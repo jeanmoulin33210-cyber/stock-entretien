@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#0f172a">
+<link rel="manifest" href="manifest.webmanifest">
+<title>Stock Entretien partagé</title>
+<style>
+:root{
+ --bg:#f3f6fb;--card:#fff;--ink:#18212f;--muted:#667085;--line:#e4e7ec;
+ --blue:#2563eb;--green:#15803d;--orange:#d97706;--red:#dc2626;--nav:#0f172a;
+}
+*{box-sizing:border-box}
+body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:88px}
+header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:20px 16px 16px;position:sticky;top:0;z-index:10}
+header h1{font-size:21px;margin:0} header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
+.sync{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;background:#243044;padding:5px 9px;border-radius:999px}
+.dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}.dot.ok{background:#22c55e}.dot.err{background:#ef4444}.dot.busy{background:#f59e0b}
+main{padding:14px;max-width:760px;margin:auto}
+.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 3px 14px rgba(15,23,42,.05)}
+.kpi span{font-size:12px;color:var(--muted)}.kpi strong{display:block;font-size:25px;margin-top:4px}
+.section{margin-top:14px}.section h2{font-size:17px;margin:0 0 10px}
+.btn{width:100%;border:0;border-radius:14px;padding:14px 15px;font-weight:750;font-size:15px;cursor:pointer}
+.primary{background:var(--blue);color:#fff}.secondary{background:#e8eef8;color:#1f2937}.good{background:#dcfce7;color:#166534}.danger{background:#fee2e2;color:#991b1b}
+.quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.search{width:100%;border:1px solid var(--line);border-radius:14px;padding:13px 14px;font-size:16px;background:#fff}
+.product{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}.product:last-child{border-bottom:0}
+.pname{font-weight:750}.meta{font-size:12px;color:var(--muted);margin-top:3px}.stock{font-size:20px;font-weight:800;text-align:right}
+.badge{font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800;display:inline-block;margin-top:4px}
+.bgreen{background:#dcfce7;color:#166534}.borange{background:#ffedd5;color:#9a3412}.bred{background:#fee2e2;color:#991b1b}
+.product-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.mini{border:0;border-radius:10px;padding:8px 10px;font-weight:700;font-size:12px}
+.history-item{padding:12px 0;border-bottom:1px solid var(--line)}.history-item:last-child{border-bottom:0}
+.history-top{display:flex;justify-content:space-between;gap:10px}.history-sub{font-size:12px;color:var(--muted);margin-top:3px}
+nav{position:fixed;bottom:0;left:0;right:0;background:rgba(15,23,42,.98);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 6px calc(8px + env(safe-area-inset-bottom));z-index:20}
+nav button{background:none;border:0;color:#cbd5e1;font-size:11px;padding:7px 2px}nav button span{display:block;font-size:21px;margin-bottom:2px}nav button.active{color:#fff}
+.screen{display:none}.screen.active{display:block}
+dialog{border:0;border-radius:20px;padding:0;width:calc(100% - 24px);max-width:520px;box-shadow:0 25px 70px rgba(0,0,0,.3)}dialog::backdrop{background:rgba(0,0,0,.52)}
+.modal{padding:18px}.modal h3{margin:0 0 14px}.field{margin-bottom:11px}.field label{display:block;font-size:12px;font-weight:750;margin-bottom:5px;color:#475467}
+.field input,.field select{width:100%;padding:13px;border:1px solid #d0d5dd;border-radius:12px;font-size:16px;background:#fff}
+.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
+.empty{text-align:center;color:var(--muted);padding:24px 5px}.alert-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:13px;font-size:13px}.info{background:#eff6ff;border:1px solid #bfdbfe;border-radius:16px;padding:13px;font-size:13px}.setting{margin-bottom:12px}
+hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+@media(min-width:650px){.kpis{grid-template-columns:repeat(4,1fr)}}
+</style>
+</head>
+<body>
+<header>
+ <h1>🧴 Stock Entretien partagé</h1>
+ <p>Stock commun pour plusieurs smartphones</p>
+ <div class="sync"><span id="syncDot" class="dot"></span><span id="syncText">Non connecté</span></div>
+</header>
+
+<main>
+<section id="home" class="screen active">
+ <div class="kpis">
+  <div class="card kpi"><span>Produits</span><strong id="kProducts">0</strong></div>
+  <div class="card kpi"><span>Stock rouge</span><strong id="kRed">0</strong></div>
+  <div class="card kpi"><span>Stock orange</span><strong id="kOrange">0</strong></div>
+  <div class="card kpi"><span>Mouvements</span><strong id="kMoves">0</strong></div>
+ </div>
+ <div class="section"><h2>Actions rapides</h2><div class="quick">
+  <button class="btn good" onclick="chooseMove('in')">➕ Entrée</button>
+  <button class="btn secondary" onclick="chooseMove('out')">➖ Sortie</button>
+ </div></div>
+ <div class="section"><h2>Produits à surveiller</h2><div class="card" id="alerts"></div></div>
+</section>
+
+<section id="products" class="screen">
+ <div class="section" style="margin-top:0"><button class="btn primary" onclick="openProduct()">+ Ajouter un produit</button></div>
+ <div class="section"><input id="search" class="search" placeholder="Rechercher..." oninput="renderProducts()"></div>
+ <div class="section card" id="productList"></div>
+</section>
+
+<section id="history" class="screen"><div class="section card" id="historyList"></div></section>
+
+<section id="settings" class="screen">
+ <div class="section card">
+  <h2>☁️ Stock partagé</h2>
+  <div class="info">Renseignez une fois l’adresse de votre projet Supabase et sa clé publique. Ensuite, tous les smartphones utilisant les mêmes informations verront le même stock.</div>
+  <div class="field" style="margin-top:12px"><label>Adresse Supabase (Project URL)</label><input id="supabaseUrl" placeholder="https://xxxx.supabase.co"></div>
+  <div class="field"><label>Clé publique (anon / publishable key)</label><input id="supabaseKey" placeholder="sb_publishable_... ou eyJ..."></div>
+  <button class="btn primary" onclick="saveCloudSettings()">Enregistrer et connecter</button>
+  <div class="setting" style="margin-top:10px"><button class="btn secondary" onclick="reloadCloud()">🔄 Actualiser maintenant</button></div>
+  <hr>
+  <h2>📧 Alerte e-mail</h2>
+  <div class="alert-box">Quand un produit passe dans le rouge, l’application peut envoyer un e-mail via EmailJS. L’envoi nécessite Internet.</div>
+  <div class="field" style="margin-top:12px"><label>Adresse e-mail destinataire</label><input id="emailTo" type="email"></div>
+  <div class="field"><label>EmailJS Public Key</label><input id="emailPublic"></div>
+  <div class="field"><label>Service ID</label><input id="emailService"></div>
+  <div class="field"><label>Template ID</label><input id="emailTemplate"></div>
+  <button class="btn primary" onclick="saveEmailSettings()">Enregistrer les réglages e-mail</button>
+  <div class="setting" style="margin-top:10px"><button class="btn secondary" onclick="testEmail()">Envoyer un e-mail test</button></div>
+  <hr>
+  <h2>💾 Sauvegarde</h2>
+  <button class="btn secondary" onclick="backup()">Télécharger une sauvegarde</button>
+  <div class="setting" style="margin-top:10px"><button id="installBtn" class="btn secondary" style="display:none">Installer l’application</button></div>
+ </div>
+</section>
+</main>
+
+<nav>
+ <button class="active" onclick="showScreen('home',this)"><span>🏠</span>Accueil</button>
+ <button onclick="showScreen('products',this)"><span>📦</span>Produits</button>
+ <button onclick="showScreen('history',this)"><span>🕘</span>Historique</button>
+ <button onclick="showScreen('settings',this)"><span>⚙️</span>Réglages</button>
+</nav>
+
+<dialog id="productDialog">
+<form method="dialog" class="modal" onsubmit="saveProduct(event)">
+ <h3 id="productTitle">Ajouter un produit</h3><input type="hidden" id="productId">
+ <div class="field"><label>Nom du produit *</label><input id="pName" required></div>
+ <div class="field"><label>Référence</label><input id="pRef"></div>
+ <div class="field"><label>Catégorie</label><select id="pCat"><option>Hygiène</option><option>Sanitaires</option><option>Sols</option><option>Cuisine</option><option>Surfaces</option><option>Vaisselle</option><option>Autre</option></select></div>
+ <div class="field"><label>Unité</label><select id="pUnit"><option>bidon</option><option>carton</option><option>rouleau</option><option>paquet</option><option>flacon</option><option>unité</option><option>litre</option><option>kg</option></select></div>
+ <div class="field"><label>Stock actuel</label><input id="pStock" type="number" min="0" step="0.01" value="0"></div>
+ <div class="field"><label>Seuil orange</label><input id="pOrange" type="number" min="0" step="0.01" value="5"></div>
+ <div class="field"><label>Seuil rouge</label><input id="pRed" type="number" min="0" step="0.01" value="2"></div>
+ <div class="modal-actions"><button type="button" class="btn secondary" onclick="productDialog.close()">Annuler</button><button class="btn primary">Enregistrer</button></div>
+</form>
+</dialog>
+
+<dialog id="moveDialog">
+<form method="dialog" class="modal" onsubmit="saveMove(event)">
+ <h3 id="moveTitle">Mouvement</h3><input type="hidden" id="moveType">
+ <div class="field"><label>Produit</label><select id="moveProduct"></select></div>
+ <div class="field"><label>Quantité *</label><input id="moveQty" type="number" min="0.01" step="0.01" required></div>
+ <div class="field"><label>Motif / destination</label><input id="moveReason" placeholder="Ex. sanitaires, cuisine, livraison..."></div>
+ <div class="field"><label>Nom de l’utilisateur</label><input id="moveUser" placeholder="Ex. Cédric"></div>
+ <div class="modal-actions"><button type="button" class="btn secondary" onclick="moveDialog.close()">Annuler</button><button class="btn primary">Valider</button></div>
+</form>
+</dialog>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script>
+const KCFG='stock_shared_cfg_v1', KEMAIL='stock_shared_email_v1', KUSER='stock_shared_user_v1';
+let cfg=JSON.parse(localStorage.getItem(KCFG)||'{}');
+let emailCfg=JSON.parse(localStorage.getItem(KEMAIL)||'{}');
+let products=[], historyData=[], sb=null, realtimeChannel=null;
+const $=id=>document.getElementById(id), esc=(s='')=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m])), fmt=n=>Number(n).toLocaleString('fr-FR',{maximumFractionDigits:2});
+function level(p){if(Number(p.stock)<=Number(p.red_threshold))return'red';if(Number(p.stock)<=Number(p.orange_threshold))return'orange';return'green'}
+function levelLabel(l){return l==='red'?'ROUGE':l==='orange'?'ORANGE':'OK'} function levelClass(l){return l==='red'?'bred':l==='orange'?'borange':'bgreen'}
+function setSync(state,text){$('syncDot').className='dot '+state;$('syncText').textContent=text}
+function showScreen(id,btn){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));btn.classList.add('active');renderAll()}
+function renderAll(){renderHome();renderProducts();renderHistory();loadSettings()}
+function renderHome(){
+ $('kProducts').textContent=products.length;$('kRed').textContent=products.filter(p=>level(p)==='red').length;$('kOrange').textContent=products.filter(p=>level(p)==='orange').length;$('kMoves').textContent=historyData.length;
+ const watch=products.filter(p=>level(p)!=='green');
+ $('alerts').innerHTML=watch.length?watch.map(p=>`<div class="product"><div><div class="pname">${esc(p.name)}</div><div class="meta">${esc(p.category||'')} · rouge ≤ ${fmt(p.red_threshold)}</div></div><div><div class="stock">${fmt(p.stock)} ${esc(p.unit)}</div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div></div>`).join(''):`<div class="empty">Tous les stocks sont au vert.</div>`;
+}
+function renderProducts(){
+ const q=($('search')?.value||'').toLowerCase(), list=products.filter(p=>(p.name+' '+(p.reference||'')+' '+(p.category||'')).toLowerCase().includes(q));
+ $('productList').innerHTML=list.length?list.map(p=>`<div class="product"><div style="min-width:0"><div class="pname">${esc(p.name)}</div><div class="meta">${esc(p.category||'')} ${p.reference?'· '+esc(p.reference):''}</div><div class="product-actions"><button class="mini good" onclick="openMoveFor('${p.id}','in')">+ Entrée</button><button class="mini secondary" onclick="openMoveFor('${p.id}','out')">− Sortie</button><button class="mini secondary" onclick="editProduct('${p.id}')">Modifier</button></div></div><div><div class="stock">${fmt(p.stock)}</div><div class="meta" style="text-align:right">${esc(p.unit)}</div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div></div>`).join(''):`<div class="empty">Aucun produit.</div>`;
+}
+function renderHistory(){
+ $('historyList').innerHTML=historyData.length?historyData.map(h=>`<div class="history-item"><div class="history-top"><strong>${esc(h.product_name)}</strong><span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}</span></div><div class="history-sub">${new Date(h.created_at).toLocaleString('fr-FR')} · stock après : ${fmt(h.stock_after)} ${esc(h.unit||'')} ${h.reason?'· '+esc(h.reason):''} ${h.user_name?'· '+esc(h.user_name):''}</div></div>`).join(''):`<div class="empty">Aucun mouvement.</div>`;
+}
+function loadSettings(){$('supabaseUrl').value=cfg.url||'';$('supabaseKey').value=cfg.key||'';$('emailTo').value=emailCfg.to||'';$('emailPublic').value=emailCfg.publicKey||'';$('emailService').value=emailCfg.serviceId||'';$('emailTemplate').value=emailCfg.templateId||'';$('moveUser').value=localStorage.getItem(KUSER)||''}
+async function saveCloudSettings(){cfg={url:$('supabaseUrl').value.trim().replace(/\/$/,''),key:$('supabaseKey').value.trim()};localStorage.setItem(KCFG,JSON.stringify(cfg));await connectCloud()}
+async function connectCloud(){
+ if(!cfg.url||!cfg.key){setSync('err','Configuration nécessaire');renderAll();return}
+ try{setSync('busy','Connexion…');sb=supabase.createClient(cfg.url,cfg.key);await reloadCloud();subscribeRealtime();setSync('ok','Synchronisé')}catch(e){console.error(e);setSync('err','Erreur de connexion');alert('Connexion impossible. Vérifiez l’adresse Supabase, la clé et que le fichier SQL a bien été exécuté.')}
+}
+async function reloadCloud(){
+ if(!sb){if(cfg.url&&cfg.key) sb=supabase.createClient(cfg.url,cfg.key); else return}
+ setSync('busy','Actualisation…');
+ const {data:p,error:pe}=await sb.from('products').select('*').order('name');
+ if(pe) throw pe;
+ const {data:h,error:he}=await sb.from('movements').select('*').order('created_at',{ascending:false}).limit(250);
+ if(he) throw he;
+ products=p||[];historyData=h||[];renderAll();setSync('ok','Synchronisé');
+}
+function subscribeRealtime(){
+ if(!sb)return;
+ if(realtimeChannel) sb.removeChannel(realtimeChannel);
+ realtimeChannel=sb.channel('stock-live')
+ .on('postgres_changes',{event:'*',schema:'public',table:'products'},()=>reloadCloud())
+ .on('postgres_changes',{event:'INSERT',schema:'public',table:'movements'},()=>reloadCloud())
+ .subscribe();
+}
+function requireCloud(){if(!sb){alert('Configurez d’abord le stock partagé dans Réglages.');return false}return true}
+function openProduct(){if(!requireCloud())return;$('productTitle').textContent='Ajouter un produit';$('productId').value='';$('pName').value='';$('pRef').value='';$('pCat').value='Hygiène';$('pUnit').value='bidon';$('pStock').value=0;$('pOrange').value=5;$('pRed').value=2;productDialog.showModal()}
+function editProduct(id){const p=products.find(x=>x.id===id);if(!p)return;$('productTitle').textContent='Modifier le produit';$('productId').value=p.id;$('pName').value=p.name;$('pRef').value=p.reference||'';$('pCat').value=p.category||'Autre';$('pUnit').value=p.unit;$('pStock').value=p.stock;$('pOrange').value=p.orange_threshold;$('pRed').value=p.red_threshold;productDialog.showModal()}
+async function saveProduct(e){
+ e.preventDefault();if(!requireCloud())return;
+ const id=$('productId').value, payload={name:$('pName').value.trim(),reference:$('pRef').value.trim()||null,category:$('pCat').value,unit:$('pUnit').value,stock:Number($('pStock').value||0),orange_threshold:Number($('pOrange').value||0),red_threshold:Number($('pRed').value||0),updated_at:new Date().toISOString()};
+ if(payload.red_threshold>payload.orange_threshold){alert('Le seuil rouge doit être inférieur ou égal au seuil orange.');return}
+ const before=id?products.find(x=>x.id===id):null, beforeLevel=before?level(before):'green';
+ const q=id?sb.from('products').update(payload).eq('id',id).select().single():sb.from('products').insert(payload).select().single();
+ const {data,error}=await q;if(error){alert('Erreur : '+error.message);return}
+ productDialog.close();await reloadCloud();checkRedAlert(data,beforeLevel)
+}
+function chooseMove(type){if(!requireCloud())return;if(!products.length){alert('Ajoutez d’abord un produit.');return}openMove(null,type)}
+function openMoveFor(id,type){openMove(id,type)}
+function openMove(id,type){$('moveType').value=type;$('moveTitle').textContent=type==='in'?'➕ Entrée en stock':'➖ Sortie de stock';$('moveProduct').innerHTML=products.map(p=>`<option value="${p.id}" ${id===p.id?'selected':''}>${esc(p.name)} — ${fmt(p.stock)} ${esc(p.unit)}</option>`).join('');$('moveQty').value='';$('moveReason').value='';$('moveUser').value=localStorage.getItem(KUSER)||'';moveDialog.showModal()}
+async function saveMove(e){
+ e.preventDefault();if(!requireCloud())return;
+ const pid=$('moveProduct').value,p=products.find(x=>x.id===pid),qty=Number($('moveQty').value),type=$('moveType').value,user=$('moveUser').value.trim();if(!p)return;
+ localStorage.setItem(KUSER,user);if(type==='out'&&qty>Number(p.stock)){alert('Stock insuffisant.');return}
+ const beforeLevel=level(p), newStock=Number(p.stock)+(type==='in'?qty:-qty);
+ const {data:updated,error:ue}=await sb.from('products').update({stock:newStock,updated_at:new Date().toISOString()}).eq('id',pid).eq('stock',p.stock).select().single();
+ if(ue||!updated){alert('Le stock a été modifié par un autre téléphone. Actualisez puis recommencez.');await reloadCloud();return}
+ const movement={product_id:p.id,product_name:p.name,movement_type:type,quantity:qty,stock_after:newStock,unit:p.unit,reason:$('moveReason').value.trim()||null,user_name:user||null};
+ const {error:me}=await sb.from('movements').insert(movement);if(me){alert('Le stock a été modifié mais l’historique n’a pas pu être enregistré : '+me.message)}
+ moveDialog.close();await reloadCloud();checkRedAlert(updated,beforeLevel)
+}
+function saveEmailSettings(){emailCfg={to:$('emailTo').value.trim(),publicKey:$('emailPublic').value.trim(),serviceId:$('emailService').value.trim(),templateId:$('emailTemplate').value.trim()};localStorage.setItem(KEMAIL,JSON.stringify(emailCfg));alert('Réglages e-mail enregistrés sur ce téléphone.')}
+async function sendEmail(subject,message){if(!emailCfg.to||!emailCfg.publicKey||!emailCfg.serviceId||!emailCfg.templateId)return false;try{emailjs.init({publicKey:emailCfg.publicKey});await emailjs.send(emailCfg.serviceId,emailCfg.templateId,{to_email:emailCfg.to,subject,message});return true}catch(e){console.error(e);return false}}
+async function testEmail(){saveEmailSettings();const ok=await sendEmail('Test - Stock Entretien partagé','Ceci est un e-mail de test.');alert(ok?'E-mail test envoyé.':'Échec de l’envoi. Vérifiez EmailJS et Internet.')}
+async function checkRedAlert(p,beforeLevel){if(level(p)!=='red'||beforeLevel==='red')return;const msg=`ALERTE STOCK ROUGE\n\nProduit : ${p.name}\nStock actuel : ${p.stock} ${p.unit}\nSeuil rouge : ${p.red_threshold} ${p.unit}\n\nUne commande ou un réapprovisionnement est à prévoir.`;const ok=await sendEmail(`Alerte stock rouge - ${p.name}`,msg);if(emailCfg.to)alert(ok?`Alerte e-mail envoyée pour ${p.name}.`:`${p.name} est dans le rouge mais l’e-mail n’a pas pu être envoyé.`)}
+function backup(){const data={exported_at:new Date().toISOString(),products,history:historyData};const a=document.createElement('a');a.href=URL.createObjectURL(new Blob([JSON.stringify(data,null,2)],{type:'application/json'}));a.download='sauvegarde-stock-partage.json';a.click()}
+
+if('serviceWorker'in navigator){window.addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}))}
+let deferredPrompt;window.addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;$('installBtn').style.display='block'});$('installBtn').addEventListener('click',async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();await deferredPrompt.userChoice;deferredPrompt=null;$('installBtn').style.display='none'});
+renderAll();connectCloud();
+</script>
+</body>
+</html>
