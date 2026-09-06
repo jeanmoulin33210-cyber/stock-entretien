@@ -594,7 +594,6 @@ hr{
 <body>
 
 <div id="loginPage">
-
 <div class="loginContainer">
 
 <div class="school">
@@ -611,44 +610,26 @@ Ensemble pour un établissement propre et durable
 
 <div class="hero">
 
-<div class="heroIcon">
-🧴🌿
-</div>
+<div class="heroIcon">🧴🌿</div>
 
-<h2>
-Suivi des produits d'entretien
-</h2>
+<h2>Suivi des produits d'entretien</h2>
 
 <div class="heroText">
 Suivre aujourd'hui pour un environnement meilleur demain
 </div>
 
 <div class="values">
-
-<div>
-🧼<br>HYGIÈNE
+<div>🧼<br>HYGIÈNE</div>
+<div>💧<br>SÉCURITÉ</div>
+<div>♻️<br>ÉCONOMIE</div>
+<div>🌍<br>DURABILITÉ</div>
 </div>
 
-<div>
-💧<br>SÉCURITÉ
-</div>
-
-<div>
-♻️<br>ÉCONOMIE
-</div>
-
-<div>
-🌍<br>DURABILITÉ
-</div>
-
-</div>
 </div>
 
 <div class="loginCard">
 
-<h3>
-Connexion à l'application
-</h3>
+<h3>Connexion à l'application</h3>
 
 <div class="loginIntro">
 Veuillez vous identifier pour accéder au stock
@@ -662,10 +643,7 @@ Veuillez vous identifier pour accéder au stock
 >
 
 <div class="loginField">
-
-<label>
-Identifiant
-</label>
+<label>Identifiant</label>
 
 <input
  id="loginUser"
@@ -676,14 +654,11 @@ Identifiant
  spellcheck="false"
  required
 >
-
 </div>
 
 <div class="loginField">
 
-<label>
-Mot de passe
-</label>
+<label>Mot de passe</label>
 
 <div class="passwordBox">
 
@@ -712,10 +687,7 @@ Mot de passe
 🔐 SE CONNECTER
 </button>
 
-<div
- id="loginError"
- class="loginError"
->
+<div id="loginError" class="loginError">
 Identifiant ou mot de passe incorrect.
 </div>
 
@@ -736,40 +708,27 @@ Suivi des stocks · Historique des mouvements · Données partagées
 
 <div>
 
-<h1>
-🧴 Stock Entretien partagé
-</h1>
+<h1>🧴 Stock Entretien partagé</h1>
 
-<p>
-Réserve Cuisine · Réserve Service général
-</p>
+<p>Réserve Cuisine · Réserve Service général</p>
 
 <div class="sync">
-
-<span
- id="syncDot"
- class="dot"
-></span>
-
-<span id="syncText">
-Connexion…
-</span>
-
+<span id="syncDot" class="dot"></span>
+<span id="syncText">Connexion…</span>
 </div>
+
 </div>
 
 <div class="userBox">
 
 <div id="connectedUser"></div>
 
-<button
- class="logout"
- onclick="logout()"
->
+<button class="logout" onclick="logout()">
 Déconnexion
 </button>
 
 </div>
+
 </div>
 
 </header>
@@ -777,10 +736,7 @@ Déconnexion
 
 <main>
 
-<section
- id="home"
- class="screen active"
->
+<section id="home" class="screen active">
 
 <div class="kpis">
 
@@ -809,9 +765,7 @@ Déconnexion
 
 <div class="section">
 
-<h2>
-Choisir une réserve
-</h2>
+<h2>Choisir une réserve</h2>
 
 <div class="reserve-grid">
 
@@ -820,16 +774,11 @@ Choisir une réserve
  onclick="goReserve('Cuisine')"
 >
 
-<span class="reserve-icon">
-🍳
-</span>
+<span class="reserve-icon">🍳</span>
 
 Réserve Cuisine
 
-<span
- class="reserve-count"
- id="homeCuisineCount"
->
+<span class="reserve-count" id="homeCuisineCount">
 0 produit
 </span>
 
@@ -841,30 +790,24 @@ Réserve Cuisine
  onclick="goReserve('Service général')"
 >
 
-<span class="reserve-icon">
-🧹
-</span>
+<span class="reserve-icon">🧹</span>
 
 Réserve Service général
 
-<span
- class="reserve-count"
- id="homeGeneralCount"
->
+<span class="reserve-count" id="homeGeneralCount">
 0 produit
 </span>
 
 </button>
 
 </div>
+
 </div>
 
 
 <div class="section">
 
-<h2>
-Actions rapides
-</h2>
+<h2>Actions rapides</h2>
 
 <div class="quick">
 
@@ -883,34 +826,24 @@ Actions rapides
 </button>
 
 </div>
+
 </div>
 
 
 <div class="section">
 
-<h2>
-Produits à surveiller
-</h2>
+<h2>Produits à surveiller</h2>
 
-<div
- class="card"
- id="alerts"
-></div>
+<div class="card" id="alerts"></div>
 
 </div>
 
 </section>
 
 
-<section
- id="products"
- class="screen"
->
+<section id="products" class="screen">
 
-<div
- class="section"
- style="margin-top:0"
->
+<div class="section" style="margin-top:0">
 
 <div class="reserve-grid">
 
@@ -920,16 +853,11 @@ Produits à surveiller
  onclick="setReserve('Cuisine')"
 >
 
-<span class="reserve-icon">
-🍳
-</span>
+<span class="reserve-icon">🍳</span>
 
 Cuisine
 
-<span
- class="reserve-count"
- id="cCuisine"
->
+<span class="reserve-count" id="cCuisine">
 0
 </span>
 
@@ -942,29 +870,22 @@ Cuisine
  onclick="setReserve('Service général')"
 >
 
-<span class="reserve-icon">
-🧹
-</span>
+<span class="reserve-icon">🧹</span>
 
 Service général
 
-<span
- class="reserve-count"
- id="cGeneral"
->
+<span class="reserve-count" id="cGeneral">
 0
 </span>
 
 </button>
 
 </div>
+
 </div>
 
 
-<div
- id="addProductArea"
- class="section"
->
+<div id="addProductArea" class="section">
 
 <button
  class="btn primary"
@@ -996,10 +917,7 @@ Service général
 </section>
 
 
-<section
- id="history"
- class="screen"
->
+<section id="history" class="screen">
 
 <div
  class="section card"
@@ -1009,29 +927,19 @@ Service général
 </section>
 
 
-<section
- id="settings"
- class="screen"
->
+<section id="settings" class="screen">
 
 <div class="section card">
 
-<h2>
-📧 Alerte e-mail
-</h2>
+<h2>📧 Alerte e-mail</h2>
 
 <div class="alert-box">
 Quand un produit passe dans le rouge, l'application peut envoyer automatiquement une alerte e-mail.
 </div>
 
-<div
- class="field"
- style="margin-top:12px"
->
+<div class="field" style="margin-top:12px">
 
-<label>
-Adresse e-mail destinataire
-</label>
+<label>Adresse e-mail destinataire</label>
 
 <input
  id="emailTo"
@@ -1043,9 +951,7 @@ Adresse e-mail destinataire
 
 <div class="field">
 
-<label>
-EmailJS Public Key
-</label>
+<label>EmailJS Public Key</label>
 
 <input id="emailPublic">
 
@@ -1054,9 +960,7 @@ EmailJS Public Key
 
 <div class="field">
 
-<label>
-Service ID
-</label>
+<label>Service ID</label>
 
 <input id="emailService">
 
@@ -1065,9 +969,7 @@ Service ID
 
 <div class="field">
 
-<label>
-Template ID
-</label>
+<label>Template ID</label>
 
 <input id="emailTemplate">
 
@@ -1083,9 +985,7 @@ Enregistrer les réglages e-mail
 
 <hr>
 
-<h2>
-💾 Sauvegarde
-</h2>
+<h2>💾 Sauvegarde</h2>
 
 <button
  class="btn secondary"
@@ -1111,16 +1011,12 @@ Télécharger une sauvegarde
 Accueil
 </button>
 
-<button
- onclick="showScreen('products',this)"
->
+<button onclick="showScreen('products',this)">
 <span>📦</span>
 Produits
 </button>
 
-<button
- onclick="showScreen('history',this)"
->
+<button onclick="showScreen('history',this)">
 <span>🕘</span>
 Historique
 </button>
@@ -1156,9 +1052,7 @@ Ajouter un produit
 
 <div class="field">
 
-<label>
-Nom du produit *
-</label>
+<label>Nom du produit *</label>
 
 <input
  id="pName"
@@ -1170,9 +1064,7 @@ Nom du produit *
 
 <div class="field">
 
-<label>
-Référence
-</label>
+<label>Référence</label>
 
 <input id="pRef">
 
@@ -1181,9 +1073,7 @@ Référence
 
 <div class="field">
 
-<label>
-Réserve
-</label>
+<label>Réserve</label>
 
 <select id="pCat">
 
@@ -1202,9 +1092,7 @@ Réserve Service général
 
 <div class="field">
 
-<label>
-Unité
-</label>
+<label>Unité</label>
 
 <select id="pUnit">
 
@@ -1225,9 +1113,7 @@ Unité
 
 <div class="field">
 
-<label>
-Stock actuel
-</label>
+<label>Stock actuel</label>
 
 <input
  id="pStock"
@@ -1242,9 +1128,7 @@ Stock actuel
 
 <div class="field">
 
-<label>
-Seuil orange
-</label>
+<label>Seuil orange</label>
 
 <input
  id="pOrange"
@@ -1259,9 +1143,7 @@ Seuil orange
 
 <div class="field">
 
-<label>
-Seuil rouge
-</label>
+<label>Seuil rouge</label>
 
 <input
  id="pRed"
@@ -1315,9 +1197,7 @@ Mouvement
 
 <div class="field">
 
-<label>
-Produit
-</label>
+<label>Produit</label>
 
 <select id="moveProduct"></select>
 
@@ -1326,9 +1206,7 @@ Produit
 
 <div class="field">
 
-<label>
-Quantité *
-</label>
+<label>Quantité *</label>
 
 <input
  id="moveQty"
@@ -1343,9 +1221,7 @@ Quantité *
 
 <div class="field">
 
-<label>
-Motif / destination
-</label>
+<label>Motif / destination</label>
 
 <input id="moveReason">
 
@@ -1354,9 +1230,7 @@ Motif / destination
 
 <div class="field">
 
-<label>
-Utilisateur connecté
-</label>
+<label>Utilisateur connecté</label>
 
 <input
  id="moveUser"
@@ -1488,7 +1362,7 @@ function reserveProducts(name){
 }
 
 
-/* ŒIL MOT DE PASSE CORRIGÉ */
+/* ŒIL MOT DE PASSE */
 
 function togglePassword(e){
 
@@ -1546,7 +1420,7 @@ function login(e){
  $('loginPass').value;
 
 
- /* Accepte Cédric avec ou sans accent */
+ /* Accepte Cedric ou Cédric */
 
  if(
   u.toLocaleLowerCase('fr-FR')
@@ -1574,6 +1448,24 @@ function login(e){
 
   $('loginError').style.display=
   'none';
+
+
+  /*
+   Après la connexion :
+   on vide le champ mot de passe caché.
+   Cela évite que le navigateur pense
+   qu'une suppression est une nouvelle
+   soumission du mot de passe.
+  */
+
+  $('loginPass').value='';
+
+  $('loginForm')
+  .setAttribute(
+   'autocomplete',
+   'off'
+  );
+
 
   openApplication();
 
@@ -1622,6 +1514,31 @@ function logout(){
  );
 
  currentUser='';
+
+
+ /*
+  Réactivation de l'autoremplissage
+  lorsque l'écran de connexion revient.
+ */
+
+ $('loginForm')
+ .setAttribute(
+  'autocomplete',
+  'on'
+ );
+
+ $('loginUser')
+ .setAttribute(
+  'autocomplete',
+  'username'
+ );
+
+ $('loginPass')
+ .setAttribute(
+  'autocomplete',
+  'current-password'
+ );
+
 
  $('loginPage').style.display=
  'block';
@@ -1717,13 +1634,17 @@ function showScreen(id,btn){
  )
  return;
 
+
  document
  .querySelectorAll('.screen')
  .forEach(
   s=>s.classList.remove('active')
  );
 
- $(id).classList.add('active');
+
+ $(id)
+ .classList.add('active');
+
 
  document
  .querySelectorAll('nav button')
@@ -1731,8 +1652,10 @@ function showScreen(id,btn){
   b=>b.classList.remove('active')
  );
 
+
  if(btn)
  btn.classList.add('active');
+
 
  renderAll();
 
@@ -1830,6 +1753,7 @@ function renderHome(){
 
 
  $('alerts').innerHTML=
+
  watch.length
 
  ?watch.map(
@@ -1862,7 +1786,9 @@ function renderHome(){
    ${esc(p.unit||'')}
    </div>
 
-   <span class="badge ${levelClass(level(p))}">
+   <span
+    class="badge ${levelClass(level(p))}"
+   >
    ${levelLabel(level(p))}
    </span>
 
@@ -1873,9 +1799,11 @@ function renderHome(){
  `).join('')
 
  :`
+
  <div class="empty">
  Tous les stocks sont au vert.
  </div>
+
  `;
 
 }
@@ -2434,7 +2362,7 @@ async function saveProduct(e){
 }
 
 
-/* SUPPRESSION CORRIGÉE */
+/* SUPPRESSION */
 
 async function deleteProduct(id){
 
@@ -2466,8 +2394,8 @@ async function deleteProduct(id){
 
 
   /*
-   Suppression des anciens
-   mouvements liés au produit
+   Supprime les mouvements
+   liés au produit.
   */
 
   const {
@@ -2495,7 +2423,7 @@ async function deleteProduct(id){
 
 
   /*
-   Suppression du produit
+   Supprime ensuite le produit.
   */
 
   const {
