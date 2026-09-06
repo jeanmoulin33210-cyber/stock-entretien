@@ -8,8 +8,16 @@
 
 <style>
 :root{
- --bg:#f3f6fb;--card:#fff;--ink:#18212f;--muted:#667085;--line:#e4e7ec;
- --blue:#2563eb;--green:#15803d;--orange:#d97706;--red:#dc2626;--nav:#0f172a;
+ --bg:#f3f6fb;
+ --card:#fff;
+ --ink:#18212f;
+ --muted:#667085;
+ --line:#e4e7ec;
+ --blue:#2563eb;
+ --green:#15803d;
+ --orange:#d97706;
+ --red:#dc2626;
+ --nav:#0f172a;
 }
 *{box-sizing:border-box}
 
@@ -24,28 +32,28 @@ body{
 header{
  background:linear-gradient(135deg,#0f172a,#1e293b);
  color:#fff;
- padding:20px 16px 16px;
+ padding:18px 14px 14px;
  position:sticky;
  top:0;
- z-index:10
+ z-index:10;
 }
-
-header h1{font-size:21px;margin:0}
-header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
 
 .headerRow{
  display:flex;
  justify-content:space-between;
  align-items:flex-start;
- gap:10px
+ gap:10px;
 }
+
+header h1{font-size:20px;margin:0}
+header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
 
 .userBox{
  font-size:11px;
  background:#243044;
  padding:7px 9px;
  border-radius:12px;
- text-align:right
+ text-align:right;
 }
 
 .logout{
@@ -55,7 +63,6 @@ header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
  font-size:11px;
  text-decoration:underline;
  padding:4px 0 0;
- cursor:pointer
 }
 
 .sync{
@@ -66,16 +73,15 @@ header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
  font-size:11px;
  background:#243044;
  padding:5px 9px;
- border-radius:999px
+ border-radius:999px;
 }
 
 .dot{
  width:8px;
  height:8px;
  border-radius:50%;
- background:#94a3b8
+ background:#94a3b8;
 }
-
 .dot.ok{background:#22c55e}
 .dot.err{background:#ef4444}
 .dot.busy{background:#f59e0b}
@@ -83,13 +89,7 @@ header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
 main{
  padding:14px;
  max-width:760px;
- margin:auto
-}
-
-.kpis{
- display:grid;
- grid-template-columns:1fr 1fr;
- gap:10px
+ margin:auto;
 }
 
 .card{
@@ -97,11 +97,25 @@ main{
  border:1px solid var(--line);
  border-radius:18px;
  padding:14px;
- box-shadow:0 3px 14px rgba(15,23,42,.05)
+ box-shadow:0 3px 14px rgba(15,23,42,.05);
 }
 
-.kpi span{font-size:12px;color:var(--muted)}
-.kpi strong{display:block;font-size:25px;margin-top:4px}
+.kpis{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+}
+
+.kpi span{
+ font-size:12px;
+ color:var(--muted);
+}
+
+.kpi strong{
+ display:block;
+ font-size:24px;
+ margin-top:4px;
+}
 
 .section{margin-top:14px}
 .section h2{font-size:17px;margin:0 0 10px}
@@ -113,7 +127,7 @@ main{
  padding:14px 15px;
  font-weight:750;
  font-size:15px;
- cursor:pointer
+ cursor:pointer;
 }
 
 .primary{background:var(--blue);color:#fff}
@@ -123,7 +137,43 @@ main{
 .quick{
  display:grid;
  grid-template-columns:1fr 1fr;
- gap:10px
+ gap:10px;
+}
+
+/* LES DEUX RÉSERVES */
+
+.reserve-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px;
+}
+
+.reserve-card{
+ border:2px solid var(--line);
+ background:#fff;
+ border-radius:18px;
+ padding:17px 12px;
+ text-align:center;
+ font-weight:850;
+ cursor:pointer;
+}
+
+.reserve-card.active{
+ border-color:var(--blue);
+ background:#eff6ff;
+}
+
+.reserve-icon{
+ font-size:32px;
+ display:block;
+ margin-bottom:5px;
+}
+
+.reserve-count{
+ display:block;
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px;
 }
 
 .search{
@@ -132,7 +182,7 @@ main{
  border-radius:14px;
  padding:13px 14px;
  font-size:16px;
- background:#fff
+ background:#fff;
 }
 
 .product{
@@ -141,7 +191,7 @@ main{
  justify-content:space-between;
  gap:10px;
  padding:14px 0;
- border-bottom:1px solid var(--line)
+ border-bottom:1px solid var(--line);
 }
 
 .product:last-child{border-bottom:0}
@@ -151,13 +201,13 @@ main{
 .meta{
  font-size:12px;
  color:var(--muted);
- margin-top:3px
+ margin-top:3px;
 }
 
 .stock{
  font-size:20px;
  font-weight:800;
- text-align:right
+ text-align:right;
 }
 
 .badge{
@@ -166,7 +216,7 @@ main{
  border-radius:999px;
  font-weight:800;
  display:inline-block;
- margin-top:4px
+ margin-top:4px;
 }
 
 .bgreen{background:#dcfce7;color:#166534}
@@ -177,7 +227,7 @@ main{
  display:flex;
  gap:6px;
  margin-top:8px;
- flex-wrap:wrap
+ flex-wrap:wrap;
 }
 
 .mini{
@@ -185,12 +235,12 @@ main{
  border-radius:10px;
  padding:8px 10px;
  font-weight:700;
- font-size:12px
+ font-size:12px;
 }
 
 .history-item{
  padding:12px 0;
- border-bottom:1px solid var(--line)
+ border-bottom:1px solid var(--line);
 }
 
 .history-item:last-child{border-bottom:0}
@@ -198,13 +248,13 @@ main{
 .history-top{
  display:flex;
  justify-content:space-between;
- gap:10px
+ gap:10px;
 }
 
 .history-sub{
  font-size:12px;
  color:var(--muted);
- margin-top:3px
+ margin-top:3px;
 }
 
 nav{
@@ -216,7 +266,7 @@ nav{
  display:grid;
  grid-template-columns:repeat(4,1fr);
  padding:8px 6px;
- z-index:20
+ z-index:20;
 }
 
 nav button{
@@ -224,13 +274,13 @@ nav button{
  border:0;
  color:#cbd5e1;
  font-size:11px;
- padding:7px 2px
+ padding:7px 2px;
 }
 
 nav button span{
  display:block;
  font-size:21px;
- margin-bottom:2px
+ margin-bottom:2px;
 }
 
 nav button.active{color:#fff}
@@ -238,15 +288,23 @@ nav button.active{color:#fff}
 .screen{display:none}
 .screen.active{display:block}
 
+.empty{
+ text-align:center;
+ color:var(--muted);
+ padding:24px 5px;
+}
+
 dialog{
  border:0;
  border-radius:20px;
  padding:0;
  width:calc(100% - 24px);
- max-width:520px
+ max-width:520px;
 }
 
-dialog::backdrop{background:rgba(0,0,0,.52)}
+dialog::backdrop{
+ background:rgba(0,0,0,.52);
+}
 
 .modal{padding:18px}
 .modal h3{margin:0 0 14px}
@@ -258,29 +316,24 @@ dialog::backdrop{background:rgba(0,0,0,.52)}
  font-size:12px;
  font-weight:750;
  margin-bottom:5px;
- color:#475467
+ color:#475467;
 }
 
-.field input,.field select{
+.field input,
+.field select{
  width:100%;
  padding:13px;
  border:1px solid #d0d5dd;
  border-radius:12px;
  font-size:16px;
- background:#fff
+ background:#fff;
 }
 
 .modal-actions{
  display:grid;
  grid-template-columns:1fr 1fr;
  gap:8px;
- margin-top:14px
-}
-
-.empty{
- text-align:center;
- color:var(--muted);
- padding:24px 5px
+ margin-top:14px;
 }
 
 .alert-box{
@@ -288,16 +341,16 @@ dialog::backdrop{background:rgba(0,0,0,.52)}
  border:1px solid #fed7aa;
  border-radius:16px;
  padding:13px;
- font-size:13px
+ font-size:13px;
 }
 
 hr{
  border:0;
  border-top:1px solid var(--line);
- margin:14px 0
+ margin:14px 0;
 }
 
-/* PAGE DE CONNEXION */
+/* CONNEXION */
 
 #loginPage{
  position:fixed;
@@ -308,12 +361,12 @@ hr{
  radial-gradient(circle at 10% 15%,rgba(34,197,94,.25),transparent 30%),
  radial-gradient(circle at 90% 20%,rgba(37,99,235,.22),transparent 30%),
  linear-gradient(160deg,#f1faf4,#f7fbff);
- padding:22px 15px 35px
+ padding:22px 15px 35px;
 }
 
 .loginContainer{
  max-width:520px;
- margin:auto
+ margin:auto;
 }
 
 .school{
@@ -322,7 +375,7 @@ hr{
  font-weight:800;
  letter-spacing:3px;
  font-size:13px;
- margin-top:8px
+ margin-top:8px;
 }
 
 .loginTitle{
@@ -331,7 +384,7 @@ hr{
  line-height:1;
  font-weight:900;
  color:#075488;
- margin:12px 0 5px
+ margin:12px 0 5px;
 }
 
 .loginTitle span{color:#24943b}
@@ -341,7 +394,7 @@ hr{
  color:#145486;
  font-size:15px;
  font-weight:650;
- margin-bottom:20px
+ margin-bottom:20px;
 }
 
 .hero{
@@ -349,7 +402,7 @@ hr{
  color:white;
  border-radius:28px;
  padding:24px;
- box-shadow:0 14px 35px rgba(15,23,42,.20)
+ box-shadow:0 14px 35px rgba(15,23,42,.20);
 }
 
 .heroIcon{font-size:52px}
@@ -357,19 +410,19 @@ hr{
 .hero h2{
  font-size:27px;
  line-height:1.1;
- margin:8px 0
+ margin:8px 0;
 }
 
 .heroText{
  color:#dbeafe;
- font-size:14px
+ font-size:14px;
 }
 
 .values{
  display:grid;
  grid-template-columns:repeat(4,1fr);
  gap:6px;
- margin-top:18px
+ margin-top:18px;
 }
 
 .values div{
@@ -377,7 +430,7 @@ hr{
  background:rgba(255,255,255,.12);
  border-radius:12px;
  padding:9px 3px;
- font-size:10px
+ font-size:10px;
 }
 
 .loginCard{
@@ -385,33 +438,31 @@ hr{
  border-radius:24px;
  padding:22px;
  margin-top:-4px;
- box-shadow:0 14px 35px rgba(15,23,42,.14)
+ box-shadow:0 14px 35px rgba(15,23,42,.14);
 }
 
 .loginCard h3{
  text-align:center;
  margin:0;
  color:#104f7d;
- font-size:22px
+ font-size:22px;
 }
 
 .loginIntro{
  text-align:center;
  color:#667085;
  font-size:13px;
- margin:6px 0 18px
+ margin:6px 0 18px;
 }
 
-.loginField{
- margin-bottom:13px
-}
+.loginField{margin-bottom:13px}
 
 .loginField label{
  display:block;
  font-size:12px;
  font-weight:800;
  color:#475467;
- margin-bottom:6px
+ margin-bottom:6px;
 }
 
 .loginField input{
@@ -420,7 +471,7 @@ hr{
  border:1px solid #cbd5e1;
  border-radius:13px;
  background:#f8fafc;
- font-size:16px
+ font-size:16px;
 }
 
 .passwordBox{position:relative}
@@ -434,7 +485,7 @@ hr{
  transform:translateY(-50%);
  background:none;
  border:0;
- font-size:21px
+ font-size:21px;
 }
 
 .loginButton{
@@ -445,7 +496,7 @@ hr{
  background:linear-gradient(135deg,#35a92f,#218838);
  color:#fff;
  font-size:16px;
- font-weight:900
+ font-weight:900;
 }
 
 .loginError{
@@ -456,7 +507,7 @@ hr{
  color:#991b1b;
  border-radius:11px;
  text-align:center;
- font-size:12px
+ font-size:12px;
 }
 
 .loginBottom{
@@ -464,7 +515,7 @@ hr{
  margin-top:18px;
  color:#0f4f83;
  font-size:11px;
- font-weight:700
+ font-weight:700;
 }
 </style>
 </head>
@@ -472,12 +523,9 @@ hr{
 <body>
 
 <div id="loginPage">
-
 <div class="loginContainer">
 
-<div class="school">
-LYCÉE JEAN MOULIN · LANGON
-</div>
+<div class="school">LYCÉE JEAN MOULIN · LANGON</div>
 
 <div class="loginTitle">
 STOCK <span>ENTRETIEN</span>
@@ -488,7 +536,6 @@ Ensemble pour un établissement propre et durable
 </div>
 
 <div class="hero">
-
 <div class="heroIcon">🧴🌿</div>
 
 <h2>Suivi des produits d'entretien</h2>
@@ -503,7 +550,6 @@ Suivre aujourd'hui pour un environnement meilleur demain
 <div>♻️<br>ÉCONOMIE</div>
 <div>🌍<br>DURABILITÉ</div>
 </div>
-
 </div>
 
 <div class="loginCard">
@@ -522,26 +568,18 @@ Veuillez vous identifier pour accéder au stock
 </div>
 
 <div class="loginField">
-
 <label>Mot de passe</label>
 
 <div class="passwordBox">
+<input id="loginPass"
+type="password"
+autocomplete="current-password"
+required>
 
-<input
- id="loginPass"
- type="password"
- autocomplete="current-password"
- required
->
-
-<button
- type="button"
- class="eye"
- onclick="togglePassword()"
->👁️</button>
-
+<button type="button"
+class="eye"
+onclick="togglePassword()">👁️</button>
 </div>
-
 </div>
 
 <button class="loginButton">
@@ -553,7 +591,6 @@ Identifiant ou mot de passe incorrect.
 </div>
 
 </form>
-
 </div>
 
 <div class="loginBottom">
@@ -561,7 +598,6 @@ Suivi des stocks · Historique des mouvements · Données partagées
 </div>
 
 </div>
-
 </div>
 
 
@@ -570,30 +606,28 @@ Suivi des stocks · Historique des mouvements · Données partagées
 <div class="headerRow">
 
 <div>
-
 <h1>🧴 Stock Entretien partagé</h1>
 
-<p>Stock commun pour plusieurs smartphones</p>
+<p>
+Réserve Cuisine · Réserve Service général
+</p>
 
 <div class="sync">
 <span id="syncDot" class="dot"></span>
 <span id="syncText">Connexion…</span>
 </div>
-
 </div>
 
 <div class="userBox">
-
 <div id="connectedUser"></div>
 
-<button class="logout" onclick="logout()">
+<button class="logout"
+onclick="logout()">
 Déconnexion
 </button>
-
 </div>
 
 </div>
-
 </header>
 
 
@@ -604,8 +638,13 @@ Déconnexion
 <div class="kpis">
 
 <div class="card kpi">
-<span>Produits</span>
-<strong id="kProducts">0</strong>
+<span>Produits Cuisine</span>
+<strong id="kCuisine">0</strong>
+</div>
+
+<div class="card kpi">
+<span>Service général</span>
+<strong id="kGeneral">0</strong>
 </div>
 
 <div class="card kpi">
@@ -618,12 +657,47 @@ Déconnexion
 <strong id="kOrange">0</strong>
 </div>
 
-<div class="card kpi">
-<span>Mouvements</span>
-<strong id="kMoves">0</strong>
 </div>
 
+
+<div class="section">
+
+<h2>Choisir une réserve</h2>
+
+<div class="reserve-grid">
+
+<button class="reserve-card"
+onclick="goReserve('Cuisine')">
+
+<span class="reserve-icon">🍳</span>
+
+Réserve Cuisine
+
+<span class="reserve-count"
+id="homeCuisineCount">
+0 produit
+</span>
+
+</button>
+
+
+<button class="reserve-card"
+onclick="goReserve('Service général')">
+
+<span class="reserve-icon">🧹</span>
+
+Réserve Service général
+
+<span class="reserve-count"
+id="homeGeneralCount">
+0 produit
+</span>
+
+</button>
+
 </div>
+</div>
+
 
 <div class="section">
 
@@ -631,17 +705,19 @@ Déconnexion
 
 <div class="quick">
 
-<button class="btn good" onclick="chooseMove('in')">
+<button class="btn good"
+onclick="chooseMove('in')">
 ➕ Entrée
 </button>
 
-<button class="btn secondary" onclick="chooseMove('out')">
+<button class="btn secondary"
+onclick="chooseMove('out')">
 ➖ Sortie
 </button>
 
 </div>
-
 </div>
+
 
 <div class="section">
 
@@ -656,46 +732,75 @@ Déconnexion
 
 <section id="products" class="screen">
 
-<div
- id="addProductArea"
- class="section"
- style="margin-top:0"
->
+<div class="section" style="margin-top:0">
 
-<button
- class="btn primary"
- onclick="openProduct()"
->
+<div class="reserve-grid">
+
+<button id="rCuisine"
+class="reserve-card active"
+onclick="setReserve('Cuisine')">
+
+<span class="reserve-icon">🍳</span>
+
+Cuisine
+
+<span class="reserve-count"
+id="cCuisine">0</span>
+
+</button>
+
+
+<button id="rGeneral"
+class="reserve-card"
+onclick="setReserve('Service général')">
+
+<span class="reserve-icon">🧹</span>
+
+Service général
+
+<span class="reserve-count"
+id="cGeneral">0</span>
+
+</button>
+
+</div>
+</div>
+
+
+<div id="addProductArea" class="section">
+
+<button class="btn primary"
+onclick="openProduct()">
+
 + Ajouter un produit
+
 </button>
 
 </div>
 
+
 <div class="section">
 
-<input
- id="search"
- class="search"
- placeholder="Rechercher..."
- oninput="renderProducts()"
->
+<input id="search"
+class="search"
+placeholder="Rechercher..."
+oninput="renderProducts()">
 
 </div>
 
-<div
- class="section card"
- id="productList"
-></div>
+
+<div class="section card"
+id="productList">
+</div>
 
 </section>
 
 
 <section id="history" class="screen">
 
-<div
- class="section card"
- id="historyList"
-></div>
+<div class="section card"
+id="historyList">
+</div>
 
 </section>
 
@@ -707,67 +812,77 @@ Déconnexion
 <h2>📧 Alerte e-mail</h2>
 
 <div class="alert-box">
+
 Quand un produit passe dans le rouge,
 l'application peut envoyer automatiquement
 une alerte e-mail.
+
 </div>
 
-<div
- class="field"
- style="margin-top:12px"
->
+<div class="field"
+style="margin-top:12px">
 
 <label>
 Adresse e-mail destinataire
 </label>
 
-<input
- id="emailTo"
- type="email"
->
+<input id="emailTo"
+type="email">
 
 </div>
 
+
 <div class="field">
 
-<label>EmailJS Public Key</label>
+<label>
+EmailJS Public Key
+</label>
 
 <input id="emailPublic">
 
 </div>
 
+
 <div class="field">
 
-<label>Service ID</label>
+<label>
+Service ID
+</label>
 
 <input id="emailService">
 
 </div>
 
+
 <div class="field">
 
-<label>Template ID</label>
+<label>
+Template ID
+</label>
 
 <input id="emailTemplate">
 
 </div>
 
-<button
- class="btn primary"
- onclick="saveEmailSettings()"
->
+
+<button class="btn primary"
+onclick="saveEmailSettings()">
+
 Enregistrer les réglages e-mail
+
 </button>
+
 
 <hr>
 
+
 <h2>💾 Sauvegarde</h2>
 
-<button
- class="btn secondary"
- onclick="backup()"
->
+<button class="btn secondary"
+onclick="backup()">
+
 Télécharger une sauvegarde
+
 </button>
 
 </div>
@@ -779,34 +894,39 @@ Télécharger une sauvegarde
 
 <nav>
 
-<button
- class="active"
- onclick="showScreen('home',this)"
->
+<button class="active"
+onclick="showScreen('home',this)">
+
 <span>🏠</span>
 Accueil
+
 </button>
 
+
 <button
- onclick="showScreen('products',this)"
->
+onclick="showScreen('products',this)">
+
 <span>📦</span>
 Produits
+
 </button>
 
+
 <button
- onclick="showScreen('history',this)"
->
+onclick="showScreen('history',this)">
+
 <span>🕘</span>
 Historique
+
 </button>
 
-<button
- id="settingsButton"
- onclick="showScreen('settings',this)"
->
+
+<button id="settingsButton"
+onclick="showScreen('settings',this)">
+
 <span>⚙️</span>
 Réglages
+
 </button>
 
 </nav>
@@ -814,66 +934,73 @@ Réglages
 
 <dialog id="productDialog">
 
-<form
- method="dialog"
- class="modal"
- onsubmit="saveProduct(event)"
->
+<form method="dialog"
+class="modal"
+onsubmit="saveProduct(event)">
 
 <h3 id="productTitle">
 Ajouter un produit
 </h3>
 
-<input
- type="hidden"
- id="productId"
->
+<input type="hidden"
+id="productId">
+
 
 <div class="field">
 
-<label>Nom du produit *</label>
+<label>
+Nom du produit *
+</label>
 
-<input
- id="pName"
- required
->
+<input id="pName"
+required>
 
 </div>
 
+
 <div class="field">
 
-<label>Référence</label>
+<label>
+Référence
+</label>
 
 <input id="pRef">
 
 </div>
 
+
 <div class="field">
 
-<label>Catégorie</label>
+<label>
+Réserve
+</label>
 
 <select id="pCat">
 
-<option>Hygiène</option>
-<option>Sanitaires</option>
-<option>Sols</option>
-<option>Cuisine</option>
-<option>Surfaces</option>
-<option>Vaisselle</option>
-<option>Autre</option>
+<option value="Cuisine">
+Réserve Cuisine
+</option>
+
+<option value="Service général">
+Réserve Service général
+</option>
 
 </select>
 
 </div>
 
+
 <div class="field">
 
-<label>Unité</label>
+<label>
+Unité
+</label>
 
 <select id="pUnit">
 
 <option>bidon</option>
 <option>carton</option>
+<option>colis</option>
 <option>rouleau</option>
 <option>paquet</option>
 <option>flacon</option>
@@ -885,60 +1012,66 @@ Ajouter un produit
 
 </div>
 
-<div class="field">
-
-<label>Stock actuel</label>
-
-<input
- id="pStock"
- type="number"
- min="0"
- step="0.01"
- value="0"
->
-
-</div>
 
 <div class="field">
 
-<label>Seuil orange</label>
+<label>
+Stock actuel
+</label>
 
-<input
- id="pOrange"
- type="number"
- min="0"
- step="0.01"
- value="5"
->
+<input id="pStock"
+type="number"
+min="0"
+step="0.01"
+value="0">
 
 </div>
+
 
 <div class="field">
 
-<label>Seuil rouge</label>
+<label>
+Seuil orange
+</label>
 
-<input
- id="pRed"
- type="number"
- min="0"
- step="0.01"
- value="2"
->
+<input id="pOrange"
+type="number"
+min="0"
+step="0.01"
+value="5">
 
 </div>
+
+
+<div class="field">
+
+<label>
+Seuil rouge
+</label>
+
+<input id="pRed"
+type="number"
+min="0"
+step="0.01"
+value="2">
+
+</div>
+
 
 <div class="modal-actions">
 
-<button
- type="button"
- class="btn secondary"
- onclick="productDialog.close()"
->
+<button type="button"
+class="btn secondary"
+onclick="productDialog.close()">
+
 Annuler
+
 </button>
 
 <button class="btn primary">
+
 Enregistrer
+
 </button>
 
 </div>
@@ -950,70 +1083,75 @@ Enregistrer
 
 <dialog id="moveDialog">
 
-<form
- method="dialog"
- class="modal"
- onsubmit="saveMove(event)"
->
+<form method="dialog"
+class="modal"
+onsubmit="saveMove(event)">
 
 <h3 id="moveTitle">
 Mouvement
 </h3>
 
-<input
- type="hidden"
- id="moveType"
->
+<input type="hidden"
+id="moveType">
+
 
 <div class="field">
 
-<label>Produit</label>
+<label>
+Produit
+</label>
 
 <select id="moveProduct"></select>
 
 </div>
 
+
 <div class="field">
 
-<label>Quantité *</label>
+<label>
+Quantité *
+</label>
 
-<input
- id="moveQty"
- type="number"
- min="0.01"
- step="0.01"
- required
->
+<input id="moveQty"
+type="number"
+min="0.01"
+step="0.01"
+required>
 
 </div>
 
+
 <div class="field">
 
-<label>Motif / destination</label>
+<label>
+Motif / destination
+</label>
 
 <input id="moveReason">
 
 </div>
 
+
 <div class="field">
 
-<label>Utilisateur connecté</label>
+<label>
+Utilisateur connecté
+</label>
 
-<input
- id="moveUser"
- readonly
->
+<input id="moveUser"
+readonly>
 
 </div>
 
+
 <div class="modal-actions">
 
-<button
- type="button"
- class="btn secondary"
- onclick="moveDialog.close()"
->
+<button type="button"
+class="btn secondary"
+onclick="moveDialog.close()">
+
 Annuler
+
 </button>
 
 <button class="btn primary">
@@ -1031,6 +1169,7 @@ Valider
 
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
+
 <script>
 
 const SUPABASE_URL =
@@ -1041,41 +1180,36 @@ const SUPABASE_KEY =
 
 
 const USERS = {
-
-Cedric: "Kilian11+",
-
-Delphine: "Service-général",
-
-Gestionnaire: "Tork1",
-
-Proviseur: "Jean-Moulin1",
-
-Autre: "Jean-Moulin2"
-
+ Cedric:"Kilian11+",
+ Delphine:"Service-général",
+ Gestionnaire:"Tork1",
+ Proviseur:"Jean-Moulin1",
+ Autre:"Jean-Moulin2"
 };
 
 
-const ADMIN = 'Cedric';
+const ADMIN='Cedric';
 
-const KEMAIL =
-'stock_shared_email_v1';
+const KEMAIL='stock_shared_email_v1';
 
-const KSESSION =
-'stock_shared_session_v1';
+const KSESSION='stock_shared_session_v1';
 
 
-let currentUser = '';
+let currentUser='';
+
+let products=[];
+
+let historyData=[];
+
+let sb=null;
+
+let currentReserve='Cuisine';
+
 
 let emailCfg =
 JSON.parse(
-localStorage.getItem(KEMAIL) || '{}'
+ localStorage.getItem(KEMAIL) || '{}'
 );
-
-let products = [];
-
-let historyData = [];
-
-let sb = null;
 
 
 const $ = id =>
@@ -1084,310 +1218,341 @@ document.getElementById(id);
 
 const esc = (s='') =>
 String(s).replace(
-/[&<>"']/g,
-m => ({
-'&':'&amp;',
-'<':'&lt;',
-'>':'&gt;',
-'"':'&quot;',
-"'":'&#039;'
-}[m])
+ /[&<>"']/g,
+ m=>({
+ '&':'&amp;',
+ '<':'&lt;',
+ '>':'&gt;',
+ '"':'&quot;',
+ "'":'&#039;'
+ }[m])
 );
 
 
 const fmt = n =>
 Number(n).toLocaleString(
-'fr-FR',
-{maximumFractionDigits:2}
+ 'fr-FR',
+ {maximumFractionDigits:2}
 );
 
 
-function isAdmin(){
+const isAdmin = () =>
+currentUser === ADMIN;
 
-return currentUser === ADMIN;
+
+/*
+Tous les produits existants sont
+placés dans la Réserve Cuisine.
+
+Les futurs produits du Service général
+auront la catégorie "Service général".
+*/
+
+function reserveOf(p){
+
+ return p.category === 'Service général'
+ ? 'Service général'
+ : 'Cuisine';
+
+}
+
+
+function reserveProducts(name){
+
+ return products.filter(
+  p => reserveOf(p) === name
+ );
 
 }
 
 
 function togglePassword(){
 
-const input = $('loginPass');
+ const i=$('loginPass');
 
-input.type =
-input.type === 'password'
-? 'text'
-: 'password';
+ i.type =
+ i.type==='password'
+ ? 'text'
+ : 'password';
 
 }
 
 
 function login(e){
 
-e.preventDefault();
+ e.preventDefault();
 
-const user =
-$('loginUser').value.trim();
+ const u =
+ $('loginUser').value.trim();
 
-const password =
-$('loginPass').value;
+ const p =
+ $('loginPass').value;
 
 
-if(
-Object.prototype.hasOwnProperty.call(
-USERS,
-user
-)
-&&
-USERS[user] === password
-){
+ if(
+ Object.prototype.hasOwnProperty.call(USERS,u)
+ &&
+ USERS[u]===p
+ ){
 
-currentUser = user;
+  currentUser=u;
 
-localStorage.setItem(
-KSESSION,
-currentUser
-);
+  localStorage.setItem(
+   KSESSION,
+   u
+  );
 
-$('loginError').style.display =
-'none';
+  $('loginError').style.display='none';
 
-openApplication();
+  openApplication();
 
-}else{
+ }
+ else{
 
-$('loginError').style.display =
-'block';
+  $('loginError').style.display='block';
 
-}
+ }
 
 }
 
 
 function openApplication(){
 
-$('loginPage').style.display =
-'none';
+ $('loginPage').style.display='none';
 
-$('connectedUser').textContent =
-(isAdmin() ? '👑 ' : '👤 ')
-+
-currentUser;
+ $('connectedUser').textContent =
+ currentUser +
+ (isAdmin() ? ' · Admin' : '');
 
+ $('moveUser').value=currentUser;
 
-if(isAdmin()){
+ $('settingsButton').style.display =
+ isAdmin() ? 'block' : 'none';
 
-$('settingsButton').style.display =
-'block';
+ $('addProductArea').style.display =
+ isAdmin() ? 'block' : 'none';
 
-$('addProductArea').style.display =
-'block';
-
-}else{
-
-$('settingsButton').style.display =
-'none';
-
-$('addProductArea').style.display =
-'none';
-
-}
-
-
-renderAll();
+ renderAll();
 
 }
 
 
 function logout(){
 
-localStorage.removeItem(KSESSION);
+ localStorage.removeItem(KSESSION);
 
-currentUser = '';
+ currentUser='';
 
-$('loginUser').value = '';
+ $('loginPage').style.display='block';
 
-$('loginPass').value = '';
-
-$('loginError').style.display =
-'none';
-
-$('loginPage').style.display =
-'block';
+ $('loginPass').value='';
 
 }
 
 
 function restoreSession(){
 
-const saved =
-localStorage.getItem(KSESSION) || '';
+ const s =
+ localStorage.getItem(KSESSION) || '';
 
-if(
-saved &&
-Object.prototype.hasOwnProperty.call(
-USERS,
-saved
-)
-){
+ if(
+ s &&
+ Object.prototype.hasOwnProperty.call(
+ USERS,
+ s
+ )
+ ){
 
-currentUser = saved;
+  currentUser=s;
 
-openApplication();
+  openApplication();
 
-}
+ }
 
 }
 
 
 function level(p){
 
-if(
-Number(p.stock)
-<=
-Number(p.red_threshold)
-)
-return 'red';
+ if(
+ Number(p.stock) <=
+ Number(p.red_threshold)
+ )
+ return 'red';
 
-if(
-Number(p.stock)
-<=
-Number(p.orange_threshold)
-)
-return 'orange';
 
-return 'green';
+ if(
+ Number(p.stock) <=
+ Number(p.orange_threshold)
+ )
+ return 'orange';
+
+
+ return 'green';
 
 }
 
 
 function levelLabel(l){
 
-return l === 'red'
-? 'ROUGE'
-: l === 'orange'
-? 'ORANGE'
-: 'OK';
+ return l==='red'
+ ? 'ROUGE'
+ : l==='orange'
+ ? 'ORANGE'
+ : 'OK';
 
 }
 
 
 function levelClass(l){
 
-return l === 'red'
-? 'bred'
-: l === 'orange'
-? 'borange'
-: 'bgreen';
+ return l==='red'
+ ? 'bred'
+ : l==='orange'
+ ? 'borange'
+ : 'bgreen';
 
 }
 
 
 function setSync(state,text){
 
-$('syncDot').className =
-'dot ' + state;
+ $('syncDot').className =
+ 'dot '+state;
 
-$('syncText').textContent =
-text;
+ $('syncText').textContent =
+ text;
 
 }
 
 
 function showScreen(id,btn){
 
-if(
-id === 'settings'
-&&
-!isAdmin()
-){
+ if(
+ id==='settings'
+ &&
+ !isAdmin()
+ )
+ return;
 
-alert(
-'Réglages réservés à Cedric.'
-);
 
-return;
+ document
+ .querySelectorAll('.screen')
+ .forEach(
+  s=>s.classList.remove('active')
+ );
+
+
+ $(id).classList.add('active');
+
+
+ document
+ .querySelectorAll('nav button')
+ .forEach(
+  b=>b.classList.remove('active')
+ );
+
+
+ if(btn)
+ btn.classList.add('active');
+
+
+ renderAll();
 
 }
 
 
-document
-.querySelectorAll('.screen')
-.forEach(
-s =>
-s.classList.remove('active')
-);
+function navButtonForProducts(){
+
+ return document
+ .querySelectorAll('nav button')[1];
+
+}
 
 
-$(id).classList.add('active');
+function goReserve(r){
+
+ currentReserve=r;
+
+ showScreen(
+ 'products',
+ navButtonForProducts()
+ );
+
+ renderProducts();
+
+}
 
 
-document
-.querySelectorAll('nav button')
-.forEach(
-b =>
-b.classList.remove('active')
-);
+function setReserve(r){
 
+ currentReserve=r;
 
-btn.classList.add('active');
-
-
-renderAll();
+ renderProducts();
 
 }
 
 
 function renderAll(){
 
-renderHome();
+ renderHome();
 
-renderProducts();
+ renderProducts();
 
-renderHistory();
+ renderHistory();
 
-loadSettings();
+ loadSettings();
 
 }
 
 
 function renderHome(){
 
-$('kProducts').textContent =
-products.length;
+ const c =
+ reserveProducts('Cuisine').length;
+
+ const g =
+ reserveProducts(
+ 'Service général'
+ ).length;
 
 
-$('kRed').textContent =
-products.filter(
-p =>
-level(p) === 'red'
-).length;
+ $('kCuisine').textContent=c;
+
+ $('kGeneral').textContent=g;
 
 
-$('kOrange').textContent =
-products.filter(
-p =>
-level(p) === 'orange'
-).length;
+ $('homeCuisineCount').textContent =
+ c+' produit'+(c>1?'s':'');
 
 
-$('kMoves').textContent =
-historyData.length;
+ $('homeGeneralCount').textContent =
+ g+' produit'+(g>1?'s':'');
 
 
-const watch =
-products.filter(
-p =>
-level(p) !== 'green'
-);
+ $('kRed').textContent =
+ products.filter(
+ p=>level(p)==='red'
+ ).length;
 
 
-$('alerts').innerHTML =
-watch.length
+ $('kOrange').textContent =
+ products.filter(
+ p=>level(p)==='orange'
+ ).length;
 
-?
 
-watch.map(
-p => `
+ const watch =
+ products.filter(
+ p=>level(p)!=='green'
+ );
+
+
+ $('alerts').innerHTML =
+ watch.length
+ ?
+ watch.map(
+ p=>`
 
 <div class="product">
 
@@ -1398,7 +1563,9 @@ ${esc(p.name)}
 </div>
 
 <div class="meta">
-${esc(p.category || '')}
+${reserveOf(p)==='Cuisine'
+?'🍳 Réserve Cuisine'
+:'🧹 Réserve Service général'}
 </div>
 
 </div>
@@ -1407,16 +1574,11 @@ ${esc(p.category || '')}
 
 <div class="stock">
 ${fmt(p.stock)}
-${esc(p.unit)}
+${esc(p.unit||'')}
 </div>
 
-<span
- class="badge
- ${levelClass(level(p))}"
->
-
+<span class="badge ${levelClass(level(p))}">
 ${levelLabel(level(p))}
-
 </span>
 
 </div>
@@ -1424,50 +1586,70 @@ ${levelLabel(level(p))}
 </div>
 
 `
-).join('')
+ ).join('')
 
-:
+ :
 
-`<div class="empty">
-Tous les stocks sont au vert.
-</div>`;
+ `<div class="empty">
+ Tous les stocks sont au vert.
+ </div>`;
 
 }
 
 
 function renderProducts(){
 
-const q =
-($('search')?.value || '')
-.toLowerCase();
+ const c =
+ reserveProducts('Cuisine').length;
+
+ const g =
+ reserveProducts(
+ 'Service général'
+ ).length;
 
 
-const list =
-products.filter(
-p =>
-(
-p.name
-+
-' '
-+
-(p.reference || '')
-+
-' '
-+
-(p.category || '')
-)
-.toLowerCase()
-.includes(q)
-);
+ $('cCuisine').textContent =
+ c+' produit'+(c>1?'s':'');
 
 
-$('productList').innerHTML =
-list.length
+ $('cGeneral').textContent =
+ g+' produit'+(g>1?'s':'');
 
-?
 
-list.map(
-p => `
+ $('rCuisine')
+ .classList.toggle(
+ 'active',
+ currentReserve==='Cuisine'
+ );
+
+
+ $('rGeneral')
+ .classList.toggle(
+ 'active',
+ currentReserve==='Service général'
+ );
+
+
+ const q =
+ ($('search')?.value||'')
+ .toLowerCase();
+
+
+ const list =
+ reserveProducts(currentReserve)
+ .filter(
+ p=>
+ (p.name+' '+(p.reference||''))
+ .toLowerCase()
+ .includes(q)
+ );
+
+
+ $('productList').innerHTML =
+ list.length
+ ?
+ list.map(
+ p=>`
 
 <div class="product">
 
@@ -1479,11 +1661,13 @@ ${esc(p.name)}
 
 <div class="meta">
 
-${esc(p.category || '')}
+${currentReserve==='Cuisine'
+?'🍳 Réserve Cuisine'
+:'🧹 Réserve Service général'}
 
 ${p.reference
-? ' · ' + esc(p.reference)
-: ''}
+?' · '+esc(p.reference)
+:''}
 
 </div>
 
@@ -1491,35 +1675,36 @@ ${p.reference
 <div class="product-actions">
 
 <button
- class="mini good"
- onclick="openMoveFor('${p.id}','in')"
->
+class="mini good"
+onclick="openMoveFor('${p.id}','in')">
+
 + Entrée
+
 </button>
 
 
 <button
- class="mini secondary"
- onclick="openMoveFor('${p.id}','out')"
->
+class="mini secondary"
+onclick="openMoveFor('${p.id}','out')">
+
 − Sortie
+
 </button>
 
 
 ${isAdmin()
+?`
 
-?
+<button
+class="mini secondary"
+onclick="editProduct('${p.id}')">
 
-`<button
- class="mini secondary"
- onclick="editProduct('${p.id}')"
->
 Modifier
-</button>`
 
-:
+</button>
 
-''}
+`
+:''}
 
 </div>
 
@@ -1533,16 +1718,11 @@ ${fmt(p.stock)}
 </div>
 
 <div class="meta">
-${esc(p.unit)}
+${esc(p.unit||'')}
 </div>
 
-<span
- class="badge
- ${levelClass(level(p))}"
->
-
+<span class="badge ${levelClass(level(p))}">
 ${levelLabel(level(p))}
-
 </span>
 
 </div>
@@ -1550,26 +1730,28 @@ ${levelLabel(level(p))}
 </div>
 
 `
-).join('')
+ ).join('')
 
-:
+ :
 
-`<div class="empty">
-Aucun produit.
-</div>`;
+ `<div class="empty">
+
+ ${currentReserve==='Cuisine'
+ ?'Aucun produit dans la Réserve Cuisine.'
+ :'La Réserve Service général est vide pour le moment.'}
+
+ </div>`;
 
 }
 
 
 function renderHistory(){
 
-$('historyList').innerHTML =
-historyData.length
-
-?
-
-historyData.map(
-h => `
+ $('historyList').innerHTML =
+ historyData.length
+ ?
+ historyData.map(
+ h=>`
 
 <div class="history-item">
 
@@ -1579,20 +1761,13 @@ h => `
 ${esc(h.product_name)}
 </strong>
 
-<span
- class="badge
- ${
-h.movement_type === 'in'
-? 'bgreen'
-: 'borange'
-}"
->
+<span class="badge ${h.movement_type==='in'
+?'bgreen'
+:'borange'}">
 
-${
-h.movement_type === 'in'
-? 'ENTRÉE'
-: 'SORTIE'
-}
+${h.movement_type==='in'
+?'ENTRÉE'
+:'SORTIE'}
 
 ${fmt(h.quantity)}
 
@@ -1609,671 +1784,737 @@ h.created_at
 
 · stock après :
 ${fmt(h.stock_after)}
-${esc(h.unit || '')}
+${esc(h.unit||'')}
 
 ${h.reason
-? ' · ' + esc(h.reason)
-: ''}
+?' · '+esc(h.reason)
+:''}
 
 ${h.user_name
-? ' · ' + esc(h.user_name)
-: ''}
+?' · '+esc(h.user_name)
+:''}
 
 </div>
 
 </div>
 
 `
-).join('')
+ ).join('')
 
-:
+ :
 
-`<div class="empty">
-Aucun mouvement.
-</div>`;
+ `<div class="empty">
+ Aucun mouvement.
+ </div>`;
 
 }
 
 
 function loadSettings(){
 
-$('emailTo').value =
-emailCfg.to || '';
+ $('emailTo').value =
+ emailCfg.to || '';
 
-$('emailPublic').value =
-emailCfg.publicKey || '';
+ $('emailPublic').value =
+ emailCfg.publicKey || '';
 
-$('emailService').value =
-emailCfg.serviceId || '';
+ $('emailService').value =
+ emailCfg.serviceId || '';
 
-$('emailTemplate').value =
-emailCfg.templateId || '';
+ $('emailTemplate').value =
+ emailCfg.templateId || '';
 
-
-$('moveUser').value =
-currentUser || '';
+ $('moveUser').value =
+ currentUser || '';
 
 }
 
 
 async function connectCloud(){
 
-try{
+ try{
 
-setSync(
-'busy',
-'Connexion…'
-);
-
-
-sb =
-supabase.createClient(
-SUPABASE_URL,
-SUPABASE_KEY
-);
+  setSync(
+  'busy',
+  'Connexion…'
+  );
 
 
-await reloadCloud();
+  sb =
+  supabase.createClient(
+  SUPABASE_URL,
+  SUPABASE_KEY
+  );
 
 
-setSync(
-'ok',
-'Synchronisé'
-);
+  await reloadCloud();
 
-}
-catch(e){
 
-console.error(e);
+  sb.channel('stock-live')
 
-setSync(
-'err',
-'Erreur de connexion'
-);
+  .on(
+  'postgres_changes',
+  {
+   event:'*',
+   schema:'public',
+   table:'products'
+  },
+  ()=>reloadCloud()
+  )
 
-}
+  .on(
+  'postgres_changes',
+  {
+   event:'*',
+   schema:'public',
+   table:'movements'
+  },
+  ()=>reloadCloud()
+  )
+
+  .subscribe();
+
+
+  setSync(
+  'ok',
+  'Synchronisé'
+  );
+
+ }
+ catch(e){
+
+  console.error(e);
+
+  setSync(
+  'err',
+  'Erreur de connexion'
+  );
+
+ }
 
 }
 
 
 async function reloadCloud(){
 
-const {
-data:p,
-error:pe
-} =
-await sb
-.from('products')
-.select('*')
-.order('name');
+ const {
+ data:p,
+ error:pe
+ } =
+ await sb
+ .from('products')
+ .select('*')
+ .order('name');
 
 
-if(pe) throw pe;
+ if(pe)
+ throw pe;
 
 
-const {
-data:h,
-error:he
-} =
-await sb
-.from('movements')
-.select('*')
-.order(
-'created_at',
-{ascending:false}
-)
-.limit(250);
+ const {
+ data:h,
+ error:he
+ } =
+ await sb
+ .from('movements')
+ .select('*')
+ .order(
+ 'created_at',
+ {ascending:false}
+ )
+ .limit(250);
 
 
-if(he) throw he;
+ if(he)
+ throw he;
 
 
-products = p || [];
+ products=p || [];
 
-historyData = h || [];
+ historyData=h || [];
 
 
-renderAll();
+ renderAll();
 
 }
 
 
 function openProduct(){
 
-if(!isAdmin()){
-
-alert(
-'Ajout réservé à Cedric.'
-);
-
-return;
-
-}
+ if(!isAdmin())
+ return;
 
 
-$('productTitle').textContent =
-'Ajouter un produit';
+ $('productTitle').textContent =
+ 'Ajouter un produit';
 
 
-$('productId').value = '';
+ $('productId').value='';
 
-$('pName').value = '';
+ $('pName').value='';
 
-$('pRef').value = '';
+ $('pRef').value='';
 
-$('pCat').value = 'Hygiène';
+ $('pCat').value =
+ currentReserve;
 
-$('pUnit').value = 'bidon';
+ $('pUnit').value =
+ 'bidon';
 
-$('pStock').value = 0;
+ $('pStock').value=0;
 
-$('pOrange').value = 5;
+ $('pOrange').value=5;
 
-$('pRed').value = 2;
+ $('pRed').value=2;
 
 
-productDialog.showModal();
+ productDialog.showModal();
 
 }
 
 
 function editProduct(id){
 
-if(!isAdmin()){
-
-alert(
-'Modification réservée à Cedric.'
-);
-
-return;
-
-}
+ if(!isAdmin())
+ return;
 
 
-const p =
-products.find(
-x =>
-x.id === id
-);
+ const p =
+ products.find(
+ x=>x.id===id
+ );
 
 
-if(!p) return;
+ if(!p)
+ return;
 
 
-$('productTitle').textContent =
-'Modifier le produit';
+ $('productTitle').textContent =
+ 'Modifier le produit';
 
 
-$('productId').value =
-p.id;
+ $('productId').value =
+ p.id;
 
 
-$('pName').value =
-p.name;
+ $('pName').value =
+ p.name || '';
 
 
-$('pRef').value =
-p.reference || '';
+ $('pRef').value =
+ p.reference || '';
 
 
-$('pCat').value =
-p.category || 'Autre';
+ $('pCat').value =
+ reserveOf(p);
 
 
-$('pUnit').value =
-p.unit;
+ $('pUnit').value =
+ p.unit || 'unité';
 
 
-$('pStock').value =
-p.stock;
+ $('pStock').value =
+ p.stock || 0;
 
 
-$('pOrange').value =
-p.orange_threshold;
+ $('pOrange').value =
+ p.orange_threshold || 0;
 
 
-$('pRed').value =
-p.red_threshold;
+ $('pRed').value =
+ p.red_threshold || 0;
 
 
-productDialog.showModal();
+ productDialog.showModal();
 
 }
 
 
 async function saveProduct(e){
 
-e.preventDefault();
+ e.preventDefault();
 
 
-if(!isAdmin()){
-
-alert(
-'Action réservée à Cedric.'
-);
-
-return;
-
-}
+ if(!isAdmin())
+ return;
 
 
-const id =
-$('productId').value;
+ const id =
+ $('productId').value;
 
 
-const payload = {
+ const payload={
 
-name:
-$('pName').value.trim(),
+  name:
+  $('pName').value.trim(),
 
-reference:
-$('pRef').value.trim()
-|| null,
+  reference:
+  $('pRef').value.trim() || null,
 
-category:
-$('pCat').value,
+  category:
+  $('pCat').value,
 
-unit:
-$('pUnit').value,
+  unit:
+  $('pUnit').value,
 
-stock:
-Number(
-$('pStock').value || 0
-),
+  stock:
+  Number(
+  $('pStock').value || 0
+  ),
 
-orange_threshold:
-Number(
-$('pOrange').value || 0
-),
+  orange_threshold:
+  Number(
+  $('pOrange').value || 0
+  ),
 
-red_threshold:
-Number(
-$('pRed').value || 0
-),
+  red_threshold:
+  Number(
+  $('pRed').value || 0
+  ),
 
-updated_at:
-new Date().toISOString()
+  updated_at:
+  new Date().toISOString()
 
-};
-
-
-let q;
+ };
 
 
-if(id){
+ const q =
+ id
+ ?
+ sb.from('products')
+ .update(payload)
+ .eq('id',id)
 
-q =
-sb
-.from('products')
-.update(payload)
-.eq('id',id);
-
-}else{
-
-q =
-sb
-.from('products')
-.insert(payload);
-
-}
+ :
+ sb.from('products')
+ .insert(payload);
 
 
-const {error} =
-await q;
+ const {error} =
+ await q;
 
 
-if(error){
+ if(error){
 
-alert(
-'Erreur : '
-+
-error.message
-);
+  alert(
+  'Erreur : '+
+  error.message
+  );
 
-return;
+  return;
 
-}
-
-
-productDialog.close();
+ }
 
 
-await reloadCloud();
+ currentReserve =
+ $('pCat').value;
+
+
+ productDialog.close();
+
+
+ await reloadCloud();
 
 }
 
 
 function chooseMove(type){
 
-if(!products.length){
-
-alert(
-"Ajoutez d'abord un produit."
-);
-
-return;
-
-}
+ const list =
+ reserveProducts(
+ currentReserve
+ );
 
 
-openMove(
-null,
-type
-);
+ if(!list.length){
+
+  alert(
+  'Cette réserve est vide.'
+  );
+
+  return;
+
+ }
+
+
+ openMove(
+ null,
+ type
+ );
 
 }
 
 
 function openMoveFor(id,type){
 
-openMove(
-id,
-type
-);
+ openMove(
+ id,
+ type
+ );
 
 }
 
 
 function openMove(id,type){
 
-$('moveType').value =
-type;
+ $('moveType').value =
+ type;
 
 
-$('moveTitle').textContent =
-type === 'in'
-?
-'➕ Entrée en stock'
-:
-'➖ Sortie de stock';
+ $('moveTitle').textContent =
+ type==='in'
+ ? '➕ Entrée en stock'
+ : '➖ Sortie de stock';
 
 
-$('moveProduct').innerHTML =
-products.map(
-p => `
+ const list =
+ id
+ ? products
+ : reserveProducts(
+ currentReserve
+ );
+
+
+ $('moveProduct').innerHTML =
+ list.map(
+ p=>`
 
 <option
- value="${p.id}"
- ${id === p.id
- ? 'selected'
- : ''}
->
+value="${p.id}"
+${id===p.id?'selected':''}>
 
 ${esc(p.name)}
 —
 ${fmt(p.stock)}
-${esc(p.unit)}
+${esc(p.unit||'')}
 
 </option>
 
 `
-).join('');
+ ).join('');
 
 
-$('moveQty').value = '';
+ $('moveQty').value='';
 
-$('moveReason').value = '';
+ $('moveReason').value='';
 
-$('moveUser').value =
-currentUser;
+ $('moveUser').value =
+ currentUser;
 
 
-moveDialog.showModal();
+ moveDialog.showModal();
 
 }
 
 
 async function saveMove(e){
 
-e.preventDefault();
+ e.preventDefault();
 
 
-const pid =
-$('moveProduct').value;
+ const pid =
+ $('moveProduct').value;
 
 
-const p =
-products.find(
-x =>
-x.id === pid
-);
+ const p =
+ products.find(
+ x=>x.id===pid
+ );
 
 
-const qty =
-Number(
-$('moveQty').value
-);
+ const qty =
+ Number(
+ $('moveQty').value
+ );
 
 
-const type =
-$('moveType').value;
+ const type =
+ $('moveType').value;
 
 
-if(!p) return;
+ if(!p || !qty)
+ return;
 
 
-if(
-type === 'out'
-&&
-qty > Number(p.stock)
+ if(
+ type==='out'
+ &&
+ qty>Number(p.stock)
+ ){
+
+  alert(
+  'Stock insuffisant.'
+  );
+
+  return;
+
+ }
+
+
+ const oldLevel =
+ level(p);
+
+
+ const newStock =
+ Number(p.stock)
+ +
+ (
+ type==='in'
+ ? qty
+ : -qty
+ );
+
+
+ const {error} =
+ await sb
+ .from('products')
+ .update({
+  stock:newStock,
+  updated_at:
+  new Date().toISOString()
+ })
+ .eq('id',pid);
+
+
+ if(error){
+
+  alert(
+  'Erreur : '+
+  error.message
+  );
+
+  return;
+
+ }
+
+
+ const {error:me} =
+ await sb
+ .from('movements')
+ .insert({
+
+  product_id:p.id,
+
+  product_name:p.name,
+
+  movement_type:type,
+
+  quantity:qty,
+
+  stock_after:newStock,
+
+  unit:p.unit,
+
+  reason:
+  $('moveReason').value.trim()
+  || null,
+
+  user_name:
+  currentUser
+
+ });
+
+
+ if(me){
+
+  alert(
+  'Erreur historique : '+
+  me.message
+  );
+
+ }
+
+
+ moveDialog.close();
+
+
+ const newLevel =
+ level({
+ ...p,
+ stock:newStock
+ });
+
+
+ if(
+ oldLevel!=='red'
+ &&
+ newLevel==='red'
+ ){
+
+  sendRedAlert(
+  p,
+  newStock
+  );
+
+ }
+
+
+ await reloadCloud();
+
+}
+
+
+async function sendRedAlert(
+p,
+newStock
 ){
 
-alert(
-'Stock insuffisant.'
-);
+ try{
 
-return;
-
-}
-
-
-const newStock =
-Number(p.stock)
-+
-(
-type === 'in'
-? qty
-: -qty
-);
+  if(
+  !emailCfg.to
+  ||
+  !emailCfg.publicKey
+  ||
+  !emailCfg.serviceId
+  ||
+  !emailCfg.templateId
+  )
+  return;
 
 
-const {error} =
-await sb
-.from('products')
-.update({
-
-stock:newStock,
-
-updated_at:
-new Date().toISOString()
-
-})
-.eq(
-'id',
-pid
-);
+  emailjs.init({
+   publicKey:
+   emailCfg.publicKey
+  });
 
 
-if(error){
+  await emailjs.send(
 
-alert(
-'Erreur : '
-+
-error.message
-);
+  emailCfg.serviceId,
 
-return;
+  emailCfg.templateId,
 
-}
+  {
 
+   to_email:
+   emailCfg.to,
 
-const {
-error:movementError
-} =
-await sb
-.from('movements')
-.insert({
+   product_name:
+   p.name,
 
-product_id:
-p.id,
+   stock:
+   newStock,
 
-product_name:
-p.name,
+   unit:
+   p.unit || '',
 
-movement_type:
-type,
+   reserve:
+   reserveOf(p)
 
-quantity:
-qty,
+  }
 
-stock_after:
-newStock,
+  );
 
-unit:
-p.unit,
+ }
+ catch(e){
 
-reason:
-$('moveReason').value.trim()
-|| null,
+  console.error(
+  'Alerte e-mail',
+  e
+  );
 
-user_name:
-currentUser
-
-});
-
-
-if(movementError){
-
-alert(
-'Erreur historique : '
-+
-movementError.message
-);
-
-}
-
-
-moveDialog.close();
-
-
-await reloadCloud();
+ }
 
 }
 
 
 function saveEmailSettings(){
 
-if(!isAdmin()){
-
-alert(
-'Réglages réservés à Cedric.'
-);
-
-return;
-
-}
+ if(!isAdmin())
+ return;
 
 
-emailCfg = {
+ emailCfg={
 
-to:
-$('emailTo').value.trim(),
+  to:
+  $('emailTo').value.trim(),
 
-publicKey:
-$('emailPublic').value.trim(),
+  publicKey:
+  $('emailPublic').value.trim(),
 
-serviceId:
-$('emailService').value.trim(),
+  serviceId:
+  $('emailService').value.trim(),
 
-templateId:
-$('emailTemplate').value.trim()
+  templateId:
+  $('emailTemplate').value.trim()
 
-};
-
-
-localStorage.setItem(
-KEMAIL,
-JSON.stringify(emailCfg)
-);
+ };
 
 
-alert(
-'Réglages e-mail enregistrés.'
-);
+ localStorage.setItem(
+ KEMAIL,
+ JSON.stringify(emailCfg)
+ );
+
+
+ alert(
+ 'Réglages e-mail enregistrés.'
+ );
 
 }
 
 
 function backup(){
 
-if(!isAdmin()){
-
-alert(
-'Sauvegarde réservée à Cedric.'
-);
-
-return;
-
-}
+ if(!isAdmin())
+ return;
 
 
-const data = {
+ const blob =
+ new Blob(
 
-exported_at:
-new Date().toISOString(),
+ [
+ JSON.stringify(
+ {
+  exported_at:
+  new Date().toISOString(),
 
-products,
+  products,
 
-history:
-historyData
+  history:
+  historyData
 
-};
+ },
+ null,
+ 2
+ )
+ ],
 
+ {
+ type:'application/json'
+ }
 
-const a =
-document.createElement('a');
-
-
-a.href =
-URL.createObjectURL(
-
-new Blob(
-
-[
-JSON.stringify(
-data,
-null,
-2
-)
-],
-
-{
-type:
-'application/json'
-}
-
-)
-
-);
+ );
 
 
-a.download =
-'sauvegarde-stock-partage.json';
+ const a =
+ document.createElement('a');
 
 
-a.click();
+ a.href =
+ URL.createObjectURL(blob);
+
+
+ a.download =
+ 'sauvegarde-stock-entretien.json';
+
+
+ a.click();
+
+
+ URL.revokeObjectURL(
+ a.href
+ );
 
 }
 
-
-renderAll();
-
-connectCloud();
 
 restoreSession();
+
+connectCloud();
 
 </script>
 
 </body>
-
 </html>
