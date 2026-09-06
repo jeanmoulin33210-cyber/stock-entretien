@@ -814,7 +814,54 @@ async function saveProduct(e){
 
 /* SUPPRESSION : UNIQUEMENT CÉDRIC ADMIN */
 
-async function deleteProduct(id){
+async async function deleteProduct(id){
+
+ if(!isAdmin())return;
+
+ const p=products.find(x=>x.id===id);
+ if(!p)return;
+
+ if(!confirm('Supprimer définitivement « '+p.name+' » ?'))return;
+
+ try{
+
+  // Suppression de l'historique lié au produit
+  const {error:histError}=await sb
+   .from('movements')
+   .delete()
+   .eq('product_id',id);
+
+  if(histError){
+   alert('Suppression impossible dans l’historique : '+histError.message);
+   return;
+  }
+
+  // Suppression du produit
+  const {data,error}=await sb
+   .from('products')
+   .delete()
+   .eq('id',id)
+   .select('id');
+
+  if(error){
+   alert('Suppression impossible : '+error.message);
+   return;
+  }
+
+  if(!data || data.length===0){
+   alert('Le produit n’a pas été supprimé. Supabase bloque actuellement les suppressions.');
+   return;
+  }
+
+  alert('Produit supprimé avec succès.');
+
+  await reloadCloud();
+
+ }catch(e){
+
+  alert('Erreur : '+e.message);
+ }
+}
 
  if(!isAdmin())return;
 
