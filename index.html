@@ -5,155 +5,855 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <title>Stock Entretien partagé</title>
+
 <style>
 :root{
  --bg:#f3f6fb;--card:#fff;--ink:#18212f;--muted:#667085;--line:#e4e7ec;
  --blue:#2563eb;--green:#15803d;--orange:#d97706;--red:#dc2626;--nav:#0f172a;
 }
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:88px}
-header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:20px 16px 16px;position:sticky;top:0;z-index:10}
+
+body{
+ margin:0;
+ font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+ background:var(--bg);
+ color:var(--ink);
+ padding-bottom:88px;
+}
+
+header{
+ background:linear-gradient(135deg,#0f172a,#1e293b);
+ color:#fff;
+ padding:20px 16px 16px;
+ position:sticky;
+ top:0;
+ z-index:10
+}
+
 header h1{font-size:21px;margin:0}
 header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
-.sync{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;background:#243044;padding:5px 9px;border-radius:999px}
-.dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}
-.dot.ok{background:#22c55e}.dot.err{background:#ef4444}.dot.busy{background:#f59e0b}
-main{padding:14px;max-width:760px;margin:auto}
-.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 3px 14px rgba(15,23,42,.05)}
+
+.headerRow{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-start;
+ gap:10px
+}
+
+.userBox{
+ font-size:11px;
+ background:#243044;
+ padding:7px 9px;
+ border-radius:12px;
+ text-align:right
+}
+
+.logout{
+ border:0;
+ background:none;
+ color:#fff;
+ font-size:11px;
+ text-decoration:underline;
+ padding:4px 0 0;
+ cursor:pointer
+}
+
+.sync{
+ display:inline-flex;
+ align-items:center;
+ gap:6px;
+ margin-top:8px;
+ font-size:11px;
+ background:#243044;
+ padding:5px 9px;
+ border-radius:999px
+}
+
+.dot{
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ background:#94a3b8
+}
+
+.dot.ok{background:#22c55e}
+.dot.err{background:#ef4444}
+.dot.busy{background:#f59e0b}
+
+main{
+ padding:14px;
+ max-width:760px;
+ margin:auto
+}
+
+.kpis{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px
+}
+
+.card{
+ background:#fff;
+ border:1px solid var(--line);
+ border-radius:18px;
+ padding:14px;
+ box-shadow:0 3px 14px rgba(15,23,42,.05)
+}
+
 .kpi span{font-size:12px;color:var(--muted)}
 .kpi strong{display:block;font-size:25px;margin-top:4px}
-.section{margin-top:14px}.section h2{font-size:17px;margin:0 0 10px}
-.btn{width:100%;border:0;border-radius:14px;padding:14px 15px;font-weight:750;font-size:15px;cursor:pointer}
-.primary{background:var(--blue);color:#fff}.secondary{background:#e8eef8;color:#1f2937}.good{background:#dcfce7;color:#166534}
-.quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.search{width:100%;border:1px solid var(--line);border-radius:14px;padding:13px 14px;font-size:16px;background:#fff}
-.product{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+
+.section{margin-top:14px}
+.section h2{font-size:17px;margin:0 0 10px}
+
+.btn{
+ width:100%;
+ border:0;
+ border-radius:14px;
+ padding:14px 15px;
+ font-weight:750;
+ font-size:15px;
+ cursor:pointer
+}
+
+.primary{background:var(--blue);color:#fff}
+.secondary{background:#e8eef8;color:#1f2937}
+.good{background:#dcfce7;color:#166534}
+
+.quick{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px
+}
+
+.search{
+ width:100%;
+ border:1px solid var(--line);
+ border-radius:14px;
+ padding:13px 14px;
+ font-size:16px;
+ background:#fff
+}
+
+.product{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ padding:14px 0;
+ border-bottom:1px solid var(--line)
+}
+
 .product:last-child{border-bottom:0}
-.pname{font-weight:750}.meta{font-size:12px;color:var(--muted);margin-top:3px}
-.stock{font-size:20px;font-weight:800;text-align:right}
-.badge{font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800;display:inline-block;margin-top:4px}
-.bgreen{background:#dcfce7;color:#166534}.borange{background:#ffedd5;color:#9a3412}.bred{background:#fee2e2;color:#991b1b}
-.product-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.mini{border:0;border-radius:10px;padding:8px 10px;font-weight:700;font-size:12px}
-.history-item{padding:12px 0;border-bottom:1px solid var(--line)}
+
+.pname{font-weight:750}
+
+.meta{
+ font-size:12px;
+ color:var(--muted);
+ margin-top:3px
+}
+
+.stock{
+ font-size:20px;
+ font-weight:800;
+ text-align:right
+}
+
+.badge{
+ font-size:11px;
+ padding:4px 8px;
+ border-radius:999px;
+ font-weight:800;
+ display:inline-block;
+ margin-top:4px
+}
+
+.bgreen{background:#dcfce7;color:#166534}
+.borange{background:#ffedd5;color:#9a3412}
+.bred{background:#fee2e2;color:#991b1b}
+
+.product-actions{
+ display:flex;
+ gap:6px;
+ margin-top:8px;
+ flex-wrap:wrap
+}
+
+.mini{
+ border:0;
+ border-radius:10px;
+ padding:8px 10px;
+ font-weight:700;
+ font-size:12px
+}
+
+.history-item{
+ padding:12px 0;
+ border-bottom:1px solid var(--line)
+}
+
 .history-item:last-child{border-bottom:0}
-.history-top{display:flex;justify-content:space-between;gap:10px}
-.history-sub{font-size:12px;color:var(--muted);margin-top:3px}
-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(15,23,42,.98);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 6px;z-index:20}
-nav button{background:none;border:0;color:#cbd5e1;font-size:11px;padding:7px 2px}
-nav button span{display:block;font-size:21px;margin-bottom:2px}
+
+.history-top{
+ display:flex;
+ justify-content:space-between;
+ gap:10px
+}
+
+.history-sub{
+ font-size:12px;
+ color:var(--muted);
+ margin-top:3px
+}
+
+nav{
+ position:fixed;
+ bottom:0;
+ left:0;
+ right:0;
+ background:rgba(15,23,42,.98);
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ padding:8px 6px;
+ z-index:20
+}
+
+nav button{
+ background:none;
+ border:0;
+ color:#cbd5e1;
+ font-size:11px;
+ padding:7px 2px
+}
+
+nav button span{
+ display:block;
+ font-size:21px;
+ margin-bottom:2px
+}
+
 nav button.active{color:#fff}
-.screen{display:none}.screen.active{display:block}
-dialog{border:0;border-radius:20px;padding:0;width:calc(100% - 24px);max-width:520px}
+
+.screen{display:none}
+.screen.active{display:block}
+
+dialog{
+ border:0;
+ border-radius:20px;
+ padding:0;
+ width:calc(100% - 24px);
+ max-width:520px
+}
+
 dialog::backdrop{background:rgba(0,0,0,.52)}
-.modal{padding:18px}.modal h3{margin:0 0 14px}
+
+.modal{padding:18px}
+.modal h3{margin:0 0 14px}
+
 .field{margin-bottom:11px}
-.field label{display:block;font-size:12px;font-weight:750;margin-bottom:5px;color:#475467}
-.field input,.field select{width:100%;padding:13px;border:1px solid #d0d5dd;border-radius:12px;font-size:16px;background:#fff}
-.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.empty{text-align:center;color:var(--muted);padding:24px 5px}
-.alert-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:13px;font-size:13px}
-hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+
+.field label{
+ display:block;
+ font-size:12px;
+ font-weight:750;
+ margin-bottom:5px;
+ color:#475467
+}
+
+.field input,.field select{
+ width:100%;
+ padding:13px;
+ border:1px solid #d0d5dd;
+ border-radius:12px;
+ font-size:16px;
+ background:#fff
+}
+
+.modal-actions{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+ margin-top:14px
+}
+
+.empty{
+ text-align:center;
+ color:var(--muted);
+ padding:24px 5px
+}
+
+.alert-box{
+ background:#fff7ed;
+ border:1px solid #fed7aa;
+ border-radius:16px;
+ padding:13px;
+ font-size:13px
+}
+
+hr{
+ border:0;
+ border-top:1px solid var(--line);
+ margin:14px 0
+}
+
+/* PAGE DE CONNEXION */
+
+#loginPage{
+ position:fixed;
+ inset:0;
+ z-index:9999;
+ overflow:auto;
+ background:
+ radial-gradient(circle at 10% 15%,rgba(34,197,94,.25),transparent 30%),
+ radial-gradient(circle at 90% 20%,rgba(37,99,235,.22),transparent 30%),
+ linear-gradient(160deg,#f1faf4,#f7fbff);
+ padding:22px 15px 35px
+}
+
+.loginContainer{
+ max-width:520px;
+ margin:auto
+}
+
+.school{
+ text-align:center;
+ color:#0f4f83;
+ font-weight:800;
+ letter-spacing:3px;
+ font-size:13px;
+ margin-top:8px
+}
+
+.loginTitle{
+ text-align:center;
+ font-size:35px;
+ line-height:1;
+ font-weight:900;
+ color:#075488;
+ margin:12px 0 5px
+}
+
+.loginTitle span{color:#24943b}
+
+.slogan{
+ text-align:center;
+ color:#145486;
+ font-size:15px;
+ font-weight:650;
+ margin-bottom:20px
+}
+
+.hero{
+ background:linear-gradient(135deg,#08659b,#063f6b);
+ color:white;
+ border-radius:28px;
+ padding:24px;
+ box-shadow:0 14px 35px rgba(15,23,42,.20)
+}
+
+.heroIcon{font-size:52px}
+
+.hero h2{
+ font-size:27px;
+ line-height:1.1;
+ margin:8px 0
+}
+
+.heroText{
+ color:#dbeafe;
+ font-size:14px
+}
+
+.values{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:6px;
+ margin-top:18px
+}
+
+.values div{
+ text-align:center;
+ background:rgba(255,255,255,.12);
+ border-radius:12px;
+ padding:9px 3px;
+ font-size:10px
+}
+
+.loginCard{
+ background:#fff;
+ border-radius:24px;
+ padding:22px;
+ margin-top:-4px;
+ box-shadow:0 14px 35px rgba(15,23,42,.14)
+}
+
+.loginCard h3{
+ text-align:center;
+ margin:0;
+ color:#104f7d;
+ font-size:22px
+}
+
+.loginIntro{
+ text-align:center;
+ color:#667085;
+ font-size:13px;
+ margin:6px 0 18px
+}
+
+.loginField{
+ margin-bottom:13px
+}
+
+.loginField label{
+ display:block;
+ font-size:12px;
+ font-weight:800;
+ color:#475467;
+ margin-bottom:6px
+}
+
+.loginField input{
+ width:100%;
+ padding:14px;
+ border:1px solid #cbd5e1;
+ border-radius:13px;
+ background:#f8fafc;
+ font-size:16px
+}
+
+.passwordBox{position:relative}
+
+.passwordBox input{padding-right:50px}
+
+.eye{
+ position:absolute;
+ right:7px;
+ top:50%;
+ transform:translateY(-50%);
+ background:none;
+ border:0;
+ font-size:21px
+}
+
+.loginButton{
+ width:100%;
+ border:0;
+ border-radius:14px;
+ padding:15px;
+ background:linear-gradient(135deg,#35a92f,#218838);
+ color:#fff;
+ font-size:16px;
+ font-weight:900
+}
+
+.loginError{
+ display:none;
+ margin-top:12px;
+ padding:10px;
+ background:#fee2e2;
+ color:#991b1b;
+ border-radius:11px;
+ text-align:center;
+ font-size:12px
+}
+
+.loginBottom{
+ text-align:center;
+ margin-top:18px;
+ color:#0f4f83;
+ font-size:11px;
+ font-weight:700
+}
 </style>
 </head>
 
 <body>
 
+<div id="loginPage">
+
+<div class="loginContainer">
+
+<div class="school">
+LYCÉE JEAN MOULIN · LANGON
+</div>
+
+<div class="loginTitle">
+STOCK <span>ENTRETIEN</span>
+</div>
+
+<div class="slogan">
+Ensemble pour un établissement propre et durable
+</div>
+
+<div class="hero">
+
+<div class="heroIcon">🧴🌿</div>
+
+<h2>Suivi des produits d'entretien</h2>
+
+<div class="heroText">
+Suivre aujourd'hui pour un environnement meilleur demain
+</div>
+
+<div class="values">
+<div>🧼<br>HYGIÈNE</div>
+<div>💧<br>SÉCURITÉ</div>
+<div>♻️<br>ÉCONOMIE</div>
+<div>🌍<br>DURABILITÉ</div>
+</div>
+
+</div>
+
+<div class="loginCard">
+
+<h3>Connexion à l'application</h3>
+
+<div class="loginIntro">
+Veuillez vous identifier pour accéder au stock
+</div>
+
+<form onsubmit="login(event)">
+
+<div class="loginField">
+<label>Identifiant</label>
+<input id="loginUser" autocomplete="username" required>
+</div>
+
+<div class="loginField">
+
+<label>Mot de passe</label>
+
+<div class="passwordBox">
+
+<input
+ id="loginPass"
+ type="password"
+ autocomplete="current-password"
+ required
+>
+
+<button
+ type="button"
+ class="eye"
+ onclick="togglePassword()"
+>👁️</button>
+
+</div>
+
+</div>
+
+<button class="loginButton">
+🔐 SE CONNECTER
+</button>
+
+<div id="loginError" class="loginError">
+Identifiant ou mot de passe incorrect.
+</div>
+
+</form>
+
+</div>
+
+<div class="loginBottom">
+Suivi des stocks · Historique des mouvements · Données partagées
+</div>
+
+</div>
+
+</div>
+
+
 <header>
+
+<div class="headerRow">
+
+<div>
+
 <h1>🧴 Stock Entretien partagé</h1>
+
 <p>Stock commun pour plusieurs smartphones</p>
+
 <div class="sync">
 <span id="syncDot" class="dot"></span>
 <span id="syncText">Connexion…</span>
 </div>
+
+</div>
+
+<div class="userBox">
+
+<div id="connectedUser"></div>
+
+<button class="logout" onclick="logout()">
+Déconnexion
+</button>
+
+</div>
+
+</div>
+
 </header>
+
 
 <main>
 
 <section id="home" class="screen active">
+
 <div class="kpis">
-<div class="card kpi"><span>Produits</span><strong id="kProducts">0</strong></div>
-<div class="card kpi"><span>Stock rouge</span><strong id="kRed">0</strong></div>
-<div class="card kpi"><span>Stock orange</span><strong id="kOrange">0</strong></div>
-<div class="card kpi"><span>Mouvements</span><strong id="kMoves">0</strong></div>
+
+<div class="card kpi">
+<span>Produits</span>
+<strong id="kProducts">0</strong>
+</div>
+
+<div class="card kpi">
+<span>Stock rouge</span>
+<strong id="kRed">0</strong>
+</div>
+
+<div class="card kpi">
+<span>Stock orange</span>
+<strong id="kOrange">0</strong>
+</div>
+
+<div class="card kpi">
+<span>Mouvements</span>
+<strong id="kMoves">0</strong>
+</div>
+
 </div>
 
 <div class="section">
+
 <h2>Actions rapides</h2>
+
 <div class="quick">
-<button class="btn good" onclick="chooseMove('in')">➕ Entrée</button>
-<button class="btn secondary" onclick="chooseMove('out')">➖ Sortie</button>
+
+<button class="btn good" onclick="chooseMove('in')">
+➕ Entrée
+</button>
+
+<button class="btn secondary" onclick="chooseMove('out')">
+➖ Sortie
+</button>
+
 </div>
+
 </div>
 
 <div class="section">
+
 <h2>Produits à surveiller</h2>
+
 <div class="card" id="alerts"></div>
+
 </div>
+
 </section>
+
 
 <section id="products" class="screen">
-<div class="section" style="margin-top:0">
-<button class="btn primary" onclick="openProduct()">+ Ajouter un produit</button>
+
+<div
+ id="addProductArea"
+ class="section"
+ style="margin-top:0"
+>
+
+<button
+ class="btn primary"
+ onclick="openProduct()"
+>
++ Ajouter un produit
+</button>
+
 </div>
+
 <div class="section">
-<input id="search" class="search" placeholder="Rechercher..." oninput="renderProducts()">
+
+<input
+ id="search"
+ class="search"
+ placeholder="Rechercher..."
+ oninput="renderProducts()"
+>
+
 </div>
-<div class="section card" id="productList"></div>
+
+<div
+ class="section card"
+ id="productList"
+></div>
+
 </section>
+
 
 <section id="history" class="screen">
-<div class="section card" id="historyList"></div>
+
+<div
+ class="section card"
+ id="historyList"
+></div>
+
 </section>
 
+
 <section id="settings" class="screen">
+
 <div class="section card">
 
 <h2>📧 Alerte e-mail</h2>
+
 <div class="alert-box">
-Quand un produit passe dans le rouge, l'application peut envoyer automatiquement une alerte e-mail.
+Quand un produit passe dans le rouge,
+l'application peut envoyer automatiquement
+une alerte e-mail.
 </div>
 
-<div class="field" style="margin-top:12px">
-<label>Adresse e-mail destinataire</label>
-<input id="emailTo" type="email">
+<div
+ class="field"
+ style="margin-top:12px"
+>
+
+<label>
+Adresse e-mail destinataire
+</label>
+
+<input
+ id="emailTo"
+ type="email"
+>
+
 </div>
 
-<div class="field"><label>EmailJS Public Key</label><input id="emailPublic"></div>
-<div class="field"><label>Service ID</label><input id="emailService"></div>
-<div class="field"><label>Template ID</label><input id="emailTemplate"></div>
+<div class="field">
 
-<button class="btn primary" onclick="saveEmailSettings()">Enregistrer les réglages e-mail</button>
+<label>EmailJS Public Key</label>
+
+<input id="emailPublic">
+
+</div>
+
+<div class="field">
+
+<label>Service ID</label>
+
+<input id="emailService">
+
+</div>
+
+<div class="field">
+
+<label>Template ID</label>
+
+<input id="emailTemplate">
+
+</div>
+
+<button
+ class="btn primary"
+ onclick="saveEmailSettings()"
+>
+Enregistrer les réglages e-mail
+</button>
 
 <hr>
 
 <h2>💾 Sauvegarde</h2>
-<button class="btn secondary" onclick="backup()">Télécharger une sauvegarde</button>
+
+<button
+ class="btn secondary"
+ onclick="backup()"
+>
+Télécharger une sauvegarde
+</button>
 
 </div>
+
 </section>
 
 </main>
 
+
 <nav>
-<button class="active" onclick="showScreen('home',this)"><span>🏠</span>Accueil</button>
-<button onclick="showScreen('products',this)"><span>📦</span>Produits</button>
-<button onclick="showScreen('history',this)"><span>🕘</span>Historique</button>
-<button onclick="showScreen('settings',this)"><span>⚙️</span>Réglages</button>
+
+<button
+ class="active"
+ onclick="showScreen('home',this)"
+>
+<span>🏠</span>
+Accueil
+</button>
+
+<button
+ onclick="showScreen('products',this)"
+>
+<span>📦</span>
+Produits
+</button>
+
+<button
+ onclick="showScreen('history',this)"
+>
+<span>🕘</span>
+Historique
+</button>
+
+<button
+ id="settingsButton"
+ onclick="showScreen('settings',this)"
+>
+<span>⚙️</span>
+Réglages
+</button>
+
 </nav>
 
-<dialog id="productDialog">
-<form method="dialog" class="modal" onsubmit="saveProduct(event)">
-<h3 id="productTitle">Ajouter un produit</h3>
-<input type="hidden" id="productId">
 
-<div class="field"><label>Nom du produit *</label><input id="pName" required></div>
-<div class="field"><label>Référence</label><input id="pRef"></div>
+<dialog id="productDialog">
+
+<form
+ method="dialog"
+ class="modal"
+ onsubmit="saveProduct(event)"
+>
+
+<h3 id="productTitle">
+Ajouter un produit
+</h3>
+
+<input
+ type="hidden"
+ id="productId"
+>
 
 <div class="field">
+
+<label>Nom du produit *</label>
+
+<input
+ id="pName"
+ required
+>
+
+</div>
+
+<div class="field">
+
+<label>Référence</label>
+
+<input id="pRef">
+
+</div>
+
+<div class="field">
+
 <label>Catégorie</label>
+
 <select id="pCat">
+
 <option>Hygiène</option>
 <option>Sanitaires</option>
 <option>Sols</option>
@@ -161,12 +861,17 @@ Quand un produit passe dans le rouge, l'application peut envoyer automatiquement
 <option>Surfaces</option>
 <option>Vaisselle</option>
 <option>Autre</option>
+
 </select>
+
 </div>
 
 <div class="field">
+
 <label>Unité</label>
+
 <select id="pUnit">
+
 <option>bidon</option>
 <option>carton</option>
 <option>rouleau</option>
@@ -175,418 +880,1400 @@ Quand un produit passe dans le rouge, l'application peut envoyer automatiquement
 <option>unité</option>
 <option>litre</option>
 <option>kg</option>
+
 </select>
+
 </div>
 
-<div class="field"><label>Stock actuel</label><input id="pStock" type="number" min="0" step="0.01" value="0"></div>
-<div class="field"><label>Seuil orange</label><input id="pOrange" type="number" min="0" step="0.01" value="5"></div>
-<div class="field"><label>Seuil rouge</label><input id="pRed" type="number" min="0" step="0.01" value="2"></div>
+<div class="field">
+
+<label>Stock actuel</label>
+
+<input
+ id="pStock"
+ type="number"
+ min="0"
+ step="0.01"
+ value="0"
+>
+
+</div>
+
+<div class="field">
+
+<label>Seuil orange</label>
+
+<input
+ id="pOrange"
+ type="number"
+ min="0"
+ step="0.01"
+ value="5"
+>
+
+</div>
+
+<div class="field">
+
+<label>Seuil rouge</label>
+
+<input
+ id="pRed"
+ type="number"
+ min="0"
+ step="0.01"
+ value="2"
+>
+
+</div>
 
 <div class="modal-actions">
-<button type="button" class="btn secondary" onclick="productDialog.close()">Annuler</button>
-<button class="btn primary">Enregistrer</button>
+
+<button
+ type="button"
+ class="btn secondary"
+ onclick="productDialog.close()"
+>
+Annuler
+</button>
+
+<button class="btn primary">
+Enregistrer
+</button>
+
 </div>
+
 </form>
+
 </dialog>
+
 
 <dialog id="moveDialog">
-<form method="dialog" class="modal" onsubmit="saveMove(event)">
-<h3 id="moveTitle">Mouvement</h3>
-<input type="hidden" id="moveType">
 
-<div class="field"><label>Produit</label><select id="moveProduct"></select></div>
-<div class="field"><label>Quantité *</label><input id="moveQty" type="number" min="0.01" step="0.01" required></div>
-<div class="field"><label>Motif / destination</label><input id="moveReason"></div>
-<div class="field"><label>Nom de l'utilisateur</label><input id="moveUser" placeholder="Ex. Cédric"></div>
+<form
+ method="dialog"
+ class="modal"
+ onsubmit="saveMove(event)"
+>
+
+<h3 id="moveTitle">
+Mouvement
+</h3>
+
+<input
+ type="hidden"
+ id="moveType"
+>
+
+<div class="field">
+
+<label>Produit</label>
+
+<select id="moveProduct"></select>
+
+</div>
+
+<div class="field">
+
+<label>Quantité *</label>
+
+<input
+ id="moveQty"
+ type="number"
+ min="0.01"
+ step="0.01"
+ required
+>
+
+</div>
+
+<div class="field">
+
+<label>Motif / destination</label>
+
+<input id="moveReason">
+
+</div>
+
+<div class="field">
+
+<label>Utilisateur connecté</label>
+
+<input
+ id="moveUser"
+ readonly
+>
+
+</div>
 
 <div class="modal-actions">
-<button type="button" class="btn secondary" onclick="moveDialog.close()">Annuler</button>
-<button class="btn primary">Valider</button>
+
+<button
+ type="button"
+ class="btn secondary"
+ onclick="moveDialog.close()"
+>
+Annuler
+</button>
+
+<button class="btn primary">
+Valider
+</button>
+
 </div>
+
 </form>
+
 </dialog>
 
+
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 
 <script>
 
-const SUPABASE_URL='https://avhyoujlplwkuccvhnvz.supabase.co';
-const SUPABASE_KEY='sb_publishable_63ZJtw7uGovMEiZgX8V8zg_02TdkDGY';
+const SUPABASE_URL =
+'https://avhyoujlplwkuccvhnvz.supabase.co';
 
-const KEMAIL='stock_shared_email_v1';
-const KUSER='stock_shared_user_v1';
+const SUPABASE_KEY =
+'sb_publishable_63ZJtw7uGovMEiZgX8V8zg_02TdkDGY';
 
-let emailCfg=JSON.parse(localStorage.getItem(KEMAIL)||'{}');
-let products=[];
-let historyData=[];
-let sb=null;
 
-const $=id=>document.getElementById(id);
+const USERS = {
 
-const esc=(s='')=>String(s).replace(/[&<>"']/g,m=>({
+Cedric: "Kilian11+",
+
+Delphine: "Service-général",
+
+Gestionnaire: "Tork1",
+
+Proviseur: "Jean-Moulin1",
+
+Autre: "Jean-Moulin2"
+
+};
+
+
+const ADMIN = 'Cedric';
+
+const KEMAIL =
+'stock_shared_email_v1';
+
+const KSESSION =
+'stock_shared_session_v1';
+
+
+let currentUser = '';
+
+let emailCfg =
+JSON.parse(
+localStorage.getItem(KEMAIL) || '{}'
+);
+
+let products = [];
+
+let historyData = [];
+
+let sb = null;
+
+
+const $ = id =>
+document.getElementById(id);
+
+
+const esc = (s='') =>
+String(s).replace(
+/[&<>"']/g,
+m => ({
 '&':'&amp;',
 '<':'&lt;',
 '>':'&gt;',
 '"':'&quot;',
 "'":'&#039;'
-}[m]));
+}[m])
+);
 
-const fmt=n=>Number(n).toLocaleString('fr-FR',{maximumFractionDigits:2});
+
+const fmt = n =>
+Number(n).toLocaleString(
+'fr-FR',
+{maximumFractionDigits:2}
+);
+
+
+function isAdmin(){
+
+return currentUser === ADMIN;
+
+}
+
+
+function togglePassword(){
+
+const input = $('loginPass');
+
+input.type =
+input.type === 'password'
+? 'text'
+: 'password';
+
+}
+
+
+function login(e){
+
+e.preventDefault();
+
+const user =
+$('loginUser').value.trim();
+
+const password =
+$('loginPass').value;
+
+
+if(
+Object.prototype.hasOwnProperty.call(
+USERS,
+user
+)
+&&
+USERS[user] === password
+){
+
+currentUser = user;
+
+localStorage.setItem(
+KSESSION,
+currentUser
+);
+
+$('loginError').style.display =
+'none';
+
+openApplication();
+
+}else{
+
+$('loginError').style.display =
+'block';
+
+}
+
+}
+
+
+function openApplication(){
+
+$('loginPage').style.display =
+'none';
+
+$('connectedUser').textContent =
+(isAdmin() ? '👑 ' : '👤 ')
++
+currentUser;
+
+
+if(isAdmin()){
+
+$('settingsButton').style.display =
+'block';
+
+$('addProductArea').style.display =
+'block';
+
+}else{
+
+$('settingsButton').style.display =
+'none';
+
+$('addProductArea').style.display =
+'none';
+
+}
+
+
+renderAll();
+
+}
+
+
+function logout(){
+
+localStorage.removeItem(KSESSION);
+
+currentUser = '';
+
+$('loginUser').value = '';
+
+$('loginPass').value = '';
+
+$('loginError').style.display =
+'none';
+
+$('loginPage').style.display =
+'block';
+
+}
+
+
+function restoreSession(){
+
+const saved =
+localStorage.getItem(KSESSION) || '';
+
+if(
+saved &&
+Object.prototype.hasOwnProperty.call(
+USERS,
+saved
+)
+){
+
+currentUser = saved;
+
+openApplication();
+
+}
+
+}
+
 
 function level(p){
-if(Number(p.stock)<=Number(p.red_threshold))return'red';
-if(Number(p.stock)<=Number(p.orange_threshold))return'orange';
-return'green';
+
+if(
+Number(p.stock)
+<=
+Number(p.red_threshold)
+)
+return 'red';
+
+if(
+Number(p.stock)
+<=
+Number(p.orange_threshold)
+)
+return 'orange';
+
+return 'green';
+
 }
+
 
 function levelLabel(l){
-return l==='red'?'ROUGE':l==='orange'?'ORANGE':'OK';
+
+return l === 'red'
+? 'ROUGE'
+: l === 'orange'
+? 'ORANGE'
+: 'OK';
+
 }
+
 
 function levelClass(l){
-return l==='red'?'bred':l==='orange'?'borange':'bgreen';
+
+return l === 'red'
+? 'bred'
+: l === 'orange'
+? 'borange'
+: 'bgreen';
+
 }
+
 
 function setSync(state,text){
-$('syncDot').className='dot '+state;
-$('syncText').textContent=text;
+
+$('syncDot').className =
+'dot ' + state;
+
+$('syncText').textContent =
+text;
+
 }
+
 
 function showScreen(id,btn){
-document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
-$(id).classList.add('active');
-document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
-btn.classList.add('active');
-renderAll();
+
+if(
+id === 'settings'
+&&
+!isAdmin()
+){
+
+alert(
+'Réglages réservés à Cedric.'
+);
+
+return;
+
 }
 
-function renderAll(){
-renderHome();
-renderProducts();
-renderHistory();
-loadSettings();
+
+document
+.querySelectorAll('.screen')
+.forEach(
+s =>
+s.classList.remove('active')
+);
+
+
+$(id).classList.add('active');
+
+
+document
+.querySelectorAll('nav button')
+.forEach(
+b =>
+b.classList.remove('active')
+);
+
+
+btn.classList.add('active');
+
+
+renderAll();
+
 }
+
+
+function renderAll(){
+
+renderHome();
+
+renderProducts();
+
+renderHistory();
+
+loadSettings();
+
+}
+
 
 function renderHome(){
 
-$('kProducts').textContent=products.length;
-$('kRed').textContent=products.filter(p=>level(p)==='red').length;
-$('kOrange').textContent=products.filter(p=>level(p)==='orange').length;
-$('kMoves').textContent=historyData.length;
+$('kProducts').textContent =
+products.length;
 
-const watch=products.filter(p=>level(p)!=='green');
 
-$('alerts').innerHTML=watch.length
-?watch.map(p=>`
+$('kRed').textContent =
+products.filter(
+p =>
+level(p) === 'red'
+).length;
+
+
+$('kOrange').textContent =
+products.filter(
+p =>
+level(p) === 'orange'
+).length;
+
+
+$('kMoves').textContent =
+historyData.length;
+
+
+const watch =
+products.filter(
+p =>
+level(p) !== 'green'
+);
+
+
+$('alerts').innerHTML =
+watch.length
+
+?
+
+watch.map(
+p => `
+
 <div class="product">
+
 <div>
-<div class="pname">${esc(p.name)}</div>
-<div class="meta">${esc(p.category||'')}</div>
+
+<div class="pname">
+${esc(p.name)}
 </div>
+
+<div class="meta">
+${esc(p.category || '')}
+</div>
+
+</div>
+
 <div>
-<div class="stock">${fmt(p.stock)} ${esc(p.unit)}</div>
-<span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span>
+
+<div class="stock">
+${fmt(p.stock)}
+${esc(p.unit)}
 </div>
-</div>`).join('')
-:`<div class="empty">Tous les stocks sont au vert.</div>`;
+
+<span
+ class="badge
+ ${levelClass(level(p))}"
+>
+
+${levelLabel(level(p))}
+
+</span>
+
+</div>
+
+</div>
+
+`
+).join('')
+
+:
+
+`<div class="empty">
+Tous les stocks sont au vert.
+</div>`;
+
 }
+
 
 function renderProducts(){
 
-const q=($('search')?.value||'').toLowerCase();
+const q =
+($('search')?.value || '')
+.toLowerCase();
 
-const list=products.filter(p=>
-(p.name+' '+(p.reference||'')+' '+(p.category||'')).toLowerCase().includes(q)
+
+const list =
+products.filter(
+p =>
+(
+p.name
++
+' '
++
+(p.reference || '')
++
+' '
++
+(p.category || '')
+)
+.toLowerCase()
+.includes(q)
 );
 
-$('productList').innerHTML=list.length
-?list.map(p=>`
+
+$('productList').innerHTML =
+list.length
+
+?
+
+list.map(
+p => `
+
 <div class="product">
+
 <div>
-<div class="pname">${esc(p.name)}</div>
-<div class="meta">${esc(p.category||'')} ${p.reference?'· '+esc(p.reference):''}</div>
+
+<div class="pname">
+${esc(p.name)}
+</div>
+
+<div class="meta">
+
+${esc(p.category || '')}
+
+${p.reference
+? ' · ' + esc(p.reference)
+: ''}
+
+</div>
+
 
 <div class="product-actions">
-<button class="mini good" onclick="openMoveFor('${p.id}','in')">+ Entrée</button>
-<button class="mini secondary" onclick="openMoveFor('${p.id}','out')">− Sortie</button>
-<button class="mini secondary" onclick="editProduct('${p.id}')">Modifier</button>
-</div>
+
+<button
+ class="mini good"
+ onclick="openMoveFor('${p.id}','in')"
+>
++ Entrée
+</button>
+
+
+<button
+ class="mini secondary"
+ onclick="openMoveFor('${p.id}','out')"
+>
+− Sortie
+</button>
+
+
+${isAdmin()
+
+?
+
+`<button
+ class="mini secondary"
+ onclick="editProduct('${p.id}')"
+>
+Modifier
+</button>`
+
+:
+
+''}
+
 </div>
 
-<div>
-<div class="stock">${fmt(p.stock)}</div>
-<div class="meta">${esc(p.unit)}</div>
-<span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span>
 </div>
-</div>`).join('')
-:`<div class="empty">Aucun produit.</div>`;
+
+
+<div>
+
+<div class="stock">
+${fmt(p.stock)}
+</div>
+
+<div class="meta">
+${esc(p.unit)}
+</div>
+
+<span
+ class="badge
+ ${levelClass(level(p))}"
+>
+
+${levelLabel(level(p))}
+
+</span>
+
+</div>
+
+</div>
+
+`
+).join('')
+
+:
+
+`<div class="empty">
+Aucun produit.
+</div>`;
+
 }
+
 
 function renderHistory(){
 
-$('historyList').innerHTML=historyData.length
-?historyData.map(h=>`
+$('historyList').innerHTML =
+historyData.length
+
+?
+
+historyData.map(
+h => `
+
 <div class="history-item">
+
 <div class="history-top">
-<strong>${esc(h.product_name)}</strong>
-<span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">
-${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}
+
+<strong>
+${esc(h.product_name)}
+</strong>
+
+<span
+ class="badge
+ ${
+h.movement_type === 'in'
+? 'bgreen'
+: 'borange'
+}"
+>
+
+${
+h.movement_type === 'in'
+? 'ENTRÉE'
+: 'SORTIE'
+}
+
+${fmt(h.quantity)}
+
 </span>
+
 </div>
+
 
 <div class="history-sub">
-${new Date(h.created_at).toLocaleString('fr-FR')}
-· stock après : ${fmt(h.stock_after)} ${esc(h.unit||'')}
-${h.reason?' · '+esc(h.reason):''}
-${h.user_name?' · '+esc(h.user_name):''}
+
+${new Date(
+h.created_at
+).toLocaleString('fr-FR')}
+
+· stock après :
+${fmt(h.stock_after)}
+${esc(h.unit || '')}
+
+${h.reason
+? ' · ' + esc(h.reason)
+: ''}
+
+${h.user_name
+? ' · ' + esc(h.user_name)
+: ''}
+
 </div>
-</div>`).join('')
-:`<div class="empty">Aucun mouvement.</div>`;
+
+</div>
+
+`
+).join('')
+
+:
+
+`<div class="empty">
+Aucun mouvement.
+</div>`;
+
 }
 
+
 function loadSettings(){
-$('emailTo').value=emailCfg.to||'';
-$('emailPublic').value=emailCfg.publicKey||'';
-$('emailService').value=emailCfg.serviceId||'';
-$('emailTemplate').value=emailCfg.templateId||'';
-$('moveUser').value=localStorage.getItem(KUSER)||'';
+
+$('emailTo').value =
+emailCfg.to || '';
+
+$('emailPublic').value =
+emailCfg.publicKey || '';
+
+$('emailService').value =
+emailCfg.serviceId || '';
+
+$('emailTemplate').value =
+emailCfg.templateId || '';
+
+
+$('moveUser').value =
+currentUser || '';
+
 }
+
 
 async function connectCloud(){
 
 try{
 
-setSync('busy','Connexion…');
+setSync(
+'busy',
+'Connexion…'
+);
 
-sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
+
+sb =
+supabase.createClient(
+SUPABASE_URL,
+SUPABASE_KEY
+);
+
 
 await reloadCloud();
 
-setSync('ok','Synchronisé');
 
-}catch(e){
+setSync(
+'ok',
+'Synchronisé'
+);
+
+}
+catch(e){
 
 console.error(e);
-setSync('err','Erreur de connexion');
+
+setSync(
+'err',
+'Erreur de connexion'
+);
 
 }
+
 }
+
 
 async function reloadCloud(){
 
-const {data:p,error:pe}=await sb
+const {
+data:p,
+error:pe
+} =
+await sb
 .from('products')
 .select('*')
 .order('name');
 
-if(pe)throw pe;
 
-const {data:h,error:he}=await sb
+if(pe) throw pe;
+
+
+const {
+data:h,
+error:he
+} =
+await sb
 .from('movements')
 .select('*')
-.order('created_at',{ascending:false})
+.order(
+'created_at',
+{ascending:false}
+)
 .limit(250);
 
-if(he)throw he;
 
-products=p||[];
-historyData=h||[];
+if(he) throw he;
+
+
+products = p || [];
+
+historyData = h || [];
+
 
 renderAll();
+
 }
+
 
 function openProduct(){
 
-$('productTitle').textContent='Ajouter un produit';
-$('productId').value='';
-$('pName').value='';
-$('pRef').value='';
-$('pCat').value='Hygiène';
-$('pUnit').value='bidon';
-$('pStock').value=0;
-$('pOrange').value=5;
-$('pRed').value=2;
+if(!isAdmin()){
+
+alert(
+'Ajout réservé à Cedric.'
+);
+
+return;
+
+}
+
+
+$('productTitle').textContent =
+'Ajouter un produit';
+
+
+$('productId').value = '';
+
+$('pName').value = '';
+
+$('pRef').value = '';
+
+$('pCat').value = 'Hygiène';
+
+$('pUnit').value = 'bidon';
+
+$('pStock').value = 0;
+
+$('pOrange').value = 5;
+
+$('pRed').value = 2;
+
 
 productDialog.showModal();
+
 }
+
 
 function editProduct(id){
 
-const p=products.find(x=>x.id===id);
-if(!p)return;
+if(!isAdmin()){
 
-$('productTitle').textContent='Modifier le produit';
-$('productId').value=p.id;
-$('pName').value=p.name;
-$('pRef').value=p.reference||'';
-$('pCat').value=p.category||'Autre';
-$('pUnit').value=p.unit;
-$('pStock').value=p.stock;
-$('pOrange').value=p.orange_threshold;
-$('pRed').value=p.red_threshold;
+alert(
+'Modification réservée à Cedric.'
+);
+
+return;
+
+}
+
+
+const p =
+products.find(
+x =>
+x.id === id
+);
+
+
+if(!p) return;
+
+
+$('productTitle').textContent =
+'Modifier le produit';
+
+
+$('productId').value =
+p.id;
+
+
+$('pName').value =
+p.name;
+
+
+$('pRef').value =
+p.reference || '';
+
+
+$('pCat').value =
+p.category || 'Autre';
+
+
+$('pUnit').value =
+p.unit;
+
+
+$('pStock').value =
+p.stock;
+
+
+$('pOrange').value =
+p.orange_threshold;
+
+
+$('pRed').value =
+p.red_threshold;
+
 
 productDialog.showModal();
+
 }
+
 
 async function saveProduct(e){
 
 e.preventDefault();
 
-const id=$('productId').value;
 
-const payload={
-name:$('pName').value.trim(),
-reference:$('pRef').value.trim()||null,
-category:$('pCat').value,
-unit:$('pUnit').value,
-stock:Number($('pStock').value||0),
-orange_threshold:Number($('pOrange').value||0),
-red_threshold:Number($('pRed').value||0),
-updated_at:new Date().toISOString()
+if(!isAdmin()){
+
+alert(
+'Action réservée à Cedric.'
+);
+
+return;
+
+}
+
+
+const id =
+$('productId').value;
+
+
+const payload = {
+
+name:
+$('pName').value.trim(),
+
+reference:
+$('pRef').value.trim()
+|| null,
+
+category:
+$('pCat').value,
+
+unit:
+$('pUnit').value,
+
+stock:
+Number(
+$('pStock').value || 0
+),
+
+orange_threshold:
+Number(
+$('pOrange').value || 0
+),
+
+red_threshold:
+Number(
+$('pRed').value || 0
+),
+
+updated_at:
+new Date().toISOString()
+
 };
+
 
 let q;
 
+
 if(id){
-q=sb.from('products').update(payload).eq('id',id);
+
+q =
+sb
+.from('products')
+.update(payload)
+.eq('id',id);
+
 }else{
-q=sb.from('products').insert(payload);
+
+q =
+sb
+.from('products')
+.insert(payload);
+
 }
 
-const {error}=await q;
+
+const {error} =
+await q;
+
 
 if(error){
-alert('Erreur : '+error.message);
+
+alert(
+'Erreur : '
++
+error.message
+);
+
 return;
+
 }
 
+
 productDialog.close();
+
+
 await reloadCloud();
+
 }
+
 
 function chooseMove(type){
 
 if(!products.length){
-alert("Ajoutez d'abord un produit.");
+
+alert(
+"Ajoutez d'abord un produit."
+);
+
 return;
+
 }
 
-openMove(null,type);
+
+openMove(
+null,
+type
+);
+
 }
+
 
 function openMoveFor(id,type){
-openMove(id,type);
+
+openMove(
+id,
+type
+);
+
 }
+
 
 function openMove(id,type){
 
-$('moveType').value=type;
+$('moveType').value =
+type;
 
-$('moveTitle').textContent=
-type==='in'?'➕ Entrée en stock':'➖ Sortie de stock';
 
-$('moveProduct').innerHTML=products.map(p=>
-`<option value="${p.id}" ${id===p.id?'selected':''}>
-${esc(p.name)} — ${fmt(p.stock)} ${esc(p.unit)}
-</option>`
+$('moveTitle').textContent =
+type === 'in'
+?
+'➕ Entrée en stock'
+:
+'➖ Sortie de stock';
+
+
+$('moveProduct').innerHTML =
+products.map(
+p => `
+
+<option
+ value="${p.id}"
+ ${id === p.id
+ ? 'selected'
+ : ''}
+>
+
+${esc(p.name)}
+—
+${fmt(p.stock)}
+${esc(p.unit)}
+
+</option>
+
+`
 ).join('');
 
-$('moveQty').value='';
-$('moveReason').value='';
-$('moveUser').value=localStorage.getItem(KUSER)||'';
+
+$('moveQty').value = '';
+
+$('moveReason').value = '';
+
+$('moveUser').value =
+currentUser;
+
 
 moveDialog.showModal();
+
 }
+
 
 async function saveMove(e){
 
 e.preventDefault();
 
-const pid=$('moveProduct').value;
-const p=products.find(x=>x.id===pid);
-const qty=Number($('moveQty').value);
-const type=$('moveType').value;
-const user=$('moveUser').value.trim();
 
-if(!p)return;
+const pid =
+$('moveProduct').value;
 
-if(type==='out'&&qty>Number(p.stock)){
-alert('Stock insuffisant.');
+
+const p =
+products.find(
+x =>
+x.id === pid
+);
+
+
+const qty =
+Number(
+$('moveQty').value
+);
+
+
+const type =
+$('moveType').value;
+
+
+if(!p) return;
+
+
+if(
+type === 'out'
+&&
+qty > Number(p.stock)
+){
+
+alert(
+'Stock insuffisant.'
+);
+
 return;
+
 }
 
-localStorage.setItem(KUSER,user);
 
-const newStock=
-Number(p.stock)+(type==='in'?qty:-qty);
+const newStock =
+Number(p.stock)
++
+(
+type === 'in'
+? qty
+: -qty
+);
 
-const {error}=await sb
+
+const {error} =
+await sb
 .from('products')
 .update({
+
 stock:newStock,
-updated_at:new Date().toISOString()
+
+updated_at:
+new Date().toISOString()
+
 })
-.eq('id',pid);
+.eq(
+'id',
+pid
+);
+
 
 if(error){
-alert('Erreur : '+error.message);
+
+alert(
+'Erreur : '
++
+error.message
+);
+
 return;
+
 }
 
-await sb.from('movements').insert({
-product_id:p.id,
-product_name:p.name,
-movement_type:type,
-quantity:qty,
-stock_after:newStock,
-unit:p.unit,
-reason:$('moveReason').value.trim()||null,
-user_name:user||null
+
+const {
+error:movementError
+} =
+await sb
+.from('movements')
+.insert({
+
+product_id:
+p.id,
+
+product_name:
+p.name,
+
+movement_type:
+type,
+
+quantity:
+qty,
+
+stock_after:
+newStock,
+
+unit:
+p.unit,
+
+reason:
+$('moveReason').value.trim()
+|| null,
+
+user_name:
+currentUser
+
 });
 
-moveDialog.close();
-await reloadCloud();
+
+if(movementError){
+
+alert(
+'Erreur historique : '
++
+movementError.message
+);
+
 }
+
+
+moveDialog.close();
+
+
+await reloadCloud();
+
+}
+
 
 function saveEmailSettings(){
 
-emailCfg={
-to:$('emailTo').value.trim(),
-publicKey:$('emailPublic').value.trim(),
-serviceId:$('emailService').value.trim(),
-templateId:$('emailTemplate').value.trim()
+if(!isAdmin()){
+
+alert(
+'Réglages réservés à Cedric.'
+);
+
+return;
+
+}
+
+
+emailCfg = {
+
+to:
+$('emailTo').value.trim(),
+
+publicKey:
+$('emailPublic').value.trim(),
+
+serviceId:
+$('emailService').value.trim(),
+
+templateId:
+$('emailTemplate').value.trim()
+
 };
 
-localStorage.setItem(KEMAIL,JSON.stringify(emailCfg));
 
-alert('Réglages e-mail enregistrés.');
+localStorage.setItem(
+KEMAIL,
+JSON.stringify(emailCfg)
+);
+
+
+alert(
+'Réglages e-mail enregistrés.'
+);
+
 }
+
 
 function backup(){
 
-const data={
-exported_at:new Date().toISOString(),
-products,
-history:historyData
-};
+if(!isAdmin()){
 
-const a=document.createElement('a');
-
-a.href=URL.createObjectURL(
-new Blob(
-[JSON.stringify(data,null,2)],
-{type:'application/json'}
-)
+alert(
+'Sauvegarde réservée à Cedric.'
 );
 
-a.download='sauvegarde-stock-partage.json';
-a.click();
+return;
+
 }
 
+
+const data = {
+
+exported_at:
+new Date().toISOString(),
+
+products,
+
+history:
+historyData
+
+};
+
+
+const a =
+document.createElement('a');
+
+
+a.href =
+URL.createObjectURL(
+
+new Blob(
+
+[
+JSON.stringify(
+data,
+null,
+2
+)
+],
+
+{
+type:
+'application/json'
+}
+
+)
+
+);
+
+
+a.download =
+'sauvegarde-stock-partage.json';
+
+
+a.click();
+
+}
+
+
 renderAll();
+
 connectCloud();
 
+restoreSession();
+
 </script>
+
 </body>
+
 </html>
