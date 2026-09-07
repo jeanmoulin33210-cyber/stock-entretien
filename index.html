@@ -34,33 +34,6 @@ body{
   linear-gradient(160deg,#fbfdf9 0%,#eff8f5 46%,#edf6fb 100%);
  background-attachment:fixed;
 }
-body::before,
-body::after{
- content:"";
- position:fixed;
- z-index:-1;
- pointer-events:none;
- filter:blur(1px);
- opacity:.55;
-}
-body::before{
- width:230px;height:230px;
- left:-85px;bottom:45px;
- background:
-  radial-gradient(ellipse at 30% 70%,rgba(83,155,72,.30) 0 18%,transparent 19%),
-  radial-gradient(ellipse at 60% 35%,rgba(95,177,83,.24) 0 17%,transparent 18%),
-  radial-gradient(ellipse at 75% 70%,rgba(74,148,69,.20) 0 16%,transparent 17%);
- transform:rotate(-18deg);
-}
-body::after{
- width:220px;height:220px;
- right:-88px;top:185px;
- background:
-  radial-gradient(ellipse at 35% 35%,rgba(68,151,82,.22) 0 18%,transparent 19%),
-  radial-gradient(ellipse at 65% 60%,rgba(78,164,93,.20) 0 17%,transparent 18%),
-  radial-gradient(ellipse at 30% 78%,rgba(57,132,74,.18) 0 15%,transparent 16%);
- transform:rotate(24deg);
-}
 
 header{
  background:rgba(255,255,255,.88);
@@ -95,7 +68,9 @@ header p{margin:4px 0 0;color:#66768a;font-size:12px}
  border:1px solid #d4eedf
 }
 .dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}
-.dot.ok{background:#22c55e}.dot.err{background:#ef4444}.dot.busy{background:#f59e0b}
+.dot.ok{background:#22c55e}
+.dot.err{background:#ef4444}
+.dot.busy{background:#f59e0b}
 
 main{padding:16px 14px 22px;max-width:760px;margin:auto}
 .card{
@@ -104,15 +79,18 @@ main{padding:16px 14px 22px;max-width:760px;margin:auto}
  border-radius:20px;
  padding:14px;
  box-shadow:0 8px 24px rgba(43,82,70,.08);
- backdrop-filter:blur(8px);
 }
 .section{margin-top:18px}
 .section h2{font-size:19px;margin:0 0 11px;color:#17365a}
 
 .btn{
- width:100%;border:0;border-radius:16px;padding:15px 15px;
- font-weight:800;font-size:15px;cursor:pointer;
- box-shadow:0 5px 14px rgba(15,39,66,.06)
+ width:100%;
+ border:0;
+ border-radius:16px;
+ padding:15px;
+ font-weight:800;
+ font-size:15px;
+ cursor:pointer;
 }
 .primary{background:linear-gradient(135deg,#2f8ec4,#397db8);color:#fff}
 .secondary{background:linear-gradient(135deg,#eaf3fb,#dcecf9);color:#17365a}
@@ -120,9 +98,8 @@ main{padding:16px 14px 22px;max-width:760px;margin:auto}
 .danger{background:#fee2e2;color:#991b1b}
 
 .quick{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.quick .btn{min-height:68px;font-size:17px}
-
 .reserve-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
 .reserve-card{
  border:2px solid #dce8e4;
  background:rgba(255,255,255,.92);
@@ -134,36 +111,48 @@ main{padding:16px 14px 22px;max-width:760px;margin:auto}
  color:#1b2f48;
  min-height:144px;
  box-shadow:0 8px 20px rgba(49,86,74,.07);
- transition:.15s ease;
 }
 .reserve-card:nth-child(1){
  border-color:#f0c694;
- background:linear-gradient(160deg,rgba(255,255,255,.96),rgba(255,246,235,.96));
+ background:linear-gradient(160deg,#fff,#fff6eb);
 }
 .reserve-card:nth-child(2){
  border-color:#a9dce7;
- background:linear-gradient(160deg,rgba(255,255,255,.96),rgba(236,249,252,.96));
-}
-.reserve-card.active{
- border-color:#4a9ac8;
- box-shadow:0 0 0 3px rgba(74,154,200,.12),0 8px 20px rgba(49,86,74,.07)
+ background:linear-gradient(160deg,#fff,#ecf9fc);
 }
 .reserve-icon{font-size:36px;display:block;margin-bottom:7px}
 .reserve-count{display:block;color:var(--muted);font-size:12px;margin-top:5px}
 
 .search{
- width:100%;border:1px solid #d3e3df;border-radius:16px;
- padding:14px 15px;font-size:16px;background:rgba(255,255,255,.94);
- box-shadow:0 6px 18px rgba(49,86,74,.06)
+ width:100%;
+ border:1px solid #d3e3df;
+ border-radius:16px;
+ padding:14px 15px;
+ font-size:16px;
+ background:#fff;
 }
 
-.product{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+.product{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ padding:14px 0;
+ border-bottom:1px solid var(--line)
+}
 .product:last-child{border-bottom:0}
 .pname{font-weight:750}
 .meta{font-size:12px;color:var(--muted);margin-top:3px}
 .stock{font-size:20px;font-weight:800;text-align:right}
 
-.badge{font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800;display:inline-block;margin-top:4px}
+.badge{
+ font-size:11px;
+ padding:4px 8px;
+ border-radius:999px;
+ font-weight:800;
+ display:inline-block;
+ margin-top:4px
+}
 .bgreen{background:#dcfce7;color:#166534}
 .borange{background:#ffedd5;color:#9a3412}
 .bred{background:#fee2e2;color:#991b1b}
@@ -172,287 +161,410 @@ main{padding:16px 14px 22px;max-width:760px;margin:auto}
 .mini{border:0;border-radius:10px;padding:8px 10px;font-weight:700;font-size:12px}
 .infoBtn{background:#dbeafe;color:#1d4ed8}
 
-/* CATALOGUE PHOTOS */
-.catalog-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
-.catalog-title{font-size:17px;font-weight:850}
-.catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+/* CATALOGUE */
+.catalog-grid{
+ display:grid;
+ grid-template-columns:repeat(2,minmax(0,1fr));
+ gap:12px
+}
 .catalog-card{
  border:1px solid #d9e7e2;
- background:rgba(255,255,255,.95);
+ background:#fff;
  border-radius:20px;
  padding:10px;
  box-shadow:0 7px 18px rgba(44,80,68,.07);
- cursor:pointer;text-align:left;min-width:0
+ cursor:pointer;
 }
 .catalog-photo-wrap{
- height:150px;border-radius:15px;background:linear-gradient(180deg,#fbfdfc,#f3f8f6);
- display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:9px
+ height:150px;
+ border-radius:15px;
+ background:#f7faf9;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ overflow:hidden;
+ margin-bottom:9px
 }
-.catalog-photo{width:100%;height:100%;object-fit:contain;padding:8px}
+.catalog-photo{
+ width:100%;
+ height:100%;
+ object-fit:contain;
+ padding:8px
+}
 .catalog-placeholder{font-size:46px;color:#94a3b8}
-.catalog-name{font-size:14px;font-weight:800;line-height:1.2;text-align:center;min-height:34px}
-.catalog-ref{font-size:11px;color:var(--muted);text-align:center;margin-top:4px}
+.catalog-name{
+ font-size:14px;
+ font-weight:800;
+ line-height:1.2;
+ text-align:center;
+ min-height:34px
+}
+.catalog-ref{
+ font-size:11px;
+ color:var(--muted);
+ text-align:center;
+ margin-top:4px
+}
 
-/* DEUXIÈME PAGE PRODUIT */
+/* PAGE PRODUIT */
 .product-page{display:grid;gap:12px}
 .product-page-photo-wrap{
- height:250px;border:1px solid #d9e7e2;border-radius:20px;
- background:rgba(255,255,255,.95);
- display:flex;align-items:center;justify-content:center;overflow:hidden;
- box-shadow:0 7px 18px rgba(44,80,68,.07)
+ height:250px;
+ border:1px solid #d9e7e2;
+ border-radius:20px;
+ background:#fff;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ overflow:hidden
 }
-.product-page-photo{width:100%;height:100%;object-fit:contain;padding:12px}
+.product-page-photo{
+ width:100%;
+ height:100%;
+ object-fit:contain;
+ padding:12px
+}
 .product-page-placeholder{font-size:70px;color:#94a3b8}
-.product-page-name{font-size:22px;font-weight:900;line-height:1.15}
+.product-page-name{font-size:22px;font-weight:900}
 .product-page-stock{
- display:flex;align-items:center;justify-content:space-between;gap:10px;
- background:#f7fbf9;border:1px solid var(--line);border-radius:16px;padding:12px
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ background:#f7fbf9;
+ border:1px solid var(--line);
+ border-radius:16px;
+ padding:12px
 }
-.back-catalog{width:auto;padding:10px 12px}
 
 .history-item{padding:12px 0;border-bottom:1px solid var(--line)}
-.history-item:last-child{border-bottom:0}
 .history-top{display:flex;justify-content:space-between;gap:10px}
 .history-sub{font-size:12px;color:var(--muted);margin-top:3px}
 
 nav{
- position:fixed;bottom:0;left:0;right:0;
- background:rgba(15,39,66,.98);
- display:grid;grid-template-columns:repeat(4,1fr);
- padding:8px 6px;z-index:20;
+ position:fixed;
+ bottom:0;
+ left:0;
+ right:0;
+ background:#0f2742;
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ padding:8px 6px;
+ z-index:20;
  box-shadow:0 -5px 18px rgba(15,39,66,.18)
 }
-nav button{background:none;border:0;color:#cbd5e1;font-size:11px;padding:7px 2px;border-radius:14px}
+nav button{
+ background:none;
+ border:0;
+ color:#cbd5e1;
+ font-size:11px;
+ padding:7px 2px;
+ border-radius:14px
+}
 nav button span{display:block;font-size:21px;margin-bottom:2px}
 nav button.active{color:#fff;background:rgba(255,255,255,.09)}
 
 .screen{display:none}
 .screen.active{display:block}
-.empty{text-align:center;color:var(--muted);padding:28px 8px;line-height:1.45}
+.empty{
+ text-align:center;
+ color:var(--muted);
+ padding:28px 8px;
+ line-height:1.45
+}
 
-dialog{border:0;border-radius:20px;padding:0;width:calc(100% - 24px);max-width:520px}
+dialog{
+ border:0;
+ border-radius:20px;
+ padding:0;
+ width:calc(100% - 24px);
+ max-width:520px
+}
 dialog::backdrop{background:rgba(0,0,0,.52)}
 .modal{padding:18px}
 .modal h3{margin:0 0 14px}
 
 .field{margin-bottom:11px}
-.field label{display:block;font-size:12px;font-weight:750;margin-bottom:5px;color:#475467}
-.field input,.field select{width:100%;padding:13px;border:1px solid #d0d5dd;border-radius:12px;font-size:16px;background:#fff}
-.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.alert-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:13px;font-size:13px}
+.field label{
+ display:block;
+ font-size:12px;
+ font-weight:750;
+ margin-bottom:5px;
+ color:#475467
+}
+.field input,.field select{
+ width:100%;
+ padding:13px;
+ border:1px solid #d0d5dd;
+ border-radius:12px;
+ font-size:16px;
+ background:#fff
+}
+.modal-actions{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+ margin-top:14px
+}
+.alert-box{
+ background:#fff7ed;
+ border:1px solid #fed7aa;
+ border-radius:16px;
+ padding:13px;
+ font-size:13px
+}
 hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 
 /* CONNEXION */
 #loginPage{
- position:fixed;inset:0;z-index:9999;overflow:auto;
+ position:fixed;
+ inset:0;
+ z-index:9999;
+ overflow:auto;
  background:
-  radial-gradient(circle at 10% 15%,rgba(34,197,94,.25),transparent 30%),
-  radial-gradient(circle at 90% 20%,rgba(37,99,235,.22),transparent 30%),
-  linear-gradient(160deg,#f1faf4,#f7fbff);
+  linear-gradient(180deg,rgba(255,255,255,.20),rgba(238,249,245,.70)),
+  url("fond-accueil.jpg") center/cover no-repeat;
  padding:22px 15px 35px
 }
 .loginContainer{max-width:520px;margin:auto}
-.school{text-align:center;color:#0f4f83;font-weight:800;letter-spacing:3px;font-size:13px;margin-top:8px}
-.loginTitle{text-align:center;font-size:35px;line-height:1;font-weight:900;color:#075488;margin:12px 0 5px}
+.school{
+ text-align:center;
+ color:#0f4f83;
+ font-weight:800;
+ letter-spacing:3px;
+ font-size:13px;
+ margin-top:8px
+}
+.loginTitle{
+ text-align:center;
+ font-size:35px;
+ line-height:1;
+ font-weight:900;
+ color:#075488;
+ margin:12px 0 5px
+}
 .loginTitle span{color:#24943b}
-.slogan{text-align:center;color:#145486;font-size:15px;font-weight:650;margin-bottom:20px}
-.hero{background:linear-gradient(135deg,#08659b,#063f6b);color:white;border-radius:28px;padding:24px;box-shadow:0 14px 35px rgba(15,23,42,.20)}
+.slogan{
+ text-align:center;
+ color:#145486;
+ font-size:15px;
+ font-weight:650;
+ margin-bottom:20px
+}
+.hero{
+ background:linear-gradient(135deg,rgba(8,101,155,.95),rgba(6,63,107,.95));
+ color:white;
+ border-radius:28px;
+ padding:24px;
+ box-shadow:0 14px 35px rgba(15,23,42,.20)
+}
 .heroIcon{font-size:52px}
 .hero h2{font-size:27px;line-height:1.1;margin:8px 0}
 .heroText{color:#dbeafe;font-size:14px}
-.values{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:18px}
-.values div{text-align:center;background:rgba(255,255,255,.12);border-radius:12px;padding:9px 3px;font-size:10px}
+.values{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:6px;
+ margin-top:18px
+}
+.values div{
+ text-align:center;
+ background:rgba(255,255,255,.12);
+ border-radius:12px;
+ padding:9px 3px;
+ font-size:10px
+}
 
-.loginCard{background:#fff;border-radius:24px;padding:22px;margin-top:-4px;box-shadow:0 14px 35px rgba(15,23,42,.14)}
+.loginCard{
+ background:rgba(255,255,255,.94);
+ border-radius:24px;
+ padding:22px;
+ margin-top:-4px;
+ box-shadow:0 14px 35px rgba(15,23,42,.14);
+ backdrop-filter:blur(10px)
+}
 .loginCard h3{text-align:center;margin:0;color:#104f7d;font-size:22px}
-.loginIntro{text-align:center;color:#667085;font-size:13px;margin:6px 0 18px}
+.loginIntro{
+ text-align:center;
+ color:#667085;
+ font-size:13px;
+ margin:6px 0 18px
+}
 .loginField{margin-bottom:13px}
-.loginField label{display:block;font-size:12px;font-weight:800;color:#475467;margin-bottom:6px}
-.loginField input{width:100%;padding:14px;border:1px solid #cbd5e1;border-radius:13px;background:#f8fafc;font-size:16px}
+.loginField label{
+ display:block;
+ font-size:12px;
+ font-weight:800;
+ color:#475467;
+ margin-bottom:6px
+}
+.loginField input{
+ width:100%;
+ padding:14px;
+ border:1px solid #cbd5e1;
+ border-radius:13px;
+ background:#f8fafc;
+ font-size:16px
+}
 .passwordBox{position:relative}
 .passwordBox input{padding-right:50px}
-.eye{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:21px}
-.loginButton{width:100%;border:0;border-radius:14px;padding:15px;background:linear-gradient(135deg,#35a92f,#218838);color:#fff;font-size:16px;font-weight:900}
-.loginError{display:none;margin-top:12px;padding:10px;background:#fee2e2;color:#991b1b;border-radius:11px;text-align:center;font-size:12px}
-.loginBottom{text-align:center;margin-top:18px;color:#0f4f83;font-size:11px;font-weight:700}
+.eye{
+ position:absolute;
+ right:7px;
+ top:50%;
+ transform:translateY(-50%);
+ background:none;
+ border:0;
+ font-size:21px
+}
+.loginButton{
+ width:100%;
+ border:0;
+ border-radius:14px;
+ padding:15px;
+ background:linear-gradient(135deg,#35a92f,#218838);
+ color:#fff;
+ font-size:16px;
+ font-weight:900
+}
+.loginError{
+ display:none;
+ margin-top:12px;
+ padding:10px;
+ background:#fee2e2;
+ color:#991b1b;
+ border-radius:11px;
+ text-align:center;
+ font-size:12px
+}
+.loginBottom{
+ text-align:center;
+ margin-top:18px;
+ color:#0f4f83;
+ font-size:11px;
+ font-weight:700
+}
 
-/* FICHE */
-.product-detail{display:grid;gap:10px}
-.detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.detail-price{font-size:24px;font-weight:900;color:#0f4f83;white-space:nowrap}
-.detail-block{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px}
-.detail-block strong{display:block;font-size:12px;color:#475467;margin-bottom:5px}
-.detail-text{font-size:14px;line-height:1.45;white-space:pre-wrap}
-.detail-links{display:grid;gap:8px}
-.detail-links a{text-decoration:none;text-align:center}
-.detail-photo{max-width:220px;max-height:220px;object-fit:contain;border-radius:14px;background:#fff;border:1px solid var(--line);padding:8px}
-.detail-photo-wrap{text-align:center;margin-bottom:4px}
+/* ACCUEIL VISUEL */
+body:has(#home.active){
+ background:
+  linear-gradient(rgba(255,255,255,.16),rgba(246,252,249,.68)),
+  url("fond-accueil.jpg") center top/cover fixed no-repeat;
+}
+body:has(#home.active) header{
+ background:rgba(255,255,255,.78);
+ backdrop-filter:blur(12px)
+}
 
-/* ACCUEIL - VERSION VISUELLE PROCHE DE LA MAQUETTE */
 #home{
  position:relative;
+ padding-top:188px
 }
+
 .home-visual{
+ position:absolute;
+ top:0;
+ left:-14px;
+ right:-14px;
  height:205px;
- margin:-16px -14px 18px;
+ border-radius:0 0 28px 28px;
  background:
-  linear-gradient(to bottom,rgba(255,255,255,0) 72%,rgba(248,252,250,.95) 100%),
-  url("fond-accueil.jpg") center center/cover no-repeat;
- border-bottom-left-radius:26px;
- border-bottom-right-radius:26px;
- box-shadow:0 10px 26px rgba(42,86,71,.08);
+  linear-gradient(to bottom,rgba(255,255,255,0) 50%,rgba(246,252,249,.90) 100%),
+  url("fond-accueil.jpg") left center/cover no-repeat;
+ z-index:-1
 }
-#home .section{position:relative;z-index:1}
-#home .section h2{
- font-size:22px;
- font-weight:900;
- color:#12365e;
- letter-spacing:-.3px;
-}
-#home .reserve-card{
- position:relative;
- overflow:hidden;
- min-height:210px;
- padding:28px 15px 24px;
- border-radius:26px;
-}
-#home .reserve-card:nth-child(1)::before,
-#home .reserve-card:nth-child(2)::before{
- content:"";
+
+#home::before{
+ content:"Un établissement\A propre et serein\A au quotidien !";
+ white-space:pre;
  position:absolute;
- left:-26px;
- bottom:-44px;
- width:185px;
- height:110px;
- border-radius:50%;
- transform:rotate(12deg);
- opacity:.75;
-}
-#home .reserve-card:nth-child(1)::before{background:#fde9ce}
-#home .reserve-card:nth-child(2)::before{background:#cfeeff}
-#home .reserve-card:nth-child(1)::after,
-#home .reserve-card:nth-child(2)::after{
- content:"›";
- position:absolute;
- right:17px;
- bottom:17px;
- width:42px;
- height:42px;
- border-radius:50%;
- display:flex;
- align-items:center;
- justify-content:center;
- font-size:34px;
- font-weight:900;
- line-height:1;
-}
-#home .reserve-card:nth-child(1)::after{
- background:#ffe3be;
- color:#e98a22;
-}
-#home .reserve-card:nth-child(2)::after{
- background:#caedff;
- color:#147db0;
-}
-#home .reserve-icon{
- position:relative;
- z-index:2;
- font-size:54px;
- margin-bottom:10px;
-}
-#home .reserve-card{
- font-size:20px;
- line-height:1.08;
-}
-#home .reserve-count{
- position:relative;
- z-index:2;
- font-size:15px;
- margin-top:8px;
- font-weight:800;
-}
-#home .quick{
- gap:14px;
-}
-#home .quick .btn{
- min-height:96px;
- border-radius:22px;
+ top:34px;
+ right:18px;
+ width:48%;
+ text-align:center;
+ font-family:"Segoe Print","Comic Sans MS",cursive;
  font-size:21px;
- position:relative;
- text-align:left;
- padding:17px 64px 17px 23px;
+ line-height:1.15;
+ font-weight:700;
+ font-style:italic;
+ color:#153d65;
+ transform:rotate(-4deg);
+ text-shadow:0 1px 0 white
+}
+
+#home .section h2{
+ font-size:23px;
+ font-weight:900;
+ color:#13375f
+}
+
+#home .reserve-card{
+ min-height:218px;
+ border-radius:27px;
+ padding:29px 12px 28px;
+ box-shadow:0 12px 30px rgba(44,83,69,.11)
+}
+
+#home .reserve-card:nth-child(1){
+ border:2px solid #efbe83;
+ background:linear-gradient(160deg,#fff,#fff3e4)
+}
+#home .reserve-card:nth-child(2){
+ border:2px solid #8fd6e8;
+ background:linear-gradient(160deg,#fff,#ecf9fd)
+}
+#home .reserve-icon{font-size:58px}
+#home .reserve-count{font-size:16px;font-weight:800}
+
+#home .quick{gap:14px}
+#home .quick .btn{
+ min-height:100px;
+ border-radius:23px;
+ padding:18px 20px;
+ font-size:21px;
  display:flex;
  flex-direction:column;
- justify-content:center;
- align-items:flex-start;
- gap:2px;
+ justify-content:center
 }
 #home .quick .btn small{
  display:block;
  font-size:14px;
- font-weight:600;
- opacity:.88;
-}
-#home .quick .btn::after{
- position:absolute;
- right:20px;
- top:50%;
- transform:translateY(-50%);
- font-size:34px;
- opacity:.78;
+ margin-top:3px;
+ opacity:.85
 }
 #home .quick .good{
- background:linear-gradient(135deg,#b7f1cd,#9ce8ba);
- color:#0d7043;
+ background:linear-gradient(135deg,#c8f5d8,#9ce9bc);
+ color:#087145
 }
-#home .quick .good::after{content:"⇧"}
 #home .quick .secondary{
- background:linear-gradient(135deg,#bfe5fb,#aadcf8);
- color:#123e68;
+ background:linear-gradient(135deg,#cdeafe,#a8dcfa);
+ color:#143e68
 }
-#home .quick .secondary::after{content:"⇩"}
 
 #home #alerts{
- border-radius:26px;
- min-height:160px;
- background:rgba(255,255,255,.96);
- box-shadow:0 12px 28px rgba(41,83,69,.09);
+ background:rgba(255,255,255,.94);
+ border-radius:27px;
+ box-shadow:0 13px 30px rgba(39,81,68,.10)
 }
 #home #alerts .empty{
- min-height:132px;
+ min-height:170px;
  display:flex;
  flex-direction:column;
- align-items:center;
  justify-content:center;
- gap:5px;
- font-size:18px;
- font-weight:850;
- color:#17365a;
-}
-#home #alerts .empty::before{
- content:"🔍";
- width:70px;
- height:70px;
- border-radius:50%;
- display:flex;
- align-items:center;
- justify-content:center;
- background:#e8f4ff;
- font-size:38px;
- margin-bottom:4px;
-}
-#home #alerts .empty span{
- font-weight:500;
- color:#718096;
+ align-items:center
 }
 
-@media (max-width:520px){
- .home-visual{height:190px}
- #home .reserve-grid{gap:12px}
- #home .reserve-card{min-height:200px;padding:24px 10px 22px;font-size:18px}
- #home .quick .btn{min-height:92px;font-size:19px;padding-left:18px;padding-right:52px}
+@media(max-width:520px){
+ #home{padding-top:178px}
+ #home::before{
+  top:36px;
+  right:12px;
+  font-size:18px;
+  width:50%
+ }
+ .home-visual{height:195px}
+ #home .reserve-card{min-height:210px}
 }
-
 </style>
 </head>
 
@@ -503,7 +615,9 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 </form>
 </div>
 
-<div class="loginBottom">Suivi des stocks · Historique des mouvements · Données partagées</div>
+<div class="loginBottom">
+Suivi des stocks · Historique des mouvements · Données partagées
+</div>
 
 </div>
 </div>
@@ -558,8 +672,15 @@ Réserve Service général
 <h2>Actions rapides</h2>
 
 <div class="quick">
-<button class="btn good" onclick="chooseMove('in')">➕ Entrée<small>Ajouter du stock</small></button>
-<button class="btn secondary" onclick="chooseMove('out')">➖ Sortie<small>Retirer du stock</small></button>
+<button class="btn good" onclick="chooseMove('in')">
+➕ Entrée
+<small>Ajouter du stock</small>
+</button>
+
+<button class="btn secondary" onclick="chooseMove('out')">
+➖ Sortie
+<small>Retirer du stock</small>
+</button>
 </div>
 </div>
 
@@ -593,7 +714,9 @@ Service général
 </div>
 
 <div class="section">
-<input id="search" class="search" placeholder="🔎 Rechercher un produit..." oninput="renderProducts()">
+<input id="search" class="search"
+placeholder="🔎 Rechercher un produit..."
+oninput="renderProducts()">
 </div>
 
 <div id="productList" class="section"></div>
@@ -634,12 +757,16 @@ Quand un produit passe dans le rouge, l'application peut envoyer automatiquement
 <input id="emailTemplate">
 </div>
 
-<button class="btn primary" onclick="saveEmailSettings()">Enregistrer les réglages e-mail</button>
+<button class="btn primary" onclick="saveEmailSettings()">
+Enregistrer les réglages e-mail
+</button>
 
 <hr>
 
 <h2>💾 Sauvegarde</h2>
-<button class="btn secondary" onclick="backup()">Télécharger une sauvegarde</button>
+<button class="btn secondary" onclick="backup()">
+Télécharger une sauvegarde
+</button>
 
 </div>
 </section>
@@ -647,12 +774,22 @@ Quand un produit passe dans le rouge, l'application peut envoyer automatiquement
 </main>
 
 <nav>
-<button class="active" onclick="showScreen('home',this)"><span>🏠</span>Accueil</button>
-<button onclick="showScreen('products',this)"><span>📦</span>Produits</button>
-<button onclick="showScreen('history',this)"><span>🕘</span>Historique</button>
-<button id="settingsButton" onclick="showScreen('settings',this)"><span>⚙️</span>Réglages</button>
-</nav>
+<button class="active" onclick="showScreen('home',this)">
+<span>🏠</span>Accueil
+</button>
 
+<button onclick="showScreen('products',this)">
+<span>📦</span>Produits
+</button>
+
+<button onclick="showScreen('history',this)">
+<span>🕘</span>Historique
+</button>
+
+<button id="settingsButton" onclick="showScreen('settings',this)">
+<span>⚙️</span>Réglages
+</button>
+</nav>
 <dialog id="productDialog">
 <form method="dialog" class="modal" onsubmit="saveProduct(event)">
 
@@ -717,7 +854,6 @@ Quand un produit passe dans le rouge, l'application peut envoyer automatiquement
 </dialog>
 
 <dialog id="detailDialog">
-
 <div class="modal">
 <div id="detailContent" class="product-detail"></div>
 
@@ -725,7 +861,6 @@ Quand un produit passe dans le rouge, l'application peut envoyer automatiquement
 <button type="button" class="btn secondary" onclick="detailDialog.close()">Fermer</button>
 </div>
 </div>
-
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -781,7 +916,6 @@ function reserveProducts(name){
 }
 
 function productPhoto(p){
-
  if(p.photo_url && String(p.photo_url).trim()!==''){
   return String(p.photo_url).trim();
  }
@@ -808,7 +942,6 @@ function levelClass(l){
 }
 
 function togglePassword(e){
-
  if(e){
   e.preventDefault();
   e.stopPropagation();
@@ -824,7 +957,6 @@ function togglePassword(e){
 }
 
 function login(e){
-
  e.preventDefault();
 
  let u=$('loginUser').value.trim();
@@ -835,31 +967,25 @@ function login(e){
  }
 
  if(Object.prototype.hasOwnProperty.call(USERS,u)&&USERS[u]===p){
-
   currentUser=u;
   localStorage.setItem(KSESSION,u);
   $('loginError').style.display='none';
   openApplication();
-
  }else{
-
   $('loginError').style.display='block';
  }
 }
 
 function openApplication(){
-
  $('loginPage').style.display='none';
  $('connectedUser').textContent=currentUser+(isAdmin()?' · Admin':'');
  $('moveUser').value=currentUser;
  $('settingsButton').style.display=isAdmin()?'block':'none';
  $('addProductArea').style.display=isAdmin()?'block':'none';
-
  renderAll();
 }
 
 function logout(){
-
  localStorage.removeItem(KSESSION);
  currentUser='';
  $('loginPage').style.display='block';
@@ -867,7 +993,6 @@ function logout(){
 }
 
 function restoreSession(){
-
  const s=localStorage.getItem(KSESSION)||'';
 
  if(s&&Object.prototype.hasOwnProperty.call(USERS,s)){
@@ -882,7 +1007,6 @@ function setSync(state,text){
 }
 
 function showScreen(id,btn){
-
  if(id==='settings'&&!isAdmin()) return;
 
  document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));
@@ -904,15 +1028,12 @@ function navButtonForProducts(){
 }
 
 function goReserve(r){
-
  currentReserve=r;
  selectedProductId=null;
-
  showScreen('products',navButtonForProducts());
 }
 
 function setReserve(r){
-
  currentReserve=r;
  selectedProductId=null;
  renderProducts();
@@ -926,7 +1047,6 @@ function renderAll(){
 }
 
 function renderHome(){
-
  const c=reserveProducts('Cuisine').length;
  const g=reserveProducts('Service général').length;
 
@@ -949,13 +1069,13 @@ function renderHome(){
   </div>
  </div>
  `).join('')
- : `<div class="empty"><strong>Aucun produit à surveiller</strong><span>Les produits orange ou rouge apparaîtront ici.</span></div>`;
+ : `<div class="empty">
+      <strong>Aucun produit à surveiller</strong>
+      <span>Les produits orange ou rouge apparaîtront ici.</span>
+    </div>`;
 }
 
-/* PREMIÈRE PAGE : CATALOGUE */
-
 function renderProducts(){
-
  const c=reserveProducts('Cuisine').length;
  const g=reserveProducts('Service général').length;
 
@@ -966,7 +1086,6 @@ function renderProducts(){
  $('rGeneral').classList.toggle('active',currentReserve==='Service général');
 
  if(selectedProductId){
-
   const selected=products.find(p=>p.id===selectedProductId);
 
   if(selected){
@@ -984,29 +1103,15 @@ function renderProducts(){
  );
 
  $('productList').innerHTML=list.length ? `
-
- <div class="catalog-head">
-  <div class="catalog-title">
-   ${currentReserve==='Cuisine'?'🍳 Produits Cuisine':'🧹 Produits Service général'}
-  </div>
-
-  <div class="meta">
-   ${list.length} produit${list.length>1?'s':''}
-  </div>
- </div>
-
  <div class="catalog-grid">
 
  ${list.map(p=>{
-
   const photo=productPhoto(p);
 
   return `
-
   <button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')">
 
    <div class="catalog-photo-wrap">
-
     ${photo
      ? `<img class="catalog-photo"
              src="${esc(photo)}"
@@ -1015,25 +1120,19 @@ function renderProducts(){
         <div class="catalog-placeholder" style="display:none">🧴</div>`
      : `<div class="catalog-placeholder">🧴</div>`
     }
-
    </div>
 
-   <div class="catalog-name">
-    ${esc(p.name)}
-   </div>
+   <div class="catalog-name">${esc(p.name)}</div>
 
    ${p.reference
     ? `<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`
     : ''
    }
 
-  </button>
-  `;
-
+  </button>`;
  }).join('')}
 
  </div>
-
  `
  :
  `<div class="card empty">
@@ -1046,7 +1145,6 @@ function renderProducts(){
 }
 
 function openCatalogProduct(id){
-
  selectedProductId=id;
  renderProducts();
 
@@ -1056,24 +1154,19 @@ function openCatalogProduct(id){
  });
 }
 
-/* DEUXIÈME PAGE : PRODUIT */
-
 function renderSelectedProduct(p){
-
  const photo=productPhoto(p);
 
  $('productList').innerHTML=`
-
  <div class="product-page">
 
   <div>
-   <button class="btn secondary back-catalog" onclick="backToCatalog()">
+   <button class="btn secondary" onclick="backToCatalog()">
     ← Retour aux produits
    </button>
   </div>
 
   <div class="product-page-photo-wrap">
-
    ${photo
     ? `<img class="product-page-photo"
             src="${esc(photo)}"
@@ -1082,14 +1175,11 @@ function renderSelectedProduct(p){
        <div class="product-page-placeholder" style="display:none">🧴</div>`
     : `<div class="product-page-placeholder">🧴</div>`
    }
-
   </div>
 
   <div class="card">
 
-   <div class="product-page-name">
-    ${esc(p.name)}
-   </div>
+   <div class="product-page-name">${esc(p.name)}</div>
 
    <div class="meta">
     ${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}
@@ -1100,7 +1190,6 @@ function renderSelectedProduct(p){
 
     <div>
      <div class="meta">Stock actuel</div>
-
      <div style="font-size:27px;font-weight:900">
       ${fmt(p.stock)} ${esc(p.unit||'')}
      </div>
@@ -1140,15 +1229,12 @@ function renderSelectedProduct(p){
     }
 
    </div>
-
   </div>
-
  </div>
  `;
 }
 
 function backToCatalog(){
-
  selectedProductId=null;
  renderProducts();
 
@@ -1158,12 +1244,8 @@ function backToCatalog(){
  });
 }
 
-/* FICHE COMPLÈTE */
-
 function showProductDetails(id){
-
  const p=products.find(x=>x.id===id);
-
  if(!p) return;
 
  const has=v=>v!==null&&v!==undefined&&String(v).trim()!=='';
@@ -1201,8 +1283,7 @@ function showProductDetails(id){
      target="_blank"
      rel="noopener">
    📘 Fiche technique
-  </a>
-  `);
+  </a>`);
  }
 
  if(has(p.safety_sheet_url)){
@@ -1212,19 +1293,15 @@ function showProductDetails(id){
      target="_blank"
      rel="noopener">
    🛡️ Fiche de sécurité (FDS)
-  </a>
-  `);
+  </a>`);
  }
 
  $('detailContent').innerHTML=`
-
  ${photo}
 
  <div class="detail-head">
-
   <div>
    <h3 style="margin:0">${esc(p.name)}</h3>
-
    <div class="meta">
     ${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}
     ${has(p.reference)?' · Réf. '+esc(p.reference):''}
@@ -1232,7 +1309,6 @@ function showProductDetails(id){
   </div>
 
   ${price?`<div class="detail-price">${price}</div>`:''}
-
  </div>
 
  ${block('Conditionnement',p.packaging)}
@@ -1243,7 +1319,6 @@ function showProductDetails(id){
 
  <div class="detail-block">
   <strong>Stock</strong>
-
   <div class="detail-text">
    ${fmt(p.stock)} ${esc(p.unit||'')}
    · Seuil orange : ${fmt(p.orange_threshold)}
@@ -1255,27 +1330,22 @@ function showProductDetails(id){
   ? `<div class="detail-links">${links.join('')}</div>`
   : ''
  }
-
  `;
 
  detailDialog.showModal();
 }
 
 function renderHistory(){
-
  $('historyList').innerHTML=historyData.length
  ? historyData.map(h=>`
-
  <div class="history-item">
 
   <div class="history-top">
-
    <strong>${esc(h.product_name)}</strong>
 
    <span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">
     ${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}
    </span>
-
   </div>
 
   <div class="history-sub">
@@ -1286,13 +1356,11 @@ function renderHistory(){
   </div>
 
  </div>
-
  `).join('')
  : `<div class="empty">Aucun mouvement.</div>`;
 }
 
 function loadSettings(){
-
  $('emailTo').value=emailCfg.to||'';
  $('emailPublic').value=emailCfg.publicKey||'';
  $('emailService').value=emailCfg.serviceId||'';
@@ -1301,9 +1369,7 @@ function loadSettings(){
 }
 
 async function connectCloud(){
-
  try{
-
   setSync('busy','Connexion…');
 
   sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);
@@ -1318,14 +1384,12 @@ async function connectCloud(){
   setSync('ok','Synchronisé');
 
  }catch(e){
-
   console.error(e);
   setSync('err','Erreur de connexion');
  }
 }
 
 async function reloadCloud(){
-
  const {data:p,error:pe}=await sb
   .from('products')
   .select('*')
@@ -1348,7 +1412,6 @@ async function reloadCloud(){
 }
 
 function openProduct(){
-
  if(!isAdmin()) return;
 
  $('productTitle').textContent='Ajouter un produit';
@@ -1365,11 +1428,9 @@ function openProduct(){
 }
 
 function editProduct(id){
-
  if(!isAdmin()) return;
 
  const p=products.find(x=>x.id===id);
-
  if(!p) return;
 
  $('productTitle').textContent='Modifier le produit';
@@ -1386,7 +1447,6 @@ function editProduct(id){
 }
 
 async function saveProduct(e){
-
  e.preventDefault();
 
  if(!isAdmin()) return;
@@ -1416,24 +1476,20 @@ async function saveProduct(e){
  }
 
  currentReserve=$('pCat').value;
-
  productDialog.close();
 
  await reloadCloud();
 }
 
 async function deleteProduct(id){
-
  if(!isAdmin()) return;
 
  const p=products.find(x=>x.id===id);
-
  if(!p) return;
 
  if(!confirm('Supprimer définitivement « '+p.name+' » ?')) return;
 
  try{
-
   const {error:histError}=await sb
    .from('movements')
    .delete()
@@ -1461,19 +1517,16 @@ async function deleteProduct(id){
   }
 
   selectedProductId=null;
-
   alert('Produit supprimé avec succès.');
 
   await reloadCloud();
 
  }catch(e){
-
   alert('Erreur : '+e.message);
  }
 }
 
 function chooseMove(type){
-
  const list=reserveProducts(currentReserve);
 
  if(!list.length){
@@ -1489,7 +1542,6 @@ function openMoveFor(id,type){
 }
 
 function openMove(id,type){
-
  $('moveType').value=type;
 
  $('moveTitle').textContent=type==='in'
@@ -1514,7 +1566,6 @@ function openMove(id,type){
 }
 
 async function saveMove(e){
-
  e.preventDefault();
 
  const pid=$('moveProduct').value;
@@ -1574,9 +1625,7 @@ async function saveMove(e){
 }
 
 async function sendRedAlert(p,newStock){
-
  try{
-
   if(!emailCfg.to||
      !emailCfg.publicKey||
      !emailCfg.serviceId||
@@ -1599,13 +1648,11 @@ async function sendRedAlert(p,newStock){
   );
 
  }catch(e){
-
   console.error('Alerte e-mail',e);
  }
 }
 
 function saveEmailSettings(){
-
  if(!isAdmin()) return;
 
  emailCfg={
@@ -1621,7 +1668,6 @@ function saveEmailSettings(){
 }
 
 function backup(){
-
  if(!isAdmin()) return;
 
  const blob=new Blob(
