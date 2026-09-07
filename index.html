@@ -5,74 +5,392 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0f172a">
 <title>Stock Entretien partagé</title>
+
 <style>
 :root{
- --bg:#f3f6fb;--card:#fff;--ink:#18212f;--muted:#667085;--line:#e4e7ec;
- --blue:#2563eb;--green:#15803d;--orange:#d97706;--red:#dc2626;--nav:#0f172a;
+ --bg:#f3f6fb;
+ --card:#fff;
+ --ink:#18212f;
+ --muted:#667085;
+ --line:#e4e7ec;
+ --blue:#2563eb;
+ --green:#15803d;
+ --orange:#d97706;
+ --red:#dc2626;
+ --nav:#0f172a;
 }
+
 *{box-sizing:border-box}
-body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;background:var(--bg);color:var(--ink);padding-bottom:88px}
-header{background:linear-gradient(135deg,#0f172a,#1e293b);color:#fff;padding:18px 14px 14px;position:sticky;top:0;z-index:10}
-.headerRow{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
-header h1{font-size:20px;margin:0} header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
-.userBox{font-size:11px;background:#243044;padding:7px 9px;border-radius:12px;text-align:right}
-.logout{border:0;background:none;color:#fff;font-size:11px;text-decoration:underline;padding:4px 0 0}
-.sync{display:inline-flex;align-items:center;gap:6px;margin-top:8px;font-size:11px;background:#243044;padding:5px 9px;border-radius:999px}
-.dot{width:8px;height:8px;border-radius:50%;background:#94a3b8}
+
+body{
+ margin:0;
+ font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;
+ background:var(--bg);
+ color:var(--ink);
+ padding-bottom:88px
+}
+
+header{
+ background:linear-gradient(135deg,#0f172a,#1e293b);
+ color:#fff;
+ padding:18px 14px 14px;
+ position:sticky;
+ top:0;
+ z-index:10
+}
+
+.headerRow{
+ display:flex;
+ justify-content:space-between;
+ align-items:flex-start;
+ gap:10px
+}
+
+header h1{font-size:20px;margin:0}
+header p{margin:4px 0 0;color:#cbd5e1;font-size:12px}
+
+.userBox{
+ font-size:11px;
+ background:#243044;
+ padding:7px 9px;
+ border-radius:12px;
+ text-align:right
+}
+
+.logout{
+ border:0;
+ background:none;
+ color:#fff;
+ font-size:11px;
+ text-decoration:underline;
+ padding:4px 0 0
+}
+
+.sync{
+ display:inline-flex;
+ align-items:center;
+ gap:6px;
+ margin-top:8px;
+ font-size:11px;
+ background:#243044;
+ padding:5px 9px;
+ border-radius:999px
+}
+
+.dot{
+ width:8px;
+ height:8px;
+ border-radius:50%;
+ background:#94a3b8
+}
+
 .dot.ok{background:#22c55e}
 .dot.err{background:#ef4444}
 .dot.busy{background:#f59e0b}
-main{padding:14px;max-width:760px;margin:auto}
-.card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;box-shadow:0 3px 14px rgba(15,23,42,.05)}
-.kpis{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.kpi span{font-size:12px;color:var(--muted)}
-.kpi strong{display:block;font-size:24px;margin-top:4px}
+
+main{
+ padding:14px;
+ max-width:760px;
+ margin:auto
+}
+
+.card{
+ background:#fff;
+ border:1px solid var(--line);
+ border-radius:18px;
+ padding:14px;
+ box-shadow:0 3px 14px rgba(15,23,42,.05)
+}
+
+.kpis{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px
+}
+
+.kpi span{
+ font-size:12px;
+ color:var(--muted)
+}
+
+.kpi strong{
+ display:block;
+ font-size:24px;
+ margin-top:4px
+}
+
 .section{margin-top:14px}
 .section h2{font-size:17px;margin:0 0 10px}
-.btn{width:100%;border:0;border-radius:14px;padding:14px 15px;font-weight:750;font-size:15px;cursor:pointer}
+
+.btn{
+ width:100%;
+ border:0;
+ border-radius:14px;
+ padding:14px 15px;
+ font-weight:750;
+ font-size:15px;
+ cursor:pointer
+}
+
 .primary{background:var(--blue);color:#fff}
 .secondary{background:#e8eef8;color:#1f2937}
 .good{background:#dcfce7;color:#166534}
 .danger{background:#fee2e2;color:#991b1b}
-.quick{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.reserve-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.reserve-card{border:2px solid var(--line);background:#fff;border-radius:18px;padding:17px 12px;text-align:center;font-weight:850;cursor:pointer}
-.reserve-card.active{border-color:var(--blue);background:#eff6ff}
-.reserve-icon{font-size:32px;display:block;margin-bottom:5px}
-.reserve-count{display:block;color:var(--muted);font-size:12px;margin-top:4px}
-.search{width:100%;border:1px solid var(--line);border-radius:14px;padding:13px 14px;font-size:16px;background:#fff}
-.product{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:14px 0;border-bottom:1px solid var(--line)}
+
+.quick{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px
+}
+
+.reserve-grid{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:10px
+}
+
+.reserve-card{
+ border:2px solid var(--line);
+ background:#fff;
+ border-radius:18px;
+ padding:17px 12px;
+ text-align:center;
+ font-weight:850;
+ cursor:pointer
+}
+
+.reserve-card.active{
+ border-color:var(--blue);
+ background:#eff6ff
+}
+
+.reserve-icon{
+ font-size:32px;
+ display:block;
+ margin-bottom:5px
+}
+
+.reserve-count{
+ display:block;
+ color:var(--muted);
+ font-size:12px;
+ margin-top:4px
+}
+
+.search{
+ width:100%;
+ border:1px solid var(--line);
+ border-radius:14px;
+ padding:13px 14px;
+ font-size:16px;
+ background:#fff
+}
+
+.product{
+ display:flex;
+ align-items:center;
+ justify-content:space-between;
+ gap:10px;
+ padding:14px 0;
+ border-bottom:1px solid var(--line)
+}
+
 .product:last-child{border-bottom:0}
+
+.product-main{
+ display:flex;
+ align-items:center;
+ gap:10px;
+ min-width:0;
+ flex:1
+}
+
+.product-thumb-btn{
+ width:58px;
+ height:58px;
+ border:1px solid var(--line);
+ background:#fff;
+ border-radius:13px;
+ padding:3px;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ flex:0 0 58px;
+ cursor:pointer;
+ overflow:hidden
+}
+
+.product-thumb{
+ width:100%;
+ height:100%;
+ object-fit:contain;
+ border-radius:9px
+}
+
+.product-info{
+ min-width:0;
+ flex:1
+}
+
 .pname{font-weight:750}
-.meta{font-size:12px;color:var(--muted);margin-top:3px}
-.stock{font-size:20px;font-weight:800;text-align:right}
-.badge{font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800;display:inline-block;margin-top:4px}
+
+.meta{
+ font-size:12px;
+ color:var(--muted);
+ margin-top:3px
+}
+
+.stock{
+ font-size:20px;
+ font-weight:800;
+ text-align:right
+}
+
+.badge{
+ font-size:11px;
+ padding:4px 8px;
+ border-radius:999px;
+ font-weight:800;
+ display:inline-block;
+ margin-top:4px
+}
+
 .bgreen{background:#dcfce7;color:#166534}
 .borange{background:#ffedd5;color:#9a3412}
 .bred{background:#fee2e2;color:#991b1b}
-.product-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}
-.mini{border:0;border-radius:10px;padding:8px 10px;font-weight:700;font-size:12px}
-.history-item{padding:12px 0;border-bottom:1px solid var(--line)}
+
+.product-actions{
+ display:flex;
+ gap:6px;
+ margin-top:8px;
+ flex-wrap:wrap
+}
+
+.mini{
+ border:0;
+ border-radius:10px;
+ padding:8px 10px;
+ font-weight:700;
+ font-size:12px
+}
+
+.infoBtn{
+ background:#dbeafe;
+ color:#1d4ed8
+}
+
+.history-item{
+ padding:12px 0;
+ border-bottom:1px solid var(--line)
+}
+
 .history-item:last-child{border-bottom:0}
-.history-top{display:flex;justify-content:space-between;gap:10px}
-.history-sub{font-size:12px;color:var(--muted);margin-top:3px}
-nav{position:fixed;bottom:0;left:0;right:0;background:rgba(15,23,42,.98);display:grid;grid-template-columns:repeat(4,1fr);padding:8px 6px;z-index:20}
-nav button{background:none;border:0;color:#cbd5e1;font-size:11px;padding:7px 2px}
-nav button span{display:block;font-size:21px;margin-bottom:2px}
+
+.history-top{
+ display:flex;
+ justify-content:space-between;
+ gap:10px
+}
+
+.history-sub{
+ font-size:12px;
+ color:var(--muted);
+ margin-top:3px
+}
+
+nav{
+ position:fixed;
+ bottom:0;
+ left:0;
+ right:0;
+ background:rgba(15,23,42,.98);
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ padding:8px 6px;
+ z-index:20
+}
+
+nav button{
+ background:none;
+ border:0;
+ color:#cbd5e1;
+ font-size:11px;
+ padding:7px 2px
+}
+
+nav button span{
+ display:block;
+ font-size:21px;
+ margin-bottom:2px
+}
+
 nav button.active{color:#fff}
+
 .screen{display:none}
 .screen.active{display:block}
-.empty{text-align:center;color:var(--muted);padding:24px 5px}
-dialog{border:0;border-radius:20px;padding:0;width:calc(100% - 24px);max-width:520px}
-dialog::backdrop{background:rgba(0,0,0,.52)}
+
+.empty{
+ text-align:center;
+ color:var(--muted);
+ padding:24px 5px
+}
+
+dialog{
+ border:0;
+ border-radius:20px;
+ padding:0;
+ width:calc(100% - 24px);
+ max-width:520px
+}
+
+dialog::backdrop{
+ background:rgba(0,0,0,.52)
+}
+
 .modal{padding:18px}
 .modal h3{margin:0 0 14px}
+
 .field{margin-bottom:11px}
-.field label{display:block;font-size:12px;font-weight:750;margin-bottom:5px;color:#475467}
-.field input,.field select{width:100%;padding:13px;border:1px solid #d0d5dd;border-radius:12px;font-size:16px;background:#fff}
-.modal-actions{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:14px}
-.alert-box{background:#fff7ed;border:1px solid #fed7aa;border-radius:16px;padding:13px;font-size:13px}
-hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+
+.field label{
+ display:block;
+ font-size:12px;
+ font-weight:750;
+ margin-bottom:5px;
+ color:#475467
+}
+
+.field input,.field select{
+ width:100%;
+ padding:13px;
+ border:1px solid #d0d5dd;
+ border-radius:12px;
+ font-size:16px;
+ background:#fff
+}
+
+.modal-actions{
+ display:grid;
+ grid-template-columns:1fr 1fr;
+ gap:8px;
+ margin-top:14px
+}
+
+.alert-box{
+ background:#fff7ed;
+ border:1px solid #fed7aa;
+ border-radius:16px;
+ padding:13px;
+ font-size:13px
+}
+
+hr{
+ border:0;
+ border-top:1px solid var(--line);
+ margin:14px 0
+}
+
+/* CONNEXION */
 
 #loginPage{
  position:fixed;
@@ -85,362 +403,678 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
  linear-gradient(160deg,#f1faf4,#f7fbff);
  padding:22px 15px 35px
 }
+
 .loginContainer{max-width:520px;margin:auto}
-.school{text-align:center;color:#0f4f83;font-weight:800;letter-spacing:3px;font-size:13px;margin-top:8px}
-.loginTitle{text-align:center;font-size:35px;line-height:1;font-weight:900;color:#075488;margin:12px 0 5px}
+
+.school{
+ text-align:center;
+ color:#0f4f83;
+ font-weight:800;
+ letter-spacing:3px;
+ font-size:13px;
+ margin-top:8px
+}
+
+.loginTitle{
+ text-align:center;
+ font-size:35px;
+ line-height:1;
+ font-weight:900;
+ color:#075488;
+ margin:12px 0 5px
+}
+
 .loginTitle span{color:#24943b}
-.slogan{text-align:center;color:#145486;font-size:15px;font-weight:650;margin-bottom:20px}
-.hero{background:linear-gradient(135deg,#08659b,#063f6b);color:white;border-radius:28px;padding:24px;box-shadow:0 14px 35px rgba(15,23,42,.20)}
+
+.slogan{
+ text-align:center;
+ color:#145486;
+ font-size:15px;
+ font-weight:650;
+ margin-bottom:20px
+}
+
+.hero{
+ background:linear-gradient(135deg,#08659b,#063f6b);
+ color:white;
+ border-radius:28px;
+ padding:24px;
+ box-shadow:0 14px 35px rgba(15,23,42,.20)
+}
+
 .heroIcon{font-size:52px}
-.hero h2{font-size:27px;line-height:1.1;margin:8px 0}
-.heroText{color:#dbeafe;font-size:14px}
-.values{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:18px}
-.values div{text-align:center;background:rgba(255,255,255,.12);border-radius:12px;padding:9px 3px;font-size:10px}
-.loginCard{background:#fff;border-radius:24px;padding:22px;margin-top:-4px;box-shadow:0 14px 35px rgba(15,23,42,.14)}
-.loginCard h3{text-align:center;margin:0;color:#104f7d;font-size:22px}
-.loginIntro{text-align:center;color:#667085;font-size:13px;margin:6px 0 18px}
+
+.hero h2{
+ font-size:27px;
+ line-height:1.1;
+ margin:8px 0
+}
+
+.heroText{
+ color:#dbeafe;
+ font-size:14px
+}
+
+.values{
+ display:grid;
+ grid-template-columns:repeat(4,1fr);
+ gap:6px;
+ margin-top:18px
+}
+
+.values div{
+ text-align:center;
+ background:rgba(255,255,255,.12);
+ border-radius:12px;
+ padding:9px 3px;
+ font-size:10px
+}
+
+.loginCard{
+ background:#fff;
+ border-radius:24px;
+ padding:22px;
+ margin-top:-4px;
+ box-shadow:0 14px 35px rgba(15,23,42,.14)
+}
+
+.loginCard h3{
+ text-align:center;
+ margin:0;
+ color:#104f7d;
+ font-size:22px
+}
+
+.loginIntro{
+ text-align:center;
+ color:#667085;
+ font-size:13px;
+ margin:6px 0 18px
+}
+
 .loginField{margin-bottom:13px}
-.loginField label{display:block;font-size:12px;font-weight:800;color:#475467;margin-bottom:6px}
-.loginField input{width:100%;padding:14px;border:1px solid #cbd5e1;border-radius:13px;background:#f8fafc;font-size:16px}
+
+.loginField label{
+ display:block;
+ font-size:12px;
+ font-weight:800;
+ color:#475467;
+ margin-bottom:6px
+}
+
+.loginField input{
+ width:100%;
+ padding:14px;
+ border:1px solid #cbd5e1;
+ border-radius:13px;
+ background:#f8fafc;
+ font-size:16px
+}
+
 .passwordBox{position:relative}
 .passwordBox input{padding-right:50px}
-.eye{position:absolute;right:7px;top:50%;transform:translateY(-50%);background:none;border:0;font-size:21px}
-.loginButton{width:100%;border:0;border-radius:14px;padding:15px;background:linear-gradient(135deg,#35a92f,#218838);color:#fff;font-size:16px;font-weight:900}
-.loginError{display:none;margin-top:12px;padding:10px;background:#fee2e2;color:#991b1b;border-radius:11px;text-align:center;font-size:12px}
-.loginBottom{text-align:center;margin-top:18px;color:#0f4f83;font-size:11px;font-weight:700}
 
-.product-detail{display:grid;gap:10px}
-.detail-head{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
-.detail-price{font-size:24px;font-weight:900;color:#0f4f83;white-space:nowrap}
-.detail-block{background:#f8fafc;border:1px solid var(--line);border-radius:14px;padding:12px}
-.detail-block strong{display:block;font-size:12px;color:#475467;margin-bottom:5px}
-.detail-text{font-size:14px;line-height:1.45;white-space:pre-wrap}
-.detail-links{display:grid;gap:8px}
-.detail-links a{text-decoration:none;text-align:center}
-.detail-photo{max-width:180px;max-height:180px;object-fit:contain;border-radius:14px;background:#fff;border:1px solid var(--line);padding:8px}
-.detail-photo-wrap{text-align:center;margin-bottom:4px}
-.infoBtn{background:#dbeafe;color:#1d4ed8}
+.eye{
+ position:absolute;
+ right:7px;
+ top:50%;
+ transform:translateY(-50%);
+ background:none;
+ border:0;
+ font-size:21px
+}
+
+.loginButton{
+ width:100%;
+ border:0;
+ border-radius:14px;
+ padding:15px;
+ background:linear-gradient(135deg,#35a92f,#218838);
+ color:#fff;
+ font-size:16px;
+ font-weight:900
+}
+
+.loginError{
+ display:none;
+ margin-top:12px;
+ padding:10px;
+ background:#fee2e2;
+ color:#991b1b;
+ border-radius:11px;
+ text-align:center;
+ font-size:12px
+}
+
+.loginBottom{
+ text-align:center;
+ margin-top:18px;
+ color:#0f4f83;
+ font-size:11px;
+ font-weight:700
+}
+
+/* FICHE PRODUIT */
+
+.product-detail{
+ display:grid;
+ gap:10px
+}
+
+.detail-head{
+ display:flex;
+ justify-content:space-between;
+ gap:12px;
+ align-items:flex-start
+}
+
+.detail-price{
+ font-size:24px;
+ font-weight:900;
+ color:#0f4f83;
+ white-space:nowrap
+}
+
+.detail-block{
+ background:#f8fafc;
+ border:1px solid var(--line);
+ border-radius:14px;
+ padding:12px
+}
+
+.detail-block strong{
+ display:block;
+ font-size:12px;
+ color:#475467;
+ margin-bottom:5px
+}
+
+.detail-text{
+ font-size:14px;
+ line-height:1.45;
+ white-space:pre-wrap
+}
+
+.detail-links{
+ display:grid;
+ gap:8px
+}
+
+.detail-links a{
+ text-decoration:none;
+ text-align:center
+}
+
+.detail-photo{
+ max-width:180px;
+ max-height:180px;
+ object-fit:contain;
+ border-radius:14px;
+ background:#fff;
+ border:1px solid var(--line);
+ padding:8px
+}
+
+.detail-photo-wrap{
+ text-align:center;
+ margin-bottom:4px
+}
 </style>
 </head>
 
 <body>
 
 <div id="loginPage">
- <div class="loginContainer">
-  <div class="school">LYCÉE JEAN MOULIN · LANGON</div>
-  <div class="loginTitle">STOCK <span>ENTRETIEN</span></div>
-  <div class="slogan">Ensemble pour un établissement propre et durable</div>
+<div class="loginContainer">
 
-  <div class="hero">
-   <div class="heroIcon">🧴🌿</div>
-   <h2>Suivi des produits d'entretien</h2>
-   <div class="heroText">Suivre aujourd'hui pour un environnement meilleur demain</div>
-   <div class="values">
-    <div>🧼<br>HYGIÈNE</div>
-    <div>💧<br>SÉCURITÉ</div>
-    <div>♻️<br>ÉCONOMIE</div>
-    <div>🌍<br>DURABILITÉ</div>
-   </div>
-  </div>
+<div class="school">LYCÉE JEAN MOULIN · LANGON</div>
 
-  <div class="loginCard">
-   <h3>Connexion à l'application</h3>
-   <div class="loginIntro">Veuillez vous identifier pour accéder au stock</div>
-
-   <form id="loginForm" name="loginForm" autocomplete="on" onsubmit="login(event)">
-    <div class="loginField">
-     <label>Identifiant</label>
-     <input id="loginUser" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
-    </div>
-
-    <div class="loginField">
-     <label>Mot de passe</label>
-     <div class="passwordBox">
-      <input id="loginPass" name="password" type="password" autocomplete="current-password" required>
-      <button id="passwordEye" type="button" class="eye" aria-label="Afficher le mot de passe" onclick="togglePassword(event)">👁️</button>
-     </div>
-    </div>
-
-    <button class="loginButton">🔐 SE CONNECTER</button>
-    <div id="loginError" class="loginError">Identifiant ou mot de passe incorrect.</div>
-   </form>
-  </div>
-
-  <div class="loginBottom">Suivi des stocks · Historique des mouvements · Données partagées</div>
- </div>
+<div class="loginTitle">
+STOCK <span>ENTRETIEN</span>
 </div>
 
-<header>
- <div class="headerRow">
-  <div>
-   <h1>🧴 Stock Entretien partagé</h1>
-   <p>Réserve Cuisine · Réserve Service général</p>
-   <div class="sync">
-    <span id="syncDot" class="dot"></span>
-    <span id="syncText">Connexion…</span>
-   </div>
-  </div>
+<div class="slogan">
+Ensemble pour un établissement propre et durable
+</div>
 
-  <div class="userBox">
-   <div id="connectedUser"></div>
-   <button class="logout" onclick="logout()">Déconnexion</button>
-  </div>
- </div>
+<div class="hero">
+<div class="heroIcon">🧴🌿</div>
+
+<h2>Suivi des produits d'entretien</h2>
+
+<div class="heroText">
+Suivre aujourd'hui pour un environnement meilleur demain
+</div>
+
+<div class="values">
+<div>🧼<br>HYGIÈNE</div>
+<div>💧<br>SÉCURITÉ</div>
+<div>♻️<br>ÉCONOMIE</div>
+<div>🌍<br>DURABILITÉ</div>
+</div>
+</div>
+
+<div class="loginCard">
+
+<h3>Connexion à l'application</h3>
+
+<div class="loginIntro">
+Veuillez vous identifier pour accéder au stock
+</div>
+
+<form id="loginForm" name="loginForm" autocomplete="on" onsubmit="login(event)">
+
+<div class="loginField">
+<label>Identifiant</label>
+<input id="loginUser" name="username" type="text" autocomplete="username" autocapitalize="none" spellcheck="false" required>
+</div>
+
+<div class="loginField">
+<label>Mot de passe</label>
+
+<div class="passwordBox">
+<input id="loginPass" name="password" type="password" autocomplete="current-password" required>
+
+<button id="passwordEye" type="button" class="eye" aria-label="Afficher le mot de passe" onclick="togglePassword(event)">
+👁️
+</button>
+</div>
+</div>
+
+<button class="loginButton">
+🔐 SE CONNECTER
+</button>
+
+<div id="loginError" class="loginError">
+Identifiant ou mot de passe incorrect.
+</div>
+
+</form>
+</div>
+
+<div class="loginBottom">
+Suivi des stocks · Historique des mouvements · Données partagées
+</div>
+
+</div>
+</div>
+
+
+<header>
+
+<div class="headerRow">
+
+<div>
+
+<h1>🧴 Stock Entretien partagé</h1>
+
+<p>Réserve Cuisine · Réserve Service général</p>
+
+<div class="sync">
+<span id="syncDot" class="dot"></span>
+<span id="syncText">Connexion…</span>
+</div>
+
+</div>
+
+<div class="userBox">
+
+<div id="connectedUser"></div>
+
+<button class="logout" onclick="logout()">
+Déconnexion
+</button>
+
+</div>
+
+</div>
+
 </header>
+
 
 <main>
 
- <section id="home" class="screen active">
+<section id="home" class="screen active">
 
-  <div class="kpis">
-   <div class="card kpi"><span>Produits Cuisine</span><strong id="kCuisine">0</strong></div>
-   <div class="card kpi"><span>Service général</span><strong id="kGeneral">0</strong></div>
-   <div class="card kpi"><span>Stock rouge</span><strong id="kRed">0</strong></div>
-   <div class="card kpi"><span>Stock orange</span><strong id="kOrange">0</strong></div>
-  </div>
+<div class="kpis">
 
-  <div class="section">
-   <h2>Choisir une réserve</h2>
+<div class="card kpi">
+<span>Produits Cuisine</span>
+<strong id="kCuisine">0</strong>
+</div>
 
-   <div class="reserve-grid">
-    <button class="reserve-card" onclick="goReserve('Cuisine')">
-     <span class="reserve-icon">🍳</span>
-     Réserve Cuisine
-     <span class="reserve-count" id="homeCuisineCount">0 produit</span>
-    </button>
+<div class="card kpi">
+<span>Service général</span>
+<strong id="kGeneral">0</strong>
+</div>
 
-    <button class="reserve-card" onclick="goReserve('Service général')">
-     <span class="reserve-icon">🧹</span>
-     Réserve Service général
-     <span class="reserve-count" id="homeGeneralCount">0 produit</span>
-    </button>
-   </div>
-  </div>
+<div class="card kpi">
+<span>Stock rouge</span>
+<strong id="kRed">0</strong>
+</div>
 
-  <div class="section">
-   <h2>Actions rapides</h2>
-   <div class="quick">
-    <button class="btn good" onclick="chooseMove('in')">➕ Entrée</button>
-    <button class="btn secondary" onclick="chooseMove('out')">➖ Sortie</button>
-   </div>
-  </div>
+<div class="card kpi">
+<span>Stock orange</span>
+<strong id="kOrange">0</strong>
+</div>
 
-  <div class="section">
-   <h2>Produits à surveiller</h2>
-   <div class="card" id="alerts"></div>
-  </div>
+</div>
 
- </section>
+<div class="section">
 
+<h2>Choisir une réserve</h2>
 
- <section id="products" class="screen">
+<div class="reserve-grid">
 
-  <div class="section" style="margin-top:0">
-   <div class="reserve-grid">
+<button class="reserve-card" onclick="goReserve('Cuisine')">
+<span class="reserve-icon">🍳</span>
+Réserve Cuisine
+<span id="homeCuisineCount" class="reserve-count">0 produit</span>
+</button>
 
-    <button id="rCuisine" class="reserve-card active" onclick="setReserve('Cuisine')">
-     <span class="reserve-icon">🍳</span>
-     Cuisine
-     <span class="reserve-count" id="cCuisine">0</span>
-    </button>
+<button class="reserve-card" onclick="goReserve('Service général')">
+<span class="reserve-icon">🧹</span>
+Réserve Service général
+<span id="homeGeneralCount" class="reserve-count">0 produit</span>
+</button>
 
-    <button id="rGeneral" class="reserve-card" onclick="setReserve('Service général')">
-     <span class="reserve-icon">🧹</span>
-     Service général
-     <span class="reserve-count" id="cGeneral">0</span>
-    </button>
+</div>
+</div>
 
-   </div>
-  </div>
+<div class="section">
 
-  <div id="addProductArea" class="section">
-   <button class="btn primary" onclick="openProduct()">+ Ajouter un produit</button>
-  </div>
+<h2>Actions rapides</h2>
 
-  <div class="section">
-   <input id="search" class="search" placeholder="Rechercher..." oninput="renderProducts()">
-  </div>
+<div class="quick">
+<button class="btn good" onclick="chooseMove('in')">➕ Entrée</button>
+<button class="btn secondary" onclick="chooseMove('out')">➖ Sortie</button>
+</div>
 
-  <div class="section card" id="productList"></div>
+</div>
 
- </section>
+<div class="section">
+
+<h2>Produits à surveiller</h2>
+
+<div id="alerts" class="card"></div>
+
+</div>
+
+</section>
 
 
- <section id="history" class="screen">
-  <div class="section card" id="historyList"></div>
- </section>
+<section id="products" class="screen">
+
+<div class="section" style="margin-top:0">
+
+<div class="reserve-grid">
+
+<button id="rCuisine" class="reserve-card active" onclick="setReserve('Cuisine')">
+<span class="reserve-icon">🍳</span>
+Cuisine
+<span id="cCuisine" class="reserve-count">0</span>
+</button>
+
+<button id="rGeneral" class="reserve-card" onclick="setReserve('Service général')">
+<span class="reserve-icon">🧹</span>
+Service général
+<span id="cGeneral" class="reserve-count">0</span>
+</button>
+
+</div>
+</div>
+
+<div id="addProductArea" class="section">
+
+<button class="btn primary" onclick="openProduct()">
++ Ajouter un produit
+</button>
+
+</div>
+
+<div class="section">
+
+<input id="search" class="search" placeholder="Rechercher..." oninput="renderProducts()">
+
+</div>
+
+<div class="section card" id="productList"></div>
+
+</section>
 
 
- <section id="settings" class="screen">
+<section id="history" class="screen">
 
-  <div class="section card">
+<div class="section card" id="historyList"></div>
 
-   <h2>📧 Alerte e-mail</h2>
+</section>
 
-   <div class="alert-box">
-    Quand un produit passe dans le rouge, l'application peut envoyer automatiquement une alerte e-mail.
-   </div>
 
-   <div class="field" style="margin-top:12px">
-    <label>Adresse e-mail destinataire</label>
-    <input id="emailTo" type="email">
-   </div>
+<section id="settings" class="screen">
 
-   <div class="field">
-    <label>EmailJS Public Key</label>
-    <input id="emailPublic">
-   </div>
+<div class="section card">
 
-   <div class="field">
-    <label>Service ID</label>
-    <input id="emailService">
-   </div>
+<h2>📧 Alerte e-mail</h2>
 
-   <div class="field">
-    <label>Template ID</label>
-    <input id="emailTemplate">
-   </div>
+<div class="alert-box">
+Quand un produit passe dans le rouge, l'application peut envoyer automatiquement une alerte e-mail.
+</div>
 
-   <button class="btn primary" onclick="saveEmailSettings()">Enregistrer les réglages e-mail</button>
+<div class="field" style="margin-top:12px">
+<label>Adresse e-mail destinataire</label>
+<input id="emailTo" type="email">
+</div>
 
-   <hr>
+<div class="field">
+<label>EmailJS Public Key</label>
+<input id="emailPublic">
+</div>
 
-   <h2>💾 Sauvegarde</h2>
+<div class="field">
+<label>Service ID</label>
+<input id="emailService">
+</div>
 
-   <button class="btn secondary" onclick="backup()">Télécharger une sauvegarde</button>
+<div class="field">
+<label>Template ID</label>
+<input id="emailTemplate">
+</div>
 
-  </div>
+<button class="btn primary" onclick="saveEmailSettings()">
+Enregistrer les réglages e-mail
+</button>
 
- </section>
+<hr>
+
+<h2>💾 Sauvegarde</h2>
+
+<button class="btn secondary" onclick="backup()">
+Télécharger une sauvegarde
+</button>
+
+</div>
+
+</section>
 
 </main>
 
 
 <nav>
- <button class="active" onclick="showScreen('home',this)"><span>🏠</span>Accueil</button>
- <button onclick="showScreen('products',this)"><span>📦</span>Produits</button>
- <button onclick="showScreen('history',this)"><span>🕘</span>Historique</button>
- <button id="settingsButton" onclick="showScreen('settings',this)"><span>⚙️</span>Réglages</button>
+
+<button class="active" onclick="showScreen('home',this)">
+<span>🏠</span>
+Accueil
+</button>
+
+<button onclick="showScreen('products',this)">
+<span>📦</span>
+Produits
+</button>
+
+<button onclick="showScreen('history',this)">
+<span>🕘</span>
+Historique
+</button>
+
+<button id="settingsButton" onclick="showScreen('settings',this)">
+<span>⚙️</span>
+Réglages
+</button>
+
 </nav>
 
 
 <dialog id="productDialog">
 
- <form method="dialog" class="modal" onsubmit="saveProduct(event)">
+<form method="dialog" class="modal" onsubmit="saveProduct(event)">
 
-  <h3 id="productTitle">Ajouter un produit</h3>
+<h3 id="productTitle">Ajouter un produit</h3>
 
-  <input type="hidden" id="productId">
+<input type="hidden" id="productId">
 
-  <div class="field">
-   <label>Nom du produit *</label>
-   <input id="pName" required>
-  </div>
+<div class="field">
+<label>Nom du produit *</label>
+<input id="pName" required>
+</div>
 
-  <div class="field">
-   <label>Référence</label>
-   <input id="pRef">
-  </div>
+<div class="field">
+<label>Référence</label>
+<input id="pRef">
+</div>
 
-  <div class="field">
-   <label>Réserve</label>
+<div class="field">
 
-   <select id="pCat">
-    <option value="Cuisine">Réserve Cuisine</option>
-    <option value="Service général">Réserve Service général</option>
-   </select>
-  </div>
+<label>Réserve</label>
 
-  <div class="field">
-   <label>Unité</label>
+<select id="pCat">
+<option value="Cuisine">Réserve Cuisine</option>
+<option value="Service général">Réserve Service général</option>
+</select>
 
-   <select id="pUnit">
-    <option>bidon</option>
-    <option>carton</option>
-    <option>colis</option>
-    <option>rouleau</option>
-    <option>paquet</option>
-    <option>flacon</option>
-    <option>unité</option>
-    <option>litre</option>
-    <option>kg</option>
-   </select>
-  </div>
+</div>
 
-  <div class="field">
-   <label>Stock actuel</label>
-   <input id="pStock" type="number" min="0" step="0.01" value="0">
-  </div>
+<div class="field">
 
-  <div class="field">
-   <label>Seuil orange</label>
-   <input id="pOrange" type="number" min="0" step="0.01" value="5">
-  </div>
+<label>Unité</label>
 
-  <div class="field">
-   <label>Seuil rouge</label>
-   <input id="pRed" type="number" min="0" step="0.01" value="2">
-  </div>
+<select id="pUnit">
+<option>bidon</option>
+<option>carton</option>
+<option>colis</option>
+<option>rouleau</option>
+<option>paquet</option>
+<option>flacon</option>
+<option>unité</option>
+<option>litre</option>
+<option>kg</option>
+</select>
 
-  <div class="modal-actions">
-   <button type="button" class="btn secondary" onclick="productDialog.close()">Annuler</button>
-   <button class="btn primary">Enregistrer</button>
-  </div>
+</div>
 
- </form>
+<div class="field">
+<label>Stock actuel</label>
+<input id="pStock" type="number" min="0" step="0.01" value="0">
+</div>
+
+<div class="field">
+<label>Seuil orange</label>
+<input id="pOrange" type="number" min="0" step="0.01" value="5">
+</div>
+
+<div class="field">
+<label>Seuil rouge</label>
+<input id="pRed" type="number" min="0" step="0.01" value="2">
+</div>
+
+<div class="modal-actions">
+
+<button type="button" class="btn secondary" onclick="productDialog.close()">
+Annuler
+</button>
+
+<button class="btn primary">
+Enregistrer
+</button>
+
+</div>
+
+</form>
 
 </dialog>
 
 
 <dialog id="moveDialog">
 
- <form method="dialog" class="modal" onsubmit="saveMove(event)">
+<form method="dialog" class="modal" onsubmit="saveMove(event)">
 
-  <h3 id="moveTitle">Mouvement</h3>
+<h3 id="moveTitle">Mouvement</h3>
 
-  <input type="hidden" id="moveType">
+<input type="hidden" id="moveType">
 
-  <div class="field">
-   <label>Produit</label>
-   <select id="moveProduct"></select>
-  </div>
+<div class="field">
 
-  <div class="field">
-   <label>Quantité *</label>
-   <input id="moveQty" type="number" min="0.01" step="0.01" required>
-  </div>
+<label>Produit</label>
 
-  <div class="field">
-   <label>Motif / destination</label>
-   <input id="moveReason">
-  </div>
+<select id="moveProduct"></select>
 
-  <div class="field">
-   <label>Utilisateur connecté</label>
-   <input id="moveUser" readonly>
-  </div>
+</div>
 
-  <div class="modal-actions">
-   <button type="button" class="btn secondary" onclick="moveDialog.close()">Annuler</button>
-   <button class="btn primary">Valider</button>
-  </div>
+<div class="field">
 
- </form>
+<label>Quantité *</label>
+
+<input id="moveQty" type="number" min="0.01" step="0.01" required>
+
+</div>
+
+<div class="field">
+
+<label>Motif / destination</label>
+
+<input id="moveReason">
+
+</div>
+
+<div class="field">
+
+<label>Utilisateur connecté</label>
+
+<input id="moveUser" readonly>
+
+</div>
+
+<div class="modal-actions">
+
+<button type="button" class="btn secondary" onclick="moveDialog.close()">
+Annuler
+</button>
+
+<button class="btn primary">
+Valider
+</button>
+
+</div>
+
+</form>
 
 </dialog>
 
 
 <dialog id="detailDialog">
 
- <div class="modal">
+<div class="modal">
 
-  <div id="detailContent" class="product-detail"></div>
+<div id="detailContent" class="product-detail"></div>
 
-  <div style="margin-top:14px">
-   <button type="button" class="btn secondary" onclick="detailDialog.close()">Fermer</button>
-  </div>
+<div style="margin-top:14px">
 
- </div>
+<button type="button" class="btn secondary" onclick="detailDialog.close()">
+Fermer
+</button>
+
+</div>
+
+</div>
 
 </dialog>
 
@@ -504,16 +1138,20 @@ const isAdmin=()=>currentUser===ADMIN;
 
 
 function reserveOf(p){
+
  return p.category==='Service général'
  ? 'Service général'
  : 'Cuisine';
+
 }
 
 
 function reserveProducts(name){
+
  return products.filter(
   p=>reserveOf(p)===name
  );
+
 }
 
 
@@ -533,15 +1171,20 @@ function togglePassword(e){
  i.type=show?'text':'password';
 
  if(b){
+
   b.textContent=show?'🙈':'👁️';
 
   b.setAttribute(
    'aria-label',
-   show?'Masquer le mot de passe':'Afficher le mot de passe'
+   show
+   ? 'Masquer le mot de passe'
+   : 'Afficher le mot de passe'
   );
+
  }
 
  i.focus();
+
 }
 
 
@@ -722,7 +1365,11 @@ function showScreen(id,btn){
 
 
 function navButtonForProducts(){
- return document.querySelectorAll('nav button')[1];
+
+ return document.querySelectorAll(
+  'nav button'
+ )[1];
+
 }
 
 
@@ -766,7 +1413,9 @@ function renderHome(){
 
  const c=reserveProducts('Cuisine').length;
 
- const g=reserveProducts('Service général').length;
+ const g=reserveProducts(
+  'Service général'
+ ).length;
 
  $('kCuisine').textContent=c;
 
@@ -844,7 +1493,9 @@ function renderProducts(){
 
  const c=reserveProducts('Cuisine').length;
 
- const g=reserveProducts('Service général').length;
+ const g=reserveProducts(
+  'Service général'
+ ).length;
 
  $('cCuisine').textContent=
  c+' produit'+(c>1?'s':'');
@@ -863,7 +1514,8 @@ function renderProducts(){
  );
 
  const q=
- ($('search')?.value||'').toLowerCase();
+ ($('search')?.value||'')
+ .toLowerCase();
 
  const list=
  reserveProducts(currentReserve)
@@ -886,72 +1538,100 @@ function renderProducts(){
 
   <div class="product">
 
-   <div>
+   <div class="product-main">
 
-    <div class="pname">
-     ${esc(p.name)}
-    </div>
-
-    <div class="meta">
-
-     ${
-      currentReserve==='Cuisine'
-      ? '🍳 Réserve Cuisine'
-      : '🧹 Réserve Service général'
-     }
-
-     ${
-      p.reference
-      ? ' · '+esc(p.reference)
-      : ''
-     }
-
-    </div>
-
-    <div class="product-actions">
-
+    ${
+     p.photo_url
+     ?
+     `
      <button
-      class="mini infoBtn"
+      type="button"
+      class="product-thumb-btn"
       onclick="showProductDetails('${p.id}')"
+      aria-label="Voir la fiche de ${esc(p.name)}"
      >
-      📄 Fiche
-     </button>
 
-     <button
-      class="mini good"
-      onclick="openMoveFor('${p.id}','in')"
-     >
-      + Entrée
-     </button>
+      <img
+       class="product-thumb"
+       src="${esc(p.photo_url)}"
+       alt="${esc(p.name)}"
+       onerror="this.parentElement.style.display='none'"
+      >
 
-     <button
-      class="mini secondary"
-      onclick="openMoveFor('${p.id}','out')"
-     >
-      − Sortie
      </button>
+     `
+     :
+     ''
+    }
 
-     ${
-      isAdmin()
-      ?
-      `
+    <div class="product-info">
+
+     <div class="pname">
+      ${esc(p.name)}
+     </div>
+
+     <div class="meta">
+
+      ${
+       currentReserve==='Cuisine'
+       ? '🍳 Réserve Cuisine'
+       : '🧹 Réserve Service général'
+      }
+
+      ${
+       p.reference
+       ? ' · '+esc(p.reference)
+       : ''
+      }
+
+     </div>
+
+     <div class="product-actions">
+
+      <button
+       class="mini infoBtn"
+       onclick="showProductDetails('${p.id}')"
+      >
+       📄 Fiche
+      </button>
+
+      <button
+       class="mini good"
+       onclick="openMoveFor('${p.id}','in')"
+      >
+       + Entrée
+      </button>
+
       <button
        class="mini secondary"
-       onclick="editProduct('${p.id}')"
+       onclick="openMoveFor('${p.id}','out')"
       >
-       Modifier
+       − Sortie
       </button>
 
-      <button
-       class="mini danger"
-       onclick="deleteProduct('${p.id}')"
-      >
-       Supprimer
-      </button>
-      `
-      :
-      ''
-     }
+      ${
+       isAdmin()
+       ?
+       `
+       <button
+        class="mini secondary"
+        onclick="editProduct('${p.id}')"
+       >
+        Modifier
+       </button>
+
+       <button
+        class="mini danger"
+        onclick="deleteProduct('${p.id}')"
+       >
+        Supprimer
+       </button>
+       `
+       :
+       ''
+      }
+
+     </div>
 
     </div>
 
@@ -1010,10 +1690,15 @@ function showProductDetails(id){
  ?
  `
  <div class="detail-block">
-  <strong>${title}</strong>
+
+  <strong>
+   ${title}
+  </strong>
+
   <div class="detail-text">
    ${esc(value)}
   </div>
+
  </div>
  `
  :
@@ -1140,9 +1825,7 @@ function showProductDetails(id){
 
  <div class="detail-block">
 
-  <strong>
-   Stock
-  </strong>
+  <strong>Stock</strong>
 
   <div class="detail-text">
 
@@ -1192,13 +1875,11 @@ function renderHistory(){
      ${esc(h.product_name)}
     </strong>
 
-    <span
-     class="badge ${
-      h.movement_type==='in'
-      ? 'bgreen'
-      : 'borange'
-     }"
-    >
+    <span class="badge ${
+     h.movement_type==='in'
+     ? 'bgreen'
+     : 'borange'
+    }">
 
      ${
       h.movement_type==='in'
@@ -1215,7 +1896,11 @@ function renderHistory(){
    <div class="history-sub">
 
     ${
-     new Date(h.created_at).toLocaleString('fr-FR')
+     new Date(
+      h.created_at
+     ).toLocaleString(
+      'fr-FR'
+     )
     }
 
     · stock après :
@@ -1250,15 +1935,20 @@ function renderHistory(){
 
 function loadSettings(){
 
- $('emailTo').value=emailCfg.to||'';
+ $('emailTo').value=
+ emailCfg.to||'';
 
- $('emailPublic').value=emailCfg.publicKey||'';
+ $('emailPublic').value=
+ emailCfg.publicKey||'';
 
- $('emailService').value=emailCfg.serviceId||'';
+ $('emailService').value=
+ emailCfg.serviceId||'';
 
- $('emailTemplate').value=emailCfg.templateId||'';
+ $('emailTemplate').value=
+ emailCfg.templateId||'';
 
- $('moveUser').value=currentUser||'';
+ $('moveUser').value=
+ currentUser||'';
 
 }
 
@@ -1378,9 +2068,11 @@ function openProduct(){
 
  $('pRef').value='';
 
- $('pCat').value=currentReserve;
+ $('pCat').value=
+ currentReserve;
 
- $('pUnit').value='bidon';
+ $('pUnit').value=
+ 'bidon';
 
  $('pStock').value=0;
 
@@ -1408,21 +2100,29 @@ function editProduct(id){
  $('productTitle').textContent=
  'Modifier le produit';
 
- $('productId').value=p.id;
+ $('productId').value=
+ p.id;
 
- $('pName').value=p.name||'';
+ $('pName').value=
+ p.name||'';
 
- $('pRef').value=p.reference||'';
+ $('pRef').value=
+ p.reference||'';
 
- $('pCat').value=reserveOf(p);
+ $('pCat').value=
+ reserveOf(p);
 
- $('pUnit').value=p.unit||'unité';
+ $('pUnit').value=
+ p.unit||'unité';
 
- $('pStock').value=p.stock||0;
+ $('pStock').value=
+ p.stock||0;
 
- $('pOrange').value=p.orange_threshold||0;
+ $('pOrange').value=
+ p.orange_threshold||0;
 
- $('pRed').value=p.red_threshold||0;
+ $('pRed').value=
+ p.red_threshold||0;
 
  productDialog.showModal();
 
@@ -1436,31 +2136,40 @@ async function saveProduct(e){
  if(!isAdmin())
  return;
 
- const id=$('productId').value;
+ const id=
+ $('productId').value;
 
  const payload={
 
-  name:$('pName').value.trim(),
+  name:
+  $('pName').value.trim(),
 
-  reference:$('pRef').value.trim()||null,
+  reference:
+  $('pRef').value.trim()||null,
 
-  category:$('pCat').value,
+  category:
+  $('pCat').value,
 
-  unit:$('pUnit').value,
+  unit:
+  $('pUnit').value,
 
-  stock:Number(
+  stock:
+  Number(
    $('pStock').value||0
   ),
 
-  orange_threshold:Number(
+  orange_threshold:
+  Number(
    $('pOrange').value||0
   ),
 
-  red_threshold:Number(
+  red_threshold:
+  Number(
    $('pRed').value||0
   ),
 
-  updated_at:new Date().toISOString()
+  updated_at:
+  new Date().toISOString()
 
  };
 
@@ -1490,7 +2199,8 @@ async function saveProduct(e){
 
  }
 
- currentReserve=$('pCat').value;
+ currentReserve=
+ $('pCat').value;
 
  productDialog.close();
 
@@ -1504,7 +2214,8 @@ async function deleteProduct(id){
  if(!isAdmin())
  return;
 
- const p=products.find(
+ const p=
+ products.find(
   x=>x.id===id
  );
 
@@ -1575,7 +2286,7 @@ async function deleteProduct(id){
   ){
 
    alert(
-    'Le produit n’a pas été supprimé. Supabase bloque actuellement les suppressions.'
+    'Le produit n’a pas été supprimé.'
    );
 
    return;
@@ -1603,7 +2314,8 @@ async function deleteProduct(id){
 
 function chooseMove(type){
 
- const list=reserveProducts(
+ const list=
+ reserveProducts(
   currentReserve
  );
 
@@ -1637,17 +2349,24 @@ function openMoveFor(id,type){
 
 function openMove(id,type){
 
- $('moveType').value=type;
+ $('moveType').value=
+ type;
 
  $('moveTitle').textContent=
  type==='in'
- ? '➕ Entrée en stock'
- : '➖ Sortie de stock';
+ ?
+ '➕ Entrée en stock'
+ :
+ '➖ Sortie de stock';
 
  const list=
  id
- ? products
- : reserveProducts(currentReserve);
+ ?
+ products
+ :
+ reserveProducts(
+  currentReserve
+ );
 
  $('moveProduct').innerHTML=
  list.map(
@@ -1655,7 +2374,13 @@ function openMove(id,type){
 
   <option
    value="${p.id}"
-   ${id===p.id?'selected':''}
+   ${
+    id===p.id
+    ?
+    'selected'
+    :
+    ''
+   }
   >
    ${esc(p.name)}
    —
@@ -1670,7 +2395,8 @@ function openMove(id,type){
 
  $('moveReason').value='';
 
- $('moveUser').value=currentUser;
+ $('moveUser').value=
+ currentUser;
 
  moveDialog.showModal();
 
@@ -1681,17 +2407,21 @@ async function saveMove(e){
 
  e.preventDefault();
 
- const pid=$('moveProduct').value;
+ const pid=
+ $('moveProduct').value;
 
- const p=products.find(
+ const p=
+ products.find(
   x=>x.id===pid
  );
 
- const qty=Number(
+ const qty=
+ Number(
   $('moveQty').value
  );
 
- const type=$('moveType').value;
+ const type=
+ $('moveType').value;
 
  if(!p||!qty)
  return;
@@ -1710,15 +2440,18 @@ async function saveMove(e){
 
  }
 
- const oldLevel=level(p);
+ const oldLevel=
+ level(p);
 
  const newStock=
  Number(p.stock)
  +
  (
   type==='in'
-  ? qty
-  : -qty
+  ?
+  qty
+  :
+  -qty
  );
 
  const{
@@ -1728,7 +2461,8 @@ async function saveMove(e){
  .from('products')
  .update({
   stock:newStock,
-  updated_at:new Date().toISOString()
+  updated_at:
+  new Date().toISOString()
  })
  .eq(
   'id',
@@ -1766,11 +2500,14 @@ async function saveMove(e){
   unit:p.unit,
 
   reason:
-  $('moveReason').value.trim()
+  $('moveReason')
+  .value
+  .trim()
   ||
   null,
 
-  user_name:currentUser
+  user_name:
+  currentUser
 
  });
 
@@ -1785,7 +2522,8 @@ async function saveMove(e){
 
  moveDialog.close();
 
- const newLevel=level({
+ const newLevel=
+ level({
   ...p,
   stock:newStock
  });
@@ -1808,7 +2546,10 @@ async function saveMove(e){
 }
 
 
-async function sendRedAlert(p,newStock){
+async function sendRedAlert(
+ p,
+ newStock
+){
 
  try{
 
@@ -1824,7 +2565,8 @@ async function sendRedAlert(p,newStock){
   return;
 
   emailjs.init({
-   publicKey:emailCfg.publicKey
+   publicKey:
+   emailCfg.publicKey
   });
 
   await emailjs.send(
@@ -1832,15 +2574,20 @@ async function sendRedAlert(p,newStock){
    emailCfg.templateId,
    {
 
-    to_email:emailCfg.to,
+    to_email:
+    emailCfg.to,
 
-    product_name:p.name,
+    product_name:
+    p.name,
 
-    stock:newStock,
+    stock:
+    newStock,
 
-    unit:p.unit||'',
+    unit:
+    p.unit||'',
 
-    reserve:reserveOf(p)
+    reserve:
+    reserveOf(p)
 
    }
   );
@@ -1865,13 +2612,17 @@ function saveEmailSettings(){
 
  emailCfg={
 
-  to:$('emailTo').value.trim(),
+  to:
+  $('emailTo').value.trim(),
 
-  publicKey:$('emailPublic').value.trim(),
+  publicKey:
+  $('emailPublic').value.trim(),
 
-  serviceId:$('emailService').value.trim(),
+  serviceId:
+  $('emailService').value.trim(),
 
-  templateId:$('emailTemplate').value.trim()
+  templateId:
+  $('emailTemplate').value.trim()
 
  };
 
@@ -1892,13 +2643,18 @@ function backup(){
  if(!isAdmin())
  return;
 
- const blob=new Blob(
+ const blob=
+ new Blob(
   [
    JSON.stringify(
     {
-     exported_at:new Date().toISOString(),
+     exported_at:
+     new Date().toISOString(),
+
      products,
-     history:historyData
+
+     history:
+     historyData
     },
     null,
     2
@@ -1909,15 +2665,20 @@ function backup(){
   }
  );
 
- const a=document.createElement('a');
+ const a=
+ document.createElement('a');
 
- a.href=URL.createObjectURL(blob);
+ a.href=
+ URL.createObjectURL(blob);
 
- a.download='sauvegarde-stock-entretien.json';
+ a.download=
+ 'sauvegarde-stock-entretien.json';
 
  a.click();
 
- URL.revokeObjectURL(a.href);
+ URL.revokeObjectURL(
+  a.href
+ );
 
 }
 
