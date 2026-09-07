@@ -287,6 +287,172 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 .detail-links a{text-decoration:none;text-align:center}
 .detail-photo{max-width:220px;max-height:220px;object-fit:contain;border-radius:14px;background:#fff;border:1px solid var(--line);padding:8px}
 .detail-photo-wrap{text-align:center;margin-bottom:4px}
+
+/* ACCUEIL - VERSION VISUELLE PROCHE DE LA MAQUETTE */
+#home{
+ position:relative;
+}
+.home-visual{
+ height:205px;
+ margin:-16px -14px 18px;
+ background:
+  linear-gradient(to bottom,rgba(255,255,255,0) 72%,rgba(248,252,250,.95) 100%),
+  url("fond-accueil.jpg") center center/cover no-repeat;
+ border-bottom-left-radius:26px;
+ border-bottom-right-radius:26px;
+ box-shadow:0 10px 26px rgba(42,86,71,.08);
+}
+#home .section{position:relative;z-index:1}
+#home .section h2{
+ font-size:22px;
+ font-weight:900;
+ color:#12365e;
+ letter-spacing:-.3px;
+}
+#home .reserve-card{
+ position:relative;
+ overflow:hidden;
+ min-height:210px;
+ padding:28px 15px 24px;
+ border-radius:26px;
+}
+#home .reserve-card:nth-child(1)::before,
+#home .reserve-card:nth-child(2)::before{
+ content:"";
+ position:absolute;
+ left:-26px;
+ bottom:-44px;
+ width:185px;
+ height:110px;
+ border-radius:50%;
+ transform:rotate(12deg);
+ opacity:.75;
+}
+#home .reserve-card:nth-child(1)::before{background:#fde9ce}
+#home .reserve-card:nth-child(2)::before{background:#cfeeff}
+#home .reserve-card:nth-child(1)::after,
+#home .reserve-card:nth-child(2)::after{
+ content:"›";
+ position:absolute;
+ right:17px;
+ bottom:17px;
+ width:42px;
+ height:42px;
+ border-radius:50%;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ font-size:34px;
+ font-weight:900;
+ line-height:1;
+}
+#home .reserve-card:nth-child(1)::after{
+ background:#ffe3be;
+ color:#e98a22;
+}
+#home .reserve-card:nth-child(2)::after{
+ background:#caedff;
+ color:#147db0;
+}
+#home .reserve-icon{
+ position:relative;
+ z-index:2;
+ font-size:54px;
+ margin-bottom:10px;
+}
+#home .reserve-card{
+ font-size:20px;
+ line-height:1.08;
+}
+#home .reserve-count{
+ position:relative;
+ z-index:2;
+ font-size:15px;
+ margin-top:8px;
+ font-weight:800;
+}
+#home .quick{
+ gap:14px;
+}
+#home .quick .btn{
+ min-height:96px;
+ border-radius:22px;
+ font-size:21px;
+ position:relative;
+ text-align:left;
+ padding:17px 64px 17px 23px;
+ display:flex;
+ flex-direction:column;
+ justify-content:center;
+ align-items:flex-start;
+ gap:2px;
+}
+#home .quick .btn small{
+ display:block;
+ font-size:14px;
+ font-weight:600;
+ opacity:.88;
+}
+#home .quick .btn::after{
+ position:absolute;
+ right:20px;
+ top:50%;
+ transform:translateY(-50%);
+ font-size:34px;
+ opacity:.78;
+}
+#home .quick .good{
+ background:linear-gradient(135deg,#b7f1cd,#9ce8ba);
+ color:#0d7043;
+}
+#home .quick .good::after{content:"⇧"}
+#home .quick .secondary{
+ background:linear-gradient(135deg,#bfe5fb,#aadcf8);
+ color:#123e68;
+}
+#home .quick .secondary::after{content:"⇩"}
+
+#home #alerts{
+ border-radius:26px;
+ min-height:160px;
+ background:rgba(255,255,255,.96);
+ box-shadow:0 12px 28px rgba(41,83,69,.09);
+}
+#home #alerts .empty{
+ min-height:132px;
+ display:flex;
+ flex-direction:column;
+ align-items:center;
+ justify-content:center;
+ gap:5px;
+ font-size:18px;
+ font-weight:850;
+ color:#17365a;
+}
+#home #alerts .empty::before{
+ content:"🔍";
+ width:70px;
+ height:70px;
+ border-radius:50%;
+ display:flex;
+ align-items:center;
+ justify-content:center;
+ background:#e8f4ff;
+ font-size:38px;
+ margin-bottom:4px;
+}
+#home #alerts .empty span{
+ font-weight:500;
+ color:#718096;
+}
+
+@media (max-width:520px){
+ .home-visual{height:190px}
+ #home .reserve-grid{gap:12px}
+ #home .reserve-card{min-height:200px;padding:24px 10px 22px;font-size:18px}
+ #home .quick .btn{min-height:92px;font-size:19px;padding-left:18px;padding-right:52px}
+}
+
 </style>
 </head>
 
@@ -366,6 +532,8 @@ hr{border:0;border-top:1px solid var(--line);margin:14px 0}
 
 <section id="home" class="screen active">
 
+<div class="home-visual" aria-hidden="true"></div>
+
 <div class="section">
 <h2>Choisir une réserve</h2>
 
@@ -390,8 +558,8 @@ Réserve Service général
 <h2>Actions rapides</h2>
 
 <div class="quick">
-<button class="btn good" onclick="chooseMove('in')">➕ Entrée</button>
-<button class="btn secondary" onclick="chooseMove('out')">➖ Sortie</button>
+<button class="btn good" onclick="chooseMove('in')">➕ Entrée<small>Ajouter du stock</small></button>
+<button class="btn secondary" onclick="chooseMove('out')">➖ Sortie<small>Retirer du stock</small></button>
 </div>
 </div>
 
@@ -781,8 +949,10 @@ function renderHome(){
   </div>
  </div>
  `).join('')
- : `<div class="empty">🔎<br><strong>Aucun produit à surveiller</strong><br><span style="font-size:12px">Les produits orange ou rouge apparaîtront ici.</span></div>`;
+ : `<div class="empty"><strong>Aucun produit à surveiller</strong><span>Les produits orange ou rouge apparaîtront ici.</span></div>`;
 }
+
+/* PREMIÈRE PAGE : CATALOGUE */
 
 function renderProducts(){
 
@@ -886,6 +1056,8 @@ function openCatalogProduct(id){
  });
 }
 
+/* DEUXIÈME PAGE : PRODUIT */
+
 function renderSelectedProduct(p){
 
  const photo=productPhoto(p);
@@ -985,6 +1157,8 @@ function backToCatalog(){
   behavior:'smooth'
  });
 }
+
+/* FICHE COMPLÈTE */
 
 function showProductDetails(id){
 
