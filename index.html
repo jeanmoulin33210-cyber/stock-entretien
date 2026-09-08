@@ -34,25 +34,20 @@ body:has(#home.active){background:linear-gradient(rgba(255,255,255,.16),rgba(246
 </style>
 </head>
 <body>
-
 <div id="loginPage"><div class="loginContainer">
 <div class="school">LYCÉE JEAN MOULIN · LANGON</div><div class="loginTitle">STOCK <span>ENTRETIEN</span></div><div class="slogan">Ensemble pour un établissement propre et durable</div>
 <div class="hero"><div class="heroIcon">🧴🌿</div><h2>Suivi des produits d'entretien</h2><div class="heroText">Suivre aujourd'hui pour un environnement meilleur demain</div><div class="values"><div>🧼<br>HYGIÈNE</div><div>💧<br>SÉCURITÉ</div><div>♻️<br>ÉCONOMIE</div><div>🌍<br>DURABILITÉ</div></div></div>
 <div class="loginCard"><h3>Connexion à l'application</h3><div class="loginIntro">Veuillez vous identifier pour accéder au stock</div><form id="loginForm" autocomplete="on" onsubmit="login(event)"><div class="loginField"><label>Identifiant</label><input id="loginUser" name="username" type="text" autocomplete="username" required></div><div class="loginField"><label>Mot de passe</label><div class="passwordBox"><input id="loginPass" name="password" type="password" autocomplete="current-password" required><button id="passwordEye" type="button" class="eye" onclick="togglePassword(event)">👁️</button></div></div><button class="loginButton">🔐 SE CONNECTER</button><div id="loginError" class="loginError">Identifiant ou mot de passe incorrect.</div></form></div>
 <div class="loginBottom">Suivi des stocks · Historique des mouvements · Données partagées</div>
 </div></div>
-
 <header><div class="headerRow"><div><h1>🧴 Stock Entretien partagé</h1><p>Réserve Cuisine · Réserve Service général</p><div class="sync"><span id="syncDot" class="dot"></span><span id="syncText">Connexion…</span></div></div><div class="userBox"><div id="connectedUser"></div><button class="logout" onclick="logout()">Déconnexion</button></div></div></header>
-
 <main>
 <section id="home" class="screen active"><div class="home-visual" aria-hidden="true"></div>
 <div class="section"><h2>Choisir une réserve</h2><div class="reserve-grid"><button class="reserve-card" onclick="goReserve('Cuisine')"><span class="reserve-icon">🍳</span>Réserve Cuisine<span id="homeCuisineCount" class="reserve-count">0 produit</span></button><button class="reserve-card" onclick="goReserve('Service général')"><span class="reserve-icon">🧹</span>Réserve Service général<span id="homeGeneralCount" class="reserve-count">0 produit</span></button></div></div>
 <div class="section"><h2>Actions rapides</h2><div class="quick"><button class="btn good" onclick="chooseMove('in')">➕ Entrée<small>Ajouter du stock</small></button><button class="btn secondary" onclick="chooseMove('out')">➖ Sortie<small>Retirer du stock</small></button><button class="btn scanBtn" onclick="openScanner()">📷 Scanner un bon de livraison<small>Photographier et contrôler avant validation</small></button></div></div>
 <div class="section"><h2>Produits à surveiller</h2><div id="alerts" class="card"></div></div>
 </section>
-
 <section id="products" class="screen"><div class="reserve-grid"><button id="rCuisine" class="reserve-card active" onclick="setReserve('Cuisine')"><span class="reserve-icon">🍳</span>Cuisine<span id="cCuisine" class="reserve-count"></span></button><button id="rGeneral" class="reserve-card" onclick="setReserve('Service général')"><span class="reserve-icon">🧹</span>Service général<span id="cGeneral" class="reserve-count"></span></button></div><div id="addProductArea" class="section"><button class="btn primary" onclick="openProduct()">+ Ajouter un produit</button></div><div class="section"><input id="search" class="search" placeholder="🔎 Rechercher un produit..." oninput="renderProducts()"></div><div id="productList" class="section"></div></section>
-
 <section id="scanner" class="screen">
 <div class="section"><button class="btn secondary" onclick="showScreen('home',document.querySelectorAll('nav button')[0])">← Retour à l'accueil</button></div>
 <div class="section card scan-card"><h2>📷 Scanner un bon de livraison</h2>
@@ -62,20 +57,16 @@ body:has(#home.active){background:linear-gradient(rgba(255,255,255,.16),rgba(246
 <img id="deliveryPreview" class="scan-preview" alt="Aperçu du bon de livraison">
 <div id="scanStatus" class="scan-status">Aucune photo sélectionnée.</div>
 <div class="scan-actions"><button class="btn secondary" type="button" onclick="resetScanner()">Effacer</button><button id="analyzeButton" class="btn primary" type="button" onclick="prepareAnalysis()" disabled>Analyser le bon</button></div>
-<div id="scanResult" class="scan-result"><hr><h2>Contrôle avant validation</h2><div class="alert-box">Cette première version prépare l'écran de contrôle. L'analyse automatique de la photo sera branchée à l'étape suivante via une fonction sécurisée Supabase.</div><div style="overflow:auto;margin-top:12px"><table class="scan-table"><thead><tr><th>Référence</th><th>Produit</th><th>Qté</th><th>État</th></tr></thead><tbody id="scanRows"><tr><td colspan="4" class="empty">Aucune ligne analysée pour le moment.</td></tr></tbody></table></div><button id="validateDeliveryButton" class="btn good" type="button" disabled onclick="validateDelivery()">✅ Valider la livraison</button></div>
+<div id="scanResult" class="scan-result"><hr><h2>Contrôle avant validation</h2><div id="scanSummary" class="alert-box">Le bon analysé apparaîtra ici.</div><div style="overflow:auto;margin-top:12px"><table class="scan-table"><thead><tr><th>Référence</th><th>Produit</th><th>Qté</th><th>État</th></tr></thead><tbody id="scanRows"><tr><td colspan="4" class="empty">Aucune ligne analysée pour le moment.</td></tr></tbody></table></div><button id="validateDeliveryButton" class="btn good" type="button" disabled onclick="validateDelivery()">✅ Valider la livraison</button></div>
 </div>
 </section>
-
 <section id="history" class="screen"><div class="section card" id="historyList"></div></section>
 <section id="settings" class="screen"><div class="section card"><h2>📧 Alerte e-mail</h2><div class="alert-box">Quand un produit passe dans le rouge, l'application peut envoyer automatiquement une alerte e-mail.</div><div class="field" style="margin-top:12px"><label>Adresse e-mail destinataire</label><input id="emailTo" type="email"></div><div class="field"><label>EmailJS Public Key</label><input id="emailPublic"></div><div class="field"><label>Service ID</label><input id="emailService"></div><div class="field"><label>Template ID</label><input id="emailTemplate"></div><button class="btn primary" onclick="saveEmailSettings()">Enregistrer les réglages e-mail</button><hr><h2>💾 Sauvegarde</h2><button class="btn secondary" onclick="backup()">Télécharger une sauvegarde</button></div></section>
 </main>
-
 <nav><button class="active" onclick="showScreen('home',this)"><span>🏠</span>Accueil</button><button onclick="showScreen('products',this)"><span>📦</span>Produits</button><button onclick="showScreen('history',this)"><span>🕘</span>Historique</button><button id="settingsButton" onclick="showScreen('settings',this)"><span>⚙️</span>Réglages</button></nav>
-
 <dialog id="productDialog"><form method="dialog" class="modal" onsubmit="saveProduct(event)"><h3 id="productTitle">Ajouter un produit</h3><input type="hidden" id="productId"><div class="field"><label>Nom du produit *</label><input id="pName" required></div><div class="field"><label>Référence</label><input id="pRef"></div><div class="field"><label>Réserve</label><select id="pCat"><option value="Cuisine">Réserve Cuisine</option><option value="Service général">Réserve Service général</option></select></div><div class="field"><label>Unité</label><select id="pUnit"><option>bidon</option><option>carton</option><option>colis</option><option>rouleau</option><option>paquet</option><option>flacon</option><option>unité</option><option>litre</option><option>kg</option></select></div><div class="field"><label>Stock actuel</label><input id="pStock" type="number" min="0" step="0.01" value="0"></div><div class="field"><label>Seuil orange</label><input id="pOrange" type="number" min="0" step="0.01" value="5"></div><div class="field"><label>Seuil rouge</label><input id="pRed" type="number" min="0" step="0.01" value="2"></div><div class="modal-actions"><button type="button" class="btn secondary" onclick="productDialog.close()">Annuler</button><button class="btn primary">Enregistrer</button></div></form></dialog>
 <dialog id="moveDialog"><form method="dialog" class="modal" onsubmit="saveMove(event)"><h3 id="moveTitle">Mouvement</h3><input type="hidden" id="moveType"><div class="field"><label>Produit</label><select id="moveProduct"></select></div><div class="field"><label>Quantité *</label><input id="moveQty" type="number" min="0.01" step="0.01" required></div><div class="field"><label>Motif / destination</label><input id="moveReason"></div><div class="field"><label>Utilisateur connecté</label><input id="moveUser" readonly></div><div class="modal-actions"><button type="button" class="btn secondary" onclick="moveDialog.close()">Annuler</button><button class="btn primary">Valider</button></div></form></dialog>
 <dialog id="detailDialog"><div class="modal"><div id="detailContent" class="product-detail"></div><div style="margin-top:14px"><button type="button" class="btn secondary" onclick="detailDialog.close()">Fermer</button></div></div></dialog>
-
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
@@ -84,6 +75,7 @@ const SUPABASE_KEY='sb_publishable_63ZJtw7uGovMEiZgX8V8zg_02TdkDGY';
 const USERS={Cedric:"Kilian11+",Delphine:"Service-général",Gestionnaire:"Tork1",Proviseur:"Jean-Moulin1",Autre:"Jean-Moulin2"};
 const ADMIN='Cedric',KEMAIL='stock_shared_email_v1',KSESSION='stock_shared_session_v1';
 let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null;
+let scanProposal={received:[],unknown:[],outstanding:[],warnings:[],meta:{}};
 let emailCfg=JSON.parse(localStorage.getItem(KEMAIL)||'{}');
 const $=id=>document.getElementById(id);
 const esc=(s='')=>String(s).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]));
@@ -108,9 +100,70 @@ function setReserve(r){currentReserve=r;selectedProductId=null;renderProducts()}
 function renderAll(){renderHome();renderProducts();renderHistory();loadSettings()}
 function openScanner(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('scanner').classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));window.scrollTo({top:0,behavior:'smooth'})}
 function previewDeliveryPhoto(event){const file=event.target.files?.[0];if(!file)return;currentDeliveryPhoto=file;const preview=$('deliveryPreview');preview.src=URL.createObjectURL(file);preview.style.display='block';$('scanStatus').textContent='Photo prête. Tu peux maintenant lancer l’analyse.';$('analyzeButton').disabled=false;$('scanResult').style.display='none';$('validateDeliveryButton').disabled=true}
-function resetScanner(){currentDeliveryPhoto=null;$('deliveryPhoto').value='';$('deliveryPreview').src='';$('deliveryPreview').style.display='none';$('scanStatus').textContent='Aucune photo sélectionnée.';$('analyzeButton').disabled=true;$('scanResult').style.display='none';$('validateDeliveryButton').disabled=true;$('scanRows').innerHTML='<tr><td colspan="4" class="empty">Aucune ligne analysée pour le moment.</td></tr>'}
-function prepareAnalysis(){if(!currentDeliveryPhoto)return;$('scanStatus').textContent='Photo chargée. Le branchement de l’analyse automatique sera ajouté à l’étape suivante.';$('scanResult').style.display='block';$('scanRows').innerHTML='<tr><td colspan="4" class="empty">Analyse automatique non encore activée.</td></tr>';$('validateDeliveryButton').disabled=true}
-function validateDelivery(){alert('Aucune modification de stock n’est effectuée dans cette première version.')}
+function resetScanner(){currentDeliveryPhoto=null;scanProposal={received:[],unknown:[],outstanding:[],warnings:[],meta:{}};$('deliveryPhoto').value='';$('deliveryPreview').src='';$('deliveryPreview').style.display='none';$('scanStatus').textContent='Aucune photo sélectionnée.';$('analyzeButton').disabled=true;$('scanResult').style.display='none';$('validateDeliveryButton').disabled=true;$('scanRows').innerHTML='<tr><td colspan="4" class="empty">Aucune ligne analysée pour le moment.</td></tr>'}
+function fileToDataURL(file){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(String(r.result||''));r.onerror=reject;r.readAsDataURL(file)})}
+function cleanRef(v=''){return String(v).toUpperCase().replace(/[^A-Z0-9]/g,'')}
+function productRefTokens(p){return String(p.reference||'').split('/').map(cleanRef).filter(Boolean)}
+function findProductByDeliveryRef(ref){const target=cleanRef(ref);if(!target)return null;return products.find(p=>productRefTokens(p).includes(target))||null}
+function normalizeItem(i={}){return{reference:String(i.reference||i.ref||i.product_reference||'').trim(),description:String(i.description||i.product||i.name||'').trim(),quantity:Number(i.quantity??i.qty??i.delivered_quantity??0),unit:String(i.unit||'').trim()}}
+async function prepareAnalysis(){
+ if(!currentDeliveryPhoto||!sb)return;
+ const btn=$('analyzeButton');btn.disabled=true;$('scanStatus').textContent='Analyse du bon en cours…';$('scanResult').style.display='none';
+ try{
+  const dataUrl=await fileToDataURL(currentDeliveryPhoto);
+  const base64=dataUrl.includes(',')?dataUrl.split(',')[1]:dataUrl;
+  const {data,error}=await sb.functions.invoke('scan-delivery-note',{body:{image:dataUrl,image_base64:base64,mime_type:currentDeliveryPhoto.type||'image/jpeg'}});
+  if(error)throw error;
+  const result=(data&&data.data&&typeof data.data==='object')?data.data:(data||{});
+  const receivedRaw=Array.isArray(result.received_items)?result.received_items:(Array.isArray(result.items)?result.items:[]);
+  const outstandingRaw=Array.isArray(result.outstanding_items)?result.outstanding_items:[];
+  const received=[],unknown=[];
+  for(const raw of receivedRaw){
+   const item=normalizeItem(raw);if(!(item.quantity>0))continue;
+   const p=findProductByDeliveryRef(item.reference);
+   if(p)received.push({...item,productId:p.id,productName:p.name,unit:p.unit||item.unit});
+   else unknown.push(item);
+  }
+  const outstanding=outstandingRaw.map(normalizeItem).filter(i=>i.reference||i.description);
+  const warnings=Array.isArray(result.warnings)?result.warnings.map(String):[];
+  scanProposal={received,unknown,outstanding,warnings,meta:{number:result.delivery_note_number||result.delivery_number||'',date:result.delivery_date||result.date||'',supplier:result.supplier||result.vendor||''}};
+  renderScanProposal();
+ }catch(e){
+  console.error(e);
+  $('scanStatus').textContent='Erreur pendant l’analyse : '+(e?.message||'réponse impossible');
+  $('scanResult').style.display='none';
+ }finally{btn.disabled=false}
+}
+function renderScanProposal(){
+ const p=scanProposal,rows=[];
+ p.received.forEach(i=>rows.push(`<tr><td>${esc(i.reference)}</td><td>${esc(i.productName||i.description)}</td><td>+${fmt(i.quantity)}</td><td><span class="badge bgreen">RECONNU</span></td></tr>`));
+ p.unknown.forEach(i=>rows.push(`<tr><td>${esc(i.reference)}</td><td>${esc(i.description||'Produit non reconnu')}</td><td>${fmt(i.quantity)}</td><td><span class="badge borange">À CLASSER</span></td></tr>`));
+ p.outstanding.forEach(i=>rows.push(`<tr><td>${esc(i.reference)}</td><td>${esc(i.description||'Reste à livrer')}</td><td>${fmt(i.quantity)}</td><td><span class="badge bred">NON REÇU</span></td></tr>`));
+ $('scanRows').innerHTML=rows.length?rows.join(''):'<tr><td colspan="4" class="empty">Aucune ligne exploitable détectée.</td></tr>';
+ const bits=[];if(p.meta.number)bits.push('Bon n° '+esc(p.meta.number));if(p.meta.date)bits.push(esc(p.meta.date));if(p.meta.supplier)bits.push(esc(p.meta.supplier));
+ $('scanSummary').innerHTML=`${bits.length?'<strong>'+bits.join(' · ')+'</strong><br>':''}${p.received.length} produit(s) reconnu(s) · ${p.unknown.length} à classer · ${p.outstanding.length} non reçu(s)${p.warnings.length?'<br><br>⚠️ '+p.warnings.map(esc).join('<br>'):''}`;
+ $('scanStatus').textContent=p.received.length?'Analyse terminée. Vérifie les lignes puis valide la livraison.':'Analyse terminée, mais aucun produit existant n’a été reconnu.';
+ $('scanResult').style.display='block';$('validateDeliveryButton').disabled=p.received.length===0;
+}
+async function validateDelivery(){
+ if(!scanProposal.received.length)return;
+ if(!confirm('Ajouter au stock les '+scanProposal.received.length+' produit(s) reconnus ?'))return;
+ const btn=$('validateDeliveryButton');btn.disabled=true;$('scanStatus').textContent='Mise à jour du stock…';
+ try{
+  await reloadCloud();
+  for(const item of scanProposal.received){
+   const p=products.find(x=>x.id===item.productId);if(!p)throw new Error('Produit introuvable : '+item.productName);
+   const qty=Number(item.quantity);const newStock=Number(p.stock)+qty;
+   const {error:ue}=await sb.from('products').update({stock:newStock,updated_at:new Date().toISOString()}).eq('id',p.id);if(ue)throw ue;
+   const reason='Bon de livraison'+(scanProposal.meta.number?' '+scanProposal.meta.number:'');
+   const {error:me}=await sb.from('movements').insert({product_id:p.id,product_name:p.name,movement_type:'in',quantity:qty,stock_after:newStock,unit:p.unit,reason,user_name:currentUser});if(me)throw me;
+  }
+  await reloadCloud();
+  $('scanStatus').textContent='✅ Livraison validée et stock mis à jour.';
+  $('validateDeliveryButton').disabled=true;
+  alert('Livraison ajoutée au stock avec succès.');
+ }catch(e){console.error(e);$('scanStatus').textContent='Erreur pendant la mise à jour : '+(e?.message||'erreur inconnue');btn.disabled=false}
+}
 function renderHome(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('homeCuisineCount').textContent=c+' produit'+(c>1?'s':'');$('homeGeneralCount').textContent=g+' produit'+(g>1?'s':'');const watch=products.filter(p=>level(p)!=='green');$('alerts').innerHTML=watch.length?watch.map(p=>`<div class="product"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}</div></div><div><div class="stock">${fmt(p.stock)} ${esc(p.unit||'')}</div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div></div>`).join(''):`<div class="empty"><strong>Aucun produit à surveiller</strong><span>Les produits orange ou rouge apparaîtront ici.</span></div>`}
 function renderProducts(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('cCuisine').textContent=c+' produit'+(c>1?'s':'');$('cGeneral').textContent=g+' produit'+(g>1?'s':'');$('rCuisine').classList.toggle('active',currentReserve==='Cuisine');$('rGeneral').classList.toggle('active',currentReserve==='Service général');if(selectedProductId){const selected=products.find(p=>p.id===selectedProductId);if(selected){renderSelectedProduct(selected);return}selectedProductId=null}const q=($('search')?.value||'').toLowerCase();const list=reserveProducts(currentReserve).filter(p=>(p.name+' '+(p.reference||'')).toLowerCase().includes(q));$('productList').innerHTML=list.length?`<div class="catalog-grid">${list.map(p=>{const photo=productPhoto(p);return`<button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')"><div class="catalog-photo-wrap">${photo?`<img class="catalog-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="catalog-placeholder" style="display:none">🧴</div>`:`<div class="catalog-placeholder">🧴</div>`}</div><div class="catalog-name">${esc(p.name)}</div>${p.reference?`<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`:''}</button>`}).join('')}</div>`:`<div class="card empty">${currentReserve==='Cuisine'?'Aucun produit dans la Réserve Cuisine.':'La Réserve Service général est vide pour le moment.'}</div>`}
 function openCatalogProduct(id){selectedProductId=id;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
