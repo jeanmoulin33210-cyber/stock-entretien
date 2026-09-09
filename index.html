@@ -175,8 +175,8 @@ function renderOrders(){
 
  const sendBtn=$('sendOrderButton');
  const markBtn=$('markOrderedButton');
- if(sendBtn)sendBtn.disabled=list.length===0;
- if(markBtn)markBtn.disabled=list.length===0;
+ if(sendBtn){sendBtn.disabled=list.length===0;sendBtn.style.display=list.length?'block':'none';}
+ if(markBtn){markBtn.disabled=list.length===0;markBtn.style.display=list.length?'block':'none';}
 }
 function openScanner(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('scanner').classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));window.scrollTo({top:0,behavior:'smooth'})}
 function previewDeliveryPhoto(event){const file=event.target.files?.[0];if(!file)return;currentDeliveryPhoto=file;const preview=$('deliveryPreview');preview.src=URL.createObjectURL(file);preview.style.display='block';$('scanStatus').textContent='Photo prête. Tu peux maintenant lancer l’analyse.';$('analyzeButton').disabled=false;$('scanResult').style.display='none';$('validateDeliveryButton').disabled=true}
