@@ -49,6 +49,15 @@ dialog{border:0;border-radius:20px;padding:0;width:calc(100% - 24px);max-width:5
 body:has(#home.active){background:linear-gradient(rgba(255,255,255,.16),rgba(246,252,249,.68)),url("fond-accueil.jpg") center top/cover fixed no-repeat}body:has(#home.active) header{background:rgba(255,255,255,.78);backdrop-filter:blur(12px)}#home{position:relative;padding-top:188px}.home-visual{position:absolute;top:0;left:-14px;right:-14px;height:205px;border-radius:0 0 28px 28px;background:linear-gradient(to bottom,rgba(255,255,255,0) 50%,rgba(246,252,249,.90) 100%),url("fond-accueil.jpg") left center/cover no-repeat;z-index:-1}#home::before{content:"Un établissement\A propre et serein\A au quotidien !";white-space:pre;position:absolute;top:34px;right:18px;width:48%;text-align:center;font-family:"Segoe Print","Comic Sans MS",cursive;font-size:21px;line-height:1.15;font-weight:700;font-style:italic;color:#153d65;transform:rotate(-4deg);text-shadow:0 1px 0 white}#home .section h2{font-size:23px;font-weight:900;color:#13375f}#home .reserve-card{min-height:218px;border-radius:27px;padding:29px 12px 28px;box-shadow:0 12px 30px rgba(44,83,69,.11)}#home .reserve-card:nth-child(1){border:2px solid #efbe83;background:linear-gradient(160deg,#fff,#fff3e4)}#home .reserve-card:nth-child(2){border:2px solid #8fd6e8;background:linear-gradient(160deg,#fff,#ecf9fd)}#home .reserve-icon{font-size:58px}#home .reserve-count{font-size:16px;font-weight:800}#home .quick{gap:14px}#home .quick .btn{min-height:100px;border-radius:23px;padding:18px 20px;font-size:21px;display:flex;flex-direction:column;justify-content:center}#home .quick .btn small{display:block;font-size:14px;margin-top:3px;opacity:.85}#home .quick .good{background:linear-gradient(135deg,#c8f5d8,#9ce9bc);color:#087145}#home .quick .secondary{background:linear-gradient(135deg,#cdeafe,#a8dcfa);color:#143e68}#home #alerts{background:rgba(255,255,255,.94);border-radius:27px;box-shadow:0 13px 30px rgba(39,81,68,.10)}#home #alerts .empty{min-height:170px;display:flex;flex-direction:column;justify-content:center;align-items:center}
 @media(max-width:520px){#home{padding-top:178px}#home::before{top:36px;right:12px;font-size:18px;width:50%}.home-visual{height:195px}#home .reserve-card{min-height:210px}}
 </style>
+
+<style>
+/* Correction affichage accueil : évite le chevauchement du slogan */
+#home::before{
+  display:none !important;
+  content:none !important;
+}
+</style>
+
 </head>
 <body>
 <div id="loginPage"><div class="loginContainer">
