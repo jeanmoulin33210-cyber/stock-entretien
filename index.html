@@ -255,15 +255,47 @@ async function validateInventory(){
  const list=reserveProducts(currentInventoryReserve);
  const counted=list.map(p=>({p,input:$('inv_'+p.id)})).filter(x=>x.input&&x.input.value!=='');
  if(!counted.length){alert('Saisissez au moins une quantité comptée.');return}
- const changes=counted.map(x=>({p:x.p,real:Number(x.input.value),diff:Number(x.input.value)-Number(x.p.stock)})).filter(x=>Math.abs(x.diff)>0.000001);
- if(!changes.length){alert('Inventaire contrôlé : aucun écart de stock.');return}
- if(!confirm('Valider '+changes.length+' correction(s) de stock pour la réserve '+currentInventoryReserve+' ?'))return;
+
+ const inventoryLines=counted.map(x=>({
+  p:x.p,
+  theoretical:Number(x.p.stock),
+  real:Number(x.input.value),
+  diff:Number(x.input.value)-Number(x.p.stock)
+ }));
+ const changes=inventoryLines.filter(x=>Math.abs(x.diff)>0.000001);
+
+ if(!confirm('Valider l’inventaire de '+counted.length+' produit(s) pour la réserve '+currentInventoryReserve+' ?'))return;
  const btn=$('validateInventoryButton');btn.disabled=true;
+
  try{
+  /* 1. Création de la fiche d’inventaire */
+  const {data:inventory,error:ie}=await sb.from('inventories').insert({
+   reserve:currentInventoryReserve,
+   user_name:currentUser
+  }).select('id').single();
+  if(ie)throw ie;
+
+  /* 2. Enregistrement de toutes les lignes comptées, même sans écart */
+  const linesPayload=inventoryLines.map(x=>({
+   inventory_id:inventory.id,
+   product_id:x.p.id,
+   product_name:x.p.name,
+   reference:x.p.reference||null,
+   unit:x.p.unit||null,
+   theoretical_stock:x.theoretical,
+   counted_stock:x.real,
+   difference:x.diff
+  }));
+
+  const {error:ile}=await sb.from('inventory_lines').insert(linesPayload);
+  if(ile)throw ile;
+
+  /* 3. Correction du stock uniquement lorsqu’il existe un écart */
   for(const x of changes){
    const p=x.p,newStock=x.real,diff=x.diff,type=diff>0?'in':'out',qty=Math.abs(diff);
    const {error:ue}=await sb.from('products').update({stock:newStock,updated_at:new Date().toISOString()}).eq('id',p.id);
    if(ue)throw ue;
+
    const {error:me}=await sb.from('movements').insert({
     product_id:p.id,
     product_name:p.name,
@@ -276,9 +308,10 @@ async function validateInventory(){
    });
    if(me)throw me;
   }
+
   await reloadCloud();
   renderInventory();
-  alert('✅ Inventaire validé. Les écarts ont été enregistrés dans l’historique.');
+  alert('✅ Inventaire enregistré : '+counted.length+' produit(s) contrôlé(s), '+changes.length+' écart(s) corrigé(s).');
  }catch(e){
   console.error(e);
   alert('Erreur pendant l’inventaire : '+(e?.message||'erreur inconnue'));
@@ -382,7 +415,3 @@ restoreSession();connectCloud();
 </script>
 </body>
 </html>
-index.html
-HTML
-
-
