@@ -132,7 +132,28 @@ const fmt=n=>Number(n).toLocaleString('fr-FR',{maximumFractionDigits:2});
 const isAdmin=()=>currentUser===ADMIN;
 function reserveOf(p){return p.category==='Service général'?'Service général':'Cuisine'}
 function reserveProducts(name){return products.filter(p=>reserveOf(p)===name)}
-function productPhoto(p){if(p.photo_url&&String(p.photo_url).trim()!=='')return String(p.photo_url).trim();if(String(p.reference||'').trim()==='771051')return'5829.jpg';return''}
+function productPhoto(p){
+ const ref=String(p.reference||'').trim();
+ const map={
+  '1005264 / 771590':'keo-sols.jpg',
+  '771707 / 771707B':'supracid.jpg',
+  '120015 / 19280':'xon-forte.jpg',
+  '772256':'sac-noir-30l.jpg',
+  '025431':'sac-transparent-110l.jpg',
+  '774562':'gants-nitrile.jpg',
+  '771579':'keo-sanitaire.jpg',
+  '771584':'keo-vaisselle.jpg',
+  '771306':'legubact.jpg',
+  '148883 / 20552':'citrus.jpg',
+  '774458':'geobag-lavage.jpg',
+  '774459':'geobag-rincage.jpg',
+  '771051':'5829.jpg',
+  '774392':'nevea.jpg',
+  '772504 / 32250':'essuie-mains.jpg'
+ };
+ if(p.photo_url&&String(p.photo_url).trim()!=='')return String(p.photo_url).trim();
+ return map[ref]||'';
+}
 function level(p){if(Number(p.stock)<=Number(p.red_threshold))return'red';if(Number(p.stock)<=Number(p.orange_threshold))return'orange';return'green'}
 function levelLabel(l){return l==='red'?'ROUGE':l==='orange'?'ORANGE':'OK'}
 function levelClass(l){return l==='red'?'bred':l==='orange'?'borange':'bgreen'}
