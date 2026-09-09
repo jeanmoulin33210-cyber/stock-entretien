@@ -932,5 +932,92 @@ document.addEventListener('click',function(){
  },80);
 });
 </script>
+
+<script>
+(function(){
+  function escH(v){
+    return String(v==null?'':v).replace(/[&<>"']/g,function(c){
+      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
+    });
+  }
+
+  function historyKindH(m){
+    const t=String(m.movement_type||'').toLowerCase();
+    const r=String(m.reason||'').toLowerCase();
+    if(r.includes('bon de livraison')) return ['🚚','Livraison'];
+    if(r.includes('inventaire')) return ['📋','Correction inventaire'];
+    if(t==='in') return ['➕','Entrée'];
+    if(t==='out') return ['➖','Sortie'];
+    return ['🕘','Mouvement'];
+  }
+
+  window.showSelectedProductHistory=function(){
+    if(!window.selectedProductId && typeof selectedProductId==='undefined') return;
+    const sid=(typeof selectedProductId!=='undefined')?selectedProductId:window.selectedProductId;
+    const p=(window.products||products||[]).find(x=>String(x.id)===String(sid));
+    if(!p) return;
+
+    // Find the card containing the action buttons of the currently visible product.
+    const buttons=[...document.querySelectorAll('button')];
+    const actionBtn=buttons.find(b=>/^(Fiche|\+ Entrée|− Sortie|Modifier|Supprimer)$/i.test(b.textContent.trim()));
+    if(!actionBtn) return;
+    const card=actionBtn.closest('.card') || actionBtn.parentElement?.parentElement || actionBtn.parentElement;
+    if(!card) return;
+
+    let panel=card.querySelector('.product-history-inline');
+    if(!panel){
+      panel=document.createElement('div');
+      panel.className='product-history-inline';
+      card.appendChild(panel);
+    }
+
+    const rows=(window.historyData||historyData||[])
+      .filter(m=>String(m.product_id||'')===String(p.id||'') ||
+        (m.product_name && p.name && String(m.product_name).trim()===String(p.name).trim()))
+      .slice(0,8);
+
+    let body='';
+    if(!rows.length){
+      body='<div class="phi-empty">Aucun mouvement enregistré pour ce produit.</div>';
+    }else{
+      body=rows.map(m=>{
+        const k=historyKindH(m);
+        const d=m.created_at?new Date(m.created_at):null;
+        const date=d&&!Number.isNaN(d.getTime())
+          ? d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+          : '';
+        const qty=Number(m.quantity||0);
+        const sign=String(m.movement_type||'').toLowerCase()==='out'?'−':'+';
+        return `<div class="phi-row">
+          <div class="phi-icon">${k[0]}</div>
+          <div class="phi-main"><b>${k[1]}</b><small>${escH(date)}${m.user_name?' · '+escH(m.user_name):''}${m.reason?' · '+escH(m.reason):''}</small></div>
+          <div class="phi-qty">${sign}${qty} ${escH(m.unit||p.unit||'')}</div>
+        </div>`;
+      }).join('');
+    }
+    panel.innerHTML='<h3>🕘 Historique du produit</h3>'+body;
+  };
+
+  document.addEventListener('click',function(){
+    setTimeout(window.showSelectedProductHistory,120);
+  });
+  setTimeout(window.showSelectedProductHistory,250);
+})();
+</script>
+<style>
+.product-history-inline{
+ margin-top:16px;padding:15px;border-top:1px solid #dce8e3;
+ background:rgba(248,252,250,.82);border-radius:14px
+}
+.product-history-inline h3{margin:0 0 10px;color:#12385c;font-size:17px}
+.phi-row{display:grid;grid-template-columns:36px 1fr auto;gap:9px;align-items:center;padding:9px 0;border-bottom:1px solid #e2ebe7}
+.phi-row:last-child{border-bottom:0}
+.phi-icon{font-size:18px}
+.phi-main b{display:block;color:#173a59;font-size:13px}
+.phi-main small{display:block;color:#6d7d87;font-size:10px;margin-top:2px}
+.phi-qty{font-weight:900;color:#173a59;font-size:13px;white-space:nowrap}
+.phi-empty{padding:8px 0;color:#71808a;font-size:12px}
+</style>
+
 </body>
 </html>
