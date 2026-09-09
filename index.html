@@ -123,6 +123,7 @@ const SUPABASE_KEY='sb_publishable_63ZJtw7uGovMEiZgX8V8zg_02TdkDGY';
 const USERS={Cedric:"Kilian11+",Delphine:"Service-général",Gestionnaire:"Tork1",Proviseur:"Jean-Moulin1",Autre:"Jean-Moulin2"};
 const ADMIN='Cedric',KEMAIL='stock_shared_email_v1',KSESSION='stock_shared_session_v1';
 let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine';
+let reloadSeq=0;
 let scanProposal={received:[],unknown:[],outstanding:[],warnings:[],meta:{}};
 let emailCfg=JSON.parse(localStorage.getItem(KEMAIL)||'{}');
 const $=id=>document.getElementById(id);
@@ -276,13 +277,21 @@ async function validateInventory(){
   });
   if(error)throw error;
 
-  // La fonction Supabase est transactionnelle : si elle répond sans erreur,
-  // l’inventaire et les nouveaux stocks sont déjà enregistrés.
-  // On recharge ensuite l’affichage sans refaire un contrôle susceptible
-  // de lire momentanément l’ancienne valeur dans le navigateur.
-  await new Promise(resolve=>setTimeout(resolve,350));
+  // Mise à jour immédiate de l'affichage local avec les quantités comptées.
+  // Cela évite qu'un ancien rechargement Realtime remette momentanément
+  // une valeur précédente à l'écran.
+  for(const line of inventoryLines){
+   const localProduct=products.find(p=>p.id===line.product_id);
+   if(localProduct)localProduct.stock=line.counted_stock;
+  }
+  renderAll();
+  renderInventory();
+
+  // Puis synchronisation propre avec Supabase.
+  await new Promise(resolve=>setTimeout(resolve,500));
   await reloadCloud();
   renderInventory();
+
   alert("✅ Inventaire enregistré : "+counted.length+" produit(s) contrôlé(s), "+changes.length+" écart(s) corrigé(s). Le stock compté est maintenant le stock réel.");
  }catch(e){
   console.error(e);
@@ -373,7 +382,17 @@ function showProductDetails(id){const p=products.find(x=>x.id===id);if(!p)return
 function renderHistory(){$('historyList').innerHTML=historyData.length?historyData.map(h=>`<div class="history-item"><div class="history-top"><strong>${esc(h.product_name)}</strong><span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}</span></div><div class="history-sub">${new Date(h.created_at).toLocaleString('fr-FR')} · stock après : ${fmt(h.stock_after)} ${esc(h.unit||'')}${h.reason?' · '+esc(h.reason):''}${h.user_name?' · '+esc(h.user_name):''}</div></div>`).join(''):`<div class="empty">Aucun mouvement.</div>`}
 function loadSettings(){$('emailTo').value=emailCfg.to||'';$('emailPublic').value=emailCfg.publicKey||'';$('emailService').value=emailCfg.serviceId||'';$('emailTemplate').value=emailCfg.templateId||'';$('moveUser').value=currentUser||''}
 async function connectCloud(){try{setSync('busy','Connexion…');sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);await reloadCloud();sb.channel('stock-live').on('postgres_changes',{event:'*',schema:'public',table:'products'},()=>reloadCloud()).on('postgres_changes',{event:'*',schema:'public',table:'movements'},()=>reloadCloud()).subscribe();setSync('ok','Synchronisé')}catch(e){console.error(e);setSync('err','Erreur de connexion')}}
-async function reloadCloud(){const{data:p,error:pe}=await sb.from('products').select('*').order('name');if(pe)throw pe;const{data:h,error:he}=await sb.from('movements').select('*').order('created_at',{ascending:false}).limit(250);if(he)throw he;products=p||[];historyData=h||[];renderAll()}
+async function reloadCloud(){
+ const seq=++reloadSeq;
+ const{data:p,error:pe}=await sb.from('products').select('*').order('name');
+ if(pe)throw pe;
+ const{data:h,error:he}=await sb.from('movements').select('*').order('created_at',{ascending:false}).limit(250);
+ if(he)throw he;
+ if(seq!==reloadSeq)return;
+ products=p||[];
+ historyData=h||[];
+ renderAll();
+}
 function openProduct(){if(!isAdmin())return;$('productTitle').textContent='Ajouter un produit';$('productId').value='';$('pName').value='';$('pRef').value='';$('pCat').value=currentReserve;$('pUnit').value='bidon';$('pStock').value=0;$('pOrange').value=5;$('pRed').value=2;$('pDesired').value=0;productDialog.showModal()}
 function editProduct(id){if(!isAdmin())return;const p=products.find(x=>x.id===id);if(!p)return;$('productTitle').textContent='Modifier le produit';$('productId').value=p.id;$('pName').value=p.name||'';$('pRef').value=p.reference||'';$('pCat').value=reserveOf(p);$('pUnit').value=p.unit||'unité';$('pStock').value=p.stock||0;$('pOrange').value=p.orange_threshold||0;$('pRed').value=p.red_threshold||0;$('pDesired').value=p.desired_stock||0;productDialog.showModal()}
 async function saveProduct(e){e.preventDefault();if(!isAdmin())return;const id=$('productId').value;const payload={name:$('pName').value.trim(),reference:$('pRef').value.trim()||null,category:$('pCat').value,unit:$('pUnit').value,stock:Number($('pStock').value||0),orange_threshold:Number($('pOrange').value||0),red_threshold:Number($('pRed').value||0),desired_stock:Number($('pDesired').value||0),updated_at:new Date().toISOString()};const q=id?sb.from('products').update(payload).eq('id',id):sb.from('products').insert(payload);const{error}=await q;if(error){alert('Erreur : '+error.message);return}currentReserve=$('pCat').value;productDialog.close();await reloadCloud()}
