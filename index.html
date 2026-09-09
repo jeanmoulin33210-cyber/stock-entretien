@@ -379,6 +379,37 @@ main .card,
 }
 </style>
 
+
+<style>
+/* ===== Historique intégré directement à la fiche produit ===== */
+.product-history-box{
+  margin-top:16px;
+  padding:14px;
+  border-top:1px solid #dce8e3;
+  background:rgba(248,252,250,.88);
+  border-radius:14px;
+}
+.product-history-box h3{
+  margin:0 0 10px;
+  color:#12385c;
+  font-size:17px;
+}
+.product-history-row{
+  display:grid;
+  grid-template-columns:34px 1fr auto;
+  gap:9px;
+  align-items:center;
+  padding:9px 0;
+  border-bottom:1px solid #e2ebe7;
+}
+.product-history-row:last-child{border-bottom:0}
+.product-history-icon{font-size:18px}
+.product-history-main b{display:block;color:#173a59;font-size:13px}
+.product-history-main small{display:block;color:#6d7d87;font-size:10px;margin-top:2px}
+.product-history-qty{font-weight:900;color:#173a59;font-size:13px;white-space:nowrap}
+.product-history-empty{padding:8px 0;color:#71808a;font-size:12px}
+</style>
+
 </head>
 <body>
 <div id="loginPage"><div class="loginContainer">
@@ -828,9 +859,66 @@ async function validateDelivery(){
  }catch(e){console.error(e);$('scanStatus').textContent='Erreur pendant la mise à jour : '+(e?.message||'erreur inconnue');btn.disabled=false}
 }
 function renderHome(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('homeCuisineCount').textContent=c+' produit'+(c>1?'s':'');$('homeGeneralCount').textContent=g+' produit'+(g>1?'s':'');const watch=products.filter(p=>level(p)!=='green');$('alerts').innerHTML=watch.length?watch.map(p=>`<div class="product"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}</div></div><div><div class="stock">${fmt(p.stock)} ${esc(p.unit||'')}</div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div></div>`).join(''):`<div class="empty"><strong>Aucun produit à surveiller</strong><span>Les produits orange ou rouge apparaîtront ici.</span></div>`;const orders=orderProducts();$('orderHomeCount').textContent=orders.length?(orders.length+' produit'+(orders.length>1?'s':'')+' à commander'):'Aucun produit à commander'}
+
+function productHistoryHtml(p){
+ const rows=historyData
+   .filter(m=>String(m.product_id||'')===String(p.id||'') ||
+      (m.product_name && p.name && String(m.product_name).trim()===String(p.name).trim()))
+   .slice(0,8);
+
+ const rowHtml=rows.length ? rows.map(m=>{
+   const t=String(m.movement_type||'').toLowerCase();
+   const r=String(m.reason||'').toLowerCase();
+   let icon='🕘',label='Mouvement';
+   if(r.includes('bon de livraison')){icon='🚚';label='Livraison'}
+   else if(r.includes('inventaire')){icon='📋';label='Correction inventaire'}
+   else if(t==='in'){icon='➕';label='Entrée'}
+   else if(t==='out'){icon='➖';label='Sortie'}
+
+   const d=m.created_at?new Date(m.created_at):null;
+   const date=d&&!Number.isNaN(d.getTime())
+     ? d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
+     : '';
+   const qty=Number(m.quantity||0);
+   const sign=t==='out'?'−':'+';
+
+   return `<div class="product-history-row">
+     <div class="product-history-icon">${icon}</div>
+     <div class="product-history-main">
+       <b>${label}</b>
+       <small>${esc(date)}${m.user_name?' · '+esc(m.user_name):''}${m.reason?' · '+esc(m.reason):''}</small>
+     </div>
+     <div class="product-history-qty">${sign}${fmt(qty)} ${esc(m.unit||p.unit||'')}</div>
+   </div>`;
+ }).join('') : '<div class="product-history-empty">Aucun mouvement enregistré pour ce produit.</div>';
+
+ return `<div class="product-history-box"><h3>🕘 Historique du produit</h3>${rowHtml}</div>`;
+}
+
 function renderProducts(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('cCuisine').textContent=c+' produit'+(c>1?'s':'');$('cGeneral').textContent=g+' produit'+(g>1?'s':'');$('rCuisine').classList.toggle('active',currentReserve==='Cuisine');$('rGeneral').classList.toggle('active',currentReserve==='Service général');if(selectedProductId){const selected=products.find(p=>p.id===selectedProductId);if(selected){renderSelectedProduct(selected);return}selectedProductId=null}const q=($('search')?.value||'').toLowerCase();const list=reserveProducts(currentReserve).filter(p=>(p.name+' '+(p.reference||'')).toLowerCase().includes(q));$('productList').innerHTML=list.length?`<div class="catalog-grid">${list.map(p=>{const photo=productPhoto(p);return`<button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')"><div class="catalog-photo-wrap">${photo?`<img class="catalog-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="catalog-placeholder" style="display:none">🧴</div>`:`<div class="catalog-placeholder">🧴</div>`}</div><div class="catalog-name">${esc(p.name)}</div>${p.reference?`<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`:''}</button>`}).join('')}</div>`:`<div class="card empty">${currentReserve==='Cuisine'?'Aucun produit dans la Réserve Cuisine.':'La Réserve Service général est vide pour le moment.'}</div>`}
 function openCatalogProduct(id){selectedProductId=id;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
-function renderSelectedProduct(p){const photo=productPhoto(p);$('productList').innerHTML=`<div class="product-page"><div><button class="btn secondary" onclick="backToCatalog()">← Retour aux produits</button></div><div class="product-page-photo-wrap">${photo?`<img class="product-page-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="product-page-placeholder" style="display:none">🧴</div>`:`<div class="product-page-placeholder">🧴</div>`}</div><div class="card"><div class="product-page-name">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${p.reference?' · Réf. '+esc(p.reference):''}</div><div class="product-page-stock" style="margin-top:14px"><div><div class="meta">Stock actuel</div><div style="font-size:27px;font-weight:900">${fmt(p.stock)} ${esc(p.unit||'')}</div></div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div><div class="product-actions" style="margin-top:14px"><button class="mini infoBtn" onclick="showProductDetails('${p.id}')">📄 Fiche</button><button class="mini good" onclick="openMoveFor('${p.id}','in')">+ Entrée</button><button class="mini secondary" onclick="openMoveFor('${p.id}','out')">− Sortie</button>${isAdmin()?`<button class="mini secondary" onclick="editProduct('${p.id}')">Modifier</button><button class="mini danger" onclick="deleteProduct('${p.id}')">Supprimer</button>`:''}</div></div></div>`}
+function renderSelectedProduct(p){
+ const photo=productPhoto(p);
+ $('productList').innerHTML=`<div class="product-page">
+   <div><button class="btn secondary" onclick="backToCatalog()">← Retour aux produits</button></div>
+   <div class="product-page-photo-wrap">${photo?`<img class="product-page-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="product-page-placeholder" style="display:none">🧴</div>`:`<div class="product-page-placeholder">🧴</div>`}</div>
+   <div class="card">
+     <div class="product-page-name">${esc(p.name)}</div>
+     <div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${p.reference?' · Réf. '+esc(p.reference):''}</div>
+     <div class="product-page-stock" style="margin-top:14px">
+       <div><div class="meta">Stock actuel</div><div style="font-size:27px;font-weight:900">${fmt(p.stock)} ${esc(p.unit||'')}</div></div>
+       <span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span>
+     </div>
+     <div class="product-actions" style="margin-top:14px">
+       <button class="mini infoBtn" onclick="showProductDetails('${p.id}')">📄 Fiche</button>
+       <button class="mini good" onclick="openMoveFor('${p.id}','in')">+ Entrée</button>
+       <button class="mini secondary" onclick="openMoveFor('${p.id}','out')">− Sortie</button>
+       ${isAdmin()?`<button class="mini secondary" onclick="editProduct('${p.id}')">Modifier</button><button class="mini danger" onclick="deleteProduct('${p.id}')">Supprimer</button>`:''}
+     </div>
+     ${productHistoryHtml(p)}
+   </div>
+ </div>`;
+}
 function backToCatalog(){selectedProductId=null;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
 function showProductDetails(id){const p=products.find(x=>x.id===id);if(!p)return;const has=v=>v!==null&&v!==undefined&&String(v).trim()!=='';const block=(title,value)=>has(value)?`<div class="detail-block"><strong>${title}</strong><div class="detail-text">${esc(value)}</div></div>`:'';const price=has(p.price_ht)?`${Number(p.price_ht).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} € HT`:'';const photoUrl=productPhoto(p);const photo=photoUrl?`<div class="detail-photo-wrap"><img class="detail-photo" src="${esc(photoUrl)}" alt="Photo ${esc(p.name)}"></div>`:'';const links=[];if(has(p.technical_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.technical_sheet_url)}" target="_blank" rel="noopener">📘 Fiche technique</a>`);if(has(p.safety_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.safety_sheet_url)}" target="_blank" rel="noopener">🛡️ Fiche de sécurité (FDS)</a>`);$('detailContent').innerHTML=`${photo}<div class="detail-head"><div><h3 style="margin:0">${esc(p.name)}</h3><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${has(p.reference)?' · Réf. '+esc(p.reference):''}</div></div>${price?`<div class="detail-price">${price}</div>`:''}</div>${block('Conditionnement',p.packaging)}${block('Description',p.description)}${block('Utilisation',p.usage_info)}${block('Dosage',p.dosage)}${block('Sécurité',p.safety_info)}<div class="detail-block"><strong>Stock</strong><div class="detail-text">${fmt(p.stock)} ${esc(p.unit||'')} · Seuil orange : ${fmt(p.orange_threshold)} · Seuil rouge/commande : ${fmt(p.red_threshold)}${Number(p.desired_stock)>0?' · Stock souhaité : '+fmt(p.desired_stock):''}</div></div>${links.length?`<div class="detail-links">${links.join('')}</div>`:''}`;detailDialog.showModal()}
 function renderHistory(){$('historyList').innerHTML=historyData.length?historyData.map(h=>`<div class="history-item"><div class="history-top"><strong>${esc(h.product_name)}</strong><span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}</span></div><div class="history-sub">${new Date(h.created_at).toLocaleString('fr-FR')} · stock après : ${fmt(h.stock_after)} ${esc(h.unit||'')}${h.reason?' · '+esc(h.reason):''}${h.user_name?' · '+esc(h.user_name):''}</div></div>`).join(''):`<div class="empty">Aucun mouvement.</div>`}
@@ -919,105 +1007,6 @@ function saveEmailSettings(){if(!isAdmin())return;emailCfg={to:$('emailTo').valu
 function backup(){if(!isAdmin())return;const blob=new Blob([JSON.stringify({exported_at:new Date().toISOString(),products,history:historyData},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sauvegarde-stock-entretien.json';a.click();URL.revokeObjectURL(a.href)}
 restoreSession();connectCloud();
 </script>
-
-<script>
-document.addEventListener('click',function(){
- setTimeout(function(){
-   if(!selectedProductId)return;
-   const p=products.find(x=>String(x.id)===String(selectedProductId));
-   if(p){
-     if(typeof ensureProductHistoryBox==='function')ensureProductHistoryBox();
-     renderProductHistory(p);
-   }
- },80);
-});
-</script>
-
-<script>
-(function(){
-  function escH(v){
-    return String(v==null?'':v).replace(/[&<>"']/g,function(c){
-      return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c];
-    });
-  }
-
-  function historyKindH(m){
-    const t=String(m.movement_type||'').toLowerCase();
-    const r=String(m.reason||'').toLowerCase();
-    if(r.includes('bon de livraison')) return ['🚚','Livraison'];
-    if(r.includes('inventaire')) return ['📋','Correction inventaire'];
-    if(t==='in') return ['➕','Entrée'];
-    if(t==='out') return ['➖','Sortie'];
-    return ['🕘','Mouvement'];
-  }
-
-  window.showSelectedProductHistory=function(){
-    if(!window.selectedProductId && typeof selectedProductId==='undefined') return;
-    const sid=(typeof selectedProductId!=='undefined')?selectedProductId:window.selectedProductId;
-    const p=(window.products||products||[]).find(x=>String(x.id)===String(sid));
-    if(!p) return;
-
-    // Find the card containing the action buttons of the currently visible product.
-    const buttons=[...document.querySelectorAll('button')];
-    const actionBtn=buttons.find(b=>/^(Fiche|\+ Entrée|− Sortie|Modifier|Supprimer)$/i.test(b.textContent.trim()));
-    if(!actionBtn) return;
-    const card=actionBtn.closest('.card') || actionBtn.parentElement?.parentElement || actionBtn.parentElement;
-    if(!card) return;
-
-    let panel=card.querySelector('.product-history-inline');
-    if(!panel){
-      panel=document.createElement('div');
-      panel.className='product-history-inline';
-      card.appendChild(panel);
-    }
-
-    const rows=(window.historyData||historyData||[])
-      .filter(m=>String(m.product_id||'')===String(p.id||'') ||
-        (m.product_name && p.name && String(m.product_name).trim()===String(p.name).trim()))
-      .slice(0,8);
-
-    let body='';
-    if(!rows.length){
-      body='<div class="phi-empty">Aucun mouvement enregistré pour ce produit.</div>';
-    }else{
-      body=rows.map(m=>{
-        const k=historyKindH(m);
-        const d=m.created_at?new Date(m.created_at):null;
-        const date=d&&!Number.isNaN(d.getTime())
-          ? d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'})
-          : '';
-        const qty=Number(m.quantity||0);
-        const sign=String(m.movement_type||'').toLowerCase()==='out'?'−':'+';
-        return `<div class="phi-row">
-          <div class="phi-icon">${k[0]}</div>
-          <div class="phi-main"><b>${k[1]}</b><small>${escH(date)}${m.user_name?' · '+escH(m.user_name):''}${m.reason?' · '+escH(m.reason):''}</small></div>
-          <div class="phi-qty">${sign}${qty} ${escH(m.unit||p.unit||'')}</div>
-        </div>`;
-      }).join('');
-    }
-    panel.innerHTML='<h3>🕘 Historique du produit</h3>'+body;
-  };
-
-  document.addEventListener('click',function(){
-    setTimeout(window.showSelectedProductHistory,120);
-  });
-  setTimeout(window.showSelectedProductHistory,250);
-})();
-</script>
-<style>
-.product-history-inline{
- margin-top:16px;padding:15px;border-top:1px solid #dce8e3;
- background:rgba(248,252,250,.82);border-radius:14px
-}
-.product-history-inline h3{margin:0 0 10px;color:#12385c;font-size:17px}
-.phi-row{display:grid;grid-template-columns:36px 1fr auto;gap:9px;align-items:center;padding:9px 0;border-bottom:1px solid #e2ebe7}
-.phi-row:last-child{border-bottom:0}
-.phi-icon{font-size:18px}
-.phi-main b{display:block;color:#173a59;font-size:13px}
-.phi-main small{display:block;color:#6d7d87;font-size:10px;margin-top:2px}
-.phi-qty{font-weight:900;color:#173a59;font-size:13px;white-space:nowrap}
-.phi-empty{padding:8px 0;color:#71808a;font-size:12px}
-</style>
 
 </body>
 </html>
