@@ -58,6 +58,22 @@ body:has(#home.active){background:linear-gradient(rgba(255,255,255,.16),rgba(246
 }
 </style>
 
+
+<style>
+/* Correction définitive du haut de l'accueil :
+   on retire la petite bannière qui répétait l'image et son texte. */
+#home .home-visual{
+  display:none !important;
+}
+#home{
+  padding-top:18px !important;
+}
+#home::before{
+  display:none !important;
+  content:none !important;
+}
+</style>
+
 </head>
 <body>
 <div id="loginPage"><div class="loginContainer">
