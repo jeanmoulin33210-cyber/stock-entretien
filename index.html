@@ -860,22 +860,24 @@ async function validateDelivery(){
 }
 function renderHome(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('homeCuisineCount').textContent=c+' produit'+(c>1?'s':'');$('homeGeneralCount').textContent=g+' produit'+(g>1?'s':'');const watch=products.filter(p=>level(p)!=='green');$('alerts').innerHTML=watch.length?watch.map(p=>`<div class="product"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}</div></div><div><div class="stock">${fmt(p.stock)} ${esc(p.unit||'')}</div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div></div>`).join(''):`<div class="empty"><strong>Aucun produit à surveiller</strong><span>Les produits orange ou rouge apparaîtront ici.</span></div>`;const orders=orderProducts();$('orderHomeCount').textContent=orders.length?(orders.length+' produit'+(orders.length>1?'s':'')+' à commander'):'Aucun produit à commander'}
 
-function productHistoryHtml(p){
- const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
- const pRefs=String(p.reference||'').split('/').map(norm).filter(Boolean);
- const pName=norm(p.name);
- const rows=historyData
-   .filter(m=>{
-      if(String(m.product_id||'')===String(p.id||'')) return true;
-      const mName=norm(m.product_name);
-      if(mName && pName && (mName===pName || mName.includes(pName) || pName.includes(mName))) return true;
-      const hay=norm([m.product_name,m.reference,m.product_reference,m.reason].filter(Boolean).join(' '));
-      if(pRefs.some(ref=>ref && hay.includes(ref))) return true;
-      return false;
-   })
-   .slice(0,8);
 
- const rowHtml=rows.length ? rows.map(m=>{
+function productHistoryHtml(p){
+ return `<div class="product-history-box">
+   <h3>🕘 Historique du produit</h3>
+   <div id="productHistoryRows"><div class="product-history-empty">Chargement de l'historique…</div></div>
+ </div>`;
+}
+
+function renderHistoryRowsForProduct(p,rows){
+ const box=$('productHistoryRows');
+ if(!box)return;
+
+ if(!rows||!rows.length){
+   box.innerHTML='<div class="product-history-empty">Aucun mouvement enregistré pour ce produit.</div>';
+   return;
+ }
+
+ box.innerHTML=rows.map(m=>{
    const t=String(m.movement_type||'').toLowerCase();
    const r=String(m.reason||'').toLowerCase();
    let icon='🕘',label='Mouvement';
@@ -899,9 +901,38 @@ function productHistoryHtml(p){
      </div>
      <div class="product-history-qty">${sign}${fmt(qty)} ${esc(m.unit||p.unit||'')}</div>
    </div>`;
- }).join('') : '<div class="product-history-empty">Aucun mouvement enregistré pour ce produit.</div>';
+ }).join('');
+}
 
- return `<div class="product-history-box"><h3>🕘 Historique du produit</h3>${rowHtml}</div>`;
+async function loadProductHistoryDirect(p){
+ try{
+   // 1) Source principale : l'ID exact du produit, sans dépendre de la limite des 250 mouvements globaux.
+   let {data:rows,error}=await sb
+     .from('movements')
+     .select('*')
+     .eq('product_id',p.id)
+     .order('created_at',{ascending:false})
+     .limit(20);
+
+   if(error)throw error;
+
+   // 2) Compatibilité avec d'anciens mouvements éventuellement enregistrés seulement avec le nom.
+   if((!rows||!rows.length) && p.name){
+     const res=await sb
+       .from('movements')
+       .select('*')
+       .eq('product_name',p.name)
+       .order('created_at',{ascending:false})
+       .limit(20);
+     if(!res.error)rows=res.data||[];
+   }
+
+   renderHistoryRowsForProduct(p,rows||[]);
+ }catch(e){
+   console.error('Historique produit :',e);
+   const box=$('productHistoryRows');
+   if(box)box.innerHTML='<div class="product-history-empty">Impossible de charger l’historique pour le moment.</div>';
+ }
 }
 
 function renderProducts(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('cCuisine').textContent=c+' produit'+(c>1?'s':'');$('cGeneral').textContent=g+' produit'+(g>1?'s':'');$('rCuisine').classList.toggle('active',currentReserve==='Cuisine');$('rGeneral').classList.toggle('active',currentReserve==='Service général');if(selectedProductId){const selected=products.find(p=>p.id===selectedProductId);if(selected){renderSelectedProduct(selected);return}selectedProductId=null}const q=($('search')?.value||'').toLowerCase();const list=reserveProducts(currentReserve).filter(p=>(p.name+' '+(p.reference||'')).toLowerCase().includes(q));$('productList').innerHTML=list.length?`<div class="catalog-grid">${list.map(p=>{const photo=productPhoto(p);return`<button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')"><div class="catalog-photo-wrap">${photo?`<img class="catalog-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="catalog-placeholder" style="display:none">🧴</div>`:`<div class="catalog-placeholder">🧴</div>`}</div><div class="catalog-name">${esc(p.name)}</div>${p.reference?`<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`:''}</button>`}).join('')}</div>`:`<div class="card empty">${currentReserve==='Cuisine'?'Aucun produit dans la Réserve Cuisine.':'La Réserve Service général est vide pour le moment.'}</div>`}
@@ -927,6 +958,7 @@ function renderSelectedProduct(p){
      ${productHistoryHtml(p)}
    </div>
  </div>`;
+ setTimeout(()=>loadProductHistoryDirect(p),0);
 }
 function backToCatalog(){selectedProductId=null;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
 function showProductDetails(id){const p=products.find(x=>x.id===id);if(!p)return;const has=v=>v!==null&&v!==undefined&&String(v).trim()!=='';const block=(title,value)=>has(value)?`<div class="detail-block"><strong>${title}</strong><div class="detail-text">${esc(value)}</div></div>`:'';const price=has(p.price_ht)?`${Number(p.price_ht).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} € HT`:'';const photoUrl=productPhoto(p);const photo=photoUrl?`<div class="detail-photo-wrap"><img class="detail-photo" src="${esc(photoUrl)}" alt="Photo ${esc(p.name)}"></div>`:'';const links=[];if(has(p.technical_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.technical_sheet_url)}" target="_blank" rel="noopener">📘 Fiche technique</a>`);if(has(p.safety_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.safety_sheet_url)}" target="_blank" rel="noopener">🛡️ Fiche de sécurité (FDS)</a>`);$('detailContent').innerHTML=`${photo}<div class="detail-head"><div><h3 style="margin:0">${esc(p.name)}</h3><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${has(p.reference)?' · Réf. '+esc(p.reference):''}</div></div>${price?`<div class="detail-price">${price}</div>`:''}</div>${block('Conditionnement',p.packaging)}${block('Description',p.description)}${block('Utilisation',p.usage_info)}${block('Dosage',p.dosage)}${block('Sécurité',p.safety_info)}<div class="detail-block"><strong>Stock</strong><div class="detail-text">${fmt(p.stock)} ${esc(p.unit||'')} · Seuil orange : ${fmt(p.orange_threshold)} · Seuil rouge/commande : ${fmt(p.red_threshold)}${Number(p.desired_stock)>0?' · Stock souhaité : '+fmt(p.desired_stock):''}</div></div>${links.length?`<div class="detail-links">${links.join('')}</div>`:''}`;detailDialog.showModal()}
