@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#eef7f4">
-<title>Stock Entretien partagé</title>
+<title>Gestion stock produit d'entretien</title>
 <style>
 :root{--bg:#eef7f4;--card:rgba(255,255,255,.94);--ink:#18304b;--muted:#6b7a8c;--line:#dbe7e2;--blue:#2f8ec4;--green:#218c5b;--orange:#e3a15d;--red:#dc2626;--nav:#0f2742}
 *{box-sizing:border-box}html{min-height:100%}
@@ -127,6 +127,35 @@ body:has(#home.active){background:linear-gradient(rgba(255,255,255,.16),rgba(246
 }
 </style>
 
+
+<style>
+/* En-tête validé : nouveau titre centré, sans pictogramme flacon */
+header{
+  position:relative !important;
+}
+header .brand,
+header .brand-wrap,
+header .header-left{
+  text-align:center !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+header h1,
+header .title,
+header .app-title{
+  text-align:center !important;
+  width:100% !important;
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+header .subtitle,
+header .sync,
+header .sync-badge{
+  margin-left:auto !important;
+  margin-right:auto !important;
+}
+</style>
+
 </head>
 <body>
 <div id="loginPage"><div class="loginContainer">
@@ -135,7 +164,7 @@ body:has(#home.active){background:linear-gradient(rgba(255,255,255,.16),rgba(246
 <div class="loginCard"><h3>Connexion à l'application</h3><div class="loginIntro">Veuillez vous identifier pour accéder au stock</div><form id="loginForm" autocomplete="on" onsubmit="login(event)"><div class="loginField"><label>Identifiant</label><input id="loginUser" name="username" type="text" autocomplete="username" required></div><div class="loginField"><label>Mot de passe</label><div class="passwordBox"><input id="loginPass" name="password" type="password" autocomplete="current-password" required><button id="passwordEye" type="button" class="eye" onclick="togglePassword(event)">👁️</button></div></div><button class="loginButton">🔐 SE CONNECTER</button><div id="loginError" class="loginError">Identifiant ou mot de passe incorrect.</div></form></div>
 <div class="loginBottom">Suivi des stocks · Historique des mouvements · Données partagées</div>
 </div></div>
-<header><div class="headerRow"><div><h1>🧴 Stock Entretien partagé</h1><p>Réserve Cuisine · Réserve Service général</p><div class="sync"><span id="syncDot" class="dot"></span><span id="syncText">Connexion…</span></div></div><div class="userBox"><div id="connectedUser"></div><button class="logout" onclick="logout()">Déconnexion</button></div></div></header>
+<header><div class="headerRow"><div><h1>Gestion stock produit d'entretien</h1><p>Réserve Cuisine · Réserve Service général</p><div class="sync"><span id="syncDot" class="dot"></span><span id="syncText">Connexion…</span></div></div><div class="userBox"><div id="connectedUser"></div><button class="logout" onclick="logout()">Déconnexion</button></div></div></header>
 <main>
 <section id="home" class="screen active"><div class="home-visual" aria-hidden="true"></div>
 <div class="section"><h2>Choisir une réserve</h2><div class="reserve-grid"><button class="reserve-card" onclick="goReserve('Cuisine')"><span class="reserve-icon">🍳</span>Réserve Cuisine<span id="homeCuisineCount" class="reserve-count">0 produit</span></button><button class="reserve-card" onclick="goReserve('Service général')"><span class="reserve-icon">🧹</span>Réserve Service général<span id="homeGeneralCount" class="reserve-count">0 produit</span></button></div></div>
