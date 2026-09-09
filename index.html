@@ -257,72 +257,31 @@ async function validateInventory(){
  if(!counted.length){alert("Saisissez au moins une quantité comptée.");return}
 
  const inventoryLines=counted.map(x=>({
-  p:x.p,
+  product_id:x.p.id,
+  counted_stock:Number(x.input.value),
   theoretical:Number(x.p.stock),
-  real:Number(x.input.value),
-  diff:Number(x.input.value)-Number(x.p.stock)
+  name:x.p.name
  }));
- const changes=inventoryLines.filter(x=>Math.abs(x.diff)>0.000001);
+ const changes=inventoryLines.filter(x=>Math.abs(x.counted_stock-x.theoretical)>0.000001);
 
  if(!confirm("Valider l’inventaire de "+counted.length+" produit(s) pour la réserve "+currentInventoryReserve+" ?"))return;
  const btn=$("validateInventoryButton");btn.disabled=true;
 
  try{
-  /* 1. Le stock compté devient d'abord le nouveau stock réel. */
-  for(const x of changes){
-   const p=x.p,newStock=x.real,diff=x.diff,type=diff>0?"in":"out",qty=Math.abs(diff);
-
-   const {data:updated,error:ue}=await sb.from("products")
-    .update({stock:newStock,updated_at:new Date().toISOString()})
-    .eq("id",p.id)
-    .select("id,stock")
-    .single();
-   if(ue)throw ue;
-   if(!updated || Math.abs(Number(updated.stock)-newStock)>0.000001){
-    throw new Error("Le stock de "+p.name+" n’a pas été enregistré correctement.");
-   }
-
-   const {error:me}=await sb.from("movements").insert({
-    product_id:p.id,
-    product_name:p.name,
-    movement_type:type,
-    quantity:qty,
-    stock_after:newStock,
-    unit:p.unit,
-    reason:"Inventaire - correction du stock réel",
-    user_name:currentUser
-   });
-   if(me)throw me;
-  }
-
-  /* 2. Création de la fiche d’inventaire. */
-  const {data:inventory,error:ie}=await sb.from("inventories").insert({
-   reserve:currentInventoryReserve,
-   user_name:currentUser
-  }).select("id").single();
-  if(ie)throw ie;
-
-  /* 3. Conservation de toutes les lignes réellement comptées. */
-  const linesPayload=inventoryLines.map(x=>({
-   inventory_id:inventory.id,
-   product_id:x.p.id,
-   product_name:x.p.name,
-   reference:x.p.reference||null,
-   unit:x.p.unit||null,
-   theoretical_stock:x.theoretical,
-   counted_stock:x.real,
-   difference:x.diff
-  }));
-  const {error:ile}=await sb.from("inventory_lines").insert(linesPayload);
-  if(ile)throw ile;
+  const rpcLines=inventoryLines.map(x=>({product_id:x.product_id,counted_stock:x.counted_stock}));
+  const {data:inventoryId,error}=await sb.rpc('validate_inventory',{
+   p_reserve:currentInventoryReserve,
+   p_user_name:currentUser,
+   p_lines:rpcLines
+  });
+  if(error)throw error;
 
   await reloadCloud();
 
-  /* 4. Contrôle après rechargement : le stock affiché doit être celui compté. */
-  for(const x of changes){
-   const refreshed=products.find(p=>p.id===x.p.id);
-   if(!refreshed || Math.abs(Number(refreshed.stock)-x.real)>0.000001){
-    throw new Error("Contrôle du stock impossible pour "+x.p.name+".");
+  for(const x of inventoryLines){
+   const refreshed=products.find(p=>p.id===x.product_id);
+   if(!refreshed || Math.abs(Number(refreshed.stock)-x.counted_stock)>0.000001){
+    throw new Error("Le stock de "+x.name+" n’a pas été enregistré correctement.");
    }
   }
 
