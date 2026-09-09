@@ -156,6 +156,34 @@ header .sync-badge{
 }
 </style>
 
+
+<style>
+/* Titre principal réellement centré sur toute la largeur */
+header{
+  position:relative !important;
+}
+header h1,
+header .title,
+header .app-title{
+  position:absolute !important;
+  left:50% !important;
+  transform:translateX(-50%) !important;
+  width:max-content !important;
+  max-width:58% !important;
+  text-align:center !important;
+  margin:0 !important;
+}
+@media(max-width:650px){
+  header h1,
+  header .title,
+  header .app-title{
+    max-width:48% !important;
+    font-size:16px !important;
+    line-height:1.15 !important;
+  }
+}
+</style>
+
 </head>
 <body>
 <div id="loginPage"><div class="loginContainer">
