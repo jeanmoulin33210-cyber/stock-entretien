@@ -5,6 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#eef7f4">
 <title>Stock Entretien partagé</title>
+<!-- Version connexion restaurée - 09/09/2026 -->
 <style>
 :root{--bg:#eef7f4;--card:rgba(255,255,255,.94);--ink:#18304b;--muted:#6b7a8c;--line:#dbe7e2;--blue:#2f8ec4;--green:#218c5b;--orange:#e3a15d;--red:#dc2626;--nav:#0f2742}
 *{box-sizing:border-box}html{min-height:100%}
@@ -287,10 +288,8 @@ async function validateInventory(){
   renderAll();
   renderInventory();
 
-  // Puis synchronisation propre avec Supabase, sans cache navigateur.
+  // Puis synchronisation propre avec Supabase.
   await new Promise(resolve=>setTimeout(resolve,500));
-  await reloadCloud();
-  await new Promise(resolve=>setTimeout(resolve,300));
   await reloadCloud();
   renderInventory();
 
@@ -383,19 +382,7 @@ function backToCatalog(){selectedProductId=null;renderProducts();window.scrollTo
 function showProductDetails(id){const p=products.find(x=>x.id===id);if(!p)return;const has=v=>v!==null&&v!==undefined&&String(v).trim()!=='';const block=(title,value)=>has(value)?`<div class="detail-block"><strong>${title}</strong><div class="detail-text">${esc(value)}</div></div>`:'';const price=has(p.price_ht)?`${Number(p.price_ht).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} € HT`:'';const photoUrl=productPhoto(p);const photo=photoUrl?`<div class="detail-photo-wrap"><img class="detail-photo" src="${esc(photoUrl)}" alt="Photo ${esc(p.name)}"></div>`:'';const links=[];if(has(p.technical_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.technical_sheet_url)}" target="_blank" rel="noopener">📘 Fiche technique</a>`);if(has(p.safety_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.safety_sheet_url)}" target="_blank" rel="noopener">🛡️ Fiche de sécurité (FDS)</a>`);$('detailContent').innerHTML=`${photo}<div class="detail-head"><div><h3 style="margin:0">${esc(p.name)}</h3><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${has(p.reference)?' · Réf. '+esc(p.reference):''}</div></div>${price?`<div class="detail-price">${price}</div>`:''}</div>${block('Conditionnement',p.packaging)}${block('Description',p.description)}${block('Utilisation',p.usage_info)}${block('Dosage',p.dosage)}${block('Sécurité',p.safety_info)}<div class="detail-block"><strong>Stock</strong><div class="detail-text">${fmt(p.stock)} ${esc(p.unit||'')} · Seuil orange : ${fmt(p.orange_threshold)} · Seuil rouge/commande : ${fmt(p.red_threshold)}${Number(p.desired_stock)>0?' · Stock souhaité : '+fmt(p.desired_stock):''}</div></div>${links.length?`<div class="detail-links">${links.join('')}</div>`:''}`;detailDialog.showModal()}
 function renderHistory(){$('historyList').innerHTML=historyData.length?historyData.map(h=>`<div class="history-item"><div class="history-top"><strong>${esc(h.product_name)}</strong><span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}</span></div><div class="history-sub">${new Date(h.created_at).toLocaleString('fr-FR')} · stock après : ${fmt(h.stock_after)} ${esc(h.unit||'')}${h.reason?' · '+esc(h.reason):''}${h.user_name?' · '+esc(h.user_name):''}</div></div>`).join(''):`<div class="empty">Aucun mouvement.</div>`}
 function loadSettings(){$('emailTo').value=emailCfg.to||'';$('emailPublic').value=emailCfg.publicKey||'';$('emailService').value=emailCfg.serviceId||'';$('emailTemplate').value=emailCfg.templateId||'';$('moveUser').value=currentUser||''}
-async function connectCloud(){try{setSync('busy','Connexion…');sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY,{
- global:{
-  fetch:(url,options={})=>fetch(url,{
-   ...options,
-   cache:'no-store',
-   headers:{
-    ...(options.headers||{}),
-    'Cache-Control':'no-cache, no-store, max-age=0',
-    'Pragma':'no-cache'
-   }
-  })
- }
-});await reloadCloud();sb.channel('stock-live').on('postgres_changes',{event:'*',schema:'public',table:'products'},()=>reloadCloud()).on('postgres_changes',{event:'*',schema:'public',table:'movements'},()=>reloadCloud()).subscribe();setSync('ok','Synchronisé')}catch(e){console.error(e);setSync('err','Erreur de connexion')}}
+async function connectCloud(){try{setSync('busy','Connexion…');sb=supabase.createClient(SUPABASE_URL,SUPABASE_KEY);await reloadCloud();sb.channel('stock-live').on('postgres_changes',{event:'*',schema:'public',table:'products'},()=>reloadCloud()).on('postgres_changes',{event:'*',schema:'public',table:'movements'},()=>reloadCloud()).subscribe();setSync('ok','Synchronisé')}catch(e){console.error(e);setSync('err','Erreur de connexion')}}
 async function reloadCloud(){
  const seq=++reloadSeq;
  const{data:p,error:pe}=await sb.from('products').select('*').order('name');
