@@ -333,6 +333,52 @@ main .card,
 }
 </style>
 
+
+<style>
+/* ===== Historique dans la fiche produit ===== */
+.product-history-box{
+  margin-top:18px;
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.90);
+  border:1px solid rgba(190,210,205,.75);
+  box-shadow:0 8px 22px rgba(30,67,55,.08);
+}
+.product-history-box h3{
+  margin:0 0 12px;
+  color:#12385c;
+  font-size:18px;
+}
+.product-history-item{
+  display:grid;
+  grid-template-columns:42px 1fr auto;
+  gap:10px;
+  align-items:center;
+  padding:10px 0;
+  border-bottom:1px solid #e7eeeb;
+}
+.product-history-item:last-child{border-bottom:0}
+.product-history-icon{
+  width:38px;height:38px;border-radius:12px;
+  display:flex;align-items:center;justify-content:center;
+  background:#f2f7f5;font-size:19px;
+}
+.product-history-main{min-width:0}
+.product-history-title{font-weight:850;color:#173a59;font-size:13px}
+.product-history-meta{font-size:11px;color:#6a7c88;margin-top:3px}
+.product-history-qty{
+  font-weight:900;font-size:14px;white-space:nowrap;color:#173a59;
+}
+.product-history-empty{
+  padding:14px 4px;color:#71808a;font-size:13px;text-align:center;
+}
+@media(max-width:650px){
+ .product-history-box{padding:13px}
+ .product-history-item{grid-template-columns:36px 1fr auto;gap:8px}
+ .product-history-icon{width:34px;height:34px}
+}
+</style>
+
 </head>
 <body>
 <div id="loginPage"><div class="loginContainer">
@@ -505,7 +551,57 @@ function renderDashboard(){
  if(invEl)invEl.textContent=formatDashboardInventoryDate(latestInventory);
 }
 
-function renderAll(){renderHome();renderProducts();renderHistory();renderOrders();renderDashboard();loadSettings()}
+
+function movementHistoryKind(m){
+ const t=String(m.movement_type||'').toLowerCase();
+ const r=String(m.reason||'').toLowerCase();
+ if(r.includes('bon de livraison'))return {icon:'🚚',label:'Livraison'};
+ if(r.includes('inventaire'))return {icon:'📋',label:'Correction inventaire'};
+ if(t==='in')return {icon:'➕',label:'Entrée'};
+ if(t==='out')return {icon:'➖',label:'Sortie'};
+ return {icon:'🕘',label:'Mouvement'};
+}
+function renderProductHistory(product){
+ const box=$('productHistoryList');
+ if(!box||!product)return;
+ const rows=historyData
+   .filter(m=>String(m.product_id||'')===String(product.id||'') ||
+              (m.product_name && product.name && String(m.product_name).trim()===String(product.name).trim()))
+   .slice(0,8);
+ if(!rows.length){
+   box.innerHTML='<div class="product-history-empty">Aucun mouvement enregistré pour ce produit.</div>';
+   return;
+ }
+ box.innerHTML=rows.map(m=>{
+   const k=movementHistoryKind(m);
+   const d=m.created_at?new Date(m.created_at):null;
+   const date=d&&!Number.isNaN(d.getTime())?d.toLocaleDateString('fr-FR')+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}):'';
+   const qty=Number(m.quantity||0);
+   const sign=String(m.movement_type||'').toLowerCase()==='out'?'−':'+';
+   const who=m.user_name?' · '+esc(m.user_name):'';
+   const reason=m.reason?' · '+esc(m.reason):'';
+   return `<div class="product-history-item">
+     <div class="product-history-icon">${k.icon}</div>
+     <div class="product-history-main">
+       <div class="product-history-title">${k.label}</div>
+       <div class="product-history-meta">${esc(date)}${who}${reason}</div>
+     </div>
+     <div class="product-history-qty">${sign}${qty} ${esc(m.unit||product.unit||'')}</div>
+   </div>`;
+ }).join('');
+}
+
+
+function ensureProductHistoryBox(){
+ const detail=document.querySelector('#productDetail.active, #product-detail.active, .product-detail.active');
+ if(!detail||document.getElementById('productHistoryList'))return;
+ const wrap=document.createElement('div');
+ wrap.className='product-history-box';
+ wrap.innerHTML='<h3>🕘 Historique du produit</h3><div id="productHistoryList" class="product-history-list"></div>';
+ detail.appendChild(wrap);
+}
+
+function renderAll(){renderHome();renderProducts();renderHistory();renderOrders();renderDashboard();loadSettings();if(selectedProductId){const p=products.find(x=>String(x.id)===String(selectedProductId));if(p){ensureProductHistoryBox();renderProductHistory(p)}}}
 function openOrders(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('orders').classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));renderOrders();window.scrollTo({top:0,behavior:'smooth'})}
 
 function pendingOrderProducts(){return products.filter(p=>Number(p.ordered_quantity||0)>0)}
@@ -822,6 +918,19 @@ async function sendRedAlert(p,newStock){try{if(!emailCfg.to||!emailCfg.publicKey
 function saveEmailSettings(){if(!isAdmin())return;emailCfg={to:$('emailTo').value.trim(),publicKey:$('emailPublic').value.trim(),serviceId:$('emailService').value.trim(),templateId:$('emailTemplate').value.trim()};localStorage.setItem(KEMAIL,JSON.stringify(emailCfg));alert('Réglages e-mail enregistrés.')}
 function backup(){if(!isAdmin())return;const blob=new Blob([JSON.stringify({exported_at:new Date().toISOString(),products,history:historyData},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sauvegarde-stock-entretien.json';a.click();URL.revokeObjectURL(a.href)}
 restoreSession();connectCloud();
+</script>
+
+<script>
+document.addEventListener('click',function(){
+ setTimeout(function(){
+   if(!selectedProductId)return;
+   const p=products.find(x=>String(x.id)===String(selectedProductId));
+   if(p){
+     if(typeof ensureProductHistoryBox==='function')ensureProductHistoryBox();
+     renderProductHistory(p);
+   }
+ },80);
+});
 </script>
 </body>
 </html>
