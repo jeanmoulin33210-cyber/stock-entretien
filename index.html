@@ -134,25 +134,36 @@ function reserveOf(p){return p.category==='Service général'?'Service général
 function reserveProducts(name){return products.filter(p=>reserveOf(p)===name)}
 function productPhoto(p){
  const ref=String(p.reference||'').trim();
- const map={
-  '1005264 / 771590':'keo-sols.jpg',
-  '771707 / 771707B':'supracid.jpg',
-  '120015 / 19280':'xon-forte.jpg',
-  '772256':'sac-noir-30l.jpg',
-  '025431':'sac-transparent-110l.jpg',
-  '774562':'gants-nitrile.jpg',
-  '771579':'keo-sanitaire.jpg',
-  '771584':'keo-vaisselle.jpg',
-  '771306':'legubact.jpg',
-  '148883 / 20552':'citrus.jpg',
-  '774458':'geobag-lavage.jpg',
-  '774459':'geobag-rincage.jpg',
-  '771051':'5829.jpg',
-  '774392':'nevea.jpg',
-  '772504 / 32250':'essuie-mains.jpg'
- };
+
+ // Les 15 photos sont dans le même dossier GitHub que index.html.
+ // On donne priorité à ces fichiers connus, même si photo_url contient
+ // une ancienne adresse devenue invalide.
+ const knownPhotos=[
+  {refs:['1005264','771590'],file:'keo-sols.jpg'},
+  {refs:['771707','771707B'],file:'supracid.jpg'},
+  {refs:['120015','19280'],file:'xon-forte.jpg'},
+  {refs:['772256'],file:'sac-noir-30l.jpg'},
+  {refs:['025431'],file:'sac-transparent-110l.jpg'},
+  {refs:['774562'],file:'gants-nitrile.jpg'},
+  {refs:['771579'],file:'keo-sanitaire.jpg'},
+  {refs:['771584'],file:'keo-vaisselle.jpg'},
+  {refs:['771306'],file:'legubact.jpg'},
+  {refs:['148883','20552'],file:'citrus.jpg'},
+  {refs:['774458'],file:'geobag-lavage.jpg'},
+  {refs:['774459'],file:'geobag-rincage.jpg'},
+  {refs:['771051'],file:'5829.jpg'},
+  {refs:['774392'],file:'nevea.jpg'},
+  {refs:['772504','32250'],file:'essuie-mains.jpg'}
+ ];
+
+ const compact=ref.toUpperCase().replace(/\s+/g,'');
+ const found=knownPhotos.find(item =>
+  item.refs.some(r => compact.includes(String(r).toUpperCase().replace(/\s+/g,'')))
+ );
+ if(found)return './'+found.file;
+
  if(p.photo_url&&String(p.photo_url).trim()!=='')return String(p.photo_url).trim();
- return map[ref]||'';
+ return '';
 }
 function level(p){if(Number(p.stock)<=Number(p.red_threshold))return'red';if(Number(p.stock)<=Number(p.orange_threshold))return'orange';return'green'}
 function levelLabel(l){return l==='red'?'ROUGE':l==='orange'?'ORANGE':'OK'}
