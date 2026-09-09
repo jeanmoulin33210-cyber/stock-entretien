@@ -861,9 +861,18 @@ async function validateDelivery(){
 function renderHome(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('homeCuisineCount').textContent=c+' produit'+(c>1?'s':'');$('homeGeneralCount').textContent=g+' produit'+(g>1?'s':'');const watch=products.filter(p=>level(p)!=='green');$('alerts').innerHTML=watch.length?watch.map(p=>`<div class="product"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}</div></div><div><div class="stock">${fmt(p.stock)} ${esc(p.unit||'')}</div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div></div>`).join(''):`<div class="empty"><strong>Aucun produit à surveiller</strong><span>Les produits orange ou rouge apparaîtront ici.</span></div>`;const orders=orderProducts();$('orderHomeCount').textContent=orders.length?(orders.length+' produit'+(orders.length>1?'s':'')+' à commander'):'Aucun produit à commander'}
 
 function productHistoryHtml(p){
+ const norm=s=>String(s||'').toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]/g,'');
+ const pRefs=String(p.reference||'').split('/').map(norm).filter(Boolean);
+ const pName=norm(p.name);
  const rows=historyData
-   .filter(m=>String(m.product_id||'')===String(p.id||'') ||
-      (m.product_name && p.name && String(m.product_name).trim()===String(p.name).trim()))
+   .filter(m=>{
+      if(String(m.product_id||'')===String(p.id||'')) return true;
+      const mName=norm(m.product_name);
+      if(mName && pName && (mName===pName || mName.includes(pName) || pName.includes(mName))) return true;
+      const hay=norm([m.product_name,m.reference,m.product_reference,m.reason].filter(Boolean).join(' '));
+      if(pRefs.some(ref=>ref && hay.includes(ref))) return true;
+      return false;
+   })
    .slice(0,8);
 
  const rowHtml=rows.length ? rows.map(m=>{
