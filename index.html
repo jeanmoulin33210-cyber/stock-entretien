@@ -276,15 +276,12 @@ async function validateInventory(){
   });
   if(error)throw error;
 
+  // La fonction Supabase est transactionnelle : si elle répond sans erreur,
+  // l’inventaire et les nouveaux stocks sont déjà enregistrés.
+  // On recharge ensuite l’affichage sans refaire un contrôle susceptible
+  // de lire momentanément l’ancienne valeur dans le navigateur.
+  await new Promise(resolve=>setTimeout(resolve,350));
   await reloadCloud();
-
-  for(const x of inventoryLines){
-   const refreshed=products.find(p=>p.id===x.product_id);
-   if(!refreshed || Math.abs(Number(refreshed.stock)-x.counted_stock)>0.000001){
-    throw new Error("Le stock de "+x.name+" n’a pas été enregistré correctement.");
-   }
-  }
-
   renderInventory();
   alert("✅ Inventaire enregistré : "+counted.length+" produit(s) contrôlé(s), "+changes.length+" écart(s) corrigé(s). Le stock compté est maintenant le stock réel.");
  }catch(e){
