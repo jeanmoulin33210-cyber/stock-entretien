@@ -22,7 +22,7 @@ main{padding:16px 14px 22px;max-width:760px;margin:auto}.card{background:var(--c
 .badge{font-size:11px;padding:4px 8px;border-radius:999px;font-weight:800;display:inline-block;margin-top:4px}.bgreen{background:#dcfce7;color:#166534}.borange{background:#ffedd5;color:#9a3412}.bred{background:#fee2e2;color:#991b1b}
 .product-actions{display:flex;gap:6px;margin-top:8px;flex-wrap:wrap}.mini{border:0;border-radius:10px;padding:8px 10px;font-weight:700;font-size:12px}.infoBtn{background:#dbeafe;color:#1d4ed8}
 .catalog-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.catalog-card{border:1px solid #d9e7e2;background:#fff;border-radius:20px;padding:10px;box-shadow:0 7px 18px rgba(44,80,68,.07);cursor:pointer}.catalog-photo-wrap{height:150px;border-radius:15px;background:#f7faf9;display:flex;align-items:center;justify-content:center;overflow:hidden;margin-bottom:9px}.catalog-photo{width:100%;height:100%;object-fit:contain;padding:8px}.catalog-placeholder{font-size:46px;color:#94a3b8}.catalog-name{font-size:14px;font-weight:800;line-height:1.2;text-align:center;min-height:34px}.catalog-ref{font-size:11px;color:var(--muted);text-align:center;margin-top:4px}
-.product-page{display:grid;gap:12px}.product-page-photo-wrap{height:250px;border:1px solid #d9e7e2;border-radius:20px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}.product-page-photo{width:100%;height:100%;object-fit:contain;padding:12px}.product-page-placeholder{font-size:70px;color:#94a3b8}.product-page-name{font-size:22px;font-weight:900}.product-page-stock{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f7fbf9;border:1px solid var(--line);border-radius:16px;padding:12px}.diag-stock{margin-top:10px;padding:10px;border-radius:12px;background:#fff7ed;border:1px solid #fed7aa;font-size:12px;color:#9a3412;white-space:pre-wrap}
+.product-page{display:grid;gap:12px}.product-page-photo-wrap{height:250px;border:1px solid #d9e7e2;border-radius:20px;background:#fff;display:flex;align-items:center;justify-content:center;overflow:hidden}.product-page-photo{width:100%;height:100%;object-fit:contain;padding:12px}.product-page-placeholder{font-size:70px;color:#94a3b8}.product-page-name{font-size:22px;font-weight:900}.product-page-stock{display:flex;align-items:center;justify-content:space-between;gap:10px;background:#f7fbf9;border:1px solid var(--line);border-radius:16px;padding:12px}
 .history-item{padding:12px 0;border-bottom:1px solid var(--line)}.history-top{display:flex;justify-content:space-between;gap:10px}.history-sub{font-size:12px;color:var(--muted);margin-top:3px}
 nav{position:fixed;bottom:0;left:0;right:0;background:#0f2742;display:grid;grid-template-columns:repeat(4,1fr);padding:8px 6px;z-index:20;box-shadow:0 -5px 18px rgba(15,39,66,.18)}nav button{background:none;border:0;color:#cbd5e1;font-size:11px;padding:7px 2px;border-radius:14px}nav button span{display:block;font-size:21px;margin-bottom:2px}nav button.active{color:#fff;background:rgba(255,255,255,.09)}
 .screen{display:none}.screen.active{display:block}.empty{text-align:center;color:var(--muted);padding:28px 8px;line-height:1.45}
@@ -376,32 +376,7 @@ async function validateDelivery(){
 function renderHome(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('homeCuisineCount').textContent=c+' produit'+(c>1?'s':'');$('homeGeneralCount').textContent=g+' produit'+(g>1?'s':'');const watch=products.filter(p=>level(p)!=='green');$('alerts').innerHTML=watch.length?watch.map(p=>`<div class="product"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}</div></div><div><div class="stock">${fmt(p.stock)} ${esc(p.unit||'')}</div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div></div>`).join(''):`<div class="empty"><strong>Aucun produit à surveiller</strong><span>Les produits orange ou rouge apparaîtront ici.</span></div>`;const orders=orderProducts();$('orderHomeCount').textContent=orders.length?(orders.length+' produit'+(orders.length>1?'s':'')+' à commander'):'Aucun produit à commander'}
 function renderProducts(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('cCuisine').textContent=c+' produit'+(c>1?'s':'');$('cGeneral').textContent=g+' produit'+(g>1?'s':'');$('rCuisine').classList.toggle('active',currentReserve==='Cuisine');$('rGeneral').classList.toggle('active',currentReserve==='Service général');if(selectedProductId){const selected=products.find(p=>p.id===selectedProductId);if(selected){renderSelectedProduct(selected);return}selectedProductId=null}const q=($('search')?.value||'').toLowerCase();const list=reserveProducts(currentReserve).filter(p=>(p.name+' '+(p.reference||'')).toLowerCase().includes(q));$('productList').innerHTML=list.length?`<div class="catalog-grid">${list.map(p=>{const photo=productPhoto(p);return`<button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')"><div class="catalog-photo-wrap">${photo?`<img class="catalog-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="catalog-placeholder" style="display:none">🧴</div>`:`<div class="catalog-placeholder">🧴</div>`}</div><div class="catalog-name">${esc(p.name)}</div>${p.reference?`<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`:''}</button>`}).join('')}</div>`:`<div class="card empty">${currentReserve==='Cuisine'?'Aucun produit dans la Réserve Cuisine.':'La Réserve Service général est vide pour le moment.'}</div>`}
 function openCatalogProduct(id){selectedProductId=id;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
-function renderSelectedProduct(p){
- const photo=productPhoto(p);
- const diag=String(p.reference||'').trim()==='771051'
-  ?`<div id="diagStock" class="diag-stock">Diagnostic ADOC…</div>`
-  :'';
- $('productList').innerHTML=`<div class="product-page"><div><button class="btn secondary" onclick="backToCatalog()">← Retour aux produits</button></div><div class="product-page-photo-wrap">${photo?`<img class="product-page-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="product-page-placeholder" style="display:none">🧴</div>`:`<div class="product-page-placeholder">🧴</div>`}</div><div class="card"><div class="product-page-name">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${p.reference?' · Réf. '+esc(p.reference):''}</div><div class="product-page-stock" style="margin-top:14px"><div><div class="meta">Stock actuel</div><div style="font-size:27px;font-weight:900">${fmt(p.stock)} ${esc(p.unit||'')}</div></div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div>${diag}<div class="product-actions" style="margin-top:14px"><button class="mini infoBtn" onclick="showProductDetails('${p.id}')">📄 Fiche</button><button class="mini good" onclick="openMoveFor('${p.id}','in')">+ Entrée</button><button class="mini secondary" onclick="openMoveFor('${p.id}','out')">− Sortie</button>${isAdmin()?`<button class="mini secondary" onclick="editProduct('${p.id}')">Modifier</button><button class="mini danger" onclick="deleteProduct('${p.id}')">Supprimer</button>`:''}</div></div></div>`;
- if(String(p.reference||'').trim()==='771051')runAdocDiagnostic(p);
-}
-async function runAdocDiagnostic(p){
- const box=$('diagStock');
- if(!box)return;
- try{
-  const {data,error}=await sb.from('products').select('id,name,reference,stock,updated_at').eq('reference','771051').single();
-  if(error)throw error;
-  box.textContent=
-   'DIAGNOSTIC ADOC\n'+
-   'Valeur dans la fiche : '+String(p.stock)+'\n'+
-   'Valeur relue directement : '+String(data.stock)+'\n'+
-   'Même ID : '+String(p.id===data.id)+'\n'+
-   'ID fiche : '+String(p.id)+'\n'+
-   'ID relu : '+String(data.id)+'\n'+
-   'Mis à jour : '+String(data.updated_at||'');
- }catch(e){
-  box.textContent='DIAGNOSTIC ADOC - erreur : '+(e?.message||String(e));
- }
-}
+function renderSelectedProduct(p){const photo=productPhoto(p);$('productList').innerHTML=`<div class="product-page"><div><button class="btn secondary" onclick="backToCatalog()">← Retour aux produits</button></div><div class="product-page-photo-wrap">${photo?`<img class="product-page-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="product-page-placeholder" style="display:none">🧴</div>`:`<div class="product-page-placeholder">🧴</div>`}</div><div class="card"><div class="product-page-name">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${p.reference?' · Réf. '+esc(p.reference):''}</div><div class="product-page-stock" style="margin-top:14px"><div><div class="meta">Stock actuel</div><div style="font-size:27px;font-weight:900">${fmt(p.stock)} ${esc(p.unit||'')}</div></div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div><div class="product-actions" style="margin-top:14px"><button class="mini infoBtn" onclick="showProductDetails('${p.id}')">📄 Fiche</button><button class="mini good" onclick="openMoveFor('${p.id}','in')">+ Entrée</button><button class="mini secondary" onclick="openMoveFor('${p.id}','out')">− Sortie</button>${isAdmin()?`<button class="mini secondary" onclick="editProduct('${p.id}')">Modifier</button><button class="mini danger" onclick="deleteProduct('${p.id}')">Supprimer</button>`:''}</div></div></div>`}
 function backToCatalog(){selectedProductId=null;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
 function showProductDetails(id){const p=products.find(x=>x.id===id);if(!p)return;const has=v=>v!==null&&v!==undefined&&String(v).trim()!=='';const block=(title,value)=>has(value)?`<div class="detail-block"><strong>${title}</strong><div class="detail-text">${esc(value)}</div></div>`:'';const price=has(p.price_ht)?`${Number(p.price_ht).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} € HT`:'';const photoUrl=productPhoto(p);const photo=photoUrl?`<div class="detail-photo-wrap"><img class="detail-photo" src="${esc(photoUrl)}" alt="Photo ${esc(p.name)}"></div>`:'';const links=[];if(has(p.technical_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.technical_sheet_url)}" target="_blank" rel="noopener">📘 Fiche technique</a>`);if(has(p.safety_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.safety_sheet_url)}" target="_blank" rel="noopener">🛡️ Fiche de sécurité (FDS)</a>`);$('detailContent').innerHTML=`${photo}<div class="detail-head"><div><h3 style="margin:0">${esc(p.name)}</h3><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${has(p.reference)?' · Réf. '+esc(p.reference):''}</div></div>${price?`<div class="detail-price">${price}</div>`:''}</div>${block('Conditionnement',p.packaging)}${block('Description',p.description)}${block('Utilisation',p.usage_info)}${block('Dosage',p.dosage)}${block('Sécurité',p.safety_info)}<div class="detail-block"><strong>Stock</strong><div class="detail-text">${fmt(p.stock)} ${esc(p.unit||'')} · Seuil orange : ${fmt(p.orange_threshold)} · Seuil rouge/commande : ${fmt(p.red_threshold)}${Number(p.desired_stock)>0?' · Stock souhaité : '+fmt(p.desired_stock):''}</div></div>${links.length?`<div class="detail-links">${links.join('')}</div>`:''}`;detailDialog.showModal()}
 function renderHistory(){$('historyList').innerHTML=historyData.length?historyData.map(h=>`<div class="history-item"><div class="history-top"><strong>${esc(h.product_name)}</strong><span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}</span></div><div class="history-sub">${new Date(h.created_at).toLocaleString('fr-FR')} · stock après : ${fmt(h.stock_after)} ${esc(h.unit||'')}${h.reason?' · '+esc(h.reason):''}${h.user_name?' · '+esc(h.user_name):''}</div></div>`).join(''):`<div class="empty">Aucun mouvement.</div>`}
@@ -425,15 +400,50 @@ async function connectCloud(){
 }
 async function reloadCloud(){
  const seq=++reloadSeq;
- const{data:p,error:pe}=await sb.from('products').select('*').order('name');
+
+ const {data:p,error:pe}=await sb.from('products').select('*').order('name');
  if(pe)throw pe;
- const{data:h,error:he}=await sb.from('movements').select('*').order('created_at',{ascending:false}).limit(250);
+
+ const {data:h,error:he}=await sb.from('movements').select('*').order('created_at',{ascending:false}).limit(250);
  if(he)throw he;
+
  if(seq!==reloadSeq)return;
- products=p||[];
+
+ const baseProducts=p||[];
+
+ // Lecture exacte de chaque stock : évite qu'une ancienne valeur issue d'une
+ // requête de liste reste affichée alors que Supabase a déjà enregistré la nouvelle.
+ const refreshed=await Promise.all(
+  baseProducts.map(async product=>{
+   try{
+    const {data,error}=await sb
+     .from('products')
+     .select('id,stock,updated_at,ordered_quantity,ordered_at')
+     .eq('id',product.id)
+     .single();
+
+    if(error||!data)return product;
+
+    return {
+     ...product,
+     stock:data.stock,
+     updated_at:data.updated_at,
+     ordered_quantity:data.ordered_quantity,
+     ordered_at:data.ordered_at
+    };
+   }catch(_e){
+    return product;
+   }
+  })
+ );
+
+ if(seq!==reloadSeq)return;
+
+ products=refreshed;
  historyData=h||[];
  renderAll();
 }
+
 function openProduct(){if(!isAdmin())return;$('productTitle').textContent='Ajouter un produit';$('productId').value='';$('pName').value='';$('pRef').value='';$('pCat').value=currentReserve;$('pUnit').value='bidon';$('pStock').value=0;$('pOrange').value=5;$('pRed').value=2;$('pDesired').value=0;productDialog.showModal()}
 function editProduct(id){if(!isAdmin())return;const p=products.find(x=>x.id===id);if(!p)return;$('productTitle').textContent='Modifier le produit';$('productId').value=p.id;$('pName').value=p.name||'';$('pRef').value=p.reference||'';$('pCat').value=reserveOf(p);$('pUnit').value=p.unit||'unité';$('pStock').value=p.stock||0;$('pOrange').value=p.orange_threshold||0;$('pRed').value=p.red_threshold||0;$('pDesired').value=p.desired_stock||0;productDialog.showModal()}
 async function saveProduct(e){e.preventDefault();if(!isAdmin())return;const id=$('productId').value;const payload={name:$('pName').value.trim(),reference:$('pRef').value.trim()||null,category:$('pCat').value,unit:$('pUnit').value,stock:Number($('pStock').value||0),orange_threshold:Number($('pOrange').value||0),red_threshold:Number($('pRed').value||0),desired_stock:Number($('pDesired').value||0),updated_at:new Date().toISOString()};const q=id?sb.from('products').update(payload).eq('id',id):sb.from('products').insert(payload);const{error}=await q;if(error){alert('Erreur : '+error.message);return}currentReserve=$('pCat').value;productDialog.close();await reloadCloud()}
