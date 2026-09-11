@@ -428,6 +428,26 @@ main .card,
 .inventory-detail-value{background:#f5f8fa;border-radius:11px;padding:8px;text-align:center;font-size:12px}
 .inventory-detail-value strong{display:block;font-size:16px;margin-top:2px}.inventory-detail-value.positive{background:#dcfce7;color:#166534}.inventory-detail-value.negative{background:#fee2e2;color:#991b1b}
 </style>
+
+<style>
+/* ===== Historique des commandes ===== */
+.dashboard-order{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.dashboard-order:active{transform:scale(.98)}
+.order-history-btn{margin-top:12px;background:linear-gradient(135deg,#fff3d6,#ffe2a7);color:#6b4307;border:1px solid #f3d18a}
+.order-history-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:11px;box-shadow:0 6px 16px rgba(44,80,68,.06);cursor:pointer}
+.order-history-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.order-history-date{font-weight:900;color:#17365a;font-size:16px}
+.order-history-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.order-history-counts{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.order-history-pill{font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef6ff;color:#244d72}
+.order-status{font-size:11px;font-weight:900;padding:5px 9px;border-radius:999px;white-space:nowrap}
+.order-status.pending{background:#fff7ed;color:#9a3412}.order-status.partial{background:#fef3c7;color:#92400e}.order-status.delivered{background:#dcfce7;color:#166534}
+.order-detail-line{border-bottom:1px solid var(--line);padding:12px 0}.order-detail-line:last-child{border-bottom:0}
+.order-detail-name{font-weight:850}.order-detail-ref{font-size:11px;color:var(--muted);margin-top:2px}
+.order-detail-values{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px}
+.order-detail-value{background:#f5f8fa;border-radius:11px;padding:8px;text-align:center;font-size:12px}.order-detail-value strong{display:block;font-size:16px;margin-top:2px}
+.order-detail-value.remaining{background:#fff7ed;color:#9a3412}.order-detail-value.done{background:#dcfce7;color:#166534}
+</style>
 </head>
 <body>
 <div id="loginPage"><div class="loginContainer">
@@ -450,7 +470,7 @@ main .card,
       <div class="dashboard-icon">🟠</div>
       <div><div id="dashOrange" class="dashboard-number">0</div><div class="dashboard-label">Produits en orange</div></div>
     </div>
-    <div class="dashboard-card dashboard-order">
+    <div class="dashboard-card dashboard-order" role="button" tabindex="0" onclick="openOrderHistory()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openOrderHistory()}">
       <div class="dashboard-icon">🛒</div>
       <div><div id="dashPending" class="dashboard-number">0</div><div class="dashboard-label">Commandes en attente</div></div>
     </div>
@@ -473,10 +493,25 @@ main .card,
 <div id="orderList" style="margin-top:10px"></div>
 <button id="sendOrderButton" class="btn sendOrderBtn" type="button" onclick="sendOrderToManager()">📧 Envoyer à la gestionnaire</button>
 <button id="markOrderedButton" class="btn markOrderedBtn" type="button" onclick="markOrdersAsOrdered()">✅ Marquer comme commandé</button>
+<button class="btn order-history-btn" type="button" onclick="openOrderHistory()">🕘 Historique des commandes</button>
 <div class="pending-orders">
 <h2>📦 Commandes en attente de livraison</h2>
 <div id="pendingOrderList"></div>
 </div>
+</div>
+</section>
+<section id="orderHistory" class="screen">
+<div class="section"><button class="btn secondary" onclick="showScreen('home',document.querySelectorAll('nav button')[0])">← Retour à l'accueil</button></div>
+<div class="section card">
+<h2>🛒 Historique des commandes</h2>
+<div class="order-summary">Retrouvez les commandes enregistrées, les quantités commandées, les livraisons reçues et leur état.</div>
+<div id="orderHistoryList"><div class="empty">Chargement…</div></div>
+</div>
+</section>
+<section id="orderHistoryDetail" class="screen">
+<div class="section"><button class="btn secondary" onclick="showScreen('orderHistory');loadOrderHistory()">← Retour à l'historique</button></div>
+<div class="section card">
+<div id="orderHistoryDetailContent"><div class="empty">Chargement…</div></div>
 </div>
 </section>
 <section id="inventory" class="screen">
@@ -537,7 +572,7 @@ const SUPABASE_URL='https://avhyoujlplwkuccvhnvz.supabase.co';
 const SUPABASE_KEY='sb_publishable_63ZJtw7uGovMEiZgX8V8zg_02TdkDGY';
 const USERS={Cedric:"Kilian11+",Delphine:"Service-général",Gestionnaire:"Tork1",Proviseur:"Jean-Moulin1",Autre:"Jean-Moulin2"};
 const ADMIN='Cedric',KEMAIL='stock_shared_email_v1',KSESSION='stock_shared_session_v1';
-let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine',latestInventory=null,inventoryHistoryData=[],inventoryHistoryLines=[];
+let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine',latestInventory=null,inventoryHistoryData=[],inventoryHistoryLines=[],orderHistoryData=[],orderHistoryLines=[];
 let reloadSeq=0;
 let scanProposal={received:[],unknown:[],outstanding:[],warnings:[],meta:{}};
 let emailCfg=JSON.parse(localStorage.getItem(KEMAIL)||'{}');
@@ -746,23 +781,39 @@ async function markOrdersAsOrdered(){
  if(!list.length){alert('Aucun produit à marquer comme commandé.');return}
  if(!confirm('Marquer '+list.length+' produit(s) comme commandé(s) aujourd’hui ?'))return;
  const now=new Date().toISOString();
+ let createdOrderId=null;
  try{
+  const {data:order,error:oe}=await sb.from('orders').insert({user_name:currentUser,status:'pending',created_at:now}).select('id').single();
+  if(oe)throw oe;
+  createdOrderId=order.id;
+
+  const lines=list.map(p=>({
+   order_id:createdOrderId,
+   product_id:p.id,
+   product_name:p.name,
+   reference:p.reference||null,
+   unit:p.unit||null,
+   ordered_quantity:Math.max(0,Number(p.desired_stock)-Number(p.stock)),
+   received_quantity:0,
+   created_at:now
+  }));
+  const {error:le}=await sb.from('order_lines').insert(lines);
+  if(le)throw le;
+
   for(const p of list){
    const qty=Math.max(0,Number(p.desired_stock)-Number(p.stock));
-   const {error}=await sb.from('products').update({
-    ordered_quantity:qty,
-    ordered_at:now,
-    updated_at:now
-   }).eq('id',p.id);
+   const {error}=await sb.from('products').update({ordered_quantity:qty,ordered_at:now,updated_at:now}).eq('id',p.id);
    if(error)throw error;
   }
   await reloadCloud();
-  alert('✅ Commande enregistrée avec la date du jour.');
+  alert('✅ Commande enregistrée avec la date du jour et ajoutée à l’historique.');
  }catch(e){
   console.error(e);
+  if(createdOrderId){try{await sb.from('orders').delete().eq('id',createdOrderId)}catch(_e){}}
   alert('Erreur : '+(e?.message||'impossible d’enregistrer la commande'));
  }
 }
+
 function sendOrderToManager(){
  const list=orderProducts();
  if(!list.length){alert('Aucun produit à commander pour le moment.');return}
@@ -793,6 +844,117 @@ function renderOrders(){
  const markBtn=$('markOrderedButton');
  if(sendBtn){sendBtn.disabled=list.length===0;sendBtn.style.display=list.length?'block':'none';}
  if(markBtn){markBtn.disabled=list.length===0;markBtn.style.display=list.length?'block':'none';}
+}
+
+
+function orderStatusLabel(status){
+ const s=String(status||'pending').toLowerCase();
+ if(s==='delivered')return 'Livrée';
+ if(s==='partial')return 'Partiellement livrée';
+ return 'En attente';
+}
+function orderStatusClass(status){
+ const s=String(status||'pending').toLowerCase();
+ return s==='delivered'?'delivered':s==='partial'?'partial':'pending';
+}
+function orderDateTime(v){
+ const d=new Date(v||'');
+ if(Number.isNaN(d.getTime()))return 'Date inconnue';
+ return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'})+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+async function backfillLegacyPendingOrders(){
+ const pending=pendingOrderProducts();
+ if(!pending.length)return;
+ try{
+  const [{data:orders,error:oe},{data:lines,error:le}]=await Promise.all([
+   sb.from('orders').select('id,status,created_at'),
+   sb.from('order_lines').select('order_id,product_id,ordered_quantity,received_quantity')
+  ]);
+  if(oe||le)return;
+  const openIds=new Set((orders||[]).filter(o=>['pending','partial'].includes(String(o.status||'pending').toLowerCase())).map(o=>String(o.id)));
+  const represented=new Set((lines||[]).filter(l=>openIds.has(String(l.order_id)) && Number(l.ordered_quantity||0)>Number(l.received_quantity||0)).map(l=>String(l.product_id)));
+  const missing=pending.filter(p=>!represented.has(String(p.id)));
+  if(!missing.length)return;
+  const createdAt=missing.map(p=>p.ordered_at).filter(Boolean).sort()[0]||new Date().toISOString();
+  const {data:order,error}=await sb.from('orders').insert({user_name:currentUser||'Import',status:'pending',created_at:createdAt}).select('id').single();
+  if(error||!order)return;
+  const payload=missing.map(p=>({order_id:order.id,product_id:p.id,product_name:p.name,reference:p.reference||null,unit:p.unit||null,ordered_quantity:Number(p.ordered_quantity||0),received_quantity:0,created_at:p.ordered_at||createdAt}));
+  const {error:lineError}=await sb.from('order_lines').insert(payload);
+  if(lineError){try{await sb.from('orders').delete().eq('id',order.id)}catch(_e){}}
+ }catch(e){console.warn('Import ancienne commande',e)}
+}
+function openOrderHistory(){
+ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+ $('orderHistory').classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ window.scrollTo({top:0,behavior:'smooth'});
+ loadOrderHistory();
+}
+async function loadOrderHistory(){
+ const box=$('orderHistoryList');
+ if(!box||!sb)return;
+ box.innerHTML='<div class="empty">Chargement de l’historique…</div>';
+ try{
+  await backfillLegacyPendingOrders();
+  const [{data:orders,error:oe},{data:lines,error:le}]=await Promise.all([
+   sb.from('orders').select('*').order('created_at',{ascending:false}),
+   sb.from('order_lines').select('*').order('created_at',{ascending:true})
+  ]);
+  if(oe)throw oe;if(le)throw le;
+  orderHistoryData=orders||[];orderHistoryLines=lines||[];
+  renderOrderHistory();
+ }catch(e){console.error('Historique commandes',e);box.innerHTML='<div class="empty">Impossible de charger l’historique.<br><small>'+esc(e?.message||'Erreur inconnue')+'</small></div>'}
+}
+function renderOrderHistory(){
+ const box=$('orderHistoryList');if(!box)return;
+ if(!orderHistoryData.length){box.innerHTML='<div class="empty">Aucune commande enregistrée.</div>';return}
+ box.innerHTML=orderHistoryData.map(order=>{
+  const lines=orderHistoryLines.filter(l=>String(l.order_id)===String(order.id));
+  const ordered=lines.reduce((a,l)=>a+Number(l.ordered_quantity||0),0);
+  const received=lines.reduce((a,l)=>a+Math.min(Number(l.received_quantity||0),Number(l.ordered_quantity||0)),0);
+  const status=order.status||((ordered>0&&received>=ordered)?'delivered':received>0?'partial':'pending');
+  return `<div class="order-history-card" onclick="openOrderHistoryDetail('${order.id}')"><div class="order-history-top"><div><div class="order-history-date">📅 ${esc(orderDateTime(order.created_at))}</div><div class="order-history-meta">👤 ${esc(order.user_name||'Utilisateur')} · ${lines.length} produit${lines.length>1?'s':''}</div></div><span class="order-status ${orderStatusClass(status)}">${orderStatusLabel(status)}</span></div><div class="order-history-counts"><span class="order-history-pill">Commandé : ${fmt(ordered)}</span><span class="order-history-pill">Reçu : ${fmt(received)}</span><span class="order-history-pill">Reste : ${fmt(Math.max(0,ordered-received))}</span></div></div>`;
+ }).join('');
+}
+function openOrderHistoryDetail(id){
+ const order=orderHistoryData.find(x=>String(x.id)===String(id));if(!order)return;
+ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+ $('orderHistoryDetail').classList.add('active');
+ renderOrderHistoryDetail(order);window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderOrderHistoryDetail(order){
+ const box=$('orderHistoryDetailContent');if(!box)return;
+ const lines=orderHistoryLines.filter(l=>String(l.order_id)===String(order.id));
+ const ordered=lines.reduce((a,l)=>a+Number(l.ordered_quantity||0),0);
+ const received=lines.reduce((a,l)=>a+Math.min(Number(l.received_quantity||0),Number(l.ordered_quantity||0)),0);
+ const status=order.status||((ordered>0&&received>=ordered)?'delivered':received>0?'partial':'pending');
+ box.innerHTML=`<h2>🛒 Détail de la commande</h2><div class="order-summary"><strong>📅 ${esc(orderDateTime(order.created_at))}</strong><br>👤 ${esc(order.user_name||'Utilisateur')}<br><span class="order-status ${orderStatusClass(status)}" style="display:inline-block;margin-top:8px">${orderStatusLabel(status)}</span>${order.completed_at?'<br><small>Terminée le '+esc(orderDateTime(order.completed_at))+'</small>':''}</div><div style="margin-top:10px">${lines.length?lines.map(l=>{const q=Number(l.ordered_quantity||0),r=Math.min(Number(l.received_quantity||0),q),remain=Math.max(0,q-r);return `<div class="order-detail-line"><div class="order-detail-name">${esc(l.product_name||'Produit')}</div><div class="order-detail-ref">${l.reference?'Réf. '+esc(l.reference):''}${l.unit?' · '+esc(l.unit):''}</div><div class="order-detail-values"><div class="order-detail-value">Commandé<strong>${fmt(q)}</strong></div><div class="order-detail-value ${r>=q&&q>0?'done':''}">Reçu<strong>${fmt(r)}</strong></div><div class="order-detail-value ${remain>0?'remaining':'done'}">Reste<strong>${fmt(remain)}</strong></div></div></div>`}).join(''):'<div class="empty">Aucune ligne enregistrée pour cette commande.</div>'}</div>`;
+}
+async function reconcileOrderHistoryDelivery(productId,qty){
+ let remaining=Number(qty||0);if(!(remaining>0))return [];
+ const {data:orders,error:oe}=await sb.from('orders').select('id,status,created_at').in('status',['pending','partial']).order('created_at',{ascending:true});
+ if(oe)throw oe;
+ const ids=(orders||[]).map(o=>o.id);if(!ids.length)return [];
+ const {data:lines,error:le}=await sb.from('order_lines').select('*').eq('product_id',productId).in('order_id',ids).order('created_at',{ascending:true});
+ if(le)throw le;
+ const touched=new Set();
+ for(const line of (lines||[])){
+  if(remaining<=0)break;
+  const ordered=Number(line.ordered_quantity||0),received=Number(line.received_quantity||0),open=Math.max(0,ordered-received);if(open<=0)continue;
+  const add=Math.min(open,remaining);const {error}=await sb.from('order_lines').update({received_quantity:received+add}).eq('id',line.id);if(error)throw error;
+  remaining-=add;touched.add(String(line.order_id));
+ }
+ return [...touched];
+}
+async function refreshOrderStatuses(orderIds){
+ const unique=[...new Set((orderIds||[]).map(String))];
+ for(const id of unique){
+  const {data:lines,error}=await sb.from('order_lines').select('ordered_quantity,received_quantity').eq('order_id',id);if(error)throw error;
+  const total=(lines||[]).reduce((a,l)=>a+Number(l.ordered_quantity||0),0);const rec=(lines||[]).reduce((a,l)=>a+Math.min(Number(l.received_quantity||0),Number(l.ordered_quantity||0)),0);
+  const status=total>0&&rec>=total?'delivered':rec>0?'partial':'pending';
+  const payload={status};if(status==='delivered')payload.completed_at=new Date().toISOString();else payload.completed_at=null;
+  const {error:ue}=await sb.from('orders').update(payload).eq('id',id);if(ue)throw ue;
+ }
 }
 
 function openInventory(){
@@ -938,26 +1100,26 @@ async function validateDelivery(){
  const btn=$('validateDeliveryButton');btn.disabled=true;$('scanStatus').textContent='Mise à jour du stock…';
  try{
   await reloadCloud();
+  const affectedOrders=[];
   for(const item of scanProposal.received){
    const p=products.find(x=>x.id===item.productId);if(!p)throw new Error('Produit introuvable : '+item.productName);
    const qty=Number(item.quantity);const newStock=Number(p.stock)+qty;
    const receivedAgainstOrder=Math.min(Number(p.ordered_quantity||0),qty);
    const remainingOrdered=Math.max(0,Number(p.ordered_quantity||0)-receivedAgainstOrder);
    const productUpdate={stock:newStock,updated_at:new Date().toISOString()};
-   if(Number(p.ordered_quantity||0)>0){
-    productUpdate.ordered_quantity=remainingOrdered;
-    productUpdate.ordered_at=remainingOrdered>0?p.ordered_at:null;
-   }
+   if(Number(p.ordered_quantity||0)>0){productUpdate.ordered_quantity=remainingOrdered;productUpdate.ordered_at=remainingOrdered>0?p.ordered_at:null}
    const {error:ue}=await sb.from('products').update(productUpdate).eq('id',p.id);if(ue)throw ue;
    const reason='Bon de livraison'+(scanProposal.meta.number?' '+scanProposal.meta.number:'');
    const {error:me}=await sb.from('movements').insert({product_id:p.id,product_name:p.name,movement_type:'in',quantity:qty,stock_after:newStock,unit:p.unit,reason,user_name:currentUser});if(me)throw me;
+   const touched=await reconcileOrderHistoryDelivery(p.id,qty);affectedOrders.push(...touched);
   }
+  await refreshOrderStatuses(affectedOrders);
   await reloadCloud();
-  $('scanStatus').textContent='✅ Livraison validée et stock mis à jour.';
-  $('validateDeliveryButton').disabled=true;
-  alert('Livraison ajoutée au stock avec succès.');
+  $('scanStatus').textContent='✅ Livraison validée et stock mis à jour.';$('validateDeliveryButton').disabled=true;
+  alert('Livraison ajoutée au stock avec succès. L’historique des commandes a été mis à jour.');
  }catch(e){console.error(e);$('scanStatus').textContent='Erreur pendant la mise à jour : '+(e?.message||'erreur inconnue');btn.disabled=false}
 }
+
 function renderHome(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('homeCuisineCount').textContent=c+' produit'+(c>1?'s':'');$('homeGeneralCount').textContent=g+' produit'+(g>1?'s':'');const watch=products.filter(p=>level(p)!=='green');$('alerts').innerHTML=watch.length?watch.map(p=>`<div class="product"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}</div></div><div><div class="stock">${fmt(p.stock)} ${esc(p.unit||'')}</div><span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span></div></div>`).join(''):`<div class="empty"><strong>Aucun produit à surveiller</strong><span>Les produits orange ou rouge apparaîtront ici.</span></div>`;const orders=orderProducts();$('orderHomeCount').textContent=orders.length?(orders.length+' produit'+(orders.length>1?'s':'')+' à commander'):'Aucun produit à commander'}
 
 
