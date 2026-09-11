@@ -410,6 +410,24 @@ main .card,
 .product-history-empty{padding:8px 0;color:#71808a;font-size:12px}
 </style>
 
+
+<style>
+/* ===== Historique des inventaires ===== */
+.dashboard-inventory{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.dashboard-inventory:active{transform:scale(.98)}
+.inventory-history-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:11px;box-shadow:0 6px 16px rgba(44,80,68,.06);cursor:pointer}
+.inventory-history-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
+.inventory-history-date{font-weight:900;color:#17365a;font-size:16px}
+.inventory-history-meta{font-size:12px;color:var(--muted);margin-top:4px}
+.inventory-history-counts{display:flex;gap:7px;flex-wrap:wrap;margin-top:10px}
+.inventory-history-pill{font-size:11px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef6ff;color:#244d72}
+.inventory-history-pill.diff{background:#fff1f2;color:#9f1239}
+.inventory-detail-line{border-bottom:1px solid var(--line);padding:12px 0}.inventory-detail-line:last-child{border-bottom:0}
+.inventory-detail-name{font-weight:850}.inventory-detail-ref{font-size:11px;color:var(--muted);margin-top:2px}
+.inventory-detail-values{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px;margin-top:9px}
+.inventory-detail-value{background:#f5f8fa;border-radius:11px;padding:8px;text-align:center;font-size:12px}
+.inventory-detail-value strong{display:block;font-size:16px;margin-top:2px}.inventory-detail-value.positive{background:#dcfce7;color:#166534}.inventory-detail-value.negative{background:#fee2e2;color:#991b1b}
+</style>
 </head>
 <body>
 <div id="loginPage"><div class="loginContainer">
@@ -436,7 +454,7 @@ main .card,
       <div class="dashboard-icon">🛒</div>
       <div><div id="dashPending" class="dashboard-number">0</div><div class="dashboard-label">Commandes en attente</div></div>
     </div>
-    <div class="dashboard-card dashboard-inventory">
+    <div class="dashboard-card dashboard-inventory" role="button" tabindex="0" onclick="openInventoryHistory()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openInventoryHistory()}">
       <div class="dashboard-icon">📋</div>
       <div><div id="dashInventory" class="dashboard-date">—</div><div class="dashboard-label">Dernier inventaire</div></div>
     </div>
@@ -475,6 +493,20 @@ main .card,
 <button id="validateInventoryButton" class="btn good" type="button" onclick="validateInventory()">✅ Valider l'inventaire</button>
 </div>
 </section>
+<section id="inventoryHistory" class="screen">
+<div class="section"><button class="btn secondary" onclick="showScreen('home',document.querySelectorAll('nav button')[0])">← Retour à l'accueil</button></div>
+<div class="section card">
+<h2>📋 Historique des inventaires</h2>
+<div class="inventory-summary">Retrouvez les inventaires enregistrés, la réserve contrôlée, la personne qui les a réalisés et les écarts constatés.</div>
+<div id="inventoryHistoryList"><div class="empty">Chargement…</div></div>
+</div>
+</section>
+<section id="inventoryHistoryDetail" class="screen">
+<div class="section"><button class="btn secondary" onclick="showScreen('inventoryHistory');loadInventoryHistory()">← Retour à l'historique</button></div>
+<div class="section card">
+<div id="inventoryHistoryDetailContent"><div class="empty">Chargement…</div></div>
+</div>
+</section>
 <section id="scanner" class="screen">
 <div class="section"><button class="btn secondary" onclick="showScreen('home',document.querySelectorAll('nav button')[0])">← Retour à l'accueil</button></div>
 <div class="section card scan-card"><h2>📷 Scanner un bon de livraison</h2>
@@ -505,7 +537,7 @@ const SUPABASE_URL='https://avhyoujlplwkuccvhnvz.supabase.co';
 const SUPABASE_KEY='sb_publishable_63ZJtw7uGovMEiZgX8V8zg_02TdkDGY';
 const USERS={Cedric:"Kilian11+",Delphine:"Service-général",Gestionnaire:"Tork1",Proviseur:"Jean-Moulin1",Autre:"Jean-Moulin2"};
 const ADMIN='Cedric',KEMAIL='stock_shared_email_v1',KSESSION='stock_shared_session_v1';
-let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine',latestInventory=null;
+let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine',latestInventory=null,inventoryHistoryData=[],inventoryHistoryLines=[];
 let reloadSeq=0;
 let scanProposal={received:[],unknown:[],outstanding:[],warnings:[],meta:{}};
 let emailCfg=JSON.parse(localStorage.getItem(KEMAIL)||'{}');
@@ -580,6 +612,74 @@ function renderDashboard(){
  if(orangeEl)orangeEl.textContent=orange;
  if(pendingEl)pendingEl.textContent=pending;
  if(invEl)invEl.textContent=formatDashboardInventoryDate(latestInventory);
+}
+
+function inventoryDateTime(v){
+ const d=new Date(v||'');
+ if(Number.isNaN(d.getTime()))return 'Date inconnue';
+ return d.toLocaleDateString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric'})+' à '+d.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+}
+function openInventoryHistory(){
+ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+ $('inventoryHistory').classList.add('active');
+ document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));
+ window.scrollTo({top:0,behavior:'smooth'});
+ loadInventoryHistory();
+}
+async function loadInventoryHistory(){
+ const box=$('inventoryHistoryList');
+ if(!box||!sb)return;
+ box.innerHTML='<div class="empty">Chargement de l’historique…</div>';
+ try{
+  const [{data:invs,error:ie},{data:lines,error:le}]=await Promise.all([
+   sb.from('inventories').select('*').order('created_at',{ascending:false}),
+   sb.from('inventory_lines').select('*').order('created_at',{ascending:true})
+  ]);
+  if(ie)throw ie;
+  if(le)throw le;
+  inventoryHistoryData=invs||[];
+  inventoryHistoryLines=lines||[];
+  renderInventoryHistory();
+ }catch(e){
+  console.error('Historique inventaires',e);
+  box.innerHTML='<div class="empty">Impossible de charger l’historique.<br><small>'+esc(e?.message||'Erreur inconnue')+'</small></div>';
+ }
+}
+function renderInventoryHistory(){
+ const box=$('inventoryHistoryList');
+ if(!box)return;
+ if(!inventoryHistoryData.length){box.innerHTML='<div class="empty">Aucun inventaire enregistré.</div>';return}
+ box.innerHTML=inventoryHistoryData.map(inv=>{
+  const lines=inventoryHistoryLines.filter(l=>String(l.inventory_id)===String(inv.id));
+  const diffs=lines.filter(l=>Math.abs(Number(l.difference||0))>0.000001).length;
+  const icon=inv.reserve==='Service général'?'🧹':'🍳';
+  return `<div class="inventory-history-card" onclick="openInventoryHistoryDetail('${inv.id}')">
+   <div class="inventory-history-top"><div><div class="inventory-history-date">📅 ${esc(inventoryDateTime(inv.created_at))}</div><div class="inventory-history-meta">${icon} ${esc(inv.reserve||'Réserve')} · 👤 ${esc(inv.user_name||'Utilisateur')}</div></div><span style="font-size:22px">›</span></div>
+   <div class="inventory-history-counts"><span class="inventory-history-pill">${lines.length} produit${lines.length>1?'s':''} contrôlé${lines.length>1?'s':''}</span><span class="inventory-history-pill ${diffs?'diff':''}">${diffs} écart${diffs>1?'s':''}</span></div>
+  </div>`;
+ }).join('');
+}
+function openInventoryHistoryDetail(id){
+ const inv=inventoryHistoryData.find(x=>String(x.id)===String(id));
+ if(!inv)return;
+ document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
+ $('inventoryHistoryDetail').classList.add('active');
+ renderInventoryHistoryDetail(inv);
+ window.scrollTo({top:0,behavior:'smooth'});
+}
+function renderInventoryHistoryDetail(inv){
+ const box=$('inventoryHistoryDetailContent');
+ if(!box)return;
+ const lines=inventoryHistoryLines.filter(l=>String(l.inventory_id)===String(inv.id));
+ const diffs=lines.filter(l=>Math.abs(Number(l.difference||0))>0.000001).length;
+ const icon=inv.reserve==='Service général'?'🧹':'🍳';
+ box.innerHTML=`<h2>📋 Détail de l'inventaire</h2>
+  <div class="inventory-summary"><strong>📅 ${esc(inventoryDateTime(inv.created_at))}</strong><br>${icon} ${esc(inv.reserve||'Réserve')} · 👤 ${esc(inv.user_name||'Utilisateur')}<br>${lines.length} produit${lines.length>1?'s':''} contrôlé${lines.length>1?'s':''} · ${diffs} écart${diffs>1?'s':''}</div>
+  <div style="margin-top:10px">${lines.length?lines.map(l=>{
+   const diff=Number(l.difference??(Number(l.counted_stock||0)-Number(l.theoretical_stock||0)));
+   const cls=diff>0?'positive':diff<0?'negative':'';
+   return `<div class="inventory-detail-line"><div class="inventory-detail-name">${esc(l.product_name||'Produit')}</div><div class="inventory-detail-ref">${l.reference?'Réf. '+esc(l.reference):''}${l.unit?' · '+esc(l.unit):''}</div><div class="inventory-detail-values"><div class="inventory-detail-value">Avant<strong>${fmt(l.theoretical_stock)}</strong></div><div class="inventory-detail-value">Compté<strong>${fmt(l.counted_stock)}</strong></div><div class="inventory-detail-value ${cls}">Écart<strong>${diff>0?'+':''}${fmt(diff)}</strong></div></div></div>`;
+  }).join(''):'<div class="empty">Aucune ligne enregistrée pour cet inventaire.</div>'}</div>`;
 }
 
 
