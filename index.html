@@ -54,6 +54,10 @@ body:has(#home.active){background:linear-gradient(rgba(255,255,255,.16),rgba(246
 .order-filter-chip{border:1px solid #d7e2e8;background:#fff;color:#425466;border-radius:999px;padding:9px 12px;font-size:12px;font-weight:850;white-space:nowrap;cursor:pointer}
 .order-filter-chip.active{background:#173f68;color:#fff;border-color:#173f68}
 
+
+.order-age{display:inline-block;margin-top:6px;padding:5px 8px;border-radius:999px;background:#eef6ff;color:#244d72;font-size:11px;font-weight:850}
+.order-age.old{background:#fff1f2;color:#b42318}
+
 </style>
 
 <style>
@@ -472,7 +476,7 @@ main .card,
 <div id="loginPage"><div class="loginContainer">
 <div class="school">LYCÉE JEAN MOULIN · LANGON</div><div class="loginTitle">STOCK <span>ENTRETIEN</span></div><div class="slogan">Ensemble pour un établissement propre et durable</div>
 <div class="hero"><div class="heroIcon">🧴🌿</div><h2>Suivi des produits d'entretien</h2><div class="heroText">Suivre aujourd'hui pour un environnement meilleur demain</div><div class="values"><div>🧼<br>HYGIÈNE</div><div>💧<br>SÉCURITÉ</div><div>♻️<br>ÉCONOMIE</div><div>🌍<br>DURABILITÉ</div></div></div>
-<div class="loginCard"><h3>Connexion à l'application</h3><div class="loginIntro">Veuillez vous identifier pour accéder au stock</div><form id="loginForm" method="post" action="javascript:void(0)" autocomplete="on" onsubmit="return login(event)"><div class="loginField"><label>Identifiant</label><input id="loginUser" name="username" type="text" autocomplete="username" required></div><div class="loginField"><label>Mot de passe</label><div class="passwordBox"><input id="loginPass" name="password" type="password" autocomplete="current-password" required><button id="passwordEye" type="button" class="eye" onclick="togglePassword(event)">👁️</button></div></div><button class="loginButton">🔐 SE CONNECTER</button><div id="loginError" class="loginError">Identifiant ou mot de passe incorrect.</div></form></div>
+<div class="loginCard"><h3>Connexion à l'application</h3><div class="loginIntro">Veuillez vous identifier pour accéder au stock</div><form id="loginForm" autocomplete="on" onsubmit="login(event)"><div class="loginField"><label>Identifiant</label><input id="loginUser" name="username" type="text" autocomplete="username" required></div><div class="loginField"><label>Mot de passe</label><div class="passwordBox"><input id="loginPass" name="password" type="password" autocomplete="current-password" required><button id="passwordEye" type="button" class="eye" onclick="togglePassword(event)">👁️</button></div></div><button class="loginButton">🔐 SE CONNECTER</button><div id="loginError" class="loginError">Identifiant ou mot de passe incorrect.</div></form></div>
 <div class="loginBottom">Suivi des stocks · Historique des mouvements · Données partagées</div>
 </div></div>
 <header><div class="headerRow"><div><h1>Gestion stock produit d'entretien</h1><p>Réserve Cuisine · Réserve Service général</p><div class="sync"><span id="syncDot" class="dot"></span><span id="syncText">Connexion…</span></div></div><div class="userBox"><div id="connectedUser"></div><button class="logout" onclick="logout()">Déconnexion</button></div></div></header>
@@ -587,19 +591,11 @@ main .card,
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 <script>
-try{
- const u=new URL(window.location.href);
- if(u.searchParams.has('username')||u.searchParams.has('password')){
-  u.searchParams.delete('username');u.searchParams.delete('password');
-  history.replaceState(null,'',u.pathname+(u.search?'?'+u.searchParams.toString():'')+u.hash);
- }
-}catch(_e){}
-
 const SUPABASE_URL='https://avhyoujlplwkuccvhnvz.supabase.co';
 const SUPABASE_KEY='sb_publishable_63ZJtw7uGovMEiZgX8V8zg_02TdkDGY';
-const USERS={Cedric:"Kilian11++",Delphine:"Service-général",Gestionnaire:"Tork1",Proviseur:"Jean-Moulin1",Autre:"Jean-Moulin2"};
+const USERS={Cedric:"Kilian11+",Delphine:"Service-général",Gestionnaire:"Tork1",Proviseur:"Jean-Moulin1",Autre:"Jean-Moulin2"};
 const ADMIN='Cedric',KEMAIL='stock_shared_email_v1',KSESSION='stock_shared_session_v1';
-let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine',latestInventory=null,latestInventoryDifferenceCount=0,inventoryHistoryData=[],inventoryHistoryLines=[],orderHistoryData=[],orderHistoryLines=[],orderHistoryFilter='all',homeAlertFilter='all';
+let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine',latestInventory=null,latestInventoryDifferenceCount=0,inventoryHistoryData=[],inventoryHistoryLines=[],orderHistoryData=[],orderHistoryLines=[],homeAlertFilter='all';
 let reloadSeq=0;
 let scanProposal={received:[],unknown:[],outstanding:[],warnings:[],meta:{}};
 let emailCfg=JSON.parse(localStorage.getItem(KEMAIL)||'{}');
@@ -647,7 +643,7 @@ function levelLabel(l){return l==='red'?'ROUGE':l==='orange'?'ORANGE':'OK'}
 function levelClass(l){return l==='red'?'bred':l==='orange'?'borange':'bgreen'}
 function orderProducts(){return products.filter(p=>Number(p.desired_stock)>0&&Number(p.stock)<=Number(p.red_threshold)&&Number(p.desired_stock)>Number(p.stock)&&Number(p.ordered_quantity||0)<=0)}
 function togglePassword(e){if(e){e.preventDefault();e.stopPropagation()}const i=$('loginPass'),b=$('passwordEye'),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'🙈':'👁️';i.focus()}
-function login(e){if(e)e.preventDefault();let u=$('loginUser').value.trim();const p=$('loginPass').value;if(u.toLocaleLowerCase('fr-FR')==='cédric'.toLocaleLowerCase('fr-FR'))u='Cedric';if(Object.prototype.hasOwnProperty.call(USERS,u)&&USERS[u]===p){currentUser=u;localStorage.setItem(KSESSION,u);$('loginError').style.display='none';openApplication()}else $('loginError').style.display='block';return false}
+function login(e){e.preventDefault();let u=$('loginUser').value.trim();const p=$('loginPass').value;if(u.toLocaleLowerCase('fr-FR')==='cédric'.toLocaleLowerCase('fr-FR'))u='Cedric';if(Object.prototype.hasOwnProperty.call(USERS,u)&&USERS[u]===p){currentUser=u;localStorage.setItem(KSESSION,u);$('loginError').style.display='none';openApplication()}else $('loginError').style.display='block'}
 function openApplication(){$('loginPage').style.display='none';$('connectedUser').textContent=currentUser+(isAdmin()?' · Admin':'');$('moveUser').value=currentUser;$('settingsButton').style.display=isAdmin()?'block':'none';$('addProductArea').style.display=isAdmin()?'block':'none';renderAll()}
 function logout(){localStorage.removeItem(KSESSION);currentUser='';$('loginPage').style.display='block';$('loginPass').value=''}
 function restoreSession(){const s=localStorage.getItem(KSESSION)||'';if(s&&Object.prototype.hasOwnProperty.call(USERS,s)){currentUser=s;openApplication()}}
@@ -887,6 +883,23 @@ function renderOrders(){
 }
 
 
+function pendingOrderAge(order){
+ const raw=order?.created_at||order?.ordered_at;
+ if(!raw)return '';
+ const d=new Date(raw);
+ if(Number.isNaN(d.getTime()))return '';
+ const days=Math.max(0,Math.floor((Date.now()-d.getTime())/86400000));
+ if(days===0)return 'Commandée aujourd’hui';
+ if(days===1)return 'Commandée depuis 1 jour';
+ return `Commandée depuis ${days} jours`;
+}
+function pendingOrderAgeClass(order){
+ const raw=order?.created_at||order?.ordered_at;
+ if(!raw)return '';
+ const days=(Date.now()-new Date(raw).getTime())/86400000;
+ return days>=7?'old':'';
+}
+
 function orderStatusLabel(status){
  const s=String(status||'pending').toLowerCase();
  if(s==='delivered')return 'Livrée';
@@ -938,7 +951,9 @@ async function loadOrderHistory(){
  try{
   await backfillLegacyPendingOrders();
   const [{data:orders,error:oe},{data:lines,error:le}]=await Promise.all([
-   sb.from('orders').select('*').order('created_at',{ascending:false}),
+   sb.from('orders').select('*').order('created_at',{let orderHistoryFilter='all';
+
+ascending:false}),
    sb.from('order_lines').select('*').order('created_at',{ascending:true})
   ]);
   if(oe)throw oe;if(le)throw le;
@@ -954,7 +969,7 @@ function renderOrderHistoryBase(){
   const ordered=lines.reduce((a,l)=>a+Number(l.ordered_quantity||0),0);
   const received=lines.reduce((a,l)=>a+Math.min(Number(l.received_quantity||0),Number(l.ordered_quantity||0)),0);
   const status=order.status||((ordered>0&&received>=ordered)?'delivered':received>0?'partial':'pending');
-  return `<div class="order-history-card" onclick="openOrderHistoryDetail('${order.id}')"><div class="order-history-top"><div><div class="order-history-date">📅 ${esc(orderDateTime(order.created_at))}</div><div class="order-history-meta">👤 ${esc(order.user_name||'Utilisateur')} · ${lines.length} produit${lines.length>1?'s':''}</div></div><span class="order-status ${orderStatusClass(status)}">${orderStatusLabel(status)}</span></div><div class="order-history-counts"><span class="order-history-pill">Commandé : ${fmt(ordered)}</span><span class="order-history-pill">Reçu : ${fmt(received)}</span><span class="order-history-pill">Reste : ${fmt(Math.max(0,ordered-received))}</span></div></div>`;
+  return `<div class="order-history-card" onclick="openOrderHistoryDetail('${order.id}')"><div class="order-history-top"><div><div class="order-history-date">📅 ${esc(orderDateTime(order.created_at))}</div><div class="order-history-meta">👤 ${esc(order.user_name||'Utilisateur')} · ${lines.length} produit${lines.length>1?'s':''}</div></div><div><span class="order-status ${orderStatusClass(status)}">${orderStatusLabel(status)}</span>${orderStatusClass(status)==='pending'?`<div class="order-age ${pendingOrderAgeClass(order)}">${pendingOrderAge(order)}</div>`:''}</div></div><div class="order-history-counts"><span class="order-history-pill">Commandé : ${fmt(ordered)}</span><span class="order-history-pill">Reçu : ${fmt(received)}</span><span class="order-history-pill">Reste : ${fmt(Math.max(0,ordered-received))}</span></div></div>`;
  }).join('');
 }
 
