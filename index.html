@@ -414,6 +414,7 @@ main .card,
 <style>
 /* ===== Historique des inventaires ===== */
 .dashboard-inventory{cursor:pointer;transition:transform .15s ease,box-shadow .15s ease}
+.dashboard-inventory-gap{font-size:12px;font-weight:850;color:#6d46d9;margin-top:3px}
 .dashboard-inventory:active{transform:scale(.98)}
 .inventory-history-card{background:#fff;border:1px solid var(--line);border-radius:18px;padding:14px;margin-bottom:11px;box-shadow:0 6px 16px rgba(44,80,68,.06);cursor:pointer}
 .inventory-history-top{display:flex;justify-content:space-between;gap:12px;align-items:flex-start}
@@ -488,7 +489,7 @@ main .card,
     </div>
     <div class="dashboard-card dashboard-inventory" role="button" tabindex="0" onclick="openInventoryHistory()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openInventoryHistory()}">
       <div class="dashboard-icon">📋</div>
-      <div><div id="dashInventory" class="dashboard-date">—</div><div class="dashboard-label">Dernier inventaire</div></div>
+      <div><div id="dashInventory" class="dashboard-date">—</div><div id="dashInventoryGap" class="dashboard-inventory-gap">Aucun écart</div><div class="dashboard-label">Dernier inventaire</div></div>
     </div>
   </div>
 </div>
@@ -584,7 +585,7 @@ const SUPABASE_URL='https://avhyoujlplwkuccvhnvz.supabase.co';
 const SUPABASE_KEY='sb_publishable_63ZJtw7uGovMEiZgX8V8zg_02TdkDGY';
 const USERS={Cedric:"Kilian11+",Delphine:"Service-général",Gestionnaire:"Tork1",Proviseur:"Jean-Moulin1",Autre:"Jean-Moulin2"};
 const ADMIN='Cedric',KEMAIL='stock_shared_email_v1',KSESSION='stock_shared_session_v1';
-let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine',latestInventory=null,inventoryHistoryData=[],inventoryHistoryLines=[],orderHistoryData=[],orderHistoryLines=[],homeAlertFilter='all';
+let currentUser='',products=[],historyData=[],sb=null,currentReserve='Cuisine',selectedProductId=null,currentDeliveryPhoto=null,currentInventoryReserve='Cuisine',latestInventory=null,latestInventoryDifferenceCount=0,inventoryHistoryData=[],inventoryHistoryLines=[],orderHistoryData=[],orderHistoryLines=[],homeAlertFilter='all';
 let reloadSeq=0;
 let scanProposal={received:[],unknown:[],outstanding:[],warnings:[],meta:{}};
 let emailCfg=JSON.parse(localStorage.getItem(KEMAIL)||'{}');
@@ -662,11 +663,16 @@ function renderDashboard(){
  const red=products.filter(p=>level(p)==='red').length;
  const orange=products.filter(p=>level(p)==='orange').length;
  const pending=pendingOrderProducts().length;
- const redEl=$('dashRed'),orangeEl=$('dashOrange'),pendingEl=$('dashPending'),invEl=$('dashInventory');
+ const redEl=$('dashRed'),orangeEl=$('dashOrange'),pendingEl=$('dashPending'),invEl=$('dashInventory'),invGapEl=$('dashInventoryGap');
  if(redEl)redEl.textContent=red;
  if(orangeEl)orangeEl.textContent=orange;
  if(pendingEl)pendingEl.textContent=pending;
  if(invEl)invEl.textContent=formatDashboardInventoryDate(latestInventory);
+ if(invGapEl){
+  if(!latestInventory)invGapEl.textContent='Aucun inventaire';
+  else if(latestInventoryDifferenceCount===0)invGapEl.textContent='0 écart';
+  else invGapEl.textContent=latestInventoryDifferenceCount+' écart'+(latestInventoryDifferenceCount>1?'s':'');
+ }
 }
 
 function inventoryDateTime(v){
@@ -1349,8 +1355,14 @@ async function reloadCloud(){
  try{
   const {data:inv,error:ie}=await sb.from('inventories').select('*').order('created_at',{ascending:false}).limit(1);
   latestInventory=(!ie&&inv&&inv.length)?inv[0]:null;
+  latestInventoryDifferenceCount=0;
+  if(latestInventory?.id){
+   const {data:latestLines,error:ile}=await sb.from('inventory_lines').select('difference').eq('inventory_id',latestInventory.id);
+   if(!ile)latestInventoryDifferenceCount=(latestLines||[]).filter(line=>Number(line.difference||0)!==0).length;
+  }
  }catch(_e){
   latestInventory=null;
+  latestInventoryDifferenceCount=0;
  }
 
  if(seq!==reloadSeq)return;
