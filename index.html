@@ -69,6 +69,10 @@ body:has(#home.active){background:linear-gradient(rgba(255,255,255,.16),rgba(246
 .todo-item.inventory{background:#f1f5ff;color:#36558f}
 @media(max-width:560px){.todo-grid{grid-template-columns:1fr}}
 
+
+.todo-item.inventory.inventory-due{background:#fff1f2;color:#b42318}
+.todo-item.inventory.inventory-due small{color:#b42318}
+
 </style>
 
 <style>
@@ -508,7 +512,7 @@ main .card,
       <div class="dashboard-icon">🛒</div>
       <div><div id="dashPending" class="dashboard-number">0</div><div class="dashboard-label">Commandes en attente</div></div>
     </div>
-    <div class="dashboard-card dashboard-inventory" role="button" tabindex="0" onclick="openInventoryHistory();setTimeout(()=>{if(latestInventory&&latestInventory.id)openInventoryDetail(latestInventory.id)},180)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openInventoryHistory()}">
+    <div class="dashboard-card dashboard-inventory" role="button" tabindex="0" onclick="openInventoryHistory()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openInventoryHistory()}">
       <div class="dashboard-icon">📋</div>
       <div><div id="dashInventory" class="dashboard-date">—</div><div id="dashInventoryGap" class="dashboard-inventory-gap">Aucun écart</div><div class="dashboard-label">Dernier inventaire</div></div>
     </div>
@@ -521,7 +525,7 @@ main .card,
 <div class="todo-grid">
 <button id="todoRed" class="todo-item" onclick="setHomeAlertFilter('red',true);setTimeout(()=>{const e=document.getElementById('watchList')||document.getElementById('watchSection');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},50)">🔴 <span id="todoRedText">Produits rouges</span><small>Stock à contrôler ou commander</small></button>
 <button id="todoPending" class="todo-item" onclick="openPendingOrders()">🛒 <span id="todoPendingText">Commandes en attente</span><small>Livraisons à suivre</small></button>
-<button class="todo-item inventory" onclick="openInventoryHistory()">📋 Inventaire<small id="todoInventoryText">Dernier inventaire</small></button>
+<button id="todoInventory" class="todo-item inventory" onclick="openInventoryHistory()">📋 Inventaire<small id="todoInventoryText">Dernier inventaire</small></button>
 </div></div>
 <div class="section"><h2>Actions rapides</h2><div class="quick"><button class="btn good" onclick="chooseMove('in')">➕ Entrée<small>Ajouter du stock</small></button><button class="btn secondary" onclick="chooseMove('out')">➖ Sortie<small>Retirer du stock</small></button><button class="btn scanBtn" onclick="openScanner()">📷 Scanner un bon de livraison<small>Photographier et contrôler avant validation</small></button><button class="btn orderBtn" onclick="openOrders()">🛒 Commande à préparer<small id="orderHomeCount">Aucun produit à commander</small></button><button class="btn inventoryBtn" onclick="openInventory()">📋 Faire l'inventaire<small>Compter et corriger le stock réel</small></button></div></div>
 <div class="section" id="watchSection"><h2>Produits à surveiller</h2><div class="alert-filter-bar"><button id="alertAllBtn" class="alert-filter-btn active" type="button" onclick="setHomeAlertFilter('all',false)">Tous</button><button id="alertRedBtn" class="alert-filter-btn" type="button" onclick="setHomeAlertFilter('red',false)">🔴 Rouges</button><button id="alertOrangeBtn" class="alert-filter-btn" type="button" onclick="setHomeAlertFilter('orange',false)">🟠 Oranges</button></div><div id="alerts" class="card"></div></div>
@@ -1276,6 +1280,14 @@ async function validateDelivery(){
  }catch(e){console.error(e);$('scanStatus').textContent='Erreur pendant la mise à jour : '+(e?.message||'erreur inconnue');btn.disabled=false}
 }
 
+function inventoryIsDue(){
+ if(!latestInventory)return true;
+ const raw=latestInventory.created_at||latestInventory.inventory_date||latestInventory.date||latestInventory.updated_at;
+ if(!raw)return false;
+ const d=new Date(raw);
+ if(Number.isNaN(d.getTime()))return false;
+ return Math.floor((Date.now()-d.getTime())/86400000)>=14;
+}
 function todoInventoryAge(){
  if(!latestInventory)return 'Aucun inventaire enregistré';
  const raw=latestInventory.created_at||latestInventory.inventory_date||latestInventory.date||latestInventory.updated_at;
@@ -1305,7 +1317,8 @@ function renderHome(){
  const pendingCount=products.filter(p=>Number(p.ordered_quantity||0)>0).length;
  $('todoRedText').textContent=redCount+' produit'+(redCount>1?'s':'')+' en rouge';
  $('todoPendingText').textContent=pendingCount+' commande'+(pendingCount>1?'s':'')+' en attente';
- $('todoInventoryText').textContent=todoInventoryAge();
+ $('todoInventoryText').textContent=inventoryIsDue()?'Inventaire à faire (14 jours)':todoInventoryAge();
+ $('todoInventory').classList.toggle('inventory-due',inventoryIsDue());
  $('todoRed').classList.toggle('urgent',redCount>0);
  $('todoPending').classList.toggle('waiting',pendingCount>0);
 }
