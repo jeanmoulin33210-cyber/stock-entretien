@@ -1063,8 +1063,87 @@ function renderOrderHistoryDetail(order){
  const received=lines.reduce((a,l)=>a+Math.min(Number(l.received_quantity||0),Number(l.ordered_quantity||0)),0);
  const status=order.status||((ordered>0&&received>=ordered)?'delivered':received>0?'partial':'pending');
  const canEdit=orderStatusClass(status)==='pending'&&lines.every(l=>Number(l.received_quantity||0)===0);
- box.innerHTML=`<h2>🛒 Détail de la commande</h2><div class="order-summary"><strong>📅 ${esc(orderDateTime(order.created_at))}</strong><br>👤 ${esc(order.user_name||'Utilisateur')}<br><span class="order-status ${orderStatusClass(status)}" style="display:inline-block;margin-top:8px">${orderStatusLabel(status)}</span>${order.completed_at?'<br><small>Terminée le '+esc(orderDateTime(order.completed_at))+'</small>':''}</div><div style="margin-top:10px">${lines.length?lines.map(l=>{const q=Number(l.ordered_quantity||0),r=Math.min(Number(l.received_quantity||0),q),remain=Math.max(0,q-r);return `<div class="order-detail-line"><div class="order-detail-name">${esc(l.product_name||'Produit')}</div><div class="order-detail-ref">${l.reference?'Réf. '+esc(l.reference):''}${l.unit?' · '+esc(l.unit):''}</div><div class="order-detail-values"><div class="order-detail-value">Commandé<strong>${fmt(q)}</strong></div><div class="order-detail-value ${r>=q&&q>0?'done':''}">Reçu<strong>${fmt(r)}</strong></div><div class="order-detail-value ${remain>0?'remaining':'done'}">Reste<strong>${fmt(remain)}</strong></div></div></div>`}).join(''):'<div class="empty">Aucune ligne enregistrée pour cette commande.</div>'}</div>${canEdit?`<div class="order-edit-actions"><button class="btn order-edit-btn" onclick="editPendingOrder('${order.id}')">✏️ Modifier la commande</button><button class="btn order-cancel-btn" onclick="cancelPendingOrder('${order.id}')">❌ Annuler la commande</button></div>`:''}`;
+ box.innerHTML=`<h2>🛒 Détail de la commande</h2><div class="order-summary"><strong>📅 ${esc(orderDateTime(order.created_at))}</strong><br>👤 ${esc(order.user_name||'Utilisateur')}<br><span class="order-status ${orderStatusClass(status)}" style="display:inline-block;margin-top:8px">${orderStatusLabel(status)}</span>${order.completed_at?'<br><small>Terminée le '+esc(orderDateTime(order.completed_at))+'</small>':''}</div><div style="margin-top:10px">${lines.length?lines.map(l=>{const q=Number(l.ordered_quantity||0),r=Math.min(Number(l.received_quantity||0),q),remain=Math.max(0,q-r);return `<div class="order-detail-line"><div class="order-detail-name">${esc(l.product_name||'Produit')}</div><div class="order-detail-ref">${l.reference?'Réf. '+esc(l.reference):''}${l.unit?' · '+esc(l.unit):''}</div><div class="order-detail-values"><div class="order-detail-value">Commandé<strong>${fmt(q)}</strong></div><div class="order-detail-value ${r>=q&&q>0?'done':''}">Reçu<strong>${fmt(r)}</strong></div><div class="order-detail-value ${remain>0?'remaining':'done'}">Reste<strong>${fmt(remain)}</strong></div></div></div>`}).join(''):'<div class="empty">Aucune ligne enregistrée pour cette commande.</div>'}</div>${(['pending','partial'].includes(orderStatusClass(status)))?`<div class="order-edit-actions"><button class="btn" onclick="manualReceiveOrder('${order.id}')">📦 Réception manuelle</button>${canEdit?`<button class="btn order-edit-btn" onclick="editPendingOrder('${order.id}')">✏️ Modifier la commande</button><button class="btn order-cancel-btn" onclick="cancelPendingOrder('${order.id}')">❌ Annuler la commande</button>`:''}</div>`:''}`;
 }
+async function manualReceiveOrder(orderId){
+ const order=orderHistoryData.find(o=>String(o.id)===String(orderId));
+ if(!order)return;
+ const status=orderStatusClass(order.status);
+ if(!['pending','partial'].includes(status)){alert('Cette commande n’est plus en attente de livraison.');return}
+ const lines=orderHistoryLines.filter(l=>String(l.order_id)===String(orderId));
+ if(!lines.length){alert('Aucune ligne dans cette commande.');return}
+ const entries=[];
+ for(const line of lines){
+  const ordered=Number(line.ordered_quantity||0);
+  const already=Math.min(Number(line.received_quantity||0),ordered);
+  const remain=Math.max(0,ordered-already);
+  if(remain<=0)continue;
+  const answer=prompt(
+   'Réception manuelle :\n'+(line.product_name||'Produit')+
+   '\n\nCommandé : '+fmt(ordered)+
+   '\nDéjà reçu : '+fmt(already)+
+   '\nReste : '+fmt(remain)+
+   '\n\nQuantité reçue maintenant :',
+   String(remain)
+  );
+  if(answer===null)return;
+  const qty=Number(String(answer).replace(',','.'));
+  if(!Number.isFinite(qty)||qty<0||qty>remain){
+   alert('La quantité reçue doit être comprise entre 0 et '+fmt(remain)+'.');return;
+  }
+  if(qty>0)entries.push({line,qty});
+ }
+ if(!entries.length){alert('Aucune quantité reçue à enregistrer.');return}
+ if(!confirm('Valider cette réception manuelle et mettre le stock à jour ?'))return;
+ try{
+  await reloadCloud();
+  const now=new Date().toISOString();
+  for(const e of entries){
+   const line=e.line,qty=e.qty;
+   const p=products.find(x=>String(x.id)===String(line.product_id));
+   if(!p)throw new Error('Produit introuvable : '+(line.product_name||'Produit'));
+   const oldReceived=Number(line.received_quantity||0);
+   const newReceived=Math.min(Number(line.ordered_quantity||0),oldReceived+qty);
+   const newStock=Number(p.stock||0)+qty;
+   const remainingOrdered=Math.max(0,Number(p.ordered_quantity||0)-qty);
+
+   const {error:le}=await sb.from('order_lines').update({received_quantity:newReceived}).eq('id',line.id);
+   if(le)throw le;
+
+   const productUpdate={
+    stock:newStock,
+    ordered_quantity:remainingOrdered,
+    ordered_at:remainingOrdered>0?p.ordered_at:null,
+    updated_at:now
+   };
+   const {error:pe}=await sb.from('products').update(productUpdate).eq('id',p.id);
+   if(pe)throw pe;
+
+   const {error:me}=await sb.from('movements').insert({
+    product_id:p.id,
+    product_name:p.name,
+    movement_type:'in',
+    quantity:qty,
+    stock_after:newStock,
+    unit:p.unit,
+    reason:'Réception manuelle commande',
+    user_name:currentUser
+   });
+   if(me)throw me;
+  }
+
+  await refreshOrderStatuses([orderId]);
+  await reloadCloud();
+  await loadOrderHistory();
+  const fresh=orderHistoryData.find(o=>String(o.id)===String(orderId));
+  if(fresh)renderOrderHistoryDetail(fresh);
+  alert('✅ Réception enregistrée et stock mis à jour.');
+ }catch(e){
+  console.error(e);
+  alert('Erreur : '+(e?.message||'réception impossible'));
+ }
+}
+
 async function editPendingOrder(orderId){
  const order=orderHistoryData.find(o=>String(o.id)===String(orderId));if(!order||orderStatusClass(order.status)!=='pending')return;
  const lines=orderHistoryLines.filter(l=>String(l.order_id)===String(orderId));
