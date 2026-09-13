@@ -675,15 +675,7 @@ function openPendingOrders(){
  showScreen('orders');
  setTimeout(()=>{
   const section=$('pendingOrdersSection');
-  if(section)section.scrollIntoView({behavior:'smooth',block:'start'
- setTimeout(()=>{
-   const target =
-     document.getElementById('pendingOrders') ||
-     document.getElementById('pendingOrdersSection') ||
-     document.querySelector('[data-section="pending-orders"]');
-   if(target) target.scrollIntoView({behavior:'smooth',block:'start'});
- },120);
-});
+  if(section)section.scrollIntoView({behavior:'smooth',block:'start'});
  },80);
 }
 
