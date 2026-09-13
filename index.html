@@ -1482,7 +1482,7 @@ function renderHistoryRowsForProduct(p,rows){
      <div class="product-history-icon">${icon}</div>
      <div class="product-history-main">
        <b>${label}</b>
-       <small>${esc(date)}${m.user_name?' · '+esc(m.user_name):''}${m.reason?' · '+esc(m.reason):''}</small>
+       <small>${esc(date)}${m.user_name?' · '+esc(m.user_name):''}${m.reason?' · '+esc(movementReasonLabel(m.reason)):''}</small>
      </div>
      <div class="product-history-qty">${sign}${fmt(qty)} ${esc(m.unit||p.unit||'')}</div>
    </div>`;
@@ -1547,7 +1547,17 @@ function renderSelectedProduct(p){
 }
 function backToCatalog(){selectedProductId=null;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
 function showProductDetails(id){const p=products.find(x=>x.id===id);if(!p)return;const has=v=>v!==null&&v!==undefined&&String(v).trim()!=='';const block=(title,value)=>has(value)?`<div class="detail-block"><strong>${title}</strong><div class="detail-text">${esc(value)}</div></div>`:'';const price=has(p.price_ht)?`${Number(p.price_ht).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} € HT`:'';const photoUrl=productPhoto(p);const photo=photoUrl?`<div class="detail-photo-wrap"><img class="detail-photo" src="${esc(photoUrl)}" alt="Photo ${esc(p.name)}"></div>`:'';const links=[];if(has(p.technical_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.technical_sheet_url)}" target="_blank" rel="noopener">📘 Fiche technique</a>`);if(has(p.safety_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.safety_sheet_url)}" target="_blank" rel="noopener">🛡️ Fiche de sécurité (FDS)</a>`);$('detailContent').innerHTML=`${photo}<div class="detail-head"><div><h3 style="margin:0">${esc(p.name)}</h3><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${has(p.reference)?' · Réf. '+esc(p.reference):''}</div></div>${price?`<div class="detail-price">${price}</div>`:''}</div>${block('Conditionnement',p.packaging)}${block('Description',p.description)}${block('Utilisation',p.usage_info)}${block('Dosage',p.dosage)}${block('Sécurité',p.safety_info)}<div class="detail-block"><strong>Stock</strong><div class="detail-text">${fmt(p.stock)} ${esc(p.unit||'')} · Seuil orange : ${fmt(p.orange_threshold)} · Seuil rouge/commande : ${fmt(p.red_threshold)}${Number(p.desired_stock)>0?' · Stock souhaité : '+fmt(p.desired_stock):''}</div></div>${links.length?`<div class="detail-links">${links.join('')}</div>`:''}`;detailDialog.showModal()}
-function renderHistory(){$('historyList').innerHTML=historyData.length?historyData.map(h=>`<div class="history-item"><div class="history-top"><strong>${esc(h.product_name)}</strong><span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}</span></div><div class="history-sub">${new Date(h.created_at).toLocaleString('fr-FR')} · stock après : ${fmt(h.stock_after)} ${esc(h.unit||'')}${h.reason?' · '+esc(h.reason):''}${h.user_name?' · '+esc(h.user_name):''}</div></div>`).join(''):`<div class="empty">Aucun mouvement.</div>`}
+function movementReasonLabel(reason){
+ const r=String(reason||'').trim();
+ const low=r.toLowerCase();
+ if(low.startsWith('bon de livraison')){
+   const number=r.substring('Bon de livraison'.length).trim();
+   return '📷 Réception par bon de livraison'+(number?' · '+number:'');
+ }
+ if(low.includes('réception manuelle'))return '📦 Réception manuelle';
+ return r;
+}
+function renderHistory(){$('historyList').innerHTML=historyData.length?historyData.map(h=>`<div class="history-item"><div class="history-top"><strong>${esc(h.product_name)}</strong><span class="badge ${h.movement_type==='in'?'bgreen':'borange'}">${h.movement_type==='in'?'ENTRÉE':'SORTIE'} ${fmt(h.quantity)}</span></div><div class="history-sub">${new Date(h.created_at).toLocaleString('fr-FR')} · stock après : ${fmt(h.stock_after)} ${esc(h.unit||'')}${h.reason?' · '+esc(movementReasonLabel(h.reason)):''}${h.user_name?' · '+esc(h.user_name):''}</div></div>`).join(''):`<div class="empty">Aucun mouvement.</div>`}
 function loadSettings(){$('emailTo').value=emailCfg.to||'';$('emailPublic').value=emailCfg.publicKey||'';$('emailService').value=emailCfg.serviceId||'';$('emailTemplate').value=emailCfg.templateId||'';$('moveUser').value=currentUser||''}
 async function connectCloud(){
  try{
