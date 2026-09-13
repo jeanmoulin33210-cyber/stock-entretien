@@ -643,10 +643,10 @@ function levelLabel(l){return l==='red'?'ROUGE':l==='orange'?'ORANGE':'OK'}
 function levelClass(l){return l==='red'?'bred':l==='orange'?'borange':'bgreen'}
 function orderProducts(){return products.filter(p=>Number(p.desired_stock)>0&&Number(p.stock)<=Number(p.red_threshold)&&Number(p.desired_stock)>Number(p.stock)&&Number(p.ordered_quantity||0)<=0)}
 function togglePassword(e){if(e){e.preventDefault();e.stopPropagation()}const i=$('loginPass'),b=$('passwordEye'),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'🙈':'👁️';i.focus()}
-function login(e){e.preventDefault();let u=$('loginUser').value.trim();const p=$('loginPass').value;if(u.toLocaleLowerCase('fr-FR')==='cédric'.toLocaleLowerCase('fr-FR'))u='Cedric';if(Object.prototype.hasOwnProperty.call(USERS,u)&&USERS[u]===p){currentUser=u;localStorage.setItem(KSESSION,u);$('loginError').style.display='none';openApplication()}else $('loginError').style.display='block'}
+function login(e){e.preventDefault();let u=$('loginUser').value.trim();const p=$('loginPass').value;if(u.toLocaleLowerCase('fr-FR')==='cédric'.toLocaleLowerCase('fr-FR'))u='Cedric';if(Object.prototype.hasOwnProperty.call(USERS,u)&&USERS[u]===p){currentUser=u;localStorage.removeItem(KSESSION);$('loginError').style.display='none';openApplication()}else $('loginError').style.display='block'}
 function openApplication(){$('loginPage').style.display='none';$('connectedUser').textContent=currentUser+(isAdmin()?' · Admin':'');$('moveUser').value=currentUser;$('settingsButton').style.display=isAdmin()?'block':'none';$('addProductArea').style.display=isAdmin()?'block':'none';renderAll()}
 function logout(){localStorage.removeItem(KSESSION);currentUser='';$('loginPage').style.display='block';$('loginPass').value=''}
-function restoreSession(){const s=localStorage.getItem(KSESSION)||'';if(s&&Object.prototype.hasOwnProperty.call(USERS,s)){currentUser=s;openApplication()}}
+function restoreSession(){localStorage.removeItem(KSESSION);currentUser='';$('loginPage').style.display='block'}
 function setSync(state,text){$('syncDot').className='dot '+state;$('syncText').textContent=text}
 function showScreen(id,btn){if(id==='settings'&&!isAdmin())return;document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$(id).classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));if(btn)btn.classList.add('active');if(id==='products')selectedProductId=null;renderAll()}
 function navButtonForProducts(){return document.querySelectorAll('nav button')[1]}
