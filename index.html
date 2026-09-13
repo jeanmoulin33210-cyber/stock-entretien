@@ -1506,6 +1506,69 @@ function prepareOrderSummary(){
  const modal=$('prepareOrderModal');
  modal.style.display='flex';
 }
+function printPrepareOrder(){
+ const list=orderProducts();
+ if(!list.length){
+   alert('Aucun produit à commander actuellement.');
+   return;
+ }
+
+ const rows=list.map(p=>{
+   const qty=Math.max(0,Number(p.desired_stock)-Number(p.stock));
+   return `<tr>
+     <td>${esc(p.name)}</td>
+     <td>${esc(p.reference||'—')}</td>
+     <td class="num">${fmt(p.stock)} ${esc(p.unit||'')}</td>
+     <td class="num">${fmt(p.desired_stock)} ${esc(p.unit||'')}</td>
+     <td class="num"><strong>${fmt(qty)} ${esc(p.unit||'')}</strong></td>
+   </tr>`;
+ }).join('');
+
+ const w=window.open('','_blank','width=950,height=750');
+ if(!w){
+   alert("L'impression a été bloquée par le navigateur.");
+   return;
+ }
+
+ const now=new Date();
+ const date=now.toLocaleDateString('fr-FR');
+ const time=now.toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
+
+ w.document.open();
+ w.document.write(`<!doctype html>
+ <html lang="fr"><head><meta charset="utf-8">
+ <title>Préparation de commande - Lycée Jean Moulin</title>
+ <style>
+   body{font-family:Arial,sans-serif;color:#17324d;margin:28px}
+   h1{margin:0 0 4px;font-size:24px}
+   .school{font-weight:700;margin-bottom:4px}
+   .meta{color:#5d6b78;font-size:13px;margin-bottom:22px}
+   table{width:100%;border-collapse:collapse;font-size:13px}
+   th{background:#eef3f7;text-align:left}
+   th,td{padding:9px;border:1px solid #d9e0e6}
+   .num{text-align:right;white-space:nowrap}
+   .total{margin-top:14px;font-weight:700}
+   .sign{margin-top:36px;display:flex;justify-content:space-between;gap:30px}
+   .sign div{width:45%;border-top:1px solid #9aa7b2;padding-top:7px;font-size:12px}
+   @media print{body{margin:12mm}.no-print{display:none}}
+ </style></head><body>
+ <h1>📝 Préparation de commande</h1>
+ <div class="school">Lycée Jean Moulin</div>
+ <div class="meta">Éditée le ${date} à ${time} · Préparée par ${esc(currentUser||'')}</div>
+ <table>
+  <thead><tr>
+   <th>Produit</th><th>Référence</th><th class="num">Stock actuel</th>
+   <th class="num">Stock souhaité</th><th class="num">À commander</th>
+  </tr></thead>
+  <tbody>${rows}</tbody>
+ </table>
+ <div class="total">${list.length} produit${list.length>1?'s':''} à commander</div>
+ <div class="sign"><div>Préparé par</div><div>Validation gestionnaire</div></div>
+ <script>window.onload=function(){setTimeout(function(){window.print()},200)}<\/script>
+ </body></html>`);
+ w.document.close();
+}
+
 function closePrepareOrderSummary(){
  $('prepareOrderModal').style.display='none';
 }
@@ -1737,7 +1800,10 @@ restoreSession();connectCloud();
   <div class="prepare-card">
     <div class="prepare-head">
       <h2 style="margin:0">📝 Préparation de commande</h2>
-      <button class="prepare-close" type="button" onclick="closePrepareOrderSummary()">✕ Fermer</button>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button id="printPrepareOrderBtn" class="prepare-close" type="button" onclick="printPrepareOrder()">🖨️ Imprimer / PDF</button>
+        <button class="prepare-close" type="button" onclick="closePrepareOrderSummary()">✕ Fermer</button>
+      </div>
     </div>
     <div id="prepareOrderContent"></div>
   </div>
