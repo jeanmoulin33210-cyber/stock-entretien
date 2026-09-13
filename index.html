@@ -519,7 +519,7 @@ main .card,
 <div class="todo-panel">
 <h2>📌 À faire</h2>
 <div class="todo-grid">
-<button id="todoRed" class="todo-item" onclick="setHomeAlertFilter('red',true)">🔴 <span id="todoRedText">Produits rouges</span><small>Stock à contrôler ou commander</small></button>
+<button id="todoRed" class="todo-item" onclick="setHomeAlertFilter('red',true);setTimeout(()=>{const e=document.getElementById('watchList')||document.getElementById('watchSection');if(e)e.scrollIntoView({behavior:'smooth',block:'start'})},50)">🔴 <span id="todoRedText">Produits rouges</span><small>Stock à contrôler ou commander</small></button>
 <button id="todoPending" class="todo-item" onclick="openPendingOrders()">🛒 <span id="todoPendingText">Commandes en attente</span><small>Livraisons à suivre</small></button>
 <button class="todo-item inventory" onclick="openInventoryHistory()">📋 Inventaire<small id="todoInventoryText">Dernier inventaire</small></button>
 </div></div>
