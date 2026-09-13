@@ -508,7 +508,7 @@ main .card,
       <div class="dashboard-icon">🛒</div>
       <div><div id="dashPending" class="dashboard-number">0</div><div class="dashboard-label">Commandes en attente</div></div>
     </div>
-    <div class="dashboard-card dashboard-inventory" role="button" tabindex="0" onclick="openInventoryHistory()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openInventoryHistory()}">
+    <div class="dashboard-card dashboard-inventory" role="button" tabindex="0" onclick="openInventoryHistory();setTimeout(()=>{if(latestInventory&&latestInventory.id)openInventoryDetail(latestInventory.id)},180)" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openInventoryHistory()}">
       <div class="dashboard-icon">📋</div>
       <div><div id="dashInventory" class="dashboard-date">—</div><div id="dashInventoryGap" class="dashboard-inventory-gap">Aucun écart</div><div class="dashboard-label">Dernier inventaire</div></div>
     </div>
