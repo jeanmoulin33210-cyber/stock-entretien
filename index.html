@@ -541,7 +541,7 @@ main .card,
 <button id="todoInventory" class="todo-item inventory" onclick="openInventoryHistory()">📋 Inventaire<small id="todoInventoryText">Dernier inventaire</small></button>
 </div></div>
 <div class="section"><h2>Actions rapides</h2><div class="quick"><button class="btn good" onclick="chooseMove('in')">➕ Entrée<small>Ajouter du stock</small></button><button class="btn secondary" onclick="chooseMove('out')">➖ Sortie<small>Retirer du stock</small></button><button class="btn scanBtn" onclick="openScanner()">📷 Scanner un bon de livraison<small>Photographier et contrôler avant validation</small></button><button class="btn orderBtn" onclick="openOrders()">🛒 Commande à préparer<small id="orderHomeCount">Aucun produit à commander</small></button><button class="btn inventoryBtn" onclick="openInventory()">📋 Faire l'inventaire<small>Compter et corriger le stock réel</small></button></div></div>
-<div class="section" id="watchSection"><h2>Produits à surveiller</h2><div class="alert-filter-bar"><button id="alertAllBtn" class="alert-filter-btn active" type="button" onclick="setHomeAlertFilter('all',false)">Tous</button><button id="alertRedBtn" class="alert-filter-btn" type="button" onclick="setHomeAlertFilter('red',false)">🔴 Rouges</button><button id="alertOrangeBtn" class="alert-filter-btn" type="button" onclick="setHomeAlertFilter('orange',false)">🟠 Oranges</button><button id="alertToOrderBtn" class="alert-filter-btn" type="button" onclick="setHomeAlertFilter('toorder',false)">🛒 À commander</button></div><div id="alerts" class="card"></div></div>
+<div class="section" id="watchSection"><h2>Produits à surveiller</h2><div class="alert-filter-bar"><button id="alertAllBtn" class="alert-filter-btn active" type="button" onclick="setHomeAlertFilter('all',false)">Tous</button><button id="alertRedBtn" class="alert-filter-btn" type="button" onclick="setHomeAlertFilter('red',false)">🔴 Rouges</button><button id="alertOrangeBtn" class="alert-filter-btn" type="button" onclick="setHomeAlertFilter('orange',false)">🟠 Oranges</button><button id="alertToOrderBtn" class="alert-filter-btn" type="button" onclick="setHomeAlertFilter('toorder',false)">🛒 À commander</button><button class="alert-filter-btn" type="button" onclick="prepareOrderSummary()">📝 Préparer la commande</button></div><div id="alerts" class="card"></div></div>
 </section>
 <section id="products" class="screen"><div class="reserve-grid"><button id="rCuisine" class="reserve-card active" onclick="setReserve('Cuisine')"><span class="reserve-icon">🍳</span>Cuisine<span id="cCuisine" class="reserve-count"></span></button><button id="rGeneral" class="reserve-card" onclick="setReserve('Service général')"><span class="reserve-icon">🧹</span>Service général<span id="cGeneral" class="reserve-count"></span></button></div><div id="addProductArea" class="section"><button class="btn primary" onclick="openProduct()">+ Ajouter un produit</button></div><div class="section"><input id="search" class="search" placeholder="🔎 Rechercher un produit..." oninput="renderProducts()"></div><div id="productList" class="section"></div></section>
 <section id="orders" class="screen">
@@ -1429,6 +1429,45 @@ function renderHome(){
  $('todoPending').classList.toggle('waiting',pendingCount>0);
 }
 
+function prepareOrderSummary(){
+ const list=products.filter(p=>
+   Number(p.desired_stock)>Number(p.stock) &&
+   Number(p.ordered_quantity||0)<=0
+ );
+ const box=$('prepareOrderContent');
+ if(!list.length){
+   box.innerHTML='<div class="empty">Aucun produit à commander actuellement.</div>';
+ }else{
+   box.innerHTML=`
+    <div style="overflow:auto">
+     <table style="width:100%;border-collapse:collapse;font-size:13px">
+      <thead><tr>
+       <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd">Produit</th>
+       <th style="text-align:left;padding:8px;border-bottom:1px solid #ddd">Référence</th>
+       <th style="text-align:right;padding:8px;border-bottom:1px solid #ddd">Stock</th>
+       <th style="text-align:right;padding:8px;border-bottom:1px solid #ddd">Souhaité</th>
+       <th style="text-align:right;padding:8px;border-bottom:1px solid #ddd">À commander</th>
+      </tr></thead>
+      <tbody>${list.map(p=>{
+       const qty=Math.max(0,Number(p.desired_stock)-Number(p.stock));
+       return `<tr>
+        <td style="padding:8px;border-bottom:1px solid #eee">${esc(p.name)}</td>
+        <td style="padding:8px;border-bottom:1px solid #eee">${esc(p.reference||'—')}</td>
+        <td style="text-align:right;padding:8px;border-bottom:1px solid #eee">${fmt(p.stock)} ${esc(p.unit||'')}</td>
+        <td style="text-align:right;padding:8px;border-bottom:1px solid #eee">${fmt(p.desired_stock)} ${esc(p.unit||'')}</td>
+        <td style="text-align:right;padding:8px;border-bottom:1px solid #eee"><b>${fmt(qty)} ${esc(p.unit||'')}</b></td>
+       </tr>`;
+      }).join('')}</tbody>
+     </table>
+    </div>
+    <div style="margin-top:12px;font-weight:800">${list.length} produit${list.length>1?'s':''} à commander</div>`;
+ }
+ $('prepareOrderModal').style.display='flex';
+}
+function closePrepareOrderSummary(){
+ $('prepareOrderModal').style.display='none';
+}
+
 function setHomeAlertFilter(filter,scroll=true){
  homeAlertFilter=['red','orange','toorder'].includes(filter)?filter:'all';
  renderHome();
@@ -1649,6 +1688,15 @@ function saveEmailSettings(){if(!isAdmin())return;emailCfg={to:$('emailTo').valu
 function backup(){if(!isAdmin())return;const blob=new Blob([JSON.stringify({exported_at:new Date().toISOString(),products,history:historyData},null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='sauvegarde-stock-entretien.json';a.click();URL.revokeObjectURL(a.href)}
 restoreSession();connectCloud();
 </script>
+
+
+<div id="prepareOrderModal" class="modal" style="display:none">
+ <div class="modal-card" style="max-width:760px">
+  <div class="modal-head"><h2>📝 Préparation de commande</h2><button class="icon-btn" onclick="closePrepareOrderSummary()">✕</button></div>
+  <div id="prepareOrderContent"></div>
+  <div class="modal-actions"><button class="btn secondary" onclick="closePrepareOrderSummary()">Fermer</button></div>
+ </div>
+</div>
 
 </body>
 </html>
