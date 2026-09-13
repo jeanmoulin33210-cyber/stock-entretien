@@ -929,11 +929,11 @@ function renderOrderHistoryDetail(order){
  const ordered=lines.reduce((a,l)=>a+Number(l.ordered_quantity||0),0);
  const received=lines.reduce((a,l)=>a+Math.min(Number(l.received_quantity||0),Number(l.ordered_quantity||0)),0);
  const status=order.status||((ordered>0&&received>=ordered)?'delivered':received>0?'partial':'pending');
- const canEdit=String(status).toLowerCase()==='pending'&&lines.every(l=>Number(l.received_quantity||0)===0);
+ const canEdit=orderStatusClass(status)==='pending'&&lines.every(l=>Number(l.received_quantity||0)===0);
  box.innerHTML=`<h2>🛒 Détail de la commande</h2><div class="order-summary"><strong>📅 ${esc(orderDateTime(order.created_at))}</strong><br>👤 ${esc(order.user_name||'Utilisateur')}<br><span class="order-status ${orderStatusClass(status)}" style="display:inline-block;margin-top:8px">${orderStatusLabel(status)}</span>${order.completed_at?'<br><small>Terminée le '+esc(orderDateTime(order.completed_at))+'</small>':''}</div><div style="margin-top:10px">${lines.length?lines.map(l=>{const q=Number(l.ordered_quantity||0),r=Math.min(Number(l.received_quantity||0),q),remain=Math.max(0,q-r);return `<div class="order-detail-line"><div class="order-detail-name">${esc(l.product_name||'Produit')}</div><div class="order-detail-ref">${l.reference?'Réf. '+esc(l.reference):''}${l.unit?' · '+esc(l.unit):''}</div><div class="order-detail-values"><div class="order-detail-value">Commandé<strong>${fmt(q)}</strong></div><div class="order-detail-value ${r>=q&&q>0?'done':''}">Reçu<strong>${fmt(r)}</strong></div><div class="order-detail-value ${remain>0?'remaining':'done'}">Reste<strong>${fmt(remain)}</strong></div></div></div>`}).join(''):'<div class="empty">Aucune ligne enregistrée pour cette commande.</div>'}</div>${canEdit?`<div class="order-edit-actions"><button class="btn order-edit-btn" onclick="editPendingOrder('${order.id}')">✏️ Modifier la commande</button><button class="btn order-cancel-btn" onclick="cancelPendingOrder('${order.id}')">❌ Annuler la commande</button></div>`:''}`;
 }
 async function editPendingOrder(orderId){
- const order=orderHistoryData.find(o=>String(o.id)===String(orderId));if(!order||String(order.status||'pending').toLowerCase()!=='pending')return;
+ const order=orderHistoryData.find(o=>String(o.id)===String(orderId));if(!order||orderStatusClass(order.status)!=='pending')return;
  const lines=orderHistoryLines.filter(l=>String(l.order_id)===String(orderId));
  if(!lines.length)return;
  if(lines.some(l=>Number(l.received_quantity||0)>0)){alert('Cette commande a déjà été livrée en partie et ne peut plus être modifiée ici.');return}
@@ -958,7 +958,7 @@ async function editPendingOrder(orderId){
  }catch(e){console.error(e);alert('Erreur : '+(e?.message||'modification impossible'))}
 }
 async function cancelPendingOrder(orderId){
- const order=orderHistoryData.find(o=>String(o.id)===String(orderId));if(!order||String(order.status||'pending').toLowerCase()!=='pending')return;
+ const order=orderHistoryData.find(o=>String(o.id)===String(orderId));if(!order||orderStatusClass(order.status)!=='pending')return;
  const lines=orderHistoryLines.filter(l=>String(l.order_id)===String(orderId));
  if(lines.some(l=>Number(l.received_quantity||0)>0)){alert('Cette commande a déjà été livrée en partie et ne peut pas être annulée ici.');return}
  if(!confirm('Annuler cette commande ?\n\nElle restera visible dans l’historique avec le statut « Annulée ».'))return;
