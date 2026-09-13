@@ -937,6 +937,7 @@ async function backfillLegacyPendingOrders(){
   if(lineError){try{await sb.from('orders').delete().eq('id',order.id)}catch(_e){}}
  }catch(e){console.warn('Import ancienne commande',e)}
 }
+let orderHistoryFilter='all';
 function openOrderHistory(){
  document.querySelectorAll('.screen').forEach(x=>x.classList.remove('active'));
  $('orderHistory').classList.add('active');
@@ -951,9 +952,7 @@ async function loadOrderHistory(){
  try{
   await backfillLegacyPendingOrders();
   const [{data:orders,error:oe},{data:lines,error:le}]=await Promise.all([
-   sb.from('orders').select('*').order('created_at',{let orderHistoryFilter='all';
-
-ascending:false}),
+   sb.from('orders').select('*').order('created_at',{ascending:false}),
    sb.from('order_lines').select('*').order('created_at',{ascending:true})
   ]);
   if(oe)throw oe;if(le)throw le;
@@ -969,7 +968,7 @@ function renderOrderHistoryBase(){
   const ordered=lines.reduce((a,l)=>a+Number(l.ordered_quantity||0),0);
   const received=lines.reduce((a,l)=>a+Math.min(Number(l.received_quantity||0),Number(l.ordered_quantity||0)),0);
   const status=order.status||((ordered>0&&received>=ordered)?'delivered':received>0?'partial':'pending');
-  return `<div class="order-history-card" onclick="openOrderHistoryDetail('${order.id}')"><div class="order-history-top"><div><div class="order-history-date">📅 ${esc(orderDateTime(order.created_at))}</div><div class="order-history-meta">👤 ${esc(order.user_name||'Utilisateur')} · ${lines.length} produit${lines.length>1?'s':''}</div></div><div><span class="order-status ${orderStatusClass(status)}">${orderStatusLabel(status)}</span>${orderStatusClass(status)==='pending'?`<div class="order-age ${pendingOrderAgeClass(order)}">${pendingOrderAge(order)}</div>`:''}</div></div>${orderStatusClass(status)==='pending'?`<div class="order-age ${pendingOrderAgeClass(order)}" style="margin:6px 0 2px">${pendingOrderAge(order)}</div>`:''}<div class="order-history-counts"><span class="order-history-pill">Commandé : ${fmt(ordered)}</span><span class="order-history-pill">Reçu : ${fmt(received)}</span><span class="order-history-pill">Reste : ${fmt(Math.max(0,ordered-received))}</span></div></div>`;
+  return `<div class="order-history-card" onclick="openOrderHistoryDetail('${order.id}')"><div class="order-history-top"><div><div class="order-history-date">📅 ${esc(orderDateTime(order.created_at))}</div><div class="order-history-meta">👤 ${esc(order.user_name||'Utilisateur')} · ${lines.length} produit${lines.length>1?'s':''}</div></div><div><span class="order-status ${orderStatusClass(status)}">${orderStatusLabel(status)}</span>${orderStatusClass(status)==='pending'?`<div class="order-age ${pendingOrderAgeClass(order)}">${pendingOrderAge(order)}</div>`:''}</div></div><div class="order-history-counts"><span class="order-history-pill">Commandé : ${fmt(ordered)}</span><span class="order-history-pill">Reçu : ${fmt(received)}</span><span class="order-history-pill">Reste : ${fmt(Math.max(0,ordered-received))}</span></div></div>`;
  }).join('');
 }
 
