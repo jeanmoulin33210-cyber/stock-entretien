@@ -482,7 +482,7 @@ main .card,
       <div class="dashboard-icon">🟠</div>
       <div><div id="dashOrange" class="dashboard-number">0</div><div class="dashboard-label">Produits en orange</div></div>
     </div>
-    <div class="dashboard-card dashboard-order" role="button" tabindex="0" onclick="openOrderHistory()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openOrderHistory()}">
+    <div class="dashboard-card dashboard-order" role="button" tabindex="0" onclick="openPendingOrders()" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openPendingOrders()}">
       <div class="dashboard-icon">🛒</div>
       <div><div id="dashPending" class="dashboard-number">0</div><div class="dashboard-label">Commandes en attente</div></div>
     </div>
@@ -506,7 +506,7 @@ main .card,
 <button id="sendOrderButton" class="btn sendOrderBtn" type="button" onclick="sendOrderToManager()">📧 Envoyer à la gestionnaire</button>
 <button id="markOrderedButton" class="btn markOrderedBtn" type="button" onclick="markOrdersAsOrdered()">✅ Marquer comme commandé</button>
 <button class="btn order-history-btn" type="button" onclick="openOrderHistory()">🕘 Historique des commandes</button>
-<div class="pending-orders">
+<div id="pendingOrdersSection" class="pending-orders">
 <h2>📦 Commandes en attente de livraison</h2>
 <div id="pendingOrderList"></div>
 </div>
@@ -641,6 +641,14 @@ function showScreen(id,btn){if(id==='settings'&&!isAdmin())return;document.query
 function navButtonForProducts(){return document.querySelectorAll('nav button')[1]}
 function goReserve(r){currentReserve=r;selectedProductId=null;showScreen('products',navButtonForProducts())}
 function setReserve(r){currentReserve=r;selectedProductId=null;renderProducts()}
+
+function openPendingOrders(){
+ showScreen('orders');
+ setTimeout(()=>{
+  const section=$('pendingOrdersSection');
+  if(section)section.scrollIntoView({behavior:'smooth',block:'start'});
+ },80);
+}
 
 function formatDashboardInventoryDate(inv){
  if(!inv)return'—';
