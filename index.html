@@ -892,6 +892,7 @@ function ensureProductHistoryBox(){
 
 function renderAll(){renderHome();renderProducts();renderHistory();renderOrders();renderDashboard();loadSettings();if(selectedProductId){const p=products.find(x=>String(x.id)===String(selectedProductId));if(p){ensureProductHistoryBox();renderProductHistory(p)}}}
 let suggestedOrderOverride=null;
+let preparedOrderQtyOverrides={};
 
 function openSuggestedOrder(productId,qty){
  const p=products.find(x=>String(x.id)===String(productId));
@@ -907,10 +908,28 @@ function openSuggestedOrder(productId,qty){
 function openOrders(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('orders').classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));renderOrders();window.scrollTo({top:0,behavior:'smooth'})}
 
 function preparedOrderQty(p){
- if(suggestedOrderOverride&&String(suggestedOrderOverride.productId)===String(p.id)&&Number(suggestedOrderOverride.qty)>0){
+ const key=String(p.id);
+ if(Object.prototype.hasOwnProperty.call(preparedOrderQtyOverrides,key)&&Number(preparedOrderQtyOverrides[key])>0){
+   return Number(preparedOrderQtyOverrides[key]);
+ }
+ if(suggestedOrderOverride&&String(suggestedOrderOverride.productId)===key&&Number(suggestedOrderOverride.qty)>0){
    return Number(suggestedOrderOverride.qty);
  }
  return Math.max(0,Number(p.desired_stock)-Number(p.stock));
+}
+
+function changePreparedOrderQty(productId,value){
+ const qty=Number(String(value).replace(',','.'));
+ if(!Number.isFinite(qty)||qty<=0){
+   alert('La quantité doit être supérieure à 0.');
+   renderOrders();
+   return;
+ }
+ preparedOrderQtyOverrides[String(productId)]=qty;
+ if(suggestedOrderOverride&&String(suggestedOrderOverride.productId)===String(productId)){
+   suggestedOrderOverride.qty=qty;
+ }
+ renderOrders();
 }
 
 function pendingOrderProducts(){return products.filter(p=>Number(p.ordered_quantity||0)>0)}
@@ -950,6 +969,7 @@ async function markOrdersAsOrdered(){
   }
   await reloadCloud();
   suggestedOrderOverride=null;
+  preparedOrderQtyOverrides={};
   alert('✅ Commande enregistrée avec la date du jour et ajoutée à l’historique.');
  }catch(e){
   console.error(e);
@@ -978,7 +998,7 @@ function renderOrders(){
  const box=$('orderList');
  if(box)box.innerHTML=list.length?list.map(p=>{
   const qty=preparedOrderQty(p);
-  return`<div class="order-line"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${p.reference?' · Réf. '+esc(p.reference):''}<br>Stock : ${fmt(p.stock)} ${esc(p.unit||'')} · Seuil : ${fmt(p.red_threshold)} · Objectif : ${fmt(p.desired_stock)}</div></div><div><div class="meta" style="text-align:right">À commander</div><div class="order-qty">${fmt(qty)}</div><div class="meta" style="text-align:right">${esc(p.unit||'')}</div></div></div>`
+  return`<div class="order-line"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${p.reference?' · Réf. '+esc(p.reference):''}<br>Stock : ${fmt(p.stock)} ${esc(p.unit||'')} · Seuil : ${fmt(p.red_threshold)} · Objectif : ${fmt(p.desired_stock)}</div></div><div><div class="meta" style="text-align:right">Quantité à commander</div><div style="display:flex;align-items:center;justify-content:flex-end;gap:6px;margin-top:4px"><input type="number" min="0.01" step="0.01" value="${qty}" onchange="changePreparedOrderQty('${p.id}',this.value)" style="width:82px;padding:8px 9px;border:1px solid #cbd9e6;border-radius:10px;text-align:right;font-size:18px;font-weight:900"><span class="meta">${esc(p.unit||'')}</span></div></div></div>`
  }).join(''):`<div class="empty"><strong>Aucune nouvelle commande à préparer</strong><br>Les produits déjà commandés apparaissent ci-dessous en attente de livraison.</div>`;
 
  if(box&&suggestedOrderOverride){
