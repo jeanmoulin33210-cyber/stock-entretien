@@ -1527,9 +1527,13 @@ async function loadHomeRuptureRisk(){
          ${Number(p.ordered_quantity||0)>0?(()=>{
            const afterDays=Math.max(0,Math.round((Number(p.stock||0)+Number(p.ordered_quantity||0))/(total/30)));
            const sufficient=afterDays>=14;
+           const daily=total/30;
+           const targetQty=daily*14;
+           const availableAfter=Number(p.stock||0)+Number(p.ordered_quantity||0);
+           const missingQty=Math.max(0,Math.ceil(targetQty-availableAfter));
            return `<small style="display:block;margin-top:5px;font-weight:850;color:#9a5b00">📦 Livraison en attente : ${fmt(Number(p.ordered_quantity||0))} ${esc(p.unit||'')}</small>
              <small style="display:block;margin-top:3px;font-weight:850;color:#146c43">✅ Après livraison : environ ${afterDays} jours d’autonomie</small>
-             <small style="display:block;margin-top:3px;font-weight:900;color:${sufficient?'#146c43':'#b42318'}">${sufficient?'✅ Commande suffisante':'⚠️ Commande à compléter'}</small>`;
+             <small style="display:block;margin-top:3px;font-weight:900;color:${sufficient?'#146c43':'#b42318'}">${sufficient?'✅ Commande suffisante':`⚠️ Commande à compléter : prévoir environ ${fmt(missingQty)} ${esc(p.unit||'')} de plus`}</small>`;
          })():''}
        </span>
        <span style="white-space:nowrap;font-weight:900;color:#b42318">🔴 ${days} jour${days>1?'s':''}</span>
