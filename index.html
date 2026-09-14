@@ -938,49 +938,12 @@ function formatOrderDate(v){
  const d=new Date(v);
  return isNaN(d)?String(v):d.toLocaleDateString('fr-FR');
 }
-function showOrderConfirmModal(list){
- const modal=$('orderConfirmModal');
- const recap=$('orderConfirmRecap');
- const cancelBtn=$('orderConfirmCancelBtn');
- const okBtn=$('orderConfirmOkBtn');
- if(!modal||!recap||!cancelBtn||!okBtn)return Promise.resolve(false);
-
- recap.innerHTML=list.map(p=>`
-   <div style="display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-bottom:1px solid #e7edf3">
-     <span style="font-weight:800">${esc(p.name)}</span>
-     <strong style="white-space:nowrap">${fmt(preparedOrderQty(p))} ${esc(p.unit||'')}</strong>
-   </div>`).join('');
-
- modal.style.display='flex';
- modal.setAttribute('aria-hidden','false');
-
- return new Promise(resolve=>{
-   let done=false;
-   const finish=(value)=>{
-     if(done)return;
-     done=true;
-     modal.style.display='none';
-     modal.setAttribute('aria-hidden','true');
-     cancelBtn.onclick=null;
-     okBtn.onclick=null;
-     modal.onclick=null;
-     resolve(value);
-   };
-
-   cancelBtn.onclick=()=>finish(false);
-   okBtn.onclick=()=>finish(true);
-
-   // Clic en dehors de la carte = annulation, mais jamais un clic dans la carte.
-   modal.onclick=(e)=>{
-     if(e.target===modal)finish(false);
-   };
- });
-}
-
 async function markOrdersAsOrdered(){
  const list=orderProducts();
  if(!list.length){alert('Aucun produit à marquer comme commandé.');return}
- if(!(await showOrderConfirmModal(list)))return;
+ const recap=list.map(p=>'• '+p.name+' : '+fmt(preparedOrderQty(p))+' '+(p.unit||'')).join('\n');
+ if(!confirm('VÉRIFICATION DE LA COMMANDE\n\n'+recap+'\n\nVoulez-vous continuer ?'))return;
+ if(!confirm('CONFIRMATION DÉFINITIVE\n\n'+recap+'\n\nCette action va enregistrer la commande et la placer en attente de livraison.\n\nConfirmer définitivement ?'))return;
  const now=new Date().toISOString();
  let createdOrderId=null;
  try{
@@ -1747,23 +1710,7 @@ function printPrepareOrder(){
  <div class="total">${list.length} produit${list.length>1?'s':''} à commander</div>
  <div class="sign"><div>Préparé par</div><div>Validation gestionnaire</div></div>
  <script>window.onload=function(){setTimeout(function(){window.print()},200)}<\/script>
- 
-<div id="orderConfirmModal" aria-hidden="true" style="display:none;position:fixed;inset:0;z-index:99999;background:rgba(9,35,61,.58);padding:18px;align-items:center;justify-content:center">
-  <div id="orderConfirmCard" role="dialog" aria-modal="true" aria-labelledby="orderConfirmTitle" style="width:min(560px,96vw);background:#fff;border-radius:20px;box-shadow:0 24px 70px rgba(0,0,0,.30);padding:22px">
-    <div id="orderConfirmTitle" style="font-size:24px;font-weight:950;color:#173b63;margin-bottom:8px">🛒 Confirmer la commande</div>
-    <div style="color:#68757f;margin-bottom:14px">Vérifiez une dernière fois les produits et les quantités.</div>
-    <div id="orderConfirmRecap" style="background:#f5f8fb;border-radius:14px;padding:14px;line-height:1.7"></div>
-    <div style="margin-top:14px;padding:10px 12px;border-radius:12px;background:#fff7e8;color:#8a5700;font-size:13px;font-weight:700">
-      Rien ne sera enregistré tant que vous n'avez pas cliqué sur « Confirmer définitivement ».
-    </div>
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:18px">
-      <button id="orderConfirmCancelBtn" type="button" style="padding:14px;border:0;border-radius:12px;background:#eef2f6;color:#173b63;font-weight:900;cursor:pointer">❌ Annuler</button>
-      <button id="orderConfirmOkBtn" type="button" style="padding:14px;border:0;border-radius:12px;background:#198754;color:#fff;font-weight:900;cursor:pointer">✅ Confirmer définitivement</button>
-    </div>
-  </div>
-</div>
-
-</body></html>`);
+ </body></html>`);
  w.document.close();
 }
 
