@@ -721,7 +721,14 @@ function productPhoto(p){
 function level(p){if(Number(p.stock)<=Number(p.red_threshold))return'red';if(Number(p.stock)<=Number(p.orange_threshold))return'orange';return'green'}
 function levelLabel(l){return l==='red'?'ROUGE':l==='orange'?'ORANGE':'OK'}
 function levelClass(l){return l==='red'?'bred':l==='orange'?'borange':'bgreen'}
-function orderProducts(){return products.filter(p=>Number(p.desired_stock)>0&&Number(p.stock)<=Number(p.red_threshold)&&Number(p.desired_stock)>Number(p.stock)&&Number(p.ordered_quantity||0)<=0)}
+function orderProducts(){
+ const normal=products.filter(p=>Number(p.desired_stock)>0&&Number(p.stock)<=Number(p.red_threshold)&&Number(p.desired_stock)>Number(p.stock)&&Number(p.ordered_quantity||0)<=0);
+ if(suggestedOrderOverride&&Number(suggestedOrderOverride.qty)>0){
+   const p=products.find(x=>String(x.id)===String(suggestedOrderOverride.productId));
+   if(p&&Number(p.ordered_quantity||0)<=0&&!normal.some(x=>String(x.id)===String(p.id)))normal.unshift(p);
+ }
+ return normal;
+}
 function togglePassword(e){if(e){e.preventDefault();e.stopPropagation()}const i=$('loginPass'),b=$('passwordEye'),show=i.type==='password';i.type=show?'text':'password';b.textContent=show?'🙈':'👁️';i.focus()}
 function login(e){e.preventDefault();let u=$('loginUser').value.trim();const p=$('loginPass').value;if(u.toLocaleLowerCase('fr-FR')==='cédric'.toLocaleLowerCase('fr-FR'))u='Cedric';if(Object.prototype.hasOwnProperty.call(USERS,u)&&USERS[u]===p){currentUser=u;localStorage.removeItem(KSESSION);$('loginError').style.display='none';openApplication()}else $('loginError').style.display='block'}
 function openApplication(){$('loginPage').style.display='none';$('connectedUser').textContent=currentUser+(isAdmin()?' · Admin':'');$('moveUser').value=currentUser;$('settingsButton').style.display=isAdmin()?'block':'none';$('addProductArea').style.display=isAdmin()?'block':'none';renderAll()}
@@ -899,6 +906,13 @@ function openSuggestedOrder(productId,qty){
 
 function openOrders(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('orders').classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));renderOrders();window.scrollTo({top:0,behavior:'smooth'})}
 
+function preparedOrderQty(p){
+ if(suggestedOrderOverride&&String(suggestedOrderOverride.productId)===String(p.id)&&Number(suggestedOrderOverride.qty)>0){
+   return Number(suggestedOrderOverride.qty);
+ }
+ return Math.max(0,Number(p.desired_stock)-Number(p.stock));
+}
+
 function pendingOrderProducts(){return products.filter(p=>Number(p.ordered_quantity||0)>0)}
 function formatOrderDate(v){
  if(!v)return'';
@@ -922,7 +936,7 @@ async function markOrdersAsOrdered(){
    product_name:p.name,
    reference:p.reference||null,
    unit:p.unit||null,
-   ordered_quantity:Math.max(0,Number(p.desired_stock)-Number(p.stock)),
+   ordered_quantity:preparedOrderQty(p),
    received_quantity:0,
    created_at:now
   }));
@@ -930,11 +944,12 @@ async function markOrdersAsOrdered(){
   if(le)throw le;
 
   for(const p of list){
-   const qty=Math.max(0,Number(p.desired_stock)-Number(p.stock));
+   const qty=preparedOrderQty(p);
    const {error}=await sb.from('products').update({ordered_quantity:qty,ordered_at:now,updated_at:now}).eq('id',p.id);
    if(error)throw error;
   }
   await reloadCloud();
+  suggestedOrderOverride=null;
   alert('✅ Commande enregistrée avec la date du jour et ajoutée à l’historique.');
  }catch(e){
   console.error(e);
@@ -947,7 +962,7 @@ function sendOrderToManager(){
  const list=orderProducts();
  if(!list.length){alert('Aucun produit à commander pour le moment.');return}
  const lines=list.map(p=>{
-  const qty=Math.max(0,Number(p.desired_stock)-Number(p.stock));
+  const qty=preparedOrderQty(p);
   return '- '+p.name+(p.reference?' · Réf. '+p.reference:'')+' : '+fmt(qty)+' '+(p.unit||'');
  });
  const subject='Demande de commande produits d’entretien';
@@ -962,9 +977,7 @@ function renderOrders(){
 
  const box=$('orderList');
  if(box)box.innerHTML=list.length?list.map(p=>{
-  const qty=(suggestedOrderOverride&&String(suggestedOrderOverride.productId)===String(p.id)&&Number(suggestedOrderOverride.qty)>0)
-    ?Number(suggestedOrderOverride.qty)
-    :Math.max(0,Number(p.desired_stock)-Number(p.stock));
+  const qty=preparedOrderQty(p);
   return`<div class="order-line"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${p.reference?' · Réf. '+esc(p.reference):''}<br>Stock : ${fmt(p.stock)} ${esc(p.unit||'')} · Seuil : ${fmt(p.red_threshold)} · Objectif : ${fmt(p.desired_stock)}</div></div><div><div class="meta" style="text-align:right">À commander</div><div class="order-qty">${fmt(qty)}</div><div class="meta" style="text-align:right">${esc(p.unit||'')}</div></div></div>`
  }).join(''):`<div class="empty"><strong>Aucune nouvelle commande à préparer</strong><br>Les produits déjà commandés apparaissent ci-dessous en attente de livraison.</div>`;
 
