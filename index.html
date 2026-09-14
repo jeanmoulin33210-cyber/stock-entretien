@@ -884,6 +884,19 @@ function ensureProductHistoryBox(){
 }
 
 function renderAll(){renderHome();renderProducts();renderHistory();renderOrders();renderDashboard();loadSettings();if(selectedProductId){const p=products.find(x=>String(x.id)===String(selectedProductId));if(p){ensureProductHistoryBox();renderProductHistory(p)}}}
+let suggestedOrderOverride=null;
+
+function openSuggestedOrder(productId,qty){
+ const p=products.find(x=>String(x.id)===String(productId));
+ if(!p)return;
+ suggestedOrderOverride={productId:String(productId),qty:Number(qty)||0};
+ openOrders();
+ setTimeout(()=>{
+   const el=$('orderList');
+   if(el)el.scrollIntoView({behavior:'smooth',block:'start'});
+ },80);
+}
+
 function openOrders(){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));$('orders').classList.add('active');document.querySelectorAll('nav button').forEach(b=>b.classList.remove('active'));renderOrders();window.scrollTo({top:0,behavior:'smooth'})}
 
 function pendingOrderProducts(){return products.filter(p=>Number(p.ordered_quantity||0)>0)}
@@ -949,9 +962,18 @@ function renderOrders(){
 
  const box=$('orderList');
  if(box)box.innerHTML=list.length?list.map(p=>{
-  const qty=Math.max(0,Number(p.desired_stock)-Number(p.stock));
+  const qty=(suggestedOrderOverride&&String(suggestedOrderOverride.productId)===String(p.id)&&Number(suggestedOrderOverride.qty)>0)
+    ?Number(suggestedOrderOverride.qty)
+    :Math.max(0,Number(p.desired_stock)-Number(p.stock));
   return`<div class="order-line"><div><div class="pname">${esc(p.name)}</div><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${p.reference?' · Réf. '+esc(p.reference):''}<br>Stock : ${fmt(p.stock)} ${esc(p.unit||'')} · Seuil : ${fmt(p.red_threshold)} · Objectif : ${fmt(p.desired_stock)}</div></div><div><div class="meta" style="text-align:right">À commander</div><div class="order-qty">${fmt(qty)}</div><div class="meta" style="text-align:right">${esc(p.unit||'')}</div></div></div>`
  }).join(''):`<div class="empty"><strong>Aucune nouvelle commande à préparer</strong><br>Les produits déjà commandés apparaissent ci-dessous en attente de livraison.</div>`;
+
+ if(box&&suggestedOrderOverride){
+   const p=products.find(x=>String(x.id)===String(suggestedOrderOverride.productId));
+   if(p){
+     box.insertAdjacentHTML('afterbegin',`<div style="margin-bottom:12px;padding:11px 13px;border-radius:12px;background:#fff7e8;color:#9a5b00;font-weight:850">💡 Quantité conseillée pour ${esc(p.name)} : ${fmt(suggestedOrderOverride.qty)} ${esc(p.unit||'')} · à vérifier avant validation</div>`);
+   }
+ }
 
  const pendingBox=$('pendingOrderList');
  if(pendingBox)pendingBox.innerHTML=pending.length?pending.map(p=>`<div class="pending-order"><div class="pname">${esc(p.name)}</div><div class="meta">${p.reference?'Réf. '+esc(p.reference)+' · ':''}<strong>${fmt(p.ordered_quantity)} ${esc(p.unit||'')}</strong> commandé(s)</div><div class="meta pending-date">📅 Commandé le ${formatOrderDate(p.ordered_at)}</div></div>`).join(''):`<div class="empty">Aucune commande en attente de livraison.</div>`;
@@ -1538,8 +1560,8 @@ async function loadHomeRuptureRisk(){
            const daily=total/30;
            const targetQty=daily*14;
            const suggestedQty=Math.max(1,Math.ceil(targetQty-Number(p.stock||0)));
-           return `<small style="display:block;margin-top:5px;font-weight:950;color:#b42318">🛒 À commander en priorité : ${fmt(suggestedQty)} ${esc(p.unit||'')} conseillé${suggestedQty>1?'s':''}</small>
-             <small style="display:block;margin-top:3px;color:#68757f">Objectif : environ 14 jours d’autonomie</small>`;
+           return `<button type="button" onclick="event.stopPropagation();openSuggestedOrder('${p.id}',${suggestedQty})" style="display:block;margin-top:5px;padding:0;border:0;background:transparent;font:inherit;font-weight:950;color:#b42318;cursor:pointer;text-align:left">🛒 À commander en priorité : ${fmt(suggestedQty)} ${esc(p.unit||'')} conseillé${suggestedQty>1?'s':''}</button>
+             <small style="display:block;margin-top:3px;color:#68757f">Cliquer pour préparer la commande · objectif : environ 14 jours d’autonomie</small>`;
          })()}
        </span>
        <span style="white-space:nowrap;font-weight:900;color:#b42318">🔴 ${days} jour${days>1?'s':''}</span>
