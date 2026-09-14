@@ -941,7 +941,8 @@ function formatOrderDate(v){
 async function markOrdersAsOrdered(){
  const list=orderProducts();
  if(!list.length){alert('Aucun produit à marquer comme commandé.');return}
- if(!confirm('Marquer '+list.length+' produit(s) comme commandé(s) aujourd’hui ?'))return;
+ const recap=list.map(p=>'• '+p.name+' : '+fmt(preparedOrderQty(p))+' '+(p.unit||'')).join('\n');
+ if(!confirm('CONFIRMER LA COMMANDE ?\n\n'+recap+'\n\nAprès confirmation, la commande sera ajoutée aux commandes en attente de livraison et à l’historique.'))return;
  const now=new Date().toISOString();
  let createdOrderId=null;
  try{
