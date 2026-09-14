@@ -1897,7 +1897,58 @@ async function loadProductHistoryDirect(p){
  }
 }
 
-function renderProducts(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('cCuisine').textContent=c+' produit'+(c>1?'s':'');$('cGeneral').textContent=g+' produit'+(g>1?'s':'');$('rCuisine').classList.toggle('active',currentReserve==='Cuisine');$('rGeneral').classList.toggle('active',currentReserve==='Service général');if(selectedProductId){const selected=products.find(p=>p.id===selectedProductId);if(selected){renderSelectedProduct(selected);return}selectedProductId=null}const q=($('search')?.value||'').toLowerCase();const list=reserveProducts(currentReserve).filter(p=>(p.name+' '+(p.reference||'')).toLowerCase().includes(q));$('productList').innerHTML=list.length?`<div class="catalog-grid">${list.map(p=>{const photo=productPhoto(p);return`<button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')"><div class="catalog-photo-wrap">${photo?`<img class="catalog-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="catalog-placeholder" style="display:none">🧴</div>`:`<div class="catalog-placeholder">🧴</div>`}</div><div class="catalog-name">${esc(p.name)}</div>${p.reference?`<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`:''}</button>`}).join('')}</div>`:`<div class="card empty">${currentReserve==='Cuisine'?'Aucun produit dans la Réserve Cuisine.':'La Réserve Service général est vide pour le moment.'}</div>`}
+let productCatalogConsumption30={};
+
+function catalogConsumptionHtml(p){
+ const info=productCatalogConsumption30[String(p.id)];
+ if(!info)return `<div class="catalog-ref" style="margin-top:5px">📊 Calcul en cours…</div>`;
+ const total=Number(info.total||0);
+ if(total<=0)return `<div class="catalog-ref" style="margin-top:5px">📊 0 sortie · ⏳ autonomie non calculable</div>`;
+ const days=Math.max(0,Math.round(Math.max(0,Number(p.stock||0))/(total/30)));
+ return `<div class="catalog-ref" style="margin-top:5px">📊 ${fmt(total)} ${esc(p.unit||'')} / 30 j · ⏳ ${days} jour${days>1?'s':''}</div>`;
+}
+
+async function loadCatalogConsumption30(){
+ try{
+   const since=new Date(Date.now()-30*24*60*60*1000).toISOString();
+   const {data:rows,error}=await sb
+     .from('movements')
+     .select('product_id,product_name,quantity,movement_type,created_at')
+     .eq('movement_type','out')
+     .gte('created_at',since);
+   if(error)throw error;
+
+   const byId={};
+   const byName={};
+   (rows||[]).forEach(m=>{
+     const qty=Number(m.quantity||0);
+     if(qty<=0)return;
+     if(m.product_id!==null&&m.product_id!==undefined&&String(m.product_id)!==''){
+       const k=String(m.product_id);
+       byId[k]=(byId[k]||0)+qty;
+     }else if(m.product_name){
+       const k=String(m.product_name).trim().toLowerCase();
+       byName[k]=(byName[k]||0)+qty;
+     }
+   });
+
+   const next={};
+   products.forEach(p=>{
+     let total=byId[String(p.id)]||0;
+     if(total<=0&&p.name)total=byName[String(p.name).trim().toLowerCase()]||0;
+     next[String(p.id)]={total};
+   });
+   productCatalogConsumption30=next;
+
+   // Ne rafraîchir que si l'utilisateur est actuellement sur le catalogue.
+   const productsScreen=$('products');
+   if(productsScreen?.classList.contains('active')&&!selectedProductId)renderProducts();
+ }catch(e){
+   console.error('Consommation catalogue :',e);
+ }
+}
+
+function renderProducts(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('cCuisine').textContent=c+' produit'+(c>1?'s':'');$('cGeneral').textContent=g+' produit'+(g>1?'s':'');$('rCuisine').classList.toggle('active',currentReserve==='Cuisine');$('rGeneral').classList.toggle('active',currentReserve==='Service général');if(selectedProductId){const selected=products.find(p=>p.id===selectedProductId);if(selected){renderSelectedProduct(selected);return}selectedProductId=null}const q=($('search')?.value||'').toLowerCase();const list=reserveProducts(currentReserve).filter(p=>(p.name+' '+(p.reference||'')).toLowerCase().includes(q));$('productList').innerHTML=list.length?`<div class="catalog-grid">${list.map(p=>{const photo=productPhoto(p);return`<button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')"><div class="catalog-photo-wrap">${photo?`<img class="catalog-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="catalog-placeholder" style="display:none">🧴</div>`:`<div class="catalog-placeholder">🧴</div>`}</div><div class="catalog-name">${esc(p.name)}</div>${p.reference?`<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`:''}${catalogConsumptionHtml(p)}</button>`}).join('')}</div>`:`<div class="card empty">${currentReserve==='Cuisine'?'Aucun produit dans la Réserve Cuisine.':'La Réserve Service général est vide pour le moment.'}</div>`}
 function openCatalogProduct(id){selectedProductId=id;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
 function renderSelectedProduct(p){
  const photo=productPhoto(p);
@@ -2018,6 +2069,7 @@ async function reloadCloud(){
  products=refreshed;
  historyData=h||[];
  renderAll();
+ loadCatalogConsumption30();
 }
 
 function openProduct(){if(!isAdmin())return;$('productTitle').textContent='Ajouter un produit';$('productId').value='';$('pName').value='';$('pRef').value='';$('pCat').value=currentReserve;$('pUnit').value='bidon';$('pStock').value=0;$('pOrange').value=5;$('pRed').value=2;$('pDesired').value=0;productDialog.showModal()}
