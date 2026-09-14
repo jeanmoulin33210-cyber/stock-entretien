@@ -1648,7 +1648,6 @@ async function loadProductConsumption30D(p){
 
    if(error)throw error;
 
-   // Compatibilité avec d'anciens mouvements liés uniquement par le nom.
    if((!rows||!rows.length) && p.name){
      const res=await sb
        .from('movements')
@@ -1686,11 +1685,34 @@ async function loadProductConsumption30D(p){
        </div>`;
    }
 
+   // Niveau de consommation : comparaison de la consommation 30 j au stock souhaité.
+   // Cela s'adapte à l'unité propre à chaque produit.
+   const desired=Math.max(0,Number(p.desired_stock||0));
+   let consumptionHtml='';
+   if(total<=0){
+     consumptionHtml=`
+       <div style="margin-top:8px;font-weight:850;color:#5d6b78">📉 Faible consommation</div>`;
+   }else if(desired>0){
+     const ratio=total/desired;
+     if(ratio<0.5){
+       consumptionHtml=`<div style="margin-top:8px;font-weight:850;color:#146c43">📉 Faible consommation</div>`;
+     }else if(ratio<=1){
+       consumptionHtml=`<div style="margin-top:8px;font-weight:850;color:#9a5b00">📊 Consommation normale</div>`;
+     }else{
+       consumptionHtml=`<div style="margin-top:8px;font-weight:850;color:#b42318">🔥 Forte consommation</div>`;
+     }
+   }else{
+     // Sans stock souhaité renseigné, on évite de classer arbitrairement le produit.
+     consumptionHtml=`
+       <div style="margin-top:8px;font-weight:850;color:#5d6b78">📊 Niveau de consommation : stock souhaité à renseigner</div>`;
+   }
+
    box.innerHTML=`
      <div class="meta">📊 Consommation sur les 30 derniers jours</div>
      <div style="font-size:20px;font-weight:900;margin-top:3px">${fmt(total)} ${esc(p.unit||'')}</div>
      <div class="meta" style="margin-top:3px">${count} sortie${count>1?'s':''} enregistrée${count>1?'s':''}</div>
-     ${autonomyHtml}`;
+     ${autonomyHtml}
+     ${consumptionHtml}`;
  }catch(e){
    console.error('Consommation 30 jours :',e);
    box.innerHTML=`
