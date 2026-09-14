@@ -1902,10 +1902,25 @@ let productCatalogConsumption30={};
 function catalogConsumptionHtml(p){
  const info=productCatalogConsumption30[String(p.id)];
  if(!info)return `<div class="catalog-ref" style="margin-top:5px">📊 Calcul en cours…</div>`;
+
  const total=Number(info.total||0);
- if(total<=0)return `<div class="catalog-ref" style="margin-top:5px">📊 0 sortie · ⏳ autonomie non calculable</div>`;
- const days=Math.max(0,Math.round(Math.max(0,Number(p.stock||0))/(total/30)));
- return `<div class="catalog-ref" style="margin-top:5px">📊 ${fmt(total)} ${esc(p.unit||'')} / 30 j · ⏳ ${days} jour${days>1?'s':''}</div>`;
+ const stock=Number(p.stock||0);
+ const red=Number(p.red_threshold||0);
+ const ordered=Number(p.ordered_quantity||0);
+ let days=null;
+
+ if(total>0)days=Math.max(0,Math.round(Math.max(0,stock)/(total/30)));
+
+ const summary=total<=0
+   ? `📊 0 sortie · ⏳ autonomie non calculable`
+   : `📊 ${fmt(total)} ${esc(p.unit||'')} / 30 j · ⏳ ${days} jour${days>1?'s':''}`;
+
+ const alerts=[];
+ if(stock<=red)alerts.push(`<span style="display:inline-block;margin:4px 4px 0 0;padding:4px 7px;border-radius:999px;background:#ffe4e6;color:#b42318;font-weight:850">🔴 Stock critique</span>`);
+ if(days!==null&&days<=7)alerts.push(`<span style="display:inline-block;margin:4px 4px 0 0;padding:4px 7px;border-radius:999px;background:#fff3cd;color:#8a5700;font-weight:850">⚠️ Rupture dans ${days} jour${days>1?'s':''}</span>`);
+ if(ordered>0)alerts.push(`<span style="display:inline-block;margin:4px 4px 0 0;padding:4px 7px;border-radius:999px;background:#e8f1ff;color:#245a9b;font-weight:850">📦 Commande en attente : ${fmt(ordered)} ${esc(p.unit||'')}</span>`);
+
+ return `<div class="catalog-ref" style="margin-top:5px">${summary}</div>${alerts.length?`<div style="margin-top:2px">${alerts.join('')}</div>`:''}`;
 }
 
 async function loadCatalogConsumption30(){
