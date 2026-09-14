@@ -1963,7 +1963,71 @@ async function loadCatalogConsumption30(){
  }
 }
 
-function renderProducts(){const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;$('cCuisine').textContent=c+' produit'+(c>1?'s':'');$('cGeneral').textContent=g+' produit'+(g>1?'s':'');$('rCuisine').classList.toggle('active',currentReserve==='Cuisine');$('rGeneral').classList.toggle('active',currentReserve==='Service général');if(selectedProductId){const selected=products.find(p=>p.id===selectedProductId);if(selected){renderSelectedProduct(selected);return}selectedProductId=null}const q=($('search')?.value||'').toLowerCase();const list=reserveProducts(currentReserve).filter(p=>(p.name+' '+(p.reference||'')).toLowerCase().includes(q));$('productList').innerHTML=list.length?`<div class="catalog-grid">${list.map(p=>{const photo=productPhoto(p);return`<button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')"><div class="catalog-photo-wrap">${photo?`<img class="catalog-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="catalog-placeholder" style="display:none">🧴</div>`:`<div class="catalog-placeholder">🧴</div>`}</div><div class="catalog-name">${esc(p.name)}</div>${p.reference?`<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`:''}${catalogConsumptionHtml(p)}</button>`}).join('')}</div>`:`<div class="card empty">${currentReserve==='Cuisine'?'Aucun produit dans la Réserve Cuisine.':'La Réserve Service général est vide pour le moment.'}</div>`}
+let productCatalogFilter='all';
+
+function setProductCatalogFilter(filter){
+ productCatalogFilter=['critical','rupture','ordered'].includes(filter)?filter:'all';
+ renderProducts();
+}
+
+function productCatalogFilterMatch(p){
+ if(productCatalogFilter==='critical')return Number(p.stock||0)<=Number(p.red_threshold||0);
+ if(productCatalogFilter==='ordered')return Number(p.ordered_quantity||0)>0;
+ if(productCatalogFilter==='rupture'){
+   const info=productCatalogConsumption30[String(p.id)];
+   const total=Number(info?.total||0);
+   if(total<=0)return false;
+   const days=Math.max(0,Math.round(Math.max(0,Number(p.stock||0))/(total/30)));
+   return days<=7;
+ }
+ return true;
+}
+
+function productCatalogFiltersHtml(){
+ const filters=[
+   ['all','Tous'],
+   ['critical','🔴 Stock critique'],
+   ['rupture','⚠️ Rupture < 7 jours'],
+   ['ordered','📦 Commande en attente']
+ ];
+ return `<div style="display:flex;gap:7px;flex-wrap:wrap;margin:0 0 12px">
+   ${filters.map(([key,label])=>`<button type="button" onclick="setProductCatalogFilter('${key}')" style="border:0;border-radius:999px;padding:8px 11px;cursor:pointer;font-weight:850;${productCatalogFilter===key?'background:#173b63;color:#fff':'background:#eef3f7;color:#29465f'}">${label}</button>`).join('')}
+ </div>`;
+}
+
+function renderProducts(){
+ const c=reserveProducts('Cuisine').length,g=reserveProducts('Service général').length;
+ $('cCuisine').textContent=c+' produit'+(c>1?'s':'');
+ $('cGeneral').textContent=g+' produit'+(g>1?'s':'');
+ $('rCuisine').classList.toggle('active',currentReserve==='Cuisine');
+ $('rGeneral').classList.toggle('active',currentReserve==='Service général');
+
+ if(selectedProductId){
+   const selected=products.find(p=>p.id===selectedProductId);
+   if(selected){renderSelectedProduct(selected);return}
+   selectedProductId=null
+ }
+
+ const q=($('search')?.value||'').toLowerCase();
+ const base=reserveProducts(currentReserve).filter(p=>(p.name+' '+(p.reference||'')).toLowerCase().includes(q));
+ const list=base.filter(productCatalogFilterMatch);
+
+ const emptyText=productCatalogFilter==='all'
+   ? (currentReserve==='Cuisine'?'Aucun produit dans la Réserve Cuisine.':'La Réserve Service général est vide pour le moment.')
+   : 'Aucun produit pour ce filtre.';
+
+ $('productList').innerHTML=productCatalogFiltersHtml()+(list.length
+   ? `<div class="catalog-grid">${list.map(p=>{
+       const photo=productPhoto(p);
+       return `<button type="button" class="catalog-card" onclick="openCatalogProduct('${p.id}')">
+         <div class="catalog-photo-wrap">${photo?`<img class="catalog-photo" src="${esc(photo)}" alt="${esc(p.name)}" onerror="this.style.display='none';this.nextElementSibling.style.display='block'"><div class="catalog-placeholder" style="display:none">🧴</div>`:`<div class="catalog-placeholder">🧴</div>`}</div>
+         <div class="catalog-name">${esc(p.name)}</div>
+         ${p.reference?`<div class="catalog-ref">Réf. ${esc(p.reference)}</div>`:''}
+         ${catalogConsumptionHtml(p)}
+       </button>`
+     }).join('')}</div>`
+   : `<div class="card empty">${emptyText}</div>`)
+}
 function openCatalogProduct(id){selectedProductId=id;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
 function renderSelectedProduct(p){
  const photo=productPhoto(p);
