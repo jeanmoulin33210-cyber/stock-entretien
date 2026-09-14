@@ -1661,11 +1661,36 @@ async function loadProductConsumption30D(p){
 
    const total=(rows||[]).reduce((sum,m)=>sum+Number(m.quantity||0),0);
    const count=(rows||[]).length;
+   const stock=Math.max(0,Number(p.stock||0));
+
+   let autonomyHtml='';
+   if(total>0){
+     const daily=total/30;
+     const days=Math.max(0,Math.round(stock/daily));
+     let icon='🟢',label='Autonomie correcte',bg='#eaf8ef',color='#146c43';
+     if(days<=7){
+       icon='🔴'; label='Risque de rupture prochaine'; bg='#fff1f2'; color='#b42318';
+     }else if(days<=14){
+       icon='🟠'; label='Stock à surveiller'; bg='#fff7e8'; color='#9a5b00';
+     }
+     autonomyHtml=`
+       <div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:${bg};color:${color}">
+         <div style="font-weight:900">${icon} Autonomie estimée : environ ${days} jour${days>1?'s':''}</div>
+         <div style="font-size:12px;margin-top:3px">${label} · estimation basée sur les sorties des 30 derniers jours</div>
+       </div>`;
+   }else{
+     autonomyHtml=`
+       <div style="margin-top:10px;padding:10px 12px;border-radius:12px;background:#f7f9fb;color:#5d6b78">
+         <div style="font-weight:850">⏳ Autonomie non calculable</div>
+         <div style="font-size:12px;margin-top:3px">Aucune sortie enregistrée sur les 30 derniers jours.</div>
+       </div>`;
+   }
 
    box.innerHTML=`
      <div class="meta">📊 Consommation sur les 30 derniers jours</div>
      <div style="font-size:20px;font-weight:900;margin-top:3px">${fmt(total)} ${esc(p.unit||'')}</div>
-     <div class="meta" style="margin-top:3px">${count} sortie${count>1?'s':''} enregistrée${count>1?'s':''}</div>`;
+     <div class="meta" style="margin-top:3px">${count} sortie${count>1?'s':''} enregistrée${count>1?'s':''}</div>
+     ${autonomyHtml}`;
  }catch(e){
    console.error('Consommation 30 jours :',e);
    box.innerHTML=`
