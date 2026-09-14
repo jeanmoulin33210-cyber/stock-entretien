@@ -1633,6 +1633,47 @@ function renderHistoryRowsForProduct(p,rows){
  }).join('');
 }
 
+async function loadProductConsumption30D(p){
+ const box=$('productConsumption30');
+ if(!box)return;
+ try{
+   const since=new Date(Date.now()-30*24*60*60*1000).toISOString();
+
+   let {data:rows,error}=await sb
+     .from('movements')
+     .select('quantity,movement_type,created_at')
+     .eq('product_id',p.id)
+     .eq('movement_type','out')
+     .gte('created_at',since);
+
+   if(error)throw error;
+
+   // Compatibilité avec d'anciens mouvements liés uniquement par le nom.
+   if((!rows||!rows.length) && p.name){
+     const res=await sb
+       .from('movements')
+       .select('quantity,movement_type,created_at')
+       .eq('product_name',p.name)
+       .eq('movement_type','out')
+       .gte('created_at',since);
+     if(!res.error)rows=res.data||[];
+   }
+
+   const total=(rows||[]).reduce((sum,m)=>sum+Number(m.quantity||0),0);
+   const count=(rows||[]).length;
+
+   box.innerHTML=`
+     <div class="meta">📊 Consommation sur les 30 derniers jours</div>
+     <div style="font-size:20px;font-weight:900;margin-top:3px">${fmt(total)} ${esc(p.unit||'')}</div>
+     <div class="meta" style="margin-top:3px">${count} sortie${count>1?'s':''} enregistrée${count>1?'s':''}</div>`;
+ }catch(e){
+   console.error('Consommation 30 jours :',e);
+   box.innerHTML=`
+     <div class="meta">📊 Consommation sur les 30 derniers jours</div>
+     <div style="font-weight:800;margin-top:3px">Indisponible pour le moment</div>`;
+ }
+}
+
 async function loadProductHistoryDirect(p){
  try{
    // 1) Source principale : l'ID exact du produit, sans dépendre de la limite des 250 mouvements globaux.
@@ -1678,6 +1719,10 @@ function renderSelectedProduct(p){
        <div><div class="meta">Stock actuel</div><div style="font-size:27px;font-weight:900">${fmt(p.stock)} ${esc(p.unit||'')}</div></div>
        <span class="badge ${levelClass(level(p))}">${levelLabel(level(p))}</span>
      </div>
+     <div id="productConsumption30" style="margin-top:12px;padding:12px 14px;border-radius:14px;background:#f4f8fb">
+       <div class="meta">📊 Consommation sur les 30 derniers jours</div>
+       <div style="font-size:20px;font-weight:900;margin-top:3px">Chargement…</div>
+     </div>
      <div class="product-actions" style="margin-top:14px">
        <button class="mini infoBtn" onclick="showProductDetails('${p.id}')">📄 Fiche</button>
        <button class="mini good" onclick="openMoveFor('${p.id}','in')">+ Entrée</button>
@@ -1687,7 +1732,10 @@ function renderSelectedProduct(p){
      ${productHistoryHtml(p)}
    </div>
  </div>`;
- setTimeout(()=>loadProductHistoryDirect(p),0);
+ setTimeout(()=>{
+   loadProductHistoryDirect(p);
+   loadProductConsumption30D(p);
+ },0);
 }
 function backToCatalog(){selectedProductId=null;renderProducts();window.scrollTo({top:0,behavior:'smooth'})}
 function showProductDetails(id){const p=products.find(x=>x.id===id);if(!p)return;const has=v=>v!==null&&v!==undefined&&String(v).trim()!=='';const block=(title,value)=>has(value)?`<div class="detail-block"><strong>${title}</strong><div class="detail-text">${esc(value)}</div></div>`:'';const price=has(p.price_ht)?`${Number(p.price_ht).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})} € HT`:'';const photoUrl=productPhoto(p);const photo=photoUrl?`<div class="detail-photo-wrap"><img class="detail-photo" src="${esc(photoUrl)}" alt="Photo ${esc(p.name)}"></div>`:'';const links=[];if(has(p.technical_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.technical_sheet_url)}" target="_blank" rel="noopener">📘 Fiche technique</a>`);if(has(p.safety_sheet_url))links.push(`<a class="btn secondary" href="${esc(p.safety_sheet_url)}" target="_blank" rel="noopener">🛡️ Fiche de sécurité (FDS)</a>`);$('detailContent').innerHTML=`${photo}<div class="detail-head"><div><h3 style="margin:0">${esc(p.name)}</h3><div class="meta">${reserveOf(p)==='Cuisine'?'🍳 Réserve Cuisine':'🧹 Réserve Service général'}${has(p.reference)?' · Réf. '+esc(p.reference):''}</div></div>${price?`<div class="detail-price">${price}</div>`:''}</div>${block('Conditionnement',p.packaging)}${block('Description',p.description)}${block('Utilisation',p.usage_info)}${block('Dosage',p.dosage)}${block('Sécurité',p.safety_info)}<div class="detail-block"><strong>Stock</strong><div class="detail-text">${fmt(p.stock)} ${esc(p.unit||'')} · Seuil orange : ${fmt(p.orange_threshold)} · Seuil rouge/commande : ${fmt(p.red_threshold)}${Number(p.desired_stock)>0?' · Stock souhaité : '+fmt(p.desired_stock):''}</div></div>${links.length?`<div class="detail-links">${links.join('')}</div>`:''}`;detailDialog.showModal()}
