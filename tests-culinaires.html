@@ -3220,7 +3220,9 @@ function exportArchiveListCsv(){
 }
 function exportArchive(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;download(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}),`archive-${slug(rec.state?.config?.lotName||'jury')}.json`);toast('Archive exportée')}
 function deleteArchive(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;if(!confirm(`Supprimer définitivement l’archive « ${rec.state?.config?.lotName||'Jury'} » ?`))return;saveArchives(loadArchives().filter(x=>x.id!==id));renderArchives();toast('Archive supprimée')}
-function duplicateArchive(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;if(!confirm('Créer un nouveau jury vierge à partir de ce paramétrage ?\n\nLes anciennes notes ne seront pas recopiées.'))return;const cfg=deepClone(rec.state.config);delete cfg._archive;if(typeof disconnectCloud==='function'&&typeof cloudReady!=='undefined'&&cloudReady)disconnectCloud();state=makeInitialState(cfg);saveState();currentTester=1;currentProduct=state.config.products[0]?.id||'';currentSample=state.config.products[0]?.samples[0]?.id||'';adminProduct=currentProduct;renderHome();toast('Nouveau jury créé à partir de l’archive')}
+function duplicateArchive(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;if(!confirm('Créer un nouveau jury vierge à partir de ce paramétrage ?\n\nLes anciennes notes ne seront pas recopiées.'))return;const cfg=deepClone(rec.state.config);delete cfg._archive;delete cfg.closure;
+delete cfg.juryClose;
+delete cfg.juryLaunch;if(typeof disconnectCloud==='function'&&typeof cloudReady!=='undefined'&&cloudReady)disconnectCloud();state=makeInitialState(cfg);saveState();currentTester=1;currentProduct=state.config.products[0]?.id||'';currentSample=state.config.products[0]?.samples[0]?.id||'';adminProduct=currentProduct;renderHome();toast('Nouveau jury créé à partir de l’archive')}
 
 $('#homeBtn').onclick=renderHome;$('#archivesBtn').onclick=renderArchives;$('#archivesHomeBtn').onclick=renderHome;
 $('#closureBackBtn').onclick=()=>{captureClosureForm();saveState();renderAdmin()};
