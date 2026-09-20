@@ -1,6 +1,5 @@
-const CACHE_NAME='tests-culinaires-v36-20260919';
+const CACHE_NAME='tests-culinaires-v66-20260920';
 const APP_SHELL=[
-  './',
   './tests-culinaires.html',
   './manifest.webmanifest',
   './icon-192.png',
@@ -24,46 +23,30 @@ self.addEventListener('activate',event=>{
 self.addEventListener('fetch',event=>{
   const req=event.request;
   if(req.method!=='GET')return;
-
   const url=new URL(req.url);
 
-  if(
-    url.hostname.includes('supabase.co') ||
-    url.pathname.includes('/rest/v1/') ||
-    url.pathname.includes('/auth/v1/')
-  ){
-    return;
-  }
+  if(url.hostname.includes('supabase.co') || url.pathname.includes('/rest/v1/') || url.pathname.includes('/auth/v1/'))return;
 
-  if(req.mode==='navigate'){
+  if(req.mode==='navigate' || url.pathname.endsWith('/tests-culinaires.html')){
     event.respondWith(
-      fetch(req).then(res=>{
-        const copy=res.clone();
-        caches.open(CACHE_NAME)
-          .then(c=>c.put('./tests-culinaires.html',copy))
-          .catch(()=>{});
+      fetch(req,{cache:'no-store'}).then(res=>{
+        if(res && res.ok){
+          const copy=res.clone();
+          caches.open(CACHE_NAME).then(c=>c.put('./tests-culinaires.html',copy)).catch(()=>{});
+        }
         return res;
-      }).catch(()=>
-        caches.match('./tests-culinaires.html')
-          .then(r=>r||caches.match('./'))
-      )
+      }).catch(()=>caches.match('./tests-culinaires.html'))
     );
     return;
   }
 
   event.respondWith(
-    caches.match(req).then(cached=>{
-      if(cached)return cached;
-
-      return fetch(req).then(res=>{
-        if(res && (res.status===200 || res.type==='opaque')){
-          const copy=res.clone();
-          caches.open(CACHE_NAME)
-            .then(c=>c.put(req,copy))
-            .catch(()=>{});
-        }
-        return res;
-      });
-    })
+    caches.match(req).then(cached=>cached||fetch(req).then(res=>{
+      if(res && (res.status===200 || res.type==='opaque')){
+        const copy=res.clone();
+        caches.open(CACHE_NAME).then(c=>c.put(req,copy)).catch(()=>{});
+      }
+      return res;
+    }))
   );
 });
