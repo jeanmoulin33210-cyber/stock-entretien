@@ -3,7 +3,10 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v162</title>
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+<meta http-equiv="Pragma" content="no-cache" />
+<meta http-equiv="Expires" content="0" />
+<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v195</title>
 <style>
 :root{
   --bg:#f4f7fb; --panel:#fff; --ink:#172033; --muted:#667085; --line:#e5eaf0;
@@ -43,7 +46,7 @@ table{width:100%;border-collapse:collapse;font-size:13px}th,td{text-align:left;p
 .cloud-layout{display:grid;grid-template-columns:1fr .92fr;gap:14px}.cloud-card{padding:18px}.cloud-card h3{margin:0 0 12px}.cloud-help{font-size:13px;color:var(--muted);line-height:1.5}
 .cloud-links{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.share-card{border:1px solid var(--line);border-radius:14px;padding:12px;background:#fafcfd}.share-card strong{display:block}.share-card span{display:block;color:var(--muted);font-size:12px;margin:3px 0 10px}
 .connection-banner{display:none;margin:14px 0 0;padding:12px 14px;border-radius:14px;font-size:13px;font-weight:750}.connection-banner.show{display:block}.connection-banner.ok{background:#e9f7f1;color:#126c4b}.connection-banner.warn{background:#fff5e2;color:#8a5b00}.connection-banner.bad{background:#fdecec;color:#9d2f2f}
-.guest-mode #configureBtn,.guest-mode #resultsBtn,.guest-mode #backupBtn,.guest-mode #restoreBtn,.guest-mode #cloudBtn,.guest-mode #archivesBtn,.guest-mode #statsBtn,.guest-mode #adminSecurityBtn,.guest-mode #adminLockBtn,.guest-mode #homeBtn{display:none!important}
+.guest-mode #configureBtn,.guest-mode #configReceptionBtn,.guest-mode #productSheetsBtn,.guest-mode #resultsBtn,.guest-mode #backupBtn,.guest-mode #restoreBtn,.guest-mode #cloudBtn,.guest-mode #archivesBtn,.guest-mode #statsBtn,.guest-mode #adminSecurityBtn,.guest-mode #adminLockBtn,.guest-mode #homeBtn{display:none!important}
 .guest-mode #testerSelect{pointer-events:none;background:#f2f4f7;color:#667085}
 .guest-mode .tester-toolbar .field:first-child{display:none}
 @media(max-width:900px){.cloud-layout{grid-template-columns:1fr}}
@@ -2205,6 +2208,214 @@ body.live-fullscreen #liveDayView{max-width:none;padding:18px 24px}body.live-ful
 .product-known-suppliers strong{color:var(--ink)}
 .product-config input[data-s-supplier]:not(:placeholder-shown){font-weight:800;background:#f2f8fc;border-color:#b9d7e8;color:#244d63}
 @media(max-width:760px){.config-choice-recap-grid{grid-template-columns:1fr}}
+
+/* V164 — Réception numérique des échantillons */
+.reception-step-card{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:16px 18px}
+.reception-step-copy{display:flex;align-items:center;gap:12px;min-width:0}
+.reception-step-icon{width:46px;height:46px;border-radius:14px;background:#edf7fb;display:grid;place-items:center;font-size:24px;flex:0 0 auto}
+.reception-step-copy strong{display:block;color:#173f5c;font-size:14px}
+.reception-step-copy span{display:block;color:var(--muted);font-size:10px;margin-top:3px;line-height:1.4}
+.reception-status-badge{display:inline-flex;align-items:center;border-radius:999px;padding:6px 9px;background:#f1f4f6;color:#60717d;font-size:9px;font-weight:800;margin-top:7px}
+.reception-status-badge.ready{background:#e6f5ee;color:#146c4e}
+.reception-shell{max-width:1120px;margin:0 auto}
+.reception-hero{padding:20px;margin-bottom:14px}
+.reception-hero h2{margin:3px 0 5px}
+.reception-hero p{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+.reception-meta-grid{display:grid;grid-template-columns:1.25fr .75fr .75fr 1fr;gap:10px}
+.reception-meta-grid .wide{grid-column:span 2}
+.reception-lines{display:grid;gap:12px;margin-top:12px}
+.reception-line-card{border:1px solid var(--line);border-radius:14px;padding:14px;background:#fff}
+.reception-line-head{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-bottom:10px}
+.reception-line-head strong{color:#173f5c}
+.reception-line-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:9px}
+.reception-line-grid .obs{grid-column:span 2}
+.reception-line-grid .field label{font-size:9px}
+.reception-line-grid input,.reception-line-grid select{width:100%}
+.reception-signature-card{margin-top:14px}
+.reception-signature-card .signature-pad{height:150px}
+.reception-actions{display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;margin:14px 0 0}
+.reception-saved-list{display:grid;gap:8px;margin-top:10px}
+.reception-saved-item{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;border:1px solid var(--line);border-radius:12px;padding:11px 12px;background:#fafcfd}
+.reception-saved-item strong{display:block;color:#173f5c}
+.reception-saved-item span{display:block;color:var(--muted);font-size:9px;margin-top:2px}
+.reception-saved-actions{display:flex;gap:6px;flex-wrap:wrap}
+@media(max-width:840px){
+  .reception-step-card{align-items:flex-start;flex-direction:column}
+  .reception-meta-grid{grid-template-columns:1fr 1fr}
+  .reception-meta-grid .wide{grid-column:span 2}
+  .reception-line-grid{grid-template-columns:1fr 1fr}
+  .reception-line-grid .obs{grid-column:span 2}
+}
+@media(max-width:560px){
+  .reception-meta-grid,.reception-line-grid{grid-template-columns:1fr}
+  .reception-meta-grid .wide,.reception-line-grid .obs{grid-column:span 1}
+  .reception-saved-item{grid-template-columns:1fr}
+  .reception-actions{justify-content:stretch}
+  .reception-actions .btn{flex:1 1 100%}
+}
+
+
+/* V166 — Accès rapide Réception chauffeur depuis l'accueil */
+.home-quick-reception{display:flex;justify-content:center;margin:13px auto 2px;max-width:760px}
+.home-reception-btn{width:100%;appearance:none;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;border-radius:15px;padding:11px 16px;display:flex;align-items:center;justify-content:center;gap:11px;text-align:left;transition:.18s ease}
+.home-reception-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.20)}
+.home-reception-btn .quick-icon{width:35px;height:35px;border-radius:11px;display:grid;place-items:center;background:rgba(255,255,255,.18);font-size:19px;flex:0 0 auto}
+.home-reception-btn strong{display:block;font-size:14px;line-height:1.2}
+.home-reception-btn span{display:block;font-size:10px;color:rgba(255,255,255,.76);margin-top:3px;line-height:1.3}
+.home-reception-badge{margin-left:auto;display:inline-flex!important;width:auto!important;align-items:center;justify-content:center;min-width:25px;height:25px;padding:0 8px;border-radius:999px;background:rgba(255,255,255,.18);font-size:9px!important;font-weight:800;color:#fff!important}
+@media(max-width:720px){
+  .home-quick-reception{margin-top:10px}
+  .home-reception-btn{justify-content:flex-start;padding:11px 13px}
+  .home-reception-btn strong{font-size:13px}
+}
+
+
+/* V168 — Fiches d'évaluation produit en annexes */
+.product-sheets-shell{max-width:1160px;margin:0 auto}
+.product-sheets-hero{padding:20px;margin-bottom:14px}
+.product-sheets-hero h2{margin:4px 0 6px}.product-sheets-hero p{margin:0;color:var(--muted);font-size:11px;line-height:1.5}
+.product-sheet-tabs{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:12px}
+.product-sheet-tabs button{border:1px solid var(--line);background:#fff;border-radius:999px;padding:8px 11px;font-weight:800;color:#476172}
+.product-sheet-tabs button.active{background:#1b6f98;color:#fff;border-color:#1b6f98}
+.product-sheet-card{padding:16px;margin-bottom:12px}.product-sheet-card h3{margin:0;color:#214d68;font-size:16px}
+.product-sheet-card .sub{color:var(--muted);font-size:10px;margin-top:3px}
+.product-sheet-sample{border:1px solid var(--line);border-radius:14px;padding:13px;margin-top:12px;background:#fbfdfe}
+.product-sheet-sample-head{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;margin-bottom:10px}
+.product-sheet-sample-head strong{color:#173f5c;font-size:13px}.product-sheet-sample-head span{font-size:9px;color:var(--muted)}
+.product-sheet-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px}
+.product-sheet-grid .wide{grid-column:span 2}.product-sheet-grid .full{grid-column:1/-1}
+.product-sheet-auto{margin-top:10px;border:1px dashed #b9cbd5;border-radius:11px;padding:10px;background:#f7fafc}
+.product-sheet-auto strong{display:block;color:#234b64;font-size:11px}
+.product-sheet-auto .criterion-mini{display:flex;gap:6px;flex-wrap:wrap;margin-top:7px}
+.product-sheet-auto .criterion-mini span{border-radius:999px;background:#eef4f7;padding:5px 7px;font-size:9px;color:#425e70}
+.product-sheet-footer{display:flex;justify-content:flex-end;gap:8px;flex-wrap:wrap;margin:14px 0}
+.product-sheet-status{font-size:9px;border-radius:999px;padding:5px 8px;background:#eef3f6;color:#60717d;font-weight:800}
+.product-sheet-status.ready{background:#e6f5ee;color:#146c4e}
+@media(max-width:850px){.product-sheet-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.product-sheet-grid{grid-template-columns:1fr}.product-sheet-grid .wide,.product-sheet-grid .full{grid-column:span 1}.product-sheet-sample-head{flex-direction:column}}
+
+
+/* V169 — Validation bloquante des fiches produits */
+.product-sheet-sample.has-missing{border-color:#d89b2b;background:#fffdf7}
+.product-sheet-sample .field.missing-field input,
+.product-sheet-sample .field.missing-field select,
+.product-sheet-sample .field.missing-field textarea{border-color:#c97700;box-shadow:0 0 0 2px rgba(201,119,0,.08)}
+.product-sheet-required-note{margin-top:8px;padding:8px 10px;border-radius:10px;background:#fff7e8;color:#885700;font-size:9px;line-height:1.45;font-weight:700}
+
+
+/* V172 — Choix du lot pour Réception chauffeur */
+.reception-lot-list{display:grid;gap:9px;margin-top:12px;max-height:52vh;overflow:auto;padding-right:2px}
+.reception-lot-choice{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 13px;text-align:left;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;cursor:pointer}
+.reception-lot-choice:hover{border-color:#89b9d0;background:#f7fbfd}
+.reception-lot-choice.current{border-color:#69aeca;background:#f2f9fc}
+.reception-lot-choice strong{display:block;color:#173f5c;font-size:13px}
+.reception-lot-choice span{display:block;color:var(--muted);font-size:9px;margin-top:3px;line-height:1.35}
+.reception-lot-choice .lot-arrow{font-size:18px;color:#4e819d;margin:0}
+.reception-lot-empty{padding:18px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);font-size:10px}
+
+
+/* V174 — Boutons rapides indépendants */
+.home-quick-tools-v174{display:grid;grid-template-columns:1fr 1fr;gap:10px;max-width:760px;margin:13px auto 2px}
+.home-quick-tools-v174 .home-quick-reception{margin:0;max-width:none}
+.home-product-btn-v174{width:100%;appearance:none;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;border-radius:15px;padding:11px 16px;display:flex;align-items:center;gap:11px;text-align:left;transition:.18s ease}
+.home-product-btn-v174:hover{transform:translateY(-1px);background:rgba(255,255,255,.20)}
+.home-product-btn-v174 .quick-icon{width:35px;height:35px;border-radius:11px;display:grid;place-items:center;background:rgba(255,255,255,.18);font-size:19px;flex:0 0 auto}
+.home-product-btn-v174 strong{display:block;font-size:14px;line-height:1.2}
+.home-product-btn-v174 span{display:block;font-size:10px;color:rgba(255,255,255,.76);margin-top:3px;line-height:1.3}
+.product-lot-list-v174{display:grid;gap:9px;margin-top:12px;max-height:52vh;overflow:auto}
+.product-lot-choice-v174{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 13px;text-align:left;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;cursor:pointer}
+.product-lot-choice-v174:hover{border-color:#89b9d0;background:#f7fbfd}
+.product-lot-choice-v174 strong{display:block;color:#173f5c;font-size:13px}
+.product-lot-choice-v174 span{display:block;color:var(--muted);font-size:9px;margin-top:3px;line-height:1.35}
+@media(max-width:720px){.home-quick-tools-v174{grid-template-columns:1fr}.home-product-btn-v174{justify-content:flex-start}}
+
+
+/* V177 — Choisir le jury à préparer */
+.prepare-jury-list{display:grid;gap:9px;margin-top:12px;max-height:56vh;overflow:auto;padding-right:2px}
+.prepare-jury-choice{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:12px 13px;text-align:left;display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;cursor:pointer}
+.prepare-jury-choice:hover{border-color:#89b9d0;background:#f7fbfd}
+.prepare-jury-choice.current{border-color:#69aeca;background:#f2f9fc}
+.prepare-jury-choice.latest{border-color:#7bbf9b;background:#f4fbf7}
+.prepare-jury-choice strong{display:block;color:#173f5c;font-size:13px}
+.prepare-jury-choice span{display:block;color:var(--muted);font-size:9px;margin-top:3px;line-height:1.35}
+.prepare-jury-choice .prepare-arrow{font-size:18px;color:#4e819d;margin:0}
+.prepare-jury-status{display:inline-flex!important;width:auto!important;margin-top:6px!important;padding:3px 7px;border-radius:999px;background:#eef4f7;color:#496778!important;font-weight:800}
+.prepare-jury-choice.latest .prepare-jury-status{background:#e5f5eb;color:#21704a!important}
+
+
+/* V180 — Préparer le jury : sélecteur simple et toujours visible */
+.prepare-jury-empty-v180{padding:18px;border:1px dashed var(--line);border-radius:12px;text-align:center;color:var(--muted);font-size:10px;line-height:1.5;background:#fbfcfd}
+
+/* V187 — Réception chauffeur : simple rappel dans Préparer le jury */
+.reception-reminder-card{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;
+  padding:10px 13px;margin:10px 0 14px;border-style:dashed;background:#fbfdfe
+}
+.reception-reminder-copy{display:flex;align-items:center;gap:9px;min-width:0}
+.reception-reminder-icon{
+  width:32px;height:32px;border-radius:9px;background:#edf7fb;
+  display:grid;place-items:center;font-size:17px;flex:0 0 auto
+}
+.reception-reminder-copy strong{display:block;color:#234b64;font-size:11px}
+.reception-reminder-card .reception-status-badge{
+  margin-top:3px;padding:3px 7px;font-size:8px;display:inline-flex
+}
+.reception-reminder-card .btn{white-space:nowrap}
+@media(max-width:560px){
+  .reception-reminder-card{align-items:flex-start}
+  .reception-reminder-card .btn{padding:7px 9px}
+}
+
+
+/* V190 — Statut « Recharger les téléphones » en marron/ambre */
+.prepare-jury-status.refresh{
+  background:#fff0d8 !important;
+  color:#8c5a00 !important;
+  border:1px solid #e3bd78;
+}
+.jury-choice-state.refresh{
+  background:#fff0d8;
+  color:#8c5a00;
+  border:1px solid #e3bd78;
+}
+.jury-mini-badge.refresh{
+  background:#fff0d8;
+  color:#8c5a00;
+}
+
+
+/* V191 — diagnostic de démarrage iPad/Safari */
+#ipadStartupDiagnostic{
+  position:fixed;left:12px;right:12px;bottom:12px;z-index:99999;
+  display:none;max-width:720px;margin:0 auto;padding:12px 13px;
+  border-radius:14px;background:#fff7e8;border:1px solid #ddb168;
+  box-shadow:0 12px 32px rgba(0,0,0,.18);color:#684400;
+  font-family:Arial,sans-serif;font-size:12px;line-height:1.4
+}
+#ipadStartupDiagnostic strong{display:block;font-size:13px;margin-bottom:3px}
+#ipadStartupDiagnostic .diag-actions{display:flex;gap:8px;flex-wrap:wrap;margin-top:9px}
+#ipadStartupDiagnostic button{
+  border:0;border-radius:9px;padding:8px 10px;font:inherit;font-weight:800;cursor:pointer
+}
+#ipadStartupDiagnostic .diag-refresh{background:#8c5a00;color:#fff}
+#ipadStartupDiagnostic .diag-close{background:#efe7d9;color:#684400}
+
+
+/* V192 — Autoriser un nouvel appareil propriétaire */
+.owner-device-modal .modal{max-width:520px}
+.owner-device-intro{font-size:10px;color:var(--muted);line-height:1.5;margin:0 0 12px}
+.owner-device-warning{border:1px solid #f0d7aa;background:#fff7e8;color:#7d5b1a;border-radius:11px;padding:9px 10px;font-size:9px;line-height:1.45;margin-bottom:12px}
+.owner-device-qr-wrap{display:flex;justify-content:center;align-items:center;padding:14px;background:#fff;border:1px solid var(--line);border-radius:14px;min-height:260px}
+#ownerDeviceQr{display:grid;place-items:center}
+#ownerDeviceQr img,#ownerDeviceQr canvas{max-width:240px!important;width:240px!important;height:240px!important}
+.owner-device-status{margin-top:10px;text-align:center;font-size:9px;color:var(--muted);line-height:1.4}
+.owner-device-actions{display:flex;gap:8px;justify-content:flex-end;flex-wrap:wrap;margin-top:13px}
+#ownerNewDeviceBtn{display:none}
+@media(max-width:560px){
+  .owner-device-actions{display:grid;grid-template-columns:1fr}
+  .owner-device-actions .btn{width:100%}
+}
+
 </style>
 
 <link rel="manifest" href="manifest.webmanifest">
@@ -4223,14 +4434,91 @@ body.tester-preview-mode #testerView{
 }
 </style>
 
+<!-- V194 : base v192 complète, sans régression fonctionnelle -->
 </head>
 <body>
+<script id="v195-cache-reset">
+(function(){
+  try{
+    if('caches' in window){caches.keys().then(function(keys){return Promise.all(keys.filter(function(k){return k.indexOf('tests-culinaires-')===0 && k!=='tests-culinaires-v195-20261002'}).map(function(k){return caches.delete(k)}));}).catch(function(){});}
+  }catch(e){}
+})();
+</script>
+<div id="ipadStartupDiagnostic">
+  <strong id="ipadDiagTitle">Vérification de l’application…</strong>
+  <span id="ipadDiagText">Version v195.</span>
+  <div class="diag-actions">
+    <button class="diag-refresh" type="button" onclick="window.forceIpadAppRefresh()">Forcer l’actualisation iPad</button>
+    <button class="diag-close" type="button" onclick="document.getElementById('ipadStartupDiagnostic').style.display='none'">Fermer</button>
+  </div>
+</div>
+<script>
+(function(){
+  var modernOk=true;
+  try{
+    new Function("var x={a:1}; return x?.a ?? 0;");
+  }catch(e){
+    modernOk=false;
+  }
+
+  window.forceIpadAppRefresh=function(){
+    try{
+      var base=window.location.href.split('#')[0].split('?')[0];
+      window.location.replace(base+'?v=194-ipad-'+(new Date().getTime()));
+    }catch(e){
+      window.location.reload(true);
+    }
+  };
+
+  function showDiag(title,msg){
+    var box=document.getElementById('ipadStartupDiagnostic');
+    var t=document.getElementById('ipadDiagTitle');
+    var m=document.getElementById('ipadDiagText');
+    if(t)t.innerHTML=title;
+    if(m)m.innerHTML=msg;
+    if(box)box.style.display='block';
+  }
+
+  if(!modernOk){
+    window.setTimeout(function(){
+      showDiag(
+        'Safari / iPadOS trop ancien pour le moteur actuel',
+        'La page HTML est bien chargée en v191, mais ce Safari ne comprend pas certaines instructions JavaScript de l’application. Dites-moi la version iPadOS affichée dans Réglages &gt; Général &gt; Informations.'
+      );
+    },100);
+    return;
+  }
+
+  window.setTimeout(function(){
+    var engineOk=(typeof window.renderHome==='function');
+    var badge=document.getElementById('appBuildBadge');
+    if(engineOk){
+      if(badge){
+        badge.innerHTML='v195 · OK';
+        badge.style.background='#e6f5ee';
+        badge.style.color='#146c4e';
+      }
+    }else{
+      if(badge){
+        badge.innerHTML='v195 · moteur arrêté';
+        badge.style.background='#fff0d8';
+        badge.style.color='#8c5a00';
+      }
+      showDiag(
+        'L’application ne s’est pas démarrée',
+        'Le fichier v195 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
+      );
+    }
+  },5000);
+})();
+</script>
 <div class="testphone-banner" id="testPhoneBanner"></div>
 <div class="offline-banner" id="offlineBanner">📴 Mode hors connexion — vos réponses restent enregistrées sur cet appareil et seront resynchronisées au retour du réseau.</div>
 <header class="topbar">
   <div class="brandmark">TC</div>
   <div class="topbar-title"><strong id="headerTitle">Tests culinaires</strong><span id="headerSub">Groupe Marchés Nouvelle-Aquitaine</span></div>
   <span class="cloud-status" id="cloudStatus">● Local</span>
+  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v195</span>
   <button class="btn btn-secondary btn-small admin-security-btn" id="adminLockBtn">🔐 Sécurité</button>
   <button class="btn btn-secondary btn-small" id="homeBtn">Accueil</button>
 </header>
@@ -4281,9 +4569,22 @@ body.tester-preview-mode #testerView{
     <div class="home-status-summary"><div><strong id="homeProgressTitle">Aucune dégustation commencée</strong><span id="homeProgressDetail">Le jury peut être préparé.</span></div><div class="pct" id="homeProgressPct">0 %</div></div>
     <div class="home-command-grid simple-command-grid">
       <button class="command-card simple-command" id="samplesSetupBtn"><span class="cmd-icon">✨</span><div><strong>1. Choix des échantillons</strong><span>Créer un nouveau lot</span></div></button>
-      <button class="command-card simple-command" id="configureBtn"><span class="cmd-icon">＋</span><div><strong>2. Préparer le jury</strong><span>Questions, testeurs et préparation du jury</span></div></button>
+      <button class="command-card simple-command" id="configureBtn" type="button"><span class="cmd-icon">＋</span><div><strong>2. Préparer le jury</strong><span>Questions, testeurs et préparation du jury</span></div></button>
       <button class="command-card primary-command simple-command" id="juryBtn" type="button" onclick="openJuryFlow()"><span class="cmd-icon">▶</span><div><strong id="juryBtnTitle">Lancer le jury</strong><span id="juryBtnSub"></span></div></button>
       <button class="command-card simple-command" id="resultsBtn"><span class="cmd-icon">📊</span><div><strong>Résultats & archives</strong><span>Consulter les résultats et les jurys terminés</span></div></button>
+    </div>
+    <div class="home-quick-tools-v174">
+      <div class="home-quick-reception">
+        <button class="home-reception-btn" id="homeReceptionBtn" type="button">
+          <span class="quick-icon">🚚</span>
+          <span><strong>Réception chauffeur</strong><span>Températures · conformité · signature</span></span>
+          <span class="home-reception-badge" id="homeReceptionBadge">0</span>
+        </button>
+      </div>
+      <button class="home-product-btn-v174" id="homeProductSheetsBtnV174" type="button">
+        <span class="quick-icon">📋</span>
+        <span><strong>Fiches produits</strong><span>Traçabilité · conformité · annexes</span></span>
+      </button>
     </div>
     <details class="advanced-tools" id="advancedTools">
       <summary>⚙️ Outils avancés</summary>
@@ -4639,6 +4940,84 @@ body.tester-preview-mode #testerView{
   </section>
 </main>
 
+
+<main id="receptionView" class="view">
+  <div class="reception-shell">
+    <section class="panel reception-hero">
+      <div class="eyebrow">MARCHÉ 2026 · CONTRÔLE À RÉCEPTION</div>
+      <h2>Relevé de réception des échantillons</h2>
+      <p id="receptionLotSubtitle">Renseignez la livraison, contrôlez les produits puis faites signer le livreur directement sur l’écran.</p>
+    </section>
+
+    <section class="panel">
+      <div class="config-section-head" style="margin-top:0">
+        <div><h2 style="font-size:17px">Livraison</h2><p>Une fiche correspond à une livraison / un fournisseur.</p></div>
+      </div>
+      <div class="reception-meta-grid">
+        <div class="field wide">
+          <label>Établissement</label>
+          <input id="receptionEstablishment" autocomplete="off" placeholder="Ex. Lycée Jean Moulin — Langon">
+        </div>
+        <div class="field">
+          <label>Date</label>
+          <input id="receptionDate" type="date">
+        </div>
+        <div class="field">
+          <label>Heure</label>
+          <input id="receptionTime" type="time">
+        </div>
+        <div class="field wide">
+          <label>Fournisseur</label>
+          <input id="receptionSupplier" list="receptionSupplierOptions" autocomplete="off" placeholder="Choisir ou saisir le fournisseur">
+          <datalist id="receptionSupplierOptions"></datalist>
+        </div>
+        <div class="field">
+          <label>T° véhicule (°C)</label>
+          <select id="receptionVehicleTemp"></select>
+        </div>
+        <div class="field">
+          <label>Nom du livreur</label>
+          <input id="receptionDriverName" autocomplete="off" placeholder="Nom / prénom">
+        </div>
+        <div class="field wide">
+          <label>Agent réceptionnaire</label>
+          <input id="receptionReceiverName" autocomplete="off" placeholder="Nom de l’agent">
+        </div>
+      </div>
+    </section>
+
+    <section class="panel" style="margin-top:14px">
+      <div class="config-section-head" style="margin-top:0">
+        <div><h2 style="font-size:17px">Produits réceptionnés</h2><p>Les produits du lot sont repris automatiquement. Décochez un produit s’il n’est pas présent dans cette livraison.</p></div>
+      </div>
+      <div class="reception-lines" id="receptionLines"></div>
+    </section>
+
+    <section class="panel signature-card reception-signature-card">
+      <h3>Signature du livreur</h3>
+      <p>Le livreur signe avec le doigt sur téléphone/tablette ou avec la souris sur ordinateur.</p>
+      <canvas id="receptionSignature" class="signature-pad"></canvas>
+      <div class="signature-actions"><button class="btn btn-ghost btn-small" id="clearReceptionSignature" type="button">Effacer la signature</button></div>
+    </section>
+
+    <section class="panel" style="margin-top:14px">
+      <div class="config-section-head" style="margin-top:0">
+        <div><h2 style="font-size:17px">Réceptions déjà enregistrées</h2><p>Vous pouvez avoir plusieurs livraisons pour le même lot.</p></div>
+      </div>
+      <div class="reception-saved-list" id="receptionSavedList"></div>
+    </section>
+
+    <div class="reception-actions">
+      <button class="btn btn-ghost" id="receptionBackBtn" type="button">← Retour à Préparer le jury</button>
+      <button class="btn btn-secondary" id="receptionChangeLotBtn" type="button">📦 Changer de lot</button>
+      <button class="btn btn-secondary" id="receptionNewBtn" type="button">＋ Nouvelle réception</button>
+      <button class="btn btn-secondary" id="receptionPrintBtn" type="button">🖨️ Imprimer la fiche</button>
+      <button class="btn btn-secondary" id="receptionPdfBtn" type="button">📄 Télécharger le PDF</button>
+      <button class="btn btn-primary" id="receptionSaveBtn" type="button">✓ Enregistrer et émarger</button>
+    </div>
+  </div>
+</main>
+
 <main id="prepView" class="view">
   <section class="prep-hero">
     <div class="panel prep-hero-main">
@@ -4834,19 +5213,11 @@ body.tester-preview-mode #testerView{
 
 <main id="configView" class="view">
   <section class="panel config-start-hero">
-    <h2>Créer un jury</h2>
+    <h2>Préparer le jury</h2>
     <button class="btn config-cancel-top" id="cancelConfigTopBtn">← Annuler et revenir à l’accueil</button>
   </section>
 
-  <section class="creation-choice-intro">
-  <div class="creation-choice-icon">🧭</div>
-  <div>
-    <h2>Comment voulez-vous créer ce jury ?</h2>
-    <p>Choisissez une seule méthode de départ. Les deux possibilités ci-dessous ne sont pas des étapes à faire l’une après l’autre.</p>
-  </div>
-</section>
-
-<section class="config-methods" id="creationMethods">
+<section class="config-methods" id="creationMethods" style="display:none" aria-hidden="true" data-legacy="true">
     <div class="panel method-card" id="marketMethodCard">
       <div class="method-icon">📚</div>
       <div class="creation-choice-label">CHOIX 1</div><h3>À partir du Marché 2026</h3>
@@ -4885,10 +5256,20 @@ body.tester-preview-mode #testerView{
     <button id="useArchiveTemplateBtn"></button>
   </div>
 
+  <div class="panel" id="preparedJuryIntro" style="padding:14px 16px;margin-bottom:12px">
+    <strong style="display:block;color:#234b64;font-size:13px">Préparation du jury</strong>
+    <span style="display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.45">Les choix du lot ont déjà été faits. Vérifiez les informations ci-dessous puis complétez uniquement ce qui manque.</span>
+  </div>
+
   <section class="panel config-choice-recap" id="configChoiceRecap" hidden>
+    <div class="config-recap-lot-identity" style="display:grid;grid-template-columns:1fr 2fr;gap:10px;margin:10px 0 12px">
+      <div class="field"><label>N° du lot</label><div id="configRecapLotNumber" class="readonly-value">—</div></div>
+      <div class="field"><label>Nom du lot</label><div id="configRecapLotNameV184" class="readonly-value">—</div></div>
+    </div>
+
     <div class="config-choice-recap-head">
       <strong>Choix enregistrés</strong>
-      <span>Ces informations viennent de « Choix des échantillons ».</span>
+      <span>Lot, produits et fournisseurs repris automatiquement depuis « Choix des échantillons ».</span>
     </div>
     <div class="config-choice-recap-grid">
       <div><small>Produits testés</small><div id="configRecapProducts"></div></div>
@@ -4907,9 +5288,20 @@ body.tester-preview-mode #testerView{
     <div class="add-product-after-help" id="addProductHelp">Chaque nouveau produit aura ses propres échantillons et ses 5 questions.</div>
   </div>
 
+  <section class="panel reception-reminder-card" id="configReceptionStep">
+    <div class="reception-reminder-copy">
+      <span class="reception-reminder-icon">🚚</span>
+      <div>
+        <strong>Réception des échantillons</strong>
+        <span class="reception-status-badge" id="configReceptionStatus">Aucune réception enregistrée</span>
+      </div>
+    </div>
+    <button class="btn btn-ghost btn-small" id="configReceptionBtn" type="button">Voir / ajouter</button>
+  </section>
+
   <section class="config-intro">
     <div class="panel config-card tester-count-only">
-      <h3>3. Nombre de testeurs</h3>
+      <h3>2. Nombre de testeurs</h3>
       <div class="tester-count-center">
         <div class="field">
           <label>Combien de testeurs participent au jury ?</label>
@@ -5495,6 +5887,23 @@ body.tester-preview-mode #testerView{
   </div>
 </main>
 
+
+<main id="productSheetsView" class="view">
+  <div class="product-sheets-shell">
+    <section class="panel product-sheets-hero">
+      <div class="eyebrow">ANNEXES DU DOSSIER FINAL</div>
+      <h2>Fiches d’évaluation des produits</h2>
+      <p>Une fiche par produit. Les fournisseurs et les résultats sensoriels sont repris automatiquement ; vous complétez seulement les informations techniques utiles.</p>
+    </section>
+    <div class="product-sheet-tabs" id="productSheetTabs"></div>
+    <div id="productSheetContent"></div>
+    <div class="product-sheet-footer">
+      <button type="button" class="btn btn-ghost" id="productSheetsBackBtn">← Retour aux résultats</button>
+      <button type="button" class="btn btn-primary" id="saveProductSheetsBtn">💾 Enregistrer les fiches produits</button>
+    </div>
+  </div>
+</main>
+
 <main id="adminView" class="view">
   <div class="results-subpage-back"><button type="button" class="btn btn-ghost btn-small" id="resultsBackHubBtn">← Résultats & archives</button></div>
 
@@ -5517,6 +5926,7 @@ body.tester-preview-mode #testerView{
     </div>
     <div class="simple-results-action-buttons">
       <button type="button" class="btn btn-primary" id="simpleResultsPdfBtn">📄 Rapport sensoriel / PDF</button>
+      <button type="button" class="btn btn-secondary" id="productSheetsBtn">📋 Fiches produits</button>
       <button type="button" class="btn btn-secondary" id="simpleResultsEmailBtn">📧 Envoyer le rapport par email</button>
       <button type="button" class="btn btn-secondary" id="simpleResultsArchiveBtn">📁 Archiver ce jury</button>
       <button type="button" class="btn btn-ghost" id="simpleResultsMoreBtn">⚙️ Plus de détails</button>
@@ -5587,6 +5997,42 @@ body.tester-preview-mode #testerView{
   </section>
 </main>
 
+
+
+
+<div class="modal-backdrop" id="prepareJuryModal">
+  <div class="modal" style="max-width:600px">
+    <h3>＋ Quel jury voulez-vous préparer ?</h3>
+    <p id="prepareJuryModalText">Choisissez le lot ou le jury que vous voulez préparer.</p>
+    <div class="prepare-jury-list" id="prepareJuryList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="prepareJuryCancelBtn" type="button">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="productLotModalV174">
+  <div class="modal" style="max-width:560px">
+    <h3>📋 Quel lot voulez-vous ouvrir ?</h3>
+    <p>Sélectionnez le lot dont vous voulez compléter les fiches produits.</p>
+    <div class="product-lot-list-v174" id="productLotListV174"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="productLotCancelV174" type="button">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="receptionLotModal">
+  <div class="modal" style="max-width:560px">
+    <h3>🚚 Quel lot réceptionnez-vous ?</h3>
+    <p>Sélectionnez le lot correspondant au camion qui vient d’arriver.</p>
+    <div class="reception-lot-list" id="receptionLotList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="receptionLotCancelBtn" type="button">Annuler</button>
+    </div>
+  </div>
+</div>
+
 <div class="modal-backdrop" id="simpleResultsModal">
   <div class="modal simple-results-modal" style="max-width:520px">
     <h3>Résultats & archives</h3>
@@ -5612,9 +6058,31 @@ body.tester-preview-mode #testerView{
       <div class="field"><label>Confirmer le code PIN</label><input id="securityPin2" type="password" inputmode="numeric" maxlength="8" placeholder="Répétez le code"></div>
     </div>
     <div class="security-actions">
+      <button class="btn btn-secondary" id="ownerNewDeviceBtn" type="button">📲 Autoriser un nouvel appareil propriétaire</button>
       <button class="btn btn-ghost" id="securityCancelBtn">Annuler</button>
       <button class="btn btn-secondary" id="securityLockNowBtn">🔒 Verrouiller maintenant</button>
       <button class="btn btn-primary" id="securitySaveBtn">Continuer</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop owner-device-modal" id="ownerDeviceModal">
+  <div class="modal">
+    <h3>📲 Autoriser un nouvel appareil propriétaire</h3>
+    <p class="owner-device-intro">
+      Affichez ce QR code sur votre appareil propriétaire actuel, puis scannez-le avec le nouvel iPad, téléphone ou ordinateur.
+    </p>
+    <div class="owner-device-warning">
+      🔐 <strong>QR code privé :</strong> il donne les droits administrateur et propriétaire de cette session.
+      Ne le transmettez qu’à vos propres appareils.
+    </div>
+    <div class="owner-device-qr-wrap">
+      <div id="ownerDeviceQr"></div>
+    </div>
+    <div class="owner-device-status" id="ownerDeviceStatus">Préparation du lien sécurisé…</div>
+    <div class="owner-device-actions">
+      <button class="btn btn-secondary" id="ownerDeviceCopyBtn" type="button">🔗 Copier le lien propriétaire</button>
+      <button class="btn btn-ghost" id="ownerDeviceCloseBtn" type="button">Fermer</button>
     </div>
   </div>
 </div>
@@ -5672,6 +6140,7 @@ const PREPARED_JURY_STORAGE_KEY='jm_test_culinaire_prepared_v97';
 const SAMPLE_MASTER_STORAGE_KEY='jm_test_culinaire_sample_master_v1';
 const SAMPLE_MASTER_META_STORAGE_KEY='jm_test_culinaire_sample_master_meta_v1';
 const SAMPLE_PRODUCTS_STORAGE_KEY='jm_test_culinaire_sample_products_v1';
+const SAMPLE_LOT_HISTORY_STORAGE_KEY='jm_test_culinaire_sample_lot_history_v178';
 const PALETTE=['#e5862f','#2f8f5b','#7d5ab5','#2e7cae','#c95366','#8a6b37','#3a8e91','#9b5f9b'];
 const QUESTIONS=[
  {title:'Par rapport à la couleur que vous jugez idéale, où se situe le produit testé ?',weights:[0,3,6,10,6,3,0],labels:['Trop pâle','','','Parfait','','','Trop foncée']},
@@ -6078,13 +6547,16 @@ function renderJuryChooser(){
       try{phonesReady=phoneSharePrepared(cfg)}catch(e){phonesReady=!!cfg._shareSessionId}
       const current=String(rec.id)===currentId;
 
+      const phonesRefresh=phoneShareNeedsRefresh(cfg);
       const statusText=running
         ?'● Jury en cours'
         :phonesReady
           ?'✓ Prêt à lancer'
-          :'📱 Téléphones à préparer';
+          :phonesRefresh
+            ?'↻ Recharger les téléphones'
+            :'📱 Téléphones à préparer';
 
-      const statusClass=running?'running':phonesReady?'ready':'waiting';
+      const statusClass=running?'running':phonesReady?'ready':phonesRefresh?'refresh':'waiting';
 
       let buttons='';
       if(running){
@@ -6094,7 +6566,7 @@ function renderJuryChooser(){
           <button type="button" class="btn btn-secondary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','edit')">Modifier</button>
           <button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','launch')">▶ Lancer ce jury</button>`;
       }else{
-        buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','edit');setTimeout(()=>document.getElementById('configPhonesStep')?.scrollIntoView({behavior:'smooth',block:'center'}),120)">📱 Préparer ce jury</button>`;
+        buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','edit');setTimeout(()=>document.getElementById('configPhonesStep')?.scrollIntoView({behavior:'smooth',block:'center'}),120)">${phonesRefresh?'↻ Recharger les téléphones':'📱 Préparer ce jury'}</button>`;
       }
 
       return `<article class="panel jury-choice-card ${current?'current':''}">
@@ -6248,7 +6720,7 @@ function renderCurrentDashboardCard(phase){
   </article>`;
 }
 function renderPreparedDashboardCard(rec){
-  const st=rec.state||{},cfg=st.config||{},meta=preparedJuryMeta(st),phonesReady=phoneSharePrepared(cfg);
+  const st=rec.state||{},cfg=st.config||{},meta=preparedJuryMeta(st),phonesReady=phoneSharePrepared(cfg),phonesRefresh=phoneShareNeedsRefresh(cfg);
   const running=!!cfg.juryLaunch?.openedAt&&!cfg.juryClose?.closedAt;
   return `<article class="jury-mini-card">
     <div class="top">
@@ -6257,7 +6729,7 @@ function renderPreparedDashboardCard(rec){
         <h4>${escapeHtml(cfg.lotName||rec.name||'Jury')}</h4>
         <p>${escapeHtml(cfg.subtitle||'')}</p>
       </div>
-      <span class="jury-mini-badge prep">${running?'En cours':phonesReady?'Téléphones prêts':'À préparer'}</span>
+      <span class="jury-mini-badge ${phonesRefresh?'refresh':'prep'}">${running?'En cours':phonesReady?'Téléphones prêts':phonesRefresh?'↻ Recharger les téléphones':'À préparer'}</span>
     </div>
     <div class="jury-mini-meta">
       <span>${meta.products} produit${meta.products>1?'s':''}</span>
@@ -6434,6 +6906,53 @@ function saveSampleProducts(list){
   localStorage.setItem(SAMPLE_PRODUCTS_STORAGE_KEY,JSON.stringify(clean));
   return clean;
 }
+function loadSampleLotHistory(){
+  try{
+    const rows=JSON.parse(localStorage.getItem(SAMPLE_LOT_HISTORY_STORAGE_KEY)||'[]');
+    return Array.isArray(rows)?rows:[];
+  }catch(e){return[]}
+}
+function saveSampleLotHistory(rows){
+  localStorage.setItem(SAMPLE_LOT_HISTORY_STORAGE_KEY,JSON.stringify(Array.isArray(rows)?rows.slice(0,40):[]));
+}
+function sampleLotSnapshotSignature(meta,products){
+  const cleanMeta=cleanSampleMasterMeta(meta);
+  const lot=String(lotNameFromSampleMeta(cleanMeta)||'').toLowerCase();
+  const list=Array.isArray(products)?products:[];
+  const prods=list.map(p=>String(p?.name||'').trim().toLowerCase()).filter(Boolean).join('|');
+  const suppliers=(Array.isArray(cleanMeta.supplierNames)?cleanMeta.supplierNames:[])
+    .map(x=>String(x||'').trim().toLowerCase()).filter(Boolean).sort().join('|');
+  return `${lot}::${prods}::${suppliers}`;
+}
+function saveSampleLotSnapshot(meta,products){
+  const cleanMeta=cleanSampleMasterMeta(meta);
+  const cleanProducts=cleanSampleProducts(products);
+  const lotName=lotNameFromSampleMeta(cleanMeta);
+  if(!lotName || !cleanProducts.length)return null;
+
+  const signature=sampleLotSnapshotSignature(cleanMeta,cleanProducts);
+  const rows=loadSampleLotHistory();
+  const existing=rows.find(x=>x.signature===signature);
+  const rec={
+    id:existing?.id||uid('samplelot'),
+    savedAt:new Date().toISOString(),
+    lotName,
+    meta:deepClone(cleanMeta),
+    products:deepClone(cleanProducts),
+    signature
+  };
+  const filtered=rows.filter(x=>x.id!==rec.id && x.signature!==signature);
+  filtered.unshift(rec);
+  saveSampleLotHistory(filtered);
+  return rec;
+}
+function restoreSampleLotSnapshot(rec){
+  if(!rec?.meta||!Array.isArray(rec?.products))return false;
+  saveSampleMasterMeta(rec.meta);
+  const products=saveSampleProducts(rec.products);
+  saveSampleMaster((products[0]?.samples||[]).map(s=>({id:s.id,supplier:''})));
+  return true;
+}
 function masterSamplesForNewProduct(){
   const products=loadSampleProducts();
   const rows=products?.[0]?.samples||loadSampleMaster();
@@ -6584,10 +7103,11 @@ function commitSampleMaster({continueToJury=false}={}){
   }
   const products=saveSampleProducts(sampleProductsSetupDraft);
   const firstName=products[0]?.name||'';
-  saveSampleMasterMeta({...meta,productName:firstName});
+  const savedMeta=saveSampleMasterMeta({...meta,productName:firstName});
   saveSampleMaster((products[0]?.samples||[]).map(s=>({id:s.id,supplier:''})));
+  saveSampleLotSnapshot(savedMeta,products);
   sampleProductsSetupDraft=products.map(p=>({name:p.name,samples:p.samples.map(s=>({id:s.id,supplier:''}))}));
-  toast('Lot enregistré ✓ · le prochain nouveau lot repartira vierge');
+  toast('Lot enregistré ✓ · il restera disponible dans « Préparer le jury »');
 
   if(draftConfig){
     draftConfig.lotNumber=meta.lotNumber;
@@ -6646,11 +7166,1060 @@ function startBlankJuryFromMaster(){
   requestAnimationFrame(()=>document.querySelector('#productsConfig')?.scrollIntoView({behavior:'smooth',block:'start'}));
 }
 
+
+/* ===== V164 — Réception numérique des échantillons ===== */
+let receptionEditingIndex=-1;
+let receptionDraft=null;
+
+function receptionConfig(){
+  return draftConfig||state?.config||null;
+}
+function receptionList(cfg=receptionConfig()){
+  if(!cfg)return[];
+  if(!Array.isArray(cfg.receptions))cfg.receptions=[];
+  return cfg.receptions;
+}
+
+
+function receptionSupplierNames(cfg=receptionConfig()){
+  if(!cfg||typeof cfg!=='object')return[];
+  const names=[];
+  const configured=Array.isArray(cfg.supplierNames)?cfg.supplierNames:[];
+  for(const x of configured){
+    const n=String(x||'').trim();
+    if(n)names.push(n);
+  }
+  const products=Array.isArray(cfg.products)?cfg.products:[];
+  for(const p of products){
+    const samples=Array.isArray(p?.samples)?p.samples:[];
+    for(const sm of samples){
+      const n=String(sm?.supplier||'').trim();
+      if(n)names.push(n);
+    }
+  }
+  return [...new Set(names)];
+}
+
+function receptionTemperatureOptions(selected=''){
+  const values=[];
+  for(let t=8;t>=-20;t--)values.push(t);
+  return '<option value="">— Choisir —</option>'+
+    values.map(t=>{
+      const label=t>0?`+${t} °C`:`${t} °C`;
+      return `<option value="${t}" ${String(selected)===String(t)?'selected':''}>${label}</option>`;
+    }).join('');
+}
+
+function receptionNowTime(){
+  const d=new Date(),hh=String(d.getHours()).padStart(2,'0'),mm=String(d.getMinutes()).padStart(2,'0');
+  return `${hh}:${mm}`;
+}
+function newReceptionRecord(cfg=receptionConfig()){
+  const products=cfg?.products||[];
+  return{
+    id:uid('reception'),
+    establishment:String(cfg?.receptionEstablishment||''),
+    date:todayIsoLocal(),
+    time:receptionNowTime(),
+    supplier:'',
+    vehicleTemp:'',
+    driverName:'',
+    receiverName:'',
+    lines:products.map((p,i)=>({
+      productId:p.id||'',
+      productName:String(p.name||`Produit ${i+1}`),
+      received:true,
+      productTemp:'',
+      interiorTemp:'',
+      dlc:'',
+      packaging:'conforme',
+      decision:'acceptation',
+      observations:''
+    })),
+    driverSignature:'',
+    validatedAt:null
+  };
+}
+function normalizeReceptionRecord(rec,cfg=receptionConfig()){
+  const base=newReceptionRecord(cfg);
+  const incoming=rec&&typeof rec==='object'?rec:{};
+  const byId=new Map((incoming.lines||[]).map(x=>[String(x.productId||x.productName||''),x]));
+  base.id=incoming.id||base.id;
+  base.establishment=String(incoming.establishment||base.establishment);
+  base.date=String(incoming.date||base.date);
+  base.time=String(incoming.time||base.time);
+  base.supplier=String(incoming.supplier||'');
+  base.vehicleTemp=String(incoming.vehicleTemp??'');
+  base.driverName=String(incoming.driverName||'');
+  base.receiverName=String(incoming.receiverName||'');
+  base.driverSignature=String(incoming.driverSignature||'');
+  base.validatedAt=incoming.validatedAt||null;
+  base.lines=base.lines.map(line=>{
+    const old=byId.get(String(line.productId||line.productName||''))||
+      (incoming.lines||[]).find(x=>String(x.productName||'')===line.productName);
+    return old?{...line,...old,productId:line.productId,productName:line.productName}:line;
+  });
+  return base;
+}
+function renderReceptionConfigStatus(){
+  const el=$('#configReceptionStatus');
+  if(!el||!draftConfig)return;
+  const count=receptionList(draftConfig).length;
+  el.textContent=count?`${count} réception${count>1?'s':''} enregistrée${count>1?'s':''} ✓`:'Aucune réception enregistrée';
+  el.classList.toggle('ready',count>0);
+}
+
+
+function closeProductLotModalV174(){
+  $('#productLotModalV174')?.classList.remove('show');
+}
+function productLotsV174(){
+  const rows=[],seen=new Set();
+  const cfg=state?.config||{};
+  const curId=String(cfg._preparedId||'__current__');
+
+  if(cfg.products?.length){
+    rows.push({
+      id:curId,
+      current:true,
+      name:cfg.lotName||'Lot en cours',
+      products:cfg.products.length,
+      suppliers:(cfg.supplierNames||[]).filter(x=>String(x||'').trim()).length
+    });
+    seen.add(curId);
+  }
+
+  for(const rec of loadPreparedJurys()){
+    const rcfg=rec?.state?.config||{};
+    if(!rcfg.products?.length)continue;
+    const id=String(rec.id||rcfg._preparedId||'');
+    if(!id||seen.has(id))continue;
+    rows.push({
+      id,
+      current:false,
+      name:rcfg.lotName||rec.name||'Lot préparé',
+      products:rcfg.products.length,
+      suppliers:(rcfg.supplierNames||[]).filter(x=>String(x||'').trim()).length
+    });
+    seen.add(id);
+  }
+  return rows;
+}
+function openProductLotV174(row){
+  closeProductLotModalV174();
+
+  if(row.current){
+    activeProductSheetId='';
+    openProductSheets();
+    return;
+  }
+
+  try{
+    if(state?.config?._preparedId && !isJuryClosed())saveState();
+  }catch(e){}
+
+  const rec=loadPreparedJurys().find(x=>String(x.id)===String(row.id));
+  if(!rec?.state){
+    alert('Ce lot est introuvable.');
+    return;
+  }
+
+  state=deepClone(rec.state);
+  if(!state.config)state.config={};
+  if(!state.config._preparedId)state.config._preparedId=rec.id;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+
+  currentTester=1;
+  currentProduct=state.config.products?.[0]?.id||'';
+  currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';
+  adminProduct=currentProduct;
+  selectedAdminSample='';
+  activeProductSheetId='';
+  openProductSheets();
+}
+function openProductSheetsFromHomeV174(){
+  const rows=productLotsV174();
+  if(!rows.length){
+    alert('Aucun lot contenant des produits n’est disponible.');
+    return;
+  }
+  if(rows.length===1){
+    openProductLotV174(rows[0]);
+    return;
+  }
+
+  const modal=$('#productLotModalV174'),list=$('#productLotListV174');
+  if(!modal||!list)return;
+
+  list.innerHTML=rows.map(r=>`
+    <button type="button" class="product-lot-choice-v174" data-product-lot-v174="${escapeHtml(r.id)}">
+      <span>
+        <strong>${escapeHtml(r.name)}</strong>
+        <span>${r.products} produit${r.products>1?'s':''} · ${r.suppliers} fournisseur${r.suppliers>1?'s':''}${r.current?' · lot actuellement ouvert':''}</span>
+      </span>
+      <span style="font-size:18px;color:#4e819d">›</span>
+    </button>`).join('');
+
+  list.querySelectorAll('[data-product-lot-v174]').forEach(btn=>{
+    btn.onclick=()=>{
+      const row=rows.find(r=>String(r.id)===String(btn.dataset.productLotV174));
+      if(row)openProductLotV174(row);
+    };
+  });
+
+  modal.classList.add('show');
+}
+
+
+function availableReceptionLots(){
+  try{ensureCurrentPrepSaved()}catch(e){}
+  const choices=[],seen=new Set();
+  const currentCfg=state?.config||{};
+  const currentId=String(currentCfg._preparedId||'__current__');
+
+  if(currentCfg?.products?.length && !currentCfg?.juryClose?.closedAt){
+    choices.push({
+      id:currentId,
+      kind:'current',
+      lotName:currentCfg.lotName||'Lot en cours',
+      suppliers:receptionSupplierNames(currentCfg),
+      products:(currentCfg.products||[]).length,
+      savedAt:state?.updatedAt||''
+    });
+    seen.add(currentId);
+  }
+
+  for(const rec of loadPreparedJurys()){
+    const cfg=rec?.state?.config||{};
+    if(!cfg?.products?.length || cfg?.juryClose?.closedAt)continue;
+    const id=String(rec.id||cfg._preparedId||'');
+    if(!id || seen.has(id))continue;
+    choices.push({
+      id,
+      kind:'prepared',
+      lotName:cfg.lotName||rec.name||'Lot préparé',
+      suppliers:receptionSupplierNames(cfg),
+      products:(cfg.products||[]).length,
+      savedAt:rec.savedAt||''
+    });
+    seen.add(id);
+  }
+
+  return choices.sort((a,b)=>{
+    if(a.kind==='current'&&b.kind!=='current')return -1;
+    if(b.kind==='current'&&a.kind!=='current')return 1;
+    return String(b.savedAt||'').localeCompare(String(a.savedAt||''));
+  });
+}
+function closeReceptionLotPicker(){
+  $('#receptionLotModal')?.classList.remove('show');
+}
+function activateReceptionLot(choice){
+  closeReceptionLotPicker();
+  draftConfig=null;
+
+  if(choice?.kind==='current'){
+    openReceptionView(-1);
+    return;
+  }
+
+  try{
+    if(state?.config?._preparedId && !isJuryClosed())saveState();
+  }catch(e){}
+
+  const rec=loadPreparedJurys().find(x=>String(x.id)===String(choice?.id));
+  if(!rec?.state){
+    alert('Ce lot est introuvable. Revenez à l’accueil puis réessayez.');
+    return;
+  }
+
+  state=deepClone(rec.state);
+  if(!state.config)state.config={};
+  if(!state.config._preparedId)state.config._preparedId=rec.id;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+
+  currentTester=1;
+  currentProduct=state.config.products?.[0]?.id||'';
+  currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';
+  adminProduct=currentProduct;
+  selectedAdminSample='';
+
+  openReceptionView(-1);
+}
+function showReceptionLotPicker(choices){
+  const modal=$('#receptionLotModal'),list=$('#receptionLotList');
+  if(!modal||!list)return;
+  const intro=modal.querySelector('p');
+  if(intro)intro.textContent=choices.length>1
+    ?`${choices.length} lots sont disponibles. Sélectionnez celui correspondant au camion qui vient d’arriver.`
+    :'1 lot est disponible. Touchez-le pour ouvrir la fiche de réception.';
+  list.innerHTML=choices.length?choices.map((c,i)=>{
+    const suppliers=c.suppliers?.length?`${c.suppliers.length} fournisseur${c.suppliers.length>1?'s':''}`:'Aucun fournisseur renseigné';
+    const products=`${c.products} produit${c.products>1?'s':''}`;
+    return `<button type="button" class="reception-lot-choice ${c.kind==='current'?'current':''}" data-reception-lot="${escapeHtml(c.id)}">
+      <span><strong>${escapeHtml(c.lotName)}</strong><span>${products} · ${suppliers}${c.kind==='current'?' · lot actuellement ouvert':''}</span></span>
+      <span class="lot-arrow">›</span>
+    </button>`;
+  }).join(''):'<div class="reception-lot-empty">Aucun lot disponible pour une réception.</div>';
+
+  list.querySelectorAll('[data-reception-lot]').forEach(btn=>{
+    btn.onclick=()=>{
+      const choice=choices.find(c=>String(c.id)===String(btn.dataset.receptionLot));
+      if(choice)activateReceptionLot(choice);
+    };
+  });
+  modal.classList.add('show');
+}
+function openReceptionFromHome(){
+  draftConfig=null;
+  const choices=availableReceptionLots();
+  if(!choices.length){
+    alert('Aucun lot n’est prêt pour une réception. Créez d’abord un lot dans « Choix des échantillons ».');
+    return;
+  }
+  showReceptionLotPicker(choices);
+}
+function changeReceptionLot(){
+  try{captureReceptionForm?.()}catch(e){}
+  const choices=availableReceptionLots();
+  if(!choices.length){
+    alert('Aucun autre lot n’est disponible.');
+    return;
+  }
+  showReceptionLotPicker(choices);
+}
+function renderHomeReceptionBadge(){
+  const badge=$('#homeReceptionBadge');
+  if(!badge)return;
+  const lots=availableReceptionLots();
+  if(lots.length>1){
+    badge.textContent=String(lots.length);
+    badge.title=`${lots.length} lots disponibles pour une réception`;
+    return;
+  }
+  const count=Array.isArray(state?.config?.receptions)?state.config.receptions.length:0;
+  badge.textContent=String(count);
+  badge.title=count?`${count} réception${count>1?'s':''} enregistrée${count>1?'s':''}`:'Aucune réception enregistrée';
+}
+
+function openReceptionView(index=-1){
+  const cfg=receptionConfig();
+  if(!cfg?.products?.length){
+    alert('Ajoutez d’abord au moins un produit dans le jury.');
+    return;
+  }
+  receptionEditingIndex=Number.isInteger(index)?index:-1;
+  receptionDraft=receptionEditingIndex>=0 && receptionList(cfg)[receptionEditingIndex]
+    ?normalizeReceptionRecord(deepClone(receptionList(cfg)[receptionEditingIndex]),cfg)
+    :newReceptionRecord(cfg);
+
+  showView('receptionView');
+  $('#headerTitle').textContent='Réception des échantillons';
+  $('#headerSub').textContent=cfg.lotName||'Jury Marchés';
+  $('#receptionLotSubtitle').textContent=`${cfg.lotName||'Lot'} · contrôle de la livraison et émargement du chauffeur`;
+
+  renderReceptionForm();
+}
+function renderReceptionForm(){
+  const cfg=receptionConfig();
+  if(!cfg||!receptionDraft)return;
+  receptionDraft=normalizeReceptionRecord(receptionDraft,cfg);
+
+  $('#receptionEstablishment').value=receptionDraft.establishment||'';
+  $('#receptionDate').value=receptionDraft.date||todayIsoLocal();
+  $('#receptionTime').value=receptionDraft.time||receptionNowTime();
+  $('#receptionVehicleTemp').innerHTML=receptionTemperatureOptions(receptionDraft.vehicleTemp??'');
+  $('#receptionVehicleTemp').value=String(receptionDraft.vehicleTemp??'');
+  $('#receptionDriverName').value=receptionDraft.driverName||'';
+  $('#receptionReceiverName').value=receptionDraft.receiverName||'';
+
+  const supplierInput=$('#receptionSupplier');
+  const supplierOptions=$('#receptionSupplierOptions');
+  const suppliers=receptionSupplierNames(cfg);
+  const selected=String(receptionDraft.supplier||'');
+  const choices=[...new Set([selected,...suppliers].filter(Boolean))];
+  if(supplierOptions)supplierOptions.innerHTML=choices.map(name=>`<option value="${escapeHtml(name)}"></option>`).join('');
+  if(supplierInput)supplierInput.value=selected;
+
+  const lines=$('#receptionLines');
+  lines.innerHTML=receptionDraft.lines.map((line,i)=>`
+    <article class="reception-line-card" data-reception-line="${i}">
+      <div class="reception-line-head">
+        <strong>${escapeHtml(line.productName||`Produit ${i+1}`)}</strong>
+        <label style="display:flex;gap:6px;align-items:center;font-size:10px;font-weight:700">
+          <input type="checkbox" data-rec-received="${i}" ${line.received!==false?'checked':''}> Produit reçu
+        </label>
+      </div>
+      <div class="reception-line-grid">
+        <div class="field"><label>T° produit (°C)</label><select data-rec-product-temp="${i}">${receptionTemperatureOptions(line.productTemp??'')}</select></div>
+        <div class="field"><label>T° intérieur produit (°C)</label><select data-rec-interior-temp="${i}">${receptionTemperatureOptions(line.interiorTemp??'')}</select></div>
+        <div class="field"><label>DLC — Date limite de consommation / DDM</label><input type="date" data-rec-dlc="${i}" value="${escapeHtml(line.dlc||'')}"></div>
+        <div class="field"><label>État emballage</label><select data-rec-packaging="${i}"><option value="conforme">Conforme</option><option value="non-conforme">Non conforme</option></select></div>
+        <div class="field"><label>Décision</label><select data-rec-decision="${i}"><option value="acceptation">Acceptation</option><option value="refus">Refus</option></select></div>
+        <div class="field obs"><label>Observations</label><input data-rec-observations="${i}" value="${escapeHtml(line.observations||'')}" placeholder="Observation éventuelle"></div>
+      </div>
+    </article>`).join('');
+
+  receptionDraft.lines.forEach((line,i)=>{
+    const p=document.querySelector(`[data-rec-packaging="${i}"]`);if(p)p.value=line.packaging||'conforme';
+    const d=document.querySelector(`[data-rec-decision="${i}"]`);if(d)d.value=line.decision||'acceptation';
+  });
+
+  setupSignatureCanvas('receptionSignature',receptionDraft.driverSignature||'');
+  renderReceptionSavedList();
+}
+function captureReceptionForm(){
+  const cfg=receptionConfig();
+  if(!cfg||!receptionDraft)return null;
+  receptionDraft.establishment=$('#receptionEstablishment').value.trim();
+  receptionDraft.date=$('#receptionDate').value||'';
+  receptionDraft.time=$('#receptionTime').value||'';
+  receptionDraft.supplier=$('#receptionSupplier').value||'';
+  receptionDraft.vehicleTemp=String($('#receptionVehicleTemp').value??'').trim();
+  receptionDraft.driverName=$('#receptionDriverName').value.trim();
+  receptionDraft.receiverName=$('#receptionReceiverName').value.trim();
+  receptionDraft.lines=receptionDraft.lines.map((line,i)=>({
+    ...line,
+    received:!!document.querySelector(`[data-rec-received="${i}"]`)?.checked,
+    productTemp:String(document.querySelector(`[data-rec-product-temp="${i}"]`)?.value??'').trim(),
+    interiorTemp:String(document.querySelector(`[data-rec-interior-temp="${i}"]`)?.value??'').trim(),
+    dlc:document.querySelector(`[data-rec-dlc="${i}"]`)?.value||'',
+    packaging:document.querySelector(`[data-rec-packaging="${i}"]`)?.value||'conforme',
+    decision:document.querySelector(`[data-rec-decision="${i}"]`)?.value||'acceptation',
+    observations:document.querySelector(`[data-rec-observations="${i}"]`)?.value.trim()||''
+  }));
+  receptionDraft.driverSignature=signatureCanvasData('receptionSignature');
+  return receptionDraft;
+}
+async function saveReceptionForm(){
+  const cfg=receptionConfig(),rec=captureReceptionForm();
+  if(!cfg||!rec)return;
+  if(!rec.date){alert('Indiquez la date de réception.');$('#receptionDate')?.focus();return}
+  if(!rec.supplier){alert('Choisissez le fournisseur.');$('#receptionSupplier')?.focus();return}
+  if(!rec.lines.some(x=>x.received!==false)){alert('Cochez au moins un produit reçu.');return}
+  if(!rec.driverSignature){alert('La signature du livreur est nécessaire pour émarger la réception.');return}
+
+  rec.validatedAt=new Date().toISOString();
+  cfg.receptionEstablishment=rec.establishment||cfg.receptionEstablishment||'';
+  const list=receptionList(cfg);
+  if(receptionEditingIndex>=0 && list[receptionEditingIndex])list[receptionEditingIndex]=deepClone(rec);
+  else{
+    list.push(deepClone(rec));
+    receptionEditingIndex=list.length-1;
+  }
+
+  if(cfg===state.config){
+    saveState();
+    if(typeof syncDirtyToCloud==='function'){try{await syncDirtyToCloud()}catch(e){}}
+  }
+
+  renderReceptionSavedList();
+  renderReceptionConfigStatus();
+  toast('Réception émargée et enregistrée ✓');
+}
+function renderReceptionSavedList(){
+  const box=$('#receptionSavedList'),cfg=receptionConfig();
+  if(!box||!cfg)return;
+  const list=receptionList(cfg);
+  if(!list.length){
+    box.innerHTML='<div class="empty-note">Aucune réception enregistrée pour ce lot.</div>';
+    return;
+  }
+  box.innerHTML=list.map((r,i)=>{
+    const received=(r.lines||[]).filter(x=>x.received!==false).length;
+    const refus=(r.lines||[]).filter(x=>x.received!==false&&x.decision==='refus').length;
+    return `<div class="reception-saved-item">
+      <div><strong>${escapeHtml(r.supplier||'Fournisseur')} · ${escapeHtml(formatClosureDate(r.date))} ${escapeHtml(r.time||'')}</strong><span>${received} produit${received>1?'s':''} réceptionné${received>1?'s':''}${refus?` · ${refus} refus`:''}${r.driverSignature?' · signature enregistrée':''}</span></div>
+      <div class="reception-saved-actions"><button class="btn btn-secondary btn-small" type="button" data-edit-reception="${i}">Modifier</button><button class="btn btn-danger btn-small" type="button" data-delete-reception="${i}">Supprimer</button></div>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('[data-edit-reception]').forEach(b=>b.onclick=()=>openReceptionView(Number(b.dataset.editReception)));
+  box.querySelectorAll('[data-delete-reception]').forEach(b=>b.onclick=()=>{
+    const i=Number(b.dataset.deleteReception);
+    if(!confirm('Supprimer cette fiche de réception ?'))return;
+    receptionList(cfg).splice(i,1);
+    receptionEditingIndex=-1;
+    receptionDraft=newReceptionRecord(cfg);
+    renderReceptionForm();
+    renderReceptionConfigStatus();
+    if(cfg===state.config)saveState();
+  });
+}
+function newReceptionForm(){
+  receptionEditingIndex=-1;
+  receptionDraft=newReceptionRecord(receptionConfig());
+  renderReceptionForm();
+  $('#receptionSupplier')?.focus();
+}
+
+function receptionPaperData(){
+  const cfg=receptionConfig()||state?.config||{};
+  const products=(cfg.products||[]).map((p,i)=>String(p.name||`Produit ${i+1}`));
+  while(products.length<10)products.push('');
+  return{
+    lotName:String(cfg.lotName||''),
+    products:products.slice(0,14)
+  };
+}
+function receptionPrintableHtml(){
+  const d=receptionPaperData();
+  const rows=d.products.map(name=>`<tr>
+    <td></td><td></td><td class="prod">${escapeHtml(name)}</td>
+    <td></td><td></td><td></td><td></td>
+    <td></td><td></td><td></td><td></td>
+  </tr>`).join('');
+  return `<!doctype html><html lang="fr"><head><meta charset="utf-8"><title>Réception des échantillons</title>
+  <style>
+    @page{size:A4 landscape;margin:9mm}
+    *{box-sizing:border-box}body{font-family:Arial,sans-serif;color:#111;margin:0}
+    h1{text-align:center;font-size:17px;margin:0 0 8px}
+    .meta{display:grid;grid-template-columns:1fr 1fr 1fr;gap:6px;margin-bottom:7px;font-size:10px}
+    .box{border:1px solid #333;padding:5px;min-height:26px}.box b{font-size:9px}
+    table{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8px}
+    th,td{border:1px solid #222;padding:3px;text-align:center;height:24px;vertical-align:middle}
+    th{background:#f1f1f1;font-size:7.5px}.prod{text-align:left;font-weight:600}
+    .sign{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:8px}
+    .sign>div{border:1px solid #333;min-height:55px;padding:5px;font-size:9px}
+    .note{font-size:8px;margin-top:5px;color:#444}
+    @media print{button{display:none}}
+  </style></head><body>
+    <h1>RELEVÉ DE RÉCEPTION DES ÉCHANTILLONS</h1>
+    <div class="meta">
+      <div class="box"><b>Établissement :</b></div>
+      <div class="box"><b>Lot :</b> ${escapeHtml(d.lotName)}</div>
+      <div class="box"><b>Fournisseur :</b></div>
+      <div class="box"><b>Nom du livreur :</b></div>
+      <div class="box"><b>Agent réceptionnaire :</b></div>
+      <div class="box"><b>Date générale / heure :</b></div>
+    </div>
+    <table>
+      <thead><tr>
+        <th style="width:7%">Date</th><th style="width:6%">Heure</th><th style="width:17%">Dénomination du produit</th>
+        <th style="width:7%">T° véhicule</th><th style="width:7%">T° produit</th><th style="width:8%">T° intérieur produit</th>
+        <th style="width:10%">DLC / DDM</th><th style="width:9%">État emballage</th>
+        <th style="width:7%">Acceptation</th><th style="width:6%">Refus</th><th style="width:16%">Observations</th>
+      </tr></thead><tbody>${rows}</tbody>
+    </table>
+    <div class="sign">
+      <div><b>Signature du livreur :</b></div>
+      <div><b>Observations générales / réserves :</b></div>
+    </div>
+    <div class="note">DLC = Date limite de consommation. DDM = Date de durabilité minimale.</div>
+  </body></html>`;
+}
+function printReceptionPaper(){
+  const w=window.open('','_blank');
+  if(!w){alert('Autorisez les fenêtres pop-up pour imprimer la fiche.');return}
+  w.document.open();
+  w.document.write(receptionPrintableHtml());
+  w.document.close();
+  setTimeout(()=>{try{w.focus();w.print()}catch(e){console.error(e)}},350);
+}
+async function downloadReceptionPaperPdf(){
+  const JsPDF=window.jspdf?.jsPDF;
+  if(!JsPDF){alert('Le module PDF n’est pas chargé. Vérifiez la connexion Internet puis réessayez.');return}
+  const d=receptionPaperData();
+  const doc=new JsPDF({orientation:'landscape',unit:'mm',format:'a4'});
+  const W=297,H=210,m=8;
+  let y=10;
+  doc.setFont('helvetica','bold');doc.setFontSize(14);
+  doc.text('RELEVE DE RECEPTION DES ECHANTILLONS',W/2,y,{align:'center'});
+  y+=6;
+  doc.setFontSize(8);doc.setFont('helvetica','normal');
+
+  const metaH=12, colW=(W-2*m)/3;
+  const metas=[
+    ['Etablissement',''],['Lot',d.lotName],['Fournisseur',''],
+    ['Nom du livreur',''],['Agent receptionnaire',''],['Date generale / heure','']
+  ];
+  metas.forEach((it,i)=>{
+    const row=Math.floor(i/3),col=i%3,x=m+col*colW,yy=y+row*metaH;
+    doc.rect(x,yy,colW,metaH);
+    doc.setFont('helvetica','bold');doc.text(`${it[0]} :`,x+2,yy+4);
+    doc.setFont('helvetica','normal');
+    if(it[1])doc.text(doc.splitTextToSize(it[1],colW-26),x+24,yy+4);
+  });
+  y+=metaH*2+4;
+
+  const headers=['Date','Heure','Produit','T veh.','T prod.','T int.','DLC / DDM','Emballage','Accept.','Refus','Observations'];
+  const widths=[15,14,47,18,18,20,26,24,18,14,67];
+  const rowH=9;
+  let x=m;
+  doc.setFont('helvetica','bold');doc.setFontSize(6.7);
+  headers.forEach((h,i)=>{doc.setFillColor(242,242,242);doc.rect(x,y,widths[i],rowH,'FD');doc.text(h,x+widths[i]/2,y+5.5,{align:'center'});x+=widths[i]});
+  y+=rowH;
+  doc.setFont('helvetica','normal');doc.setFontSize(7);
+  d.products.forEach(name=>{
+    x=m;
+    headers.forEach((_,i)=>{
+      doc.rect(x,y,widths[i],rowH);
+      if(i===2 && name){
+        const lines=doc.splitTextToSize(name,widths[i]-3);
+        doc.text(lines.slice(0,2),x+1.5,y+3.8);
+      }
+      x+=widths[i];
+    });
+    y+=rowH;
+  });
+
+  y+=4;
+  const sigW=(W-2*m-5)/2;
+  doc.rect(m,y,sigW,28);doc.rect(m+sigW+5,y,sigW,28);
+  doc.setFont('helvetica','bold');doc.setFontSize(8);
+  doc.text('Signature du livreur :',m+2,y+5);
+  doc.text('Observations generales / reserves :',m+sigW+7,y+5);
+  doc.setFont('helvetica','normal');doc.setFontSize(7);
+  doc.text('DLC = Date limite de consommation. DDM = Date de durabilite minimale.',m,H-5);
+
+  const lot=(typeof safePdfFileName==='function'?safePdfFileName(d.lotName||'lot'):(d.lotName||'lot').replace(/[^a-z0-9]+/gi,'-'));
+  doc.save(`fiche-reception-chauffeur-${lot}.pdf`);
+}
+
+function closeReceptionView(){
+  captureReceptionForm();
+  if(draftConfig){
+    showView('configView');
+    $('#headerTitle').textContent='Préparer le jury';
+    $('#headerSub').textContent='Questions, testeurs et validation';
+    renderConfig();
+    setTimeout(()=>$('#configReceptionStep')?.scrollIntoView({behavior:'smooth',block:'center'}),80);
+  }else renderHome();
+}
+
+
+
+
+var prepareJuryV181Busy=false;
+function prepareJuryFromHomeV181(evt){
+  if(prepareJuryV181Busy)return false;
+  prepareJuryV181Busy=true;
+  try{
+    if(evt && typeof evt.preventDefault==='function')evt.preventDefault();
+    prepareJuryFromHomeV180(evt || null);
+  }catch(err){
+    console.error('Préparer le jury v181',err);
+    alert('Impossible d’ouvrir la liste des jurys. Rechargez cette page dans Safari.');
+  }
+  setTimeout(function(){prepareJuryV181Busy=false;},500);
+  return false;
+}
+
+function prepareJuryFromHomeV180(event){
+  try{event?.preventDefault?.()}catch(e){}
+  const modal=$('#prepareJuryModal');
+  const list=$('#prepareJuryList');
+  const intro=$('#prepareJuryModalText');
+
+  if(!modal||!list){
+    alert('La fenêtre « Préparer le jury » ne peut pas s’ouvrir. Rechargez la page.');
+    return false;
+  }
+
+  // La fenêtre s'ouvre D'ABORD. Ainsi le bouton répond toujours.
+  modal.classList.add('show');
+  if(intro)intro.textContent='Choisissez le lot ou le jury que vous voulez préparer.';
+  list.innerHTML='<div class="prepare-jury-empty-v180">Chargement des lots enregistrés…</div>';
+
+  setTimeout(()=>{
+    try{
+      const items=[];
+      const used=new Set();
+
+      const addItem=(item)=>{
+        if(!item||!item.id)return;
+        const key=String(item.key||item.id);
+        if(used.has(key))return;
+        used.add(key);
+        items.push(item);
+      };
+
+      // A. Jurys déjà préparés/enregistrés.
+      let prepared=[];
+      try{
+        const raw=loadPreparedJurys();
+        prepared=Array.isArray(raw)?raw:[];
+      }catch(e){prepared=[]}
+
+      for(const rec of prepared){
+        try{
+          const cfg=rec?.state?.config;
+          if(!cfg||cfg?.juryClose?.closedAt)continue;
+          const products=Array.isArray(cfg.products)?cfg.products:[];
+          if(!products.length)continue;
+          const id=String(rec.id||cfg._preparedId||'').trim();
+          if(!id)continue;
+          const suppliers=receptionSupplierNames(cfg);
+          const phonesReady=phoneSharePrepared(cfg);
+          const phonesRefresh=phoneShareNeedsRefresh(cfg);
+          addItem({
+            id,
+            key:`prepared:${id}`,
+            kind:'prepared',
+            lotName:String(cfg.lotName||rec.name||'Jury préparé'),
+            products:products.length,
+            suppliers:suppliers.length,
+            status:cfg?.juryLaunch?.openedAt
+              ?'Jury déjà lancé'
+              :phonesRefresh
+                ?'↻ Recharger les téléphones'
+                :phonesReady
+                  ?'✓ Téléphones prêts'
+                  :'📱 Téléphones à préparer'
+          });
+        }catch(e){}
+      }
+
+      // B. Lots conservés depuis « Choix des échantillons ».
+      let history=[];
+      try{
+        const raw=loadSampleLotHistory();
+        history=Array.isArray(raw)?raw:[];
+      }catch(e){history=[]}
+
+      for(const rec of history){
+        try{
+          const products=Array.isArray(rec?.products)?rec.products:[];
+          const meta=rec?.meta&&typeof rec.meta==='object'?rec.meta:{};
+          const lotName=String(rec?.lotName||lotNameFromSampleMeta(meta)||'').trim();
+          if(!lotName||!products.length)continue;
+
+          const signature=String(rec?.signature||sampleLotSnapshotSignature(meta,products));
+          addItem({
+            id:String(rec.id||uid('samplelot')),
+            key:`sample:${signature||rec.id}`,
+            kind:'sampleLot',
+            lotName,
+            products:products.length,
+            suppliers:(Array.isArray(meta.supplierNames)?meta.supplierNames:[]).filter(x=>String(x||'').trim()).length,
+            status:'Lot enregistré — à préparer',
+            snapshot:{...rec,meta,products}
+          });
+        }catch(e){}
+      }
+
+      // C. Compatibilité avec le dernier lot saisi dans les anciennes versions.
+      try{
+        const products=loadSampleProducts();
+        const meta=loadSampleMasterMeta();
+        const lotName=String(lotNameFromSampleMeta(meta)||'').trim();
+        const usable=Array.isArray(products)?products.filter(p=>String(p?.name||'').trim()):[];
+        if(lotName&&usable.length){
+          const sig=sampleLotSnapshotSignature(meta,usable);
+          const already=items.some(x=>{
+            if(x.kind==='prepared')return String(x.lotName).trim().toLowerCase()===lotName.toLowerCase();
+            return String(x.key||'').includes(sig);
+          });
+          if(!already){
+            addItem({
+              id:'__latest_v180__',
+              key:`latest:${sig}`,
+              kind:'latest',
+              lotName,
+              products:usable.length,
+              suppliers:(Array.isArray(meta.supplierNames)?meta.supplierNames:[]).filter(x=>String(x||'').trim()).length,
+              status:'Dernier lot saisi — à préparer',
+              meta:deepClone(meta),
+              sampleProducts:deepClone(usable)
+            });
+          }
+        }
+      }catch(e){}
+
+      if(!items.length){
+        if(intro)intro.textContent='Aucun lot enregistré à préparer.';
+        list.innerHTML='<div class="prepare-jury-empty-v180">Aucun lot n’est encore disponible.<br>Créez d’abord un lot avec « 1. Choix des échantillons », puis enregistrez-le.</div>';
+        return;
+      }
+
+      if(intro)intro.textContent=`${items.length} lot${items.length>1?'s':''} / jury${items.length>1?'s':''} disponible${items.length>1?'s':''}. Touchez celui que vous voulez préparer.`;
+
+      list.innerHTML=items.map((c,i)=>`
+        <button type="button" class="prepare-jury-choice ${(c.kind==='sampleLot'||c.kind==='latest')?'latest':''}" data-v180-prepare="${i}">
+          <span>
+            <strong>${escapeHtml(c.lotName)}</strong>
+            <span>${c.products} produit${c.products>1?'s':''} · ${c.suppliers} fournisseur${c.suppliers>1?'s':''}</span>
+            <span class="prepare-jury-status ${String(c.status||'').includes('Recharger')?'refresh':''}">${escapeHtml(c.status)}</span>
+          </span>
+          <span class="prepare-arrow">›</span>
+        </button>`).join('');
+
+      list.querySelectorAll('[data-v180-prepare]').forEach(btn=>{
+        btn.onclick=()=>{
+          const item=items[Number(btn.dataset.v180Prepare)];
+          if(!item)return;
+          closePrepareJuryChooser();
+
+          try{
+            if(item.kind==='prepared'){
+              activatePreparedJury(item.id,'edit');
+              return;
+            }
+
+            if(item.kind==='sampleLot'){
+              if(!restoreSampleLotSnapshot(item.snapshot)){
+                alert('Impossible de recharger ce lot.');
+                return;
+              }
+              startBlankJuryFromMaster();
+              return;
+            }
+
+            if(item.kind==='latest'){
+              saveSampleLotSnapshot(item.meta,item.sampleProducts);
+              restoreSampleLotSnapshot({meta:item.meta,products:item.sampleProducts});
+              startBlankJuryFromMaster();
+            }
+          }catch(e){
+            console.error(e);
+            alert('Ce lot ne peut pas être ouvert. Essayez un autre lot ou recréez uniquement ce lot.');
+          }
+        };
+      });
+    }catch(e){
+      console.error('Préparer le jury v180',e);
+      if(intro)intro.textContent='Préparer le jury';
+      list.innerHTML='<div class="prepare-jury-empty-v180">Une ancienne donnée empêche de lire certains lots. Les autres fonctions de l’application restent disponibles.</div>';
+    }
+  },0);
+
+  return false;
+}
+
+function closePrepareJuryChooser(){
+  $('#prepareJuryModal')?.classList.remove('show');
+}
+function prepareJurySignatureFromConfig(cfg){
+  try{
+    if(!cfg||typeof cfg!=='object')return'';
+    const lot=String(cfg.lotName||'').trim().toLowerCase();
+    const products=(Array.isArray(cfg.products)?cfg.products:[])
+      .map(p=>String(p?.name||'').trim().toLowerCase()).filter(Boolean).join('|');
+    const suppliers=receptionSupplierNames(cfg)
+      .map(x=>String(x||'').trim().toLowerCase()).filter(Boolean).sort().join('|');
+    return `${lot}::${products}::${suppliers}`;
+  }catch(e){
+    console.warn('Ancien jury ignoré pour la signature',e);
+    return'';
+  }
+}
+function prepareJuryLatestSampleChoice(){
+  try{
+    const products=loadSampleProducts();
+    const meta=loadSampleMasterMeta();
+    const usable=Array.isArray(products)?products:[];
+    const ready=usable.length&&usable.some(p=>String(p?.name||'').trim());
+    const lotName=lotNameFromSampleMeta(meta);
+    if(!ready||!String(lotName||'').trim())return null;
+    return{
+      id:'__latest_sample_setup__',
+      kind:'latest',
+      lotName,
+      products:usable.filter(p=>String(p?.name||'').trim()).length,
+      suppliers:(Array.isArray(meta.supplierNames)?meta.supplierNames:[]).filter(x=>String(x||'').trim()).length,
+      signature:sampleLotSnapshotSignature(meta,usable),
+      meta:deepClone(meta),
+      sampleProducts:deepClone(usable)
+    };
+  }catch(e){
+    console.warn('Dernier lot non exploitable',e);
+    return null;
+  }
+}
+function prepareJuryChoices(){
+  try{ensureCurrentPrepSaved()}catch(e){console.warn('Sauvegarde du jury courant non bloquante',e)}
+
+  const choices=[];
+  const signatures=new Set();
+  const currentId=String(state?.config?._preparedId||'');
+
+  // Jurys déjà préparés. Un ancien enregistrement invalide est simplement ignoré.
+  let prepared=[];
+  try{
+    const raw=loadPreparedJurys();
+    prepared=(Array.isArray(raw)?raw:[])
+      .filter(rec=>rec&&rec.state&&rec.state.config&&typeof rec.state.config==='object')
+      .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
+  }catch(e){
+    console.warn('Liste des jurys préparés illisible',e);
+    prepared=[];
+  }
+
+  for(const rec of prepared){
+    try{
+      const cfg=rec.state.config||{};
+      if(cfg?.juryClose?.closedAt)continue;
+      const products=Array.isArray(cfg.products)?cfg.products:[];
+      if(!products.length)continue;
+      const id=String(rec.id||cfg._preparedId||'').trim();
+      if(!id)continue;
+      const signature=prepareJurySignatureFromConfig(cfg);
+      choices.push({
+        id,
+        kind:'prepared',
+        lotName:String(cfg.lotName||rec.name||'Jury préparé'),
+        products:products.length,
+        suppliers:receptionSupplierNames(cfg).length,
+        current:id===currentId,
+        running:!!cfg.juryLaunch?.openedAt&&!cfg.juryClose?.closedAt,
+        signature
+      });
+      if(signature)signatures.add(signature);
+    }catch(e){
+      console.warn('Jury ancien ignoré',e);
+    }
+  }
+
+  // Lots sauvegardés depuis « Choix des échantillons ».
+  let history=[];
+  try{
+    const raw=loadSampleLotHistory();
+    history=(Array.isArray(raw)?raw:[])
+      .filter(rec=>rec&&typeof rec==='object')
+      .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
+  }catch(e){
+    console.warn('Historique des lots illisible',e);
+    history=[];
+  }
+
+  for(const rec of history){
+    try{
+      const products=Array.isArray(rec.products)?rec.products:[];
+      const meta=rec.meta&&typeof rec.meta==='object'?rec.meta:{};
+      if(!products.length)continue;
+      const lotName=String(rec.lotName||lotNameFromSampleMeta(meta)||'').trim();
+      if(!lotName)continue;
+      const id=String(rec.id||uid('samplelot')).trim();
+      const signature=String(rec.signature||sampleLotSnapshotSignature(meta,products));
+      if(signature&&signatures.has(signature))continue;
+      choices.push({
+        id,
+        kind:'sampleLot',
+        lotName,
+        products:products.filter(p=>String(p?.name||'').trim()).length||products.length,
+        suppliers:(Array.isArray(meta.supplierNames)?meta.supplierNames:[]).filter(x=>String(x||'').trim()).length,
+        current:false,
+        running:false,
+        signature,
+        snapshot:{...rec,id,meta,products}
+      });
+      if(signature)signatures.add(signature);
+    }catch(e){
+      console.warn('Lot ancien ignoré',e);
+    }
+  }
+
+  // Compatibilité avec le dernier lot des anciennes versions.
+  const latest=prepareJuryLatestSampleChoice();
+  if(latest&&(!latest.signature||!signatures.has(latest.signature))){
+    choices.unshift(latest);
+  }
+
+  return choices;
+}
+function activatePrepareJuryChoice(choice){
+  closePrepareJuryChooser();
+  if(!choice)return;
+
+  try{
+    if(choice.kind==='prepared'){
+      activatePreparedJury(choice.id,'edit');
+      return;
+    }
+
+    if(choice.kind==='sampleLot'){
+      if(!restoreSampleLotSnapshot(choice.snapshot)){
+        alert('Impossible de recharger ce lot.');
+        return;
+      }
+      startBlankJuryFromMaster();
+      return;
+    }
+
+    if(choice.kind==='latest'){
+      try{saveSampleLotSnapshot(choice.meta,choice.sampleProducts)}catch(e){}
+      if(!restoreSampleLotSnapshot({meta:choice.meta,products:choice.sampleProducts})){
+        alert('Impossible de recharger ce lot.');
+        return;
+      }
+      startBlankJuryFromMaster();
+    }
+  }catch(e){
+    console.error('Ouverture du jury impossible',e);
+    alert('Ce jury ne peut pas être ouvert car son ancien enregistrement est incomplet. Les autres jurys restent disponibles.');
+  }
+}
+function showPrepareJuryChooser(choices){
+  const modal=$('#prepareJuryModal'),list=$('#prepareJuryList');
+  if(!modal||!list){
+    alert('La fenêtre de choix du jury est indisponible. Rechargez la page.');
+    return;
+  }
+
+  const safeChoices=Array.isArray(choices)?choices.filter(Boolean):[];
+  const intro=$('#prepareJuryModalText');
+  if(intro)intro.textContent=safeChoices.length>1
+    ?`${safeChoices.length} jurys / lots sont disponibles. Touchez celui que vous voulez préparer.`
+    :'1 jury / lot est disponible. Touchez-le pour le préparer.';
+
+  list.innerHTML=safeChoices.map(c=>{
+    const status=c.kind==='sampleLot'||c.kind==='latest'
+      ?'Lot enregistré — préparation à terminer'
+      :c.running
+        ?'Jury déjà lancé'
+        :c.current
+          ?'Jury actuellement ouvert'
+          :'Jury préparé et enregistré';
+
+    return `<button type="button" class="prepare-jury-choice ${c.current?'current':''} ${(c.kind==='sampleLot'||c.kind==='latest')?'latest':''}" data-prepare-jury="${escapeHtml(String(c.id||''))}">
+      <span>
+        <strong>${escapeHtml(String(c.lotName||'Lot'))}</strong>
+        <span>${Number(c.products||0)} produit${Number(c.products||0)>1?'s':''} · ${Number(c.suppliers||0)} fournisseur${Number(c.suppliers||0)>1?'s':''}</span>
+        <span class="prepare-jury-status ${String(status||'').includes('Recharger')?'refresh':''}">${escapeHtml(status)}</span>
+      </span>
+      <span class="prepare-arrow">›</span>
+    </button>`;
+  }).join('');
+
+  list.querySelectorAll('[data-prepare-jury]').forEach(btn=>{
+    btn.onclick=()=>{
+      const choice=safeChoices.find(c=>String(c.id)===String(btn.dataset.prepareJury));
+      if(choice)activatePrepareJuryChoice(choice);
+    };
+  });
+
+  modal.classList.add('show');
+}
 function prepareJuryFromHome(){
-  const products=loadSampleProducts();
-  const ready=products.length&&products.every(p=>String(p.name||'').trim());
-  if(!ready){openSampleSetup();toast('Commencez par choisir le lot et les produits');return;}
-  dashboardNewJury();
+  const choices=prepareJuryChoices();
+
+  if(!choices.length){
+    alert('Aucun lot n’est encore enregistré à préparer.\n\nUtilisez d’abord « 1. Choix des échantillons », puis « Enregistrer et préparer le jury ».');
+    return;
+  }
+
+  if(choices.length===1){
+    activatePrepareJuryChoice(choices[0]);
+    return;
+  }
+
+  showPrepareJuryChooser(choices);
+}
+function prepareJuryFromHomeSafe(event){
+  try{
+    event?.preventDefault?.();
+    prepareJuryFromHome();
+  }catch(e){
+    console.error('Erreur Préparer le jury',e);
+    // Dernier secours : essayer uniquement le dernier lot courant.
+    try{
+      const latest=prepareJuryLatestSampleChoice();
+      if(latest){
+        activatePrepareJuryChoice(latest);
+        return;
+      }
+    }catch(err){}
+    alert('Impossible d’ouvrir la préparation du jury avec les anciennes données enregistrées. Le reste de l’application reste utilisable.');
+  }
 }
 
 function freshNewJuryDraft(){
@@ -6672,6 +8241,8 @@ function freshNewJuryDraft(){
     lotTitle:meta.lotTitle||'',
     supplierNames:[...(meta.supplierNames||[])],
     supplierResponseCount:(meta.supplierNames||[]).length||meta.supplierResponseCount||0,
+    receptions:[],
+    receptionEstablishment:'',
     subtitle:'',
     criteria:defaultCriteria(),
     testerCount:8,
@@ -6810,7 +8381,7 @@ function renderMyJuriesDashboard(){
   document.querySelectorAll('[data-dash-archive-copy]').forEach(b=>b.onclick=()=>copyArchiveAsNew(b.dataset.dashArchiveCopy));
 }
 
-function renderHome(){ensureCurrentPrepSaved();updateHeader();showView('homeView');const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
+function renderHome(){ensureCurrentPrepSaved();updateHeader();showView('homeView');renderHomeReceptionBadge();const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
 const preparedCount=loadPreparedJurys().filter(r=>!r?.state?.config?.juryClose?.closedAt).length;
 $('#juryBtnTitle').textContent=preparedCount>1
   ?'Choisir un jury'
@@ -6907,12 +8478,41 @@ function testerMustWaitForLaunch(){
 function stopTesterLaunchWait(){
   if(testerLaunchWaitTimer){clearInterval(testerLaunchWaitTimer);testerLaunchWaitTimer=null}
 }
+async function refreshTesterLaunchState(){
+  if(testerPreviewMode||!cloudReady||cloudRole!=='tester'||!cloudClient||!cloudCfg?.sessionId)return false;
+  try{
+    const {data,error}=await cloudClient.rpc('test_culinaire_get_public_session',{p_session_id:cloudCfg.sessionId});
+    if(error)return false;
+    const row=Array.isArray(data)?data[0]:data;
+    const remote=row?.public_config;
+    if(!remote)return false;
+
+    const remoteId=String(remote.juryInstanceId||'').trim();
+    const launch=remote.juryLaunch||null;
+    if(remoteId){
+      state.config.juryInstanceId=remoteId;
+      state.config._juryInstanceId=remoteId;
+    }
+    state.config.juryLaunch=launch&&launch.openedAt?{
+      openedAt:launch.openedAt,
+      instanceId:String(launch.instanceId||'')
+    }:null;
+    if(remote.juryClose?.closedAt)state.config.juryClose={closedAt:remote.juryClose.closedAt};
+    originalSaveState();
+    return isJuryOfficiallyOpen();
+  }catch(e){
+    return false;
+  }
+}
 function startTesterLaunchWait(){
   if(testerLaunchWaitTimer||!testerMustWaitForLaunch())return;
-  testerLaunchWaitTimer=setInterval(async()=>{
+  const check=async()=>{
     if(!testerMustWaitForLaunch()){stopTesterLaunchWait();return}
-    if(cloudReady&&typeof reloadCloudConfig==='function'){
-      try{await reloadCloudConfig()}catch(e){}
+    if(cloudReady){
+      try{
+        if(cloudRole==='tester')await refreshTesterLaunchState();
+        else if(typeof reloadCloudConfig==='function')await reloadCloudConfig();
+      }catch(e){}
     }
     if(isJuryOfficiallyOpen()){
       stopTesterLaunchWait();
@@ -6920,7 +8520,9 @@ function startTesterLaunchWait(){
       renderSample();
       toast('Jury lancé ✓ — vous pouvez commencer');
     }
-  },2500);
+  };
+  check();
+  testerLaunchWaitTimer=setInterval(check,1000);
 }
 function renderTesterWaitingForLaunch(){
   showView('testerView');
@@ -6991,6 +8593,13 @@ function phoneSharePrepared(cfg=state.config){
     cfg._shareSessionId &&
     cfg._phoneShareSignature &&
     cfg._phoneShareSignature===phoneShareSignature(cfg)
+  )
+}
+function phoneShareNeedsRefresh(cfg=state.config){
+  return !!(
+    cfg &&
+    cfg._shareSessionId &&
+    !phoneSharePrepared(cfg)
   )
 }
 function currentJuryShareSessionId(){
@@ -7067,7 +8676,7 @@ function renderLaunchView(){
   const pbox=$('#launchProducts');pbox.innerHTML='';
   cfg.products.forEach((prod,pi)=>{
     const d=document.createElement('div');d.className='launch-product';
-    d.innerHTML=`<div class="launch-product-head"><strong>${escapeHtml(prod.code?`${prod.code} — `:'')}${escapeHtml(prod.name||`Produit ${pi+1}`)}</strong><span>${(prod.samples||[]).length} échantillon${(prod.samples||[]).length>1?'s':''}</span></div><div class="sample-mini-list">${(prod.samples||[]).map(s=>`<span class="sample-mini">N° ${escapeHtml(s.id)} · ${escapeHtml(s.supplier||'—')}</span>`).join('')}</div>`;
+    d.innerHTML=`<div class="launch-product-head"><strong>${escapeHtml(prod.name||`Produit ${pi+1}`)}</strong><span>${(prod.samples||[]).length} échantillon${(prod.samples||[]).length>1?'s':''}</span></div><div class="sample-mini-list">${(prod.samples||[]).map(s=>`<span class="sample-mini">N° ${escapeHtml(s.id)} · ${escapeHtml(s.supplier||'—')}</span>`).join('')}</div>`;
     pbox.appendChild(d);
   });
 
@@ -7177,14 +8786,33 @@ async function officialLaunch(){
     sessionId:cloudCfg.sessionId,
     instanceId:launchInstanceId
   };
-  saveState();
+  originalSaveState();
   upsertPreparedJury(state);
 
-  if(typeof syncDirtyToCloud==='function'){
-    try{await syncDirtyToCloud()}catch(e){}
+  /* V163 — le lancement n'est validé qu'après écriture confirmée côté serveur.
+     L'ancienne synchronisation masquait les erreurs et pouvait laisser les téléphones verrouillés. */
+  try{
+    if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId){
+      throw new Error('La session partagée administrateur n’est pas connectée.');
+    }
+    const {error}=await cloudClient.from('test_culinaire_sessions').update({
+      config:state.config,
+      public_config:makePublicCloudConfig(state.config),
+      updated_at:new Date().toISOString()
+    }).eq('session_id',cloudCfg.sessionId);
+    if(error)throw error;
+    lastCloudConfigHash=hashJson(state.config);
+  }catch(e){
+    delete state.config.juryLaunch;
+    originalSaveState();
+    upsertPreparedJury(state);
+    if(launchBtn){launchBtn.disabled=false;launchBtn.textContent='▶ Lancer ce jury'}
+    alert(`Le jury n’a pas pu être ouvert sur les téléphones. ${e?.message||e}`);
+    renderLaunchView();
+    return;
   }
 
-  toast('Jury lancé ✓');
+  toast('Jury lancé ✓ — téléphones déverrouillés');
   renderJuryView();
 }
 function openJuryFlow(){
@@ -7649,6 +9277,7 @@ function renderConfig(){
   renderDraftSummary();
   renderArticlePrintStatus();
   renderConfigPhoneShare();
+  renderReceptionConfigStatus();
 }
 
 function renderCriteriaConfig(){
@@ -8451,11 +10080,26 @@ function renderConfigChoiceRecap(){
   const pbox=$('#configRecapProducts');
   const sbox=$('#configRecapSuppliers');
   if(!box||!pbox||!sbox||!draftConfig)return;
+
+  const lotNumber=String(draftConfig.lotNumber||'').trim();
+  const lotTitle=String(draftConfig.lotTitle||'').trim();
+  const lotNumberBox=$('#configRecapLotNumber');
+  const lotNameBox=$('#configRecapLotNameV184');
+
+  if(lotNumberBox)lotNumberBox.textContent=lotNumber||'—';
+  if(lotNameBox)lotNameBox.textContent=lotTitle||String(draftConfig.lotName||'').replace(/^Lot\s*[^—-]+\s*[—-]?\s*/i,'').trim()||'—';
+
   const products=(draftConfig.products||[]).map(p=>String(p?.name||'').trim()).filter(Boolean);
   const suppliers=(draftConfig.supplierNames||[]).map(x=>String(x||'').trim()).filter(Boolean);
-  box.hidden=!(products.length||suppliers.length);
-  pbox.innerHTML=products.length?products.map((x,i)=>`<span class="config-recap-chip">Produit ${i+1} · ${escapeHtml(x)}</span>`).join(''):'<span class="muted">Aucun produit renseigné</span>';
-  sbox.innerHTML=suppliers.length?suppliers.map((x,i)=>`<span class="config-recap-chip">${escapeHtml(x)}</span>`).join(''):'<span class="muted">Aucun fournisseur renseigné</span>';
+  box.hidden=!(lotNumber||lotTitle||products.length||suppliers.length);
+
+  pbox.innerHTML=products.length
+    ?products.map((x,i)=>`<span class="config-recap-chip">Produit ${i+1} · ${escapeHtml(x)}</span>`).join('')
+    :'<span class="muted">Aucun produit renseigné</span>';
+
+  sbox.innerHTML=suppliers.length
+    ?suppliers.map(x=>`<span class="config-recap-chip">${escapeHtml(x)}</span>`).join('')
+    :'<span class="muted">Aucun fournisseur renseigné</span>';
 }
 function renderSupplierSuggestions(){
   const dl=$('#supplierSuggestions');if(!dl)return;
@@ -8745,7 +10389,6 @@ function renderProductConfigs(){
       </div>
     </div>
     <div class="product-fields">
-      <div class="field"><label>Code (facultatif)</label><input data-p-code="${pi}" value="${escapeHtml(p.code||'')}"></div>
       <div class="field"><label>Nom du produit / article</label><input data-p-name="${pi}" value="${escapeHtml(p.name||'')}" placeholder="Ex. Filet de colin"></div>
     </div>
     <div class="product-known-suppliers"><strong>Fournisseurs repris pour ce produit :</strong> ${(draftConfig?.supplierNames||[]).length?(draftConfig.supplierNames.map(x=>escapeHtml(x)).join(' · ')):'Aucun fournisseur enregistré'}</div>
@@ -8779,7 +10422,6 @@ function renderProductConfigs(){
     box.appendChild(group);
   });
 
-  box.querySelectorAll('[data-p-code]').forEach(e=>e.oninput=x=>{draftConfig.products[Number(x.target.dataset.pCode)].code=x.target.value;renderDraftSummary()});
   box.querySelectorAll('[data-p-name]').forEach(e=>e.oninput=x=>{draftConfig.products[Number(x.target.dataset.pName)].name=x.target.value;renderDraftSummary()});
   box.querySelectorAll('[data-s-id]').forEach(e=>e.oninput=x=>{const [pi,si]=x.target.dataset.sId.split(':').map(Number);draftConfig.products[pi].samples[si].id=x.target.value;renderDraftSummary()});
   box.querySelectorAll('[data-s-supplier]').forEach(e=>e.oninput=x=>{const [pi,si]=x.target.dataset.sSupplier.split(':').map(Number);draftConfig.products[pi].samples[si].supplier=x.target.value;renderDraftSummary()});
@@ -8927,7 +10569,7 @@ function openConfigPreview(){
     <div class="config-preview-sample" style="background:linear-gradient(135deg,${shade(p.color||PALETTE[0],-18)},${shade(p.color||PALETTE[0],12)})">
       <small>${escapeHtml(lotName)}${subtitle?` · ${escapeHtml(subtitle)}`:''}</small>
       <h2>Échantillon ${escapeHtml(String(sample.id||'—'))}</h2>
-      <div class="preview-product">${escapeHtml(`${p.code?`${p.code} — `:''}${p.name||'Produit à renseigner'}`)}</div>
+      <div class="preview-product">${escapeHtml(p.name||'Produit à renseigner')}</div>
     </div>
     ${questionHtml}
   `;
@@ -9004,7 +10646,7 @@ function applyDraft(){
       alert(
         `Jury enregistré avec ${requestedTesterCount} testeur${requestedTesterCount>1?'s':''}.\n\n`+
         `Attention : les téléphones et les QR codes ne sont plus à jour.\n`+
-        `Préparez maintenant les téléphones à l’étape 6 avant de revenir à l’accueil.`
+        `Préparez maintenant les téléphones à l’étape 5 avant de revenir à l’accueil.`
       );
       $('#configPhonesStep')?.scrollIntoView({behavior:'smooth',block:'center'});
     },80);
@@ -9089,7 +10731,7 @@ function openTester(i){
   $('#headerTitle').textContent=state.testers[i]?.name||`Testeur ${i}`;
   $('#headerSub').textContent=state.config.lotName
 }
-function renderTesterSelectors(){const ts=$('#testerSelect');ts.innerHTML='';for(let i=1;i<=state.config.testerCount;i++){const o=document.createElement('option');o.value=i;o.textContent=state.testers[i]?.name||`Testeur ${i}`;ts.appendChild(o)}ts.value=currentTester;const ps=$('#productSelect');ps.innerHTML=state.config.products.map(p=>`<option value="${p.id}">${escapeHtml(p.code?`${p.code} — `:'')}${escapeHtml(p.name)}</option>`).join('');ps.value=currentProduct;syncSampleSelector()}
+function renderTesterSelectors(){const ts=$('#testerSelect');ts.innerHTML='';for(let i=1;i<=state.config.testerCount;i++){const o=document.createElement('option');o.value=i;o.textContent=state.testers[i]?.name||`Testeur ${i}`;ts.appendChild(o)}ts.value=currentTester;const ps=$('#productSelect');ps.innerHTML=state.config.products.map(p=>`<option value="${p.id}">${escapeHtml(p.name)}</option>`).join('');ps.value=currentProduct;syncSampleSelector()}
 function syncSampleSelector(){const p=getProduct(currentProduct);const ss=$('#sampleSelect');ss.innerHTML=(p?.samples||[]).map(s=>`<option value="${escapeHtml(s.id)}">Échantillon ${escapeHtml(s.id)}</option>`).join('');ss.value=currentSample}
 
 function canPassToNextTester(){
@@ -9139,7 +10781,7 @@ function updateTesterYouthUI(a){
   if(label)label.textContent=done===total?'Tout est rempli ✓':'Questions complétées';
 }
 
-function renderSample(){if(testerMustWaitForLaunch()){renderTesterWaitingForLaunch();return}stopTesterLaunchWait();if(isJuryClosed()){showView('testerView');const ci=juryCloseInfo();$('#testerSelect').value=currentTester;$('#testerSelect').disabled=!!guestTester;$('#productSelect').disabled=true;$('#sampleSelect').disabled=true;$('#sampleHero').style.display='none';$('#questions').style.display='none';$('.sample-actions').style.display='none';const vp=$('#validationPanel');vp.className='panel tester-closed-screen';vp.innerHTML=`<div class="lock">🔒</div><h2>Jury clôturé</h2><p>La session de dégustation est terminée. Vos réponses ont été enregistrées et sont définitivement verrouillées. Pour toute correction, adressez-vous au responsable du jury avant la clôture administrative.</p><span class="date">Fermé le ${escapeHtml(fmtCloseDate(ci.closedAt))}</span>`;return}else{$('#sampleHero').style.display='flex';$('#questions').style.display='grid';$('.sample-actions').style.display='flex';$('#productSelect').disabled=false;$('#sampleSelect').disabled=false;}const p=getProduct(currentProduct);if(!p)return;const sample=p.samples.find(s=>String(s.id)===String(currentSample))||p.samples[0];currentSample=sample.id;const a=ensureAnswer(currentTester,p.id,currentSample);updateTesterYouthUI(a);const locked=testerValidated(currentTester);$('#testerSelect').value=currentTester;$('#productSelect').value=currentProduct;syncSampleSelector();$('#sampleSelect').value=currentSample;const hero=$('#sampleHero');hero.style.background=`linear-gradient(135deg,${shade(p.color,-18)},${shade(p.color,12)})`;$('#productCode').textContent=`${p.code?`${p.code} — `:''}${p.name}`;$('#sampleTitle').textContent=`Échantillon ${currentSample}`;$('#sampleScore').textContent=fmt(calcScore(a));const qbox=$('#questions');qbox.innerHTML='';const activeQuestions=juryQuestions(state.config,p);activeQuestions.forEach((q,qi)=>{const card=document.createElement('article');card.className='panel question-card';card.dataset.question=qi;card.innerHTML=`<div class="q-head"><div class="q-num">${qi+1}</div><div class="q-title">${escapeHtml(q.title)}</div><div class="q-score">${a.choices[qi]==null?'—':fmt(q.weights[a.choices[qi]])} pt</div></div><div class="scale ${q.weights.length===6?'six':''}"></div><div class="remarks"><label>Remarque</label><textarea placeholder="Facultatif…">${escapeHtml(a.remarks[qi]||'')}</textarea></div><div class="criterion-quick"><div class="criterion-quick-title">Commentaires rapides pour ce critère</div><div class="criterion-quick-buttons"></div><div class="criterion-quick-help">Un clic ajoute le texte dans « Remarque ». Un second clic le retire.</div></div>`;const scale=card.querySelector('.scale');q.weights.forEach((w,idx)=>{const b=document.createElement('button');b.type='button';const face=testerYouthFace(idx,q.weights.length);b.className='choice'+testerYouthJarClass(idx,q.weights.length)+(a.choices[qi]===idx?' selected':'');b.innerHTML=`${face?`<div class="youth-face">${face}</div>`:''}<div class="pts">${fmt(w)}</div><div class="lbl">${escapeHtml(q.labels[idx]||'')}</div>`;b.disabled=locked;b.onclick=()=>{if(locked)return;a.choices[qi]=idx;saveState();renderSample()};scale.appendChild(b)});const ta=card.querySelector('textarea');ta.disabled=locked;ta.oninput=e=>{
+function renderSample(){if(testerMustWaitForLaunch()){renderTesterWaitingForLaunch();return}stopTesterLaunchWait();if(isJuryClosed()){showView('testerView');const ci=juryCloseInfo();$('#testerSelect').value=currentTester;$('#testerSelect').disabled=!!guestTester;$('#productSelect').disabled=true;$('#sampleSelect').disabled=true;$('#sampleHero').style.display='none';$('#questions').style.display='none';$('.sample-actions').style.display='none';const vp=$('#validationPanel');vp.className='panel tester-closed-screen';vp.innerHTML=`<div class="lock">🔒</div><h2>Jury clôturé</h2><p>La session de dégustation est terminée. Vos réponses ont été enregistrées et sont définitivement verrouillées. Pour toute correction, adressez-vous au responsable du jury avant la clôture administrative.</p><span class="date">Fermé le ${escapeHtml(fmtCloseDate(ci.closedAt))}</span>`;return}else{$('#sampleHero').style.display='flex';$('#questions').style.display='grid';$('.sample-actions').style.display='flex';$('#productSelect').disabled=false;$('#sampleSelect').disabled=false;}const p=getProduct(currentProduct);if(!p)return;const sample=p.samples.find(s=>String(s.id)===String(currentSample))||p.samples[0];currentSample=sample.id;const a=ensureAnswer(currentTester,p.id,currentSample);updateTesterYouthUI(a);const locked=testerValidated(currentTester);$('#testerSelect').value=currentTester;$('#productSelect').value=currentProduct;syncSampleSelector();$('#sampleSelect').value=currentSample;const hero=$('#sampleHero');hero.style.background=`linear-gradient(135deg,${shade(p.color,-18)},${shade(p.color,12)})`;$('#productCode').textContent=p.name;$('#sampleTitle').textContent=`Échantillon ${currentSample}`;$('#sampleScore').textContent=fmt(calcScore(a));const qbox=$('#questions');qbox.innerHTML='';const activeQuestions=juryQuestions(state.config,p);activeQuestions.forEach((q,qi)=>{const card=document.createElement('article');card.className='panel question-card';card.dataset.question=qi;card.innerHTML=`<div class="q-head"><div class="q-num">${qi+1}</div><div class="q-title">${escapeHtml(q.title)}</div><div class="q-score">${a.choices[qi]==null?'—':fmt(q.weights[a.choices[qi]])} pt</div></div><div class="scale ${q.weights.length===6?'six':''}"></div><div class="remarks"><label>Remarque</label><textarea placeholder="Facultatif…">${escapeHtml(a.remarks[qi]||'')}</textarea></div><div class="criterion-quick"><div class="criterion-quick-title">Commentaires rapides pour ce critère</div><div class="criterion-quick-buttons"></div><div class="criterion-quick-help">Un clic ajoute le texte dans « Remarque ». Un second clic le retire.</div></div>`;const scale=card.querySelector('.scale');q.weights.forEach((w,idx)=>{const b=document.createElement('button');b.type='button';const face=testerYouthFace(idx,q.weights.length);b.className='choice'+testerYouthJarClass(idx,q.weights.length)+(a.choices[qi]===idx?' selected':'');b.innerHTML=`${face?`<div class="youth-face">${face}</div>`:''}<div class="pts">${fmt(w)}</div><div class="lbl">${escapeHtml(q.labels[idx]||'')}</div>`;b.disabled=locked;b.onclick=()=>{if(locked)return;a.choices[qi]=idx;saveState();renderSample()};scale.appendChild(b)});const ta=card.querySelector('textarea');ta.disabled=locked;ta.oninput=e=>{
   if(locked)return;
   a.remarks[qi]=e.target.value;
   const currentText=String(e.target.value||'').toLocaleLowerCase('fr');
@@ -9277,7 +10919,7 @@ function renderAdmin(){
   const tabs=$('#adminTabs');
   tabs.innerHTML=state.config.products.map(p=>`<button class="tab-btn ${adminProduct===p.id?'active':''}" data-id="${p.id}">${escapeHtml(p.name)}</button>`).join('')+`<button class="tab-btn ${adminProduct==='overall'?'active':''}" data-id="overall">Vue globale</button>`;
   tabs.querySelectorAll('button').forEach(b=>b.onclick=()=>{adminProduct=b.dataset.id;selectedAdminSample='';renderAdmin()});
-  renderResultsWorkflow();renderRanking();renderProgress();renderOverall();renderQuickCommentsSummary();renderRemarks();syncSimpleResultsActions();loadReportNoteIntoForm();
+  renderResultsWorkflow();renderRanking();renderProgress();renderOverall();renderQuickCommentsSummary();renderRemarks();syncSimpleResultsActions();loadReportNoteIntoForm();renderProductSheetStatus();
 }
 function sampleStats(p,s){
   let total=0,count=0,quickCommentCount=0,manualRemarkCount=0;
@@ -9375,13 +11017,13 @@ function renderRemarks(){
 }
 function exportCsv(){
   const headers=Array.from({length:5},(_,i)=>`Q${i+1}`);
-  const rows=[['Lot','Testeur','Test validé','Date validation','Produit','Code','Échantillon','Fournisseur',...headers,'Total',...headers.map(x=>`Remarque ${x}`),'Commentaires rapides']];
+  const rows=[['Lot','Testeur','Test validé','Date validation','Produit','Échantillon','Fournisseur',...headers,'Total',...headers.map(x=>`Remarque ${x}`),'Commentaires rapides']];
   for(let t=1;t<=state.config.testerCount;t++)state.config.products.forEach(p=>p.samples.forEach(s=>{
     const a=state.testers[t]?.answers[sampleKey(p.id,s.id)];if(!a)return;
     const names=criterionShortsForConfig(state.config,p);
     const scores=a.choices.map((idx,q)=>idx==null?'':QUESTIONS[q].weights[idx]);
     const free=QUESTIONS.map((_,qi)=>manualRemarkText(a,qi));
-    rows.push([state.config.lotName,state.testers[t]?.name||`Testeur ${t}`,testerValidated(t)?'Oui':'Non',state.testers[t]?.validatedAt||'',p.name,p.code,s.id,s.supplier,...scores,calcScore(a),...free,QUESTIONS.map((_,qi)=>getQuickTags(a,qi).length?`${names[qi]||`Critère ${qi+1}`}: ${getQuickTags(a,qi).join(', ')}`:'').filter(Boolean).join(' | ')])
+    rows.push([state.config.lotName,state.testers[t]?.name||`Testeur ${t}`,testerValidated(t)?'Oui':'Non',state.testers[t]?.validatedAt||'',p.name,s.id,s.supplier,...scores,calcScore(a),...free,QUESTIONS.map((_,qi)=>getQuickTags(a,qi).length?`${names[qi]||`Critère ${qi+1}`}: ${getQuickTags(a,qi).join(', ')}`:'').filter(Boolean).join(' | ')])
   }));
   const csv='\ufeff'+rows.map(r=>r.map(csvCell).join(';')).join('\n');download(new Blob([csv],{type:'text/csv;charset=utf-8'}),`resultats-${slug(state.config.lotName)}.csv`);toast('CSV créé')
 }
@@ -9739,6 +11381,352 @@ function stateRemarks(st){
 function reportEsc(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function reportDate(v){try{return new Date(v||Date.now()).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
 
+
+/* ===== V168 — Fiches d'évaluation produit ===== */
+let activeProductSheetId='';
+
+function productSheetKey(pid,sid){return `${String(pid)}__${String(sid)}`}
+function productSheetStore(st=state){
+  if(!st?.config)return {};
+  if(!st.config.productSheets || typeof st.config.productSheets!=='object')st.config.productSheets={};
+  return st.config.productSheets;
+}
+function receptionDefaultsForSample(st,p,sm){
+  const receptions=Array.isArray(st?.config?.receptions)?st.config.receptions:[];
+  const supplier=String(sm?.supplier||'');
+  for(let i=receptions.length-1;i>=0;i--){
+    const r=receptions[i];
+    if(supplier && String(r?.supplier||'')!==supplier)continue;
+    const line=(r?.lines||[]).find(x=>String(x.productId||'')===String(p?.id||'') || String(x.productName||'')===String(p?.name||''));
+    if(!line || line.received===false)continue;
+    return{
+      deliveryTemp:line.productTemp??'',
+      packagingConformity:line.packaging==='non-conforme'?'non':'oui',
+      dlc:line.dlc||'',
+      observations:line.observations||''
+    };
+  }
+  return{};
+}
+function ensureProductSheetRecord(st,p,sm){
+  const store=productSheetStore(st),k=productSheetKey(p.id,sm.id);
+  if(store[k])return store[k];
+  const d=receptionDefaultsForSample(st,p,sm);
+  store[k]={
+    productId:p.id,sampleId:sm.id,supplier:sm.supplier||'',
+    brand:'',characteristics:'',labeling:'',weight:'',
+    technicalSheet:'',deliveryTempConformity:'',
+    packagingConformity:d.packagingConformity||'',
+    manufacturingDate:'',ddm:'',dlc:d.dlc||'',supplierLot:'',
+    deliveryTemp:d.deliveryTemp??'',observations:d.observations||''
+  };
+  return store[k];
+}
+function productSheetStats(st,p,sm){
+  const stats=stateSampleStats(st,p,sm);
+  const maxes=QUESTIONS.map(q=>Math.max(...q.weights));
+  const names=criterionShortsForConfig(st.config,p);
+  return{
+    count:stats.count,
+    avg65:stats.count?stats.avg:0,
+    note5:stats.count?(stats.avg/65*5):0,
+    criteria:(stats.criterionAvg||[]).map((v,i)=>({name:names[i]||`Critère ${i+1}`,avg:v,max:maxes[i]||1}))
+  };
+}
+function productSheetMissingFields(st,p,sm){
+  const r=ensureProductSheetRecord(st,p,sm);
+  const missing=[];
+  const required=[
+    ['brand','Marque'],
+    ['characteristics','Caractéristiques'],
+    ['labeling','Étiquetage'],
+    ['weight','Poids / grammage'],
+    ['technicalSheet','Conformité à la fiche technique'],
+    ['deliveryTempConformity','Conformité de la température à la livraison'],
+    ['packagingConformity','Conformité emballage / conditionnement'],
+    ['deliveryTemp','Température du produit à la livraison'],
+    ['supplierLot','N° de lot fournisseur'],
+    ['observations','Observations (écrire RAS s’il n’y en a aucune)']
+  ];
+  for(const [key,label] of required){
+    if(!String(r?.[key]??'').trim())missing.push({key,label});
+  }
+  if(!String(r.manufacturingDate||'').trim() && !String(r.ddm||'').trim() && !String(r.dlc||'').trim()){
+    missing.push({key:'traceabilityDate',label:'Au moins une date de traçabilité : fabrication, DDM ou DLC'});
+  }
+  const stats=productSheetStats(st,p,sm);
+  if(!stats.count)missing.push({key:'sensorResult',label:'Résultat sensoriel du jury'});
+  return missing;
+}
+function productSheetFilled(rec,st=null,p=null,sm=null){
+  if(st&&p&&sm)return productSheetMissingFields(st,p,sm).length===0;
+  return ['brand','characteristics','labeling','weight','technicalSheet','deliveryTempConformity','packagingConformity','supplierLot','deliveryTemp','observations']
+    .every(k=>String(rec?.[k]??'').trim()) &&
+    !!(String(rec?.manufacturingDate||'').trim()||String(rec?.ddm||'').trim()||String(rec?.dlc||'').trim());
+}
+function productSheetsValidation(st=state){
+  const issues=[];
+  for(const p of st?.config?.products||[]){
+    for(const sm of p.samples||[]){
+      const missing=productSheetMissingFields(st,p,sm);
+      if(missing.length)issues.push({productId:p.id,productName:p.name||'Produit',sampleId:sm.id,supplier:sm.supplier||'Fournisseur',missing});
+    }
+  }
+  return{ok:issues.length===0,issues};
+}
+function productSheetsProgress(st=state){
+  let total=0,filled=0;
+  for(const p of st?.config?.products||[])for(const sm of p.samples||[]){
+    total++;
+    if(productSheetMissingFields(st,p,sm).length===0)filled++;
+  }
+  return{total,filled};
+}
+function productSheetBlockingMessage(validation,actionLabel='continuer'){
+  const issues=validation?.issues||[];
+  const lines=[];
+  for(const issue of issues.slice(0,6)){
+    lines.push(`• ${issue.productName} — ${issue.supplier} : ${issue.missing.map(x=>x.label).join(', ')}`);
+  }
+  if(issues.length>6)lines.push(`• … et ${issues.length-6} autre(s) fiche(s) incomplète(s).`);
+  return `Impossible de ${actionLabel} : les fiches produits doivent être complètes.\n\n${lines.join('\n')}`;
+}
+function ensureProductSheetsComplete(actionLabel='continuer'){
+  try{captureProductSheetForm()}catch(e){}
+  const validation=productSheetsValidation(state);
+  if(validation.ok)return true;
+  const first=validation.issues[0];
+  alert(productSheetBlockingMessage(validation,actionLabel));
+  activeProductSheetId=first.productId;
+  openProductSheets();
+  setTimeout(()=>{
+    const box=$('#productSheetContent');
+    const card=box?findProductSheetCard(box,first.sampleId):null;
+    if(!card)return;
+    card.classList.add('has-missing');
+    const firstMissing=first.missing[0]?.key;
+    let target=null;
+    if(firstMissing==='traceabilityDate'){
+      target=card.querySelector('[data-ps-field="manufacturingDate"],[data-ps-field="ddm"],[data-ps-field="dlc"]');
+    }else if(firstMissing!=='sensorResult'){
+      target=card.querySelector(`[data-ps-field="${firstMissing}"]`);
+    }
+    target?.focus?.();
+    card.scrollIntoView({behavior:'smooth',block:'center'});
+  },120);
+  return false;
+}
+function renderProductSheetStatus(){
+  const b=$('#productSheetsBtn');if(!b)return;
+  const x=productSheetsProgress(state);
+  b.textContent=`📋 Fiches produits${x.total?` (${x.filled}/${x.total})`:''}`;
+}
+function openProductSheets(){
+  if(!state?.config?.products?.length){alert('Aucun produit dans ce jury.');return}
+  if(!activeProductSheetId || !state.config.products.some(p=>String(p.id)===String(activeProductSheetId)))activeProductSheetId=state.config.products[0].id;
+  showView('productSheetsView');
+  $('#headerTitle').textContent='Fiches produits';
+  $('#headerSub').textContent=state.config.lotName||'Jury Marchés';
+  renderProductSheets();
+}
+function findProductSheetCard(box,sid){
+  return [...box.querySelectorAll('[data-ps-sample]')].find(el=>String(el.dataset.psSample)===String(sid))||null;
+}
+function renderProductSheets(){
+  const tabs=$('#productSheetTabs'),box=$('#productSheetContent');
+  if(!tabs||!box)return;
+  tabs.innerHTML=(state.config.products||[]).map((p,i)=>`<button type="button" class="${String(p.id)===String(activeProductSheetId)?'active':''}" data-product-sheet-tab="${escapeHtml(String(p.id))}">${i+1}. ${escapeHtml(p.name||`Produit ${i+1}`)}</button>`).join('');
+  tabs.querySelectorAll('[data-product-sheet-tab]').forEach(b=>b.onclick=()=>{captureProductSheetForm();activeProductSheetId=b.dataset.productSheetTab;renderProductSheets()});
+  const p=state.config.products.find(x=>String(x.id)===String(activeProductSheetId))||state.config.products[0];
+  if(!p){box.innerHTML='';return}
+  const rows=(p.samples||[]).map(sm=>{
+    const r=ensureProductSheetRecord(state,p,sm),st=productSheetStats(state,p,sm);
+    const missing=productSheetMissingFields(state,p,sm);
+    return `<article class="product-sheet-sample ${missing.length?'has-missing':''}" data-ps-sample="${escapeHtml(String(sm.id))}">
+      <div class="product-sheet-sample-head">
+        <div><strong>${escapeHtml(sm.supplier||'Fournisseur')} · Échantillon ${escapeHtml(sm.id)}</strong><span>Informations reprises dans l’annexe du rapport final</span></div>
+        <span class="product-sheet-status ${missing.length?'':'ready'}">${missing.length?`${missing.length} élément${missing.length>1?'s':''} manquant${missing.length>1?'s':''}`:'Complet ✓'}</span>
+      </div>
+      <div class="product-sheet-grid">
+        <div class="field"><label>Marque</label><input data-ps-field="brand" value="${escapeHtml(r.brand||'')}" placeholder="Marque"></div>
+        <div class="field wide"><label>Caractéristiques</label><input data-ps-field="characteristics" value="${escapeHtml(r.characteristics||'')}" placeholder="Calibre, origine, nature…"></div>
+        <div class="field"><label>Étiquetage</label><select data-ps-field="labeling"><option value="">—</option><option value="conforme">Conforme</option><option value="non-conforme">Non conforme</option></select></div>
+        <div class="field"><label>Poids / grammage</label><input data-ps-field="weight" value="${escapeHtml(r.weight||'')}" placeholder="Ex. 2,5 kg"></div>
+        <div class="field"><label>Conforme à la fiche technique</label><select data-ps-field="technicalSheet"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
+        <div class="field"><label>Température à la livraison conforme</label><select data-ps-field="deliveryTempConformity"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
+        <div class="field"><label>Emballage / conditionnement conforme</label><select data-ps-field="packagingConformity"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
+        <div class="field"><label>T° produit à la livraison</label><select data-ps-field="deliveryTemp">${receptionTemperatureOptions(r.deliveryTemp??'')}</select></div>
+        <div class="field"><label>Date de fabrication</label><input type="date" data-ps-field="manufacturingDate" value="${escapeHtml(r.manufacturingDate||'')}"></div>
+        <div class="field"><label>DDM / utilisation optimale</label><input type="date" data-ps-field="ddm" value="${escapeHtml(r.ddm||'')}"></div>
+        <div class="field"><label>DLC — Date limite de consommation</label><input type="date" data-ps-field="dlc" value="${escapeHtml(r.dlc||'')}"></div>
+        <div class="field"><label>N° de lot fournisseur</label><input data-ps-field="supplierLot" value="${escapeHtml(r.supplierLot||'')}" placeholder="N° de lot"></div>
+        <div class="field full"><label>Observations</label><textarea data-ps-field="observations" placeholder="Observations éventuelles">${escapeHtml(r.observations||'')}</textarea></div>
+      </div>
+      <div class="product-sheet-auto">
+        <strong>Résultats sensoriels repris automatiquement : ${st.count?`${fmt(st.avg65)} /65 · ${fmt(st.note5)} /5`:'aucune évaluation complète pour le moment'}</strong>
+        <div class="criterion-mini">${st.criteria.map(c=>`<span>${escapeHtml(c.name)} : ${st.count?`${fmt(c.avg)}/${fmt(c.max)}`:'—'}</span>`).join('')}</div>
+      </div>
+    </article>`;
+  }).join('');
+  box.innerHTML=`<section class="panel product-sheet-card"><h3>${escapeHtml(p.name||'Produit')}</h3><div class="sub">Une annexe produit regroupera tous les fournisseurs/échantillons ci-dessous.</div><div class="product-sheet-required-note">Tous les champs sont obligatoires pour le dossier final. Pour les dates, au moins une date de traçabilité est nécessaire : fabrication, DDM ou DLC. S’il n’y a aucune observation, écrivez « RAS ».</div>${rows||'<div class="results-empty">Aucun échantillon.</div>'}</section>`;
+  for(const sm of p.samples||[]){
+    const card=findProductSheetCard(box,sm.id);if(!card)continue;
+    const r=ensureProductSheetRecord(state,p,sm);
+    for(const field of ['labeling','technicalSheet','deliveryTempConformity','packagingConformity']){
+      const el=card.querySelector(`[data-ps-field="${field}"]`);if(el)el.value=r[field]||'';
+    }
+  }
+}
+function captureProductSheetForm(){
+  const box=$('#productSheetContent');if(!box||!state?.config)return;
+  const p=state.config.products.find(x=>String(x.id)===String(activeProductSheetId));if(!p)return;
+  for(const sm of p.samples||[]){
+    const card=findProductSheetCard(box,sm.id);if(!card)continue;
+    const r=ensureProductSheetRecord(state,p,sm);
+    card.querySelectorAll('[data-ps-field]').forEach(el=>{r[el.dataset.psField]=el.value??''});
+  }
+}
+async function saveProductSheets(){
+  captureProductSheetForm();saveState();
+  if(typeof syncDirtyToCloud==='function'){try{await syncDirtyToCloud()}catch(e){}}
+  const validation=productSheetsValidation(state);
+  renderProductSheetStatus();renderProductSheets();
+  if(validation.ok)toast('Fiches produits complètes et enregistrées ✓');
+  else alert(`Brouillon enregistré. Il reste ${validation.issues.length} fiche(s) produit incomplète(s).\n\nLe rapport final, le dossier complet, l’archivage et l’envoi par mail resteront bloqués tant que tout n’est pas complété.`);
+}
+function closeProductSheets(){captureProductSheetForm();saveState();renderAdmin()}
+
+function productSheetAnnexHtml(st){
+  const products=st?.config?.products||[];
+  if(!products.length)return '';
+  return products.map((p,pi)=>{
+    const blocks=(p.samples||[]).map(sm=>{
+      const r=ensureProductSheetRecord(st,p,sm),ss=productSheetStats(st,p,sm);
+      const yn=v=>v==='oui'?'OUI':v==='non'?'NON':'—';
+      const labeling=r.labeling==='conforme'?'Conforme':r.labeling==='non-conforme'?'Non conforme':'—';
+      return `<div class="product-annex-supplier">
+        <h3>${reportEsc(sm.supplier||'Fournisseur')} <span>— Échantillon ${reportEsc(sm.id)}</span></h3>
+        <table><tbody>
+          <tr><th>Marque</th><td>${reportEsc(r.brand||'—')}</td><th>Poids / grammage</th><td>${reportEsc(r.weight||'—')}</td></tr>
+          <tr><th>Caractéristiques</th><td colspan="3">${reportEsc(r.characteristics||'—')}</td></tr>
+          <tr><th>Étiquetage</th><td>${reportEsc(labeling)}</td><th>N° lot fournisseur</th><td>${reportEsc(r.supplierLot||'—')}</td></tr>
+          <tr><th>Fiche technique</th><td>${yn(r.technicalSheet)}</td><th>T° livraison conforme</th><td>${yn(r.deliveryTempConformity)}${String(r.deliveryTemp||'').trim()?` · ${reportEsc(r.deliveryTemp)} °C`:''}</td></tr>
+          <tr><th>Emballage / conditionnement</th><td>${yn(r.packagingConformity)}</td><th>Date fabrication</th><td>${reportEsc(r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—')}</td></tr>
+          <tr><th>DDM / utilisation optimale</th><td>${reportEsc(r.ddm?formatClosureDate(r.ddm):'—')}</td><th>DLC</th><td>${reportEsc(r.dlc?formatClosureDate(r.dlc):'—')}</td></tr>
+          <tr><th>Observations</th><td colspan="3">${reportEsc(r.observations||'—')}</td></tr>
+        </tbody></table>
+        <div class="product-annex-score"><strong>Résultat sensoriel du jury : ${ss.count?`${fmt(ss.avg65)} /65 · ${fmt(ss.note5)} /5`:'—'}</strong><div>${ss.criteria.map(c=>`${reportEsc(c.name)} : ${ss.count?`${fmt(c.avg)}/${fmt(c.max)}`:'—'}`).join(' · ')}</div></div>
+      </div>`;
+    }).join('');
+    return `<section class="section page-break product-eval-annex"><div class="section-kicker">Annexe — fiche d’évaluation produit ${pi+1}/${products.length}</div><h2>${reportEsc(p.name||`Produit ${pi+1}`)}</h2><div class="small-note">Les résultats sensoriels sont repris automatiquement des fiches des testeurs.</div>${blocks||'<div class="empty-note">Aucun fournisseur / échantillon.</div>'}</section>`;
+  }).join('');
+}
+function appendProductSheetsPdf(doc,st){
+  const products=st?.config?.products||[];
+  products.forEach((p,pi)=>{
+    doc.addPage();let y=20;
+    y=reportPdfTitle(doc,`Annexe — Fiche produit ${pi+1}/${products.length} : ${p.name||`Produit ${pi+1}`}`,y);
+    for(const sm of p.samples||[]){
+      const r=ensureProductSheetRecord(st,p,sm),ss=productSheetStats(st,p,sm);
+      y=reportPdfNeedPage(doc,y,60);
+      y=reportPdfParagraph(doc,`${sm.supplier||'Fournisseur'} — Échantillon ${sm.id}`,y,{size:10,bold:true});
+      const yn=v=>v==='oui'?'OUI':v==='non'?'NON':'—';
+      y=reportPdfSimpleTable(doc,['Élément','Valeur'],[
+        ['Marque',r.brand||'—'],['Caractéristiques',r.characteristics||'—'],
+        ['Étiquetage',r.labeling==='conforme'?'Conforme':r.labeling==='non-conforme'?'Non conforme':'—'],
+        ['Poids / grammage',r.weight||'—'],['Conforme fiche technique',yn(r.technicalSheet)],
+        ['Température livraison',`${yn(r.deliveryTempConformity)}${String(r.deliveryTemp||'').trim()?` · ${r.deliveryTemp} °C`:''}`],
+        ['Emballage / conditionnement',yn(r.packagingConformity)],
+        ['Date fabrication',r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—'],
+        ['DDM',r.ddm?formatClosureDate(r.ddm):'—'],['DLC',r.dlc?formatClosureDate(r.dlc):'—'],
+        ['N° lot fournisseur',r.supplierLot||'—'],['Observations',r.observations||'—']
+      ],y,[55,127]);
+      y=reportPdfParagraph(doc,`Résultat sensoriel : ${ss.count?`${fmt(ss.avg65)} /65 · ${fmt(ss.note5)} /5`:'—'}`,y+2,{size:9,bold:true});
+      if(ss.count)y=reportPdfParagraph(doc,ss.criteria.map(c=>`${c.name} ${fmt(c.avg)}/${fmt(c.max)}`).join(' · '),y,{size:8});
+      y+=4;
+    }
+  });
+}
+
+function reportReceptionAnnex(st){
+  const receptions=Array.isArray(st?.config?.receptions)?st.config.receptions.filter(Boolean):[];
+  if(!receptions.length)return '';
+  return receptions.map((r,ri)=>{
+    const lines=(r.lines||[]).filter(x=>x.received!==false);
+    const rows=lines.map(line=>`<tr>
+      <td>${reportEsc(line.productName||'—')}</td>
+      <td>${reportEsc(r.vehicleTemp||'—')}</td>
+      <td>${reportEsc(line.productTemp||'—')}</td>
+      <td>${reportEsc(line.interiorTemp||'—')}</td>
+      <td>${reportEsc(line.dlc?formatClosureDate(line.dlc):'')}</td>
+      <td>${reportEsc(line.packaging==='non-conforme'?'NON CONFORME':'Conforme')}</td>
+      <td>${line.decision==='refus'?'':'X'}</td>
+      <td>${line.decision==='refus'?'X':''}</td>
+      <td>${reportEsc(line.observations||'')}</td>
+    </tr>`).join('');
+    return `<section class="section page-break reception-annex">
+      <div class="section-kicker">Annexe — contrôle de réception ${ri+1}/${receptions.length}</div>
+      <h2>Relevé de réception des échantillons</h2>
+      <table><tbody>
+        <tr><th>Établissement</th><td colspan="3">${reportEsc(r.establishment||'—')}</td></tr>
+        <tr><th>Lot</th><td>${reportEsc(st.config?.lotName||'—')}</td><th>Fournisseur</th><td>${reportEsc(r.supplier||'—')}</td></tr>
+        <tr><th>Date</th><td>${reportEsc(formatClosureDate(r.date))}</td><th>Heure</th><td>${reportEsc(r.time||'—')}</td></tr>
+        <tr><th>Livreur</th><td>${reportEsc(r.driverName||'—')}</td><th>Agent réceptionnaire</th><td>${reportEsc(r.receiverName||'—')}</td></tr>
+      </tbody></table>
+      <table class="reception-report-table">
+        <thead><tr><th>Produit</th><th>T° véhicule</th><th>T° produit</th><th>T° intérieur</th><th>DLC / DDM</th><th>Emballage</th><th>Accept.</th><th>Refus</th><th>Observations</th></tr></thead>
+        <tbody>${rows||'<tr><td colspan="9">Aucun produit renseigné.</td></tr>'}</tbody>
+      </table>
+      <div class="reception-signature-report">
+        <strong>Signature du livreur</strong>
+        ${r.driverSignature?`<img src="${r.driverSignature}" alt="Signature du livreur">`:'<span>Signature non disponible</span>'}
+      </div>
+    </section>`;
+  }).join('');
+}
+function appendReceptionAnnexPdf(doc,st){
+  const receptions=Array.isArray(st?.config?.receptions)?st.config.receptions.filter(Boolean):[];
+  receptions.forEach((r,ri)=>{
+    doc.addPage();
+    let y=20;
+    y=reportPdfTitle(doc,`Annexe — Réception des échantillons ${ri+1}/${receptions.length}`,y);
+    y=reportPdfParagraph(doc,`${r.establishment||'Établissement non renseigné'} · ${st.config?.lotName||'Lot'}`,y,{size:9});
+    y=reportPdfParagraph(doc,`Fournisseur : ${r.supplier||'—'} · Date : ${formatClosureDate(r.date)} ${r.time||''}`,y,{size:9,bold:true});
+    y=reportPdfParagraph(doc,`Livreur : ${r.driverName||'—'} · Agent réceptionnaire : ${r.receiverName||'—'} · T° véhicule : ${r.vehicleTemp||'—'} °C`,y,{size:9});
+
+    const lines=(r.lines||[]).filter(x=>x.received!==false);
+    y=reportPdfSimpleTable(
+      doc,
+      ['Produit','T° prod.','T° int.','DLC/DDM','Emballage','Décision','Observations'],
+      lines.map(line=>[
+        line.productName||'—',
+        line.productTemp||'—',
+        line.interiorTemp||'—',
+        line.dlc?formatClosureDate(line.dlc):'',
+        line.packaging==='non-conforme'?'Non conf.':'Conforme',
+        line.decision==='refus'?'REFUS':'Accepté',
+        line.observations||''
+      ]),
+      y,
+      [40,20,20,27,25,22,28]
+    );
+
+    y=reportPdfParagraph(doc,'Signature du livreur',y+3,{size:9,bold:true});
+    if(r.driverSignature){
+      try{
+        y=reportPdfNeedPage(doc,y,35);
+        doc.addImage(r.driverSignature,'PNG',14,y,70,25);
+        y+=30;
+      }catch(e){
+        y=reportPdfParagraph(doc,'Signature enregistrée (image non insérable dans ce navigateur).',y,{size:8});
+      }
+    }else{
+      y=reportPdfParagraph(doc,'Signature non disponible.',y,{size:8});
+    }
+  });
+}
+
+
 function pvDate(v){
   if(!v)return '—';
   try{
@@ -10023,7 +12011,7 @@ function openJuryDossier(st,sourceLabel='Jury'){
 
   w.document.open();w.document.write(html);w.document.close();w.focus()
 }
-function openCurrentDossier(){openJuryDossier(state,'Jury actif')}
+function openCurrentDossier(){if(!ensureProductSheetsComplete('ouvrir le dossier complet'))return;openJuryDossier(state,'Jury actif')}
 function openArchiveDossier(id){
   const rec=loadArchives().find(x=>x.id===id);
   if(!rec?.state){alert('Archive introuvable.');return}
@@ -10302,6 +12290,8 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
       <tr><th>Observations générales</th><td colspan="3">${closure.notes?reportEsc(closure.notes).replace(/\n/g,'<br>'):'Aucune observation générale.'}</td></tr>
     </tbody></table>
   </section>`:'';
+  const receptionSection=reportReceptionAnnex(st);
+  const productSheetsSection=productSheetAnnexHtml(st);
 
   const reportTitle=`Rapport sensoriel — ${st.config.lotName||'Jury Marchés'}`;
   const html=`<!doctype html><html lang="fr"><head>
@@ -10341,6 +12331,13 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
     .lot-summary h2{text-align:left}
     .footer{margin-top:30px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:9px}
     .small-note{font-size:9px;color:var(--muted);line-height:1.45;margin-top:8px}
+    .reception-report-table{font-size:8px}.reception-report-table th,.reception-report-table td{padding:5px 3px}
+    .reception-signature-report{margin-top:16px;border:1px solid var(--line);border-radius:8px;padding:10px;min-height:95px}
+    .reception-signature-report strong{display:block;font-size:10px}.reception-signature-report img{display:block;max-width:260px;max-height:75px;object-fit:contain;margin-top:6px}
+    .reception-signature-report span{display:block;font-size:9px;color:var(--muted);margin-top:6px}
+    .product-annex-supplier{margin:15px 0 18px;break-inside:avoid}.product-annex-supplier h3{font-size:13px;color:var(--blue);margin:0 0 7px}.product-annex-supplier h3 span{font-size:10px;color:var(--muted);font-weight:500}
+    .product-annex-supplier table{font-size:9px}.product-annex-supplier th{width:22%;text-align:left}.product-annex-supplier td{text-align:left}
+    .product-annex-score{margin-top:7px;border-left:4px solid var(--blue);background:#f6fafc;padding:7px 9px;font-size:9px;line-height:1.45}.product-annex-score strong{display:block;color:#214d68}
     @media print{
       @page{size:A4 portrait;margin:12mm}
       body{background:#fff}
@@ -10407,6 +12404,8 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
       </section>`:''}
 
       ${closureSection}
+      ${receptionSection}
+      ${productSheetsSection}
 
       <footer class="footer">
         <span>Document généré le ${reportEsc(reportDate(generatedAt))}</span>
@@ -10619,6 +12618,12 @@ async function buildReportPdfBlob(st=state){
     y=reportPdfParagraph(doc,reportNote,y,{size:10});
   }
 
+  // Annexes de réception signées
+  appendReceptionAnnexPdf(doc,st);
+
+  // Fiches d'évaluation produit
+  appendProductSheetsPdf(doc,st);
+
   // Pied de page sur toutes les pages
   const pages=doc.getNumberOfPages();
   for(let i=1;i<=pages;i++){
@@ -10632,6 +12637,7 @@ async function buildReportPdfBlob(st=state){
   return {blob:doc.output('blob'),filename,pages};
 }
 async function emailCurrentReport(){
+  if(!ensureProductSheetsComplete('envoyer le rapport par email'))return;
   const btn=$('#simpleResultsEmailBtn');
   const old=btn?.textContent||'📧 Envoyer le rapport par email';
 
@@ -10675,7 +12681,7 @@ async function emailCurrentReport(){
   }
 }
 
-function openCurrentReport(){openJuryReport(state,'Jury actif')}
+function openCurrentReport(){if(!ensureProductSheetsComplete('générer le rapport final'))return;openJuryReport(state,'Jury actif')}
 function openArchiveReport(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;openJuryReport(rec.state,'Archive clôturée')}
 
 function archivedTotalSamples(st){return (st?.config?.products||[]).reduce((n,p)=>n+(p.samples||[]).length,0)}
@@ -10708,7 +12714,7 @@ function archivedRemarks(st){
   return rows;
 }
 function formatArchiveDate(v){try{return new Date(v).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return String(v||'')}}
-function archiveCurrentJury(){const m=juryMetrics();if(!(m.max>0&&m.done===m.max&&m.validated===state.config.testerCount)){alert('Le jury ne peut être archivé que lorsque tous les testeurs ont terminé et validé leur test.');return}if(!isJuryClosed()){alert('Fermez d’abord officiellement le jury.');return}if(!closureIsReady()){alert('Complétez d’abord la fiche de clôture : date, lieu et responsable du jury.');renderClosure();return}const previous=state.config?._archive||{};if(previous.archivedAt&&!confirm('Ce jury est déjà archivé. Mettre à jour son archive avec les résultats actuels ?'))return;const now=new Date().toISOString();const id=previous.archiveId||((typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`archive_${Date.now()}`);state.config._archive={archiveId:id,archivedAt:now,cloudSessionId:(typeof cloudCfg!=='undefined'&&cloudCfg.sessionId)?cloudCfg.sessionId:(previous.cloudSessionId||null)};saveState();const rec={id,archivedAt:now,cloudSessionId:state.config._archive.cloudSessionId,state:deepClone(state)};const list=loadArchives();const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=rec;else list.unshift(rec);saveArchives(list.slice(0,100));renderAdmin();toast(previous.archivedAt?'Archive mise à jour ✓':'Jury archivé ✓')}
+function archiveCurrentJury(){if(!ensureProductSheetsComplete('archiver le jury'))return;const m=juryMetrics();if(!(m.max>0&&m.done===m.max&&m.validated===state.config.testerCount)){alert('Le jury ne peut être archivé que lorsque tous les testeurs ont terminé et validé leur test.');return}if(!isJuryClosed()){alert('Fermez d’abord officiellement le jury.');return}if(!closureIsReady()){alert('Complétez d’abord la fiche de clôture : date, lieu et responsable du jury.');renderClosure();return}const previous=state.config?._archive||{};if(previous.archivedAt&&!confirm('Ce jury est déjà archivé. Mettre à jour son archive avec les résultats actuels ?'))return;const now=new Date().toISOString();const id=previous.archiveId||((typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`archive_${Date.now()}`);state.config._archive={archiveId:id,archivedAt:now,cloudSessionId:(typeof cloudCfg!=='undefined'&&cloudCfg.sessionId)?cloudCfg.sessionId:(previous.cloudSessionId||null)};saveState();const rec={id,archivedAt:now,cloudSessionId:state.config._archive.cloudSessionId,state:deepClone(state)};const list=loadArchives();const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=rec;else list.unshift(rec);saveArchives(list.slice(0,100));renderAdmin();toast(previous.archivedAt?'Archive mise à jour ✓':'Jury archivé ✓')}
 
 function statsFilterValues(){
   return{
@@ -11097,10 +13103,20 @@ $('#statsSupplier').onchange=renderStats;
 $('#statsResetBtn').onclick=resetStats;
 $('#statsCsvBtn').onclick=exportStatsCsv;
 $('#statsHomeBtn').onclick=renderHome;
-$('#archiveJuryBtn').onclick=archiveCurrentJury;$('#samplesSetupBtn').onclick=openSampleSetup;$('#configureBtn').onclick=prepareJuryFromHome;$('#juryBtn').onclick=openJuryFlow;$('#statsBtn').onclick=renderStats;$('#dashboardNewJuryBtn').onclick=prepareJuryFromHome;$('#dashboardAllArchivesBtn').onclick=renderArchives;$('#launchHomeBtn').onclick=renderHome;$('#launchEditBtn').onclick=openConfig;$('#officialLaunchBtn').onclick=officialLaunch;$('#launchQrBtn').onclick=()=>renderQrCodes('launchView');$('#launchCloudBtn').onclick=()=>typeof quickSharePhones==='function'?quickSharePhones():null;$('#configPrintArticlesBtn').onclick=printArticleNumbers;$('#configEmailArticlesBtn').onclick=emailArticleNumbersPdf;$('#configPreparePhonesBtn').onclick=preparePhonesFromConfig;$('#configQrBtn').onclick=openConfigQrCodes;$('#configEmailQrPdfBtn').onclick=sendQrPdfFromConfig;$('#juryChooserBackBtn').onclick=renderHome;$('#projectionBackBtn').onclick=returnFromProjection;$('#projectionPrevBtn').onclick=()=>setProjectionSlide(projectionSlideIndex-1);$('#projectionNextBtn').onclick=()=>setProjectionSlide(projectionSlideIndex+1);$('#projectionPauseBtn').onclick=toggleProjectionRotation;$('#projectionFullscreenBtn').onclick=toggleProjectionFullscreen;$('#exitTesterPreviewBtn').onclick=exitTesterPreview;
+$('#archiveJuryBtn').onclick=archiveCurrentJury;$('#samplesSetupBtn').onclick=openSampleSetup;(function(){
+  var b=$('#configureBtn');
+  if(!b)return;
+  b.onclick=function(e){return prepareJuryFromHomeV181(e);};
+  if('ontouchend' in window){
+    b.addEventListener('touchend',function(e){
+      if(e && e.cancelable)e.preventDefault();
+      prepareJuryFromHomeV181(e);
+    },{passive:false});
+  }
+})();$('#prepareJuryCancelBtn').onclick=closePrepareJuryChooser;$('#juryBtn').onclick=openJuryFlow;$('#statsBtn').onclick=renderStats;$('#dashboardNewJuryBtn').onclick=prepareJuryFromHomeV181;$('#dashboardAllArchivesBtn').onclick=renderArchives;$('#launchHomeBtn').onclick=renderHome;$('#launchEditBtn').onclick=openConfig;$('#officialLaunchBtn').onclick=officialLaunch;$('#launchQrBtn').onclick=()=>renderQrCodes('launchView');$('#launchCloudBtn').onclick=()=>typeof quickSharePhones==='function'?quickSharePhones():null;$('#configPrintArticlesBtn').onclick=printArticleNumbers;$('#configEmailArticlesBtn').onclick=emailArticleNumbersPdf;$('#configPreparePhonesBtn').onclick=preparePhonesFromConfig;$('#configQrBtn').onclick=openConfigQrCodes;$('#configEmailQrPdfBtn').onclick=sendQrPdfFromConfig;$('#juryChooserBackBtn').onclick=renderHome;$('#projectionBackBtn').onclick=returnFromProjection;$('#projectionPrevBtn').onclick=()=>setProjectionSlide(projectionSlideIndex-1);$('#projectionNextBtn').onclick=()=>setProjectionSlide(projectionSlideIndex+1);$('#projectionPauseBtn').onclick=toggleProjectionRotation;$('#projectionFullscreenBtn').onclick=toggleProjectionFullscreen;$('#exitTesterPreviewBtn').onclick=exitTesterPreview;
 $('#closeJuryBtn').onclick=closeJuryOfficially;$('#resultsCloseJuryBtn').onclick=closeJuryOfficially;
 $('#juryHomeBtn').onclick=renderHome;$('#juryQrBtn').onclick=openQrCodesFromJury;$('#juryProjectionBtn').onclick=openProjectionView;$('#juryTesterPreviewBtn').onclick=startTesterPreview;$('#juryResultsBtn').onclick=()=>openSimplifiedResults();$('#juryShareBtn').onclick=()=>typeof renderCloudPage==='function'?renderCloudPage():null;$('#resultsBtn').onclick=()=>openResultsArchiveHub();$('#backupBtn').onclick=backup;$('#restoreBtn').onclick=()=>$('#restoreFile').click();$('#restoreFile').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value=''};
-$('#sampleAddProductBtn')?.addEventListener('click',addSetupProduct);$('#sampleAddSupplierBtn')?.addEventListener('click',addSetupSupplier);$('#sampleSetupBackBtn').onclick=renderHome;$('#sampleSetupContinueBtn').onclick=()=>commitSampleMaster({continueToJury:true});$('#cancelConfigTopBtn').onclick=cancelCreateJury;$('#addProductBtn').onclick=addProduct;$('#blankTestBtn').onclick=showBlankLotEntry;$('#blankLotConfirmBtn').onclick=createBlankDraftFromName;$('#blankLotName').addEventListener('keydown',e=>{if(e.key==='Enter')createBlankDraftFromName()});$('#marketLotSelect').onchange=updateMarketLotInfo;$('#useMarketLotBtn').onclick=()=>flashCreateButton($('#useMarketLotBtn'),'✓ CRÉATION EN COURS…',prepareMarketLot);$('#customTemplateSelect').onchange=updateCustomTemplateButtons;$('#useCustomTemplateBtn').onclick=useCustomTemplate;$('#addCustomToMarketBtn').onclick=addSelectedCustomTemplateToMarket;$('#saveCustomTemplateBtn').onclick=saveCurrentDraftAsCustomTemplate;$('#deleteCustomTemplateBtn').onclick=deleteCustomTemplate;$('#useArchiveTemplateBtn').onclick=useArchiveTemplate;const testerCountInput=$('#cfgTesterCount');
+$('#sampleAddProductBtn')?.addEventListener('click',addSetupProduct);$('#sampleAddSupplierBtn')?.addEventListener('click',addSetupSupplier);$('#sampleSetupBackBtn').onclick=renderHome;$('#homeReceptionBtn').onclick=openReceptionFromHome;$('#homeProductSheetsBtnV174').onclick=openProductSheetsFromHomeV174;$('#productLotCancelV174').onclick=closeProductLotModalV174;$('#receptionLotCancelBtn').onclick=closeReceptionLotPicker;$('#configReceptionBtn').onclick=()=>openReceptionView(-1);$('#receptionBackBtn').onclick=closeReceptionView;$('#receptionChangeLotBtn').onclick=changeReceptionLot;$('#receptionNewBtn').onclick=newReceptionForm;$('#receptionPrintBtn').onclick=printReceptionPaper;$('#receptionPdfBtn').onclick=downloadReceptionPaperPdf;$('#receptionSaveBtn').onclick=saveReceptionForm;$('#clearReceptionSignature').onclick=()=>clearSignature('receptionSignature');$('#sampleSetupContinueBtn').onclick=()=>commitSampleMaster({continueToJury:true});$('#cancelConfigTopBtn').onclick=cancelCreateJury;$('#addProductBtn').onclick=addProduct;$('#blankTestBtn').onclick=showBlankLotEntry;$('#blankLotConfirmBtn').onclick=createBlankDraftFromName;$('#blankLotName').addEventListener('keydown',e=>{if(e.key==='Enter')createBlankDraftFromName()});$('#marketLotSelect').onchange=updateMarketLotInfo;$('#useMarketLotBtn').onclick=()=>flashCreateButton($('#useMarketLotBtn'),'✓ CRÉATION EN COURS…',prepareMarketLot);$('#customTemplateSelect').onchange=updateCustomTemplateButtons;$('#useCustomTemplateBtn').onclick=useCustomTemplate;$('#addCustomToMarketBtn').onclick=addSelectedCustomTemplateToMarket;$('#saveCustomTemplateBtn').onclick=saveCurrentDraftAsCustomTemplate;$('#deleteCustomTemplateBtn').onclick=deleteCustomTemplate;$('#useArchiveTemplateBtn').onclick=useArchiveTemplate;const testerCountInput=$('#cfgTesterCount');
 const syncTesterCountFromField=()=>{
   if(!draftConfig)return;
   syncTopDraft();
@@ -11111,7 +13127,7 @@ testerCountInput.onchange=syncTesterCountFromField;$('#cfgLotName').oninput=()=>
 $('#closeConfigPreviewBtn').onclick=closeConfigPreview;
 $('#configPreviewModal').onclick=e=>{if(e.target.id==='configPreviewModal')closeConfigPreview()};
 $('#testerHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#bottomHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#testerSelect').onchange=e=>{currentTester=Number(e.target.value);renderSample()};$('#productSelect').onchange=e=>{const targetPid=e.target.value;const target=getProduct(targetPid)?.samples?.[0];if(!target){e.target.value=currentProduct;return}if(!goToSample(targetPid,target.id))e.target.value=currentProduct};$('#sampleSelect').onchange=e=>{const target=e.target.value;if(!goToSample(currentProduct,target))e.target.value=currentSample};$('#prevSample').onclick=()=>moveSample(-1);$('#nextSample').onclick=()=>moveSample(1);
-$('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsArchiveBtn').onclick=()=>archiveCurrentJury();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>openResultsArchiveHub();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
+$('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#productSheetsBtn').onclick=()=>openProductSheets();$('#productSheetsBackBtn').onclick=()=>closeProductSheets();$('#saveProductSheetsBtn').onclick=()=>saveProductSheets();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsArchiveBtn').onclick=()=>archiveCurrentJury();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>openResultsArchiveHub();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
 renderHome();
 </script>
 
@@ -11230,7 +13246,7 @@ function makePublicCloudConfig(cfg){
 }
 function shareUrl(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','162');
+  u.searchParams.set('appBuild','163');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -11453,7 +13469,10 @@ async function subscribeCloud(){
   if(cloudPresenceChannel){try{await cloudClient.removeChannel(cloudPresenceChannel)}catch(e){}}
   cloudChannel=cloudClient.channel(`test-culinaire-secure-${cloudCfg.sessionId}-${cloudUserId||'u'}`)
     .on('postgres_changes',{event:'*',schema:'public',table:'test_culinaire_reponses',filter:`session_id=eq.${cloudCfg.sessionId}`},()=>reloadCloudAnswers());
-  if(cloudRole==='admin')cloudChannel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'test_culinaire_sessions',filter:`session_id=eq.${cloudCfg.sessionId}`},()=>reloadCloudConfig());
+  cloudChannel.on('postgres_changes',{event:'UPDATE',schema:'public',table:'test_culinaire_sessions',filter:`session_id=eq.${cloudCfg.sessionId}`},()=>{
+    if(cloudRole==='tester'&&typeof refreshTesterLaunchState==='function')refreshTesterLaunchState();
+    else reloadCloudConfig();
+  });
   cloudChannel.subscribe();
 
   cloudPresenceChannel=cloudClient.channel(`test-culinaire-presence-${cloudCfg.sessionId}`,{config:{presence:{key:cloudUserId||crypto.randomUUID()}}})
@@ -13001,8 +15020,35 @@ async function ensurePreparedShareConnected(){
   return true
 }
 
+
+function rememberConfigPhonePosition(){
+  const step=$('#configPhonesStep');
+  return{
+    scrollY:window.scrollY||window.pageYOffset||0,
+    viewportTop:step?step.getBoundingClientRect().top:null
+  };
+}
+function restoreConfigPhonePosition(pos){
+  if(!pos)return;
+  const restore=()=>{
+    const step=$('#configPhonesStep');
+    if(step && Number.isFinite(pos.viewportTop)){
+      const delta=step.getBoundingClientRect().top-pos.viewportTop;
+      if(Math.abs(delta)>1)window.scrollBy(0,delta);
+    }else{
+      window.scrollTo(0,Number(pos.scrollY)||0);
+    }
+  };
+  // Safari/iPad may finish layout one frame later.
+  requestAnimationFrame(()=>{
+    restore();
+    setTimeout(restore,80);
+  });
+}
+
 async function quickSharePhones(origin='launch'){
   const fromConfig=origin==='config';
+  const configPhonePosition=fromConfig?rememberConfigPhonePosition():null;
   ensureJuryInstanceId(state.config);
   if(state.config?.juryLaunch?.openedAt && String(state.config.juryLaunch.instanceId||'')!==juryInstanceId(state.config)){
     delete state.config.juryLaunch;
@@ -13014,6 +15060,7 @@ async function quickSharePhones(origin='launch'){
     if(fromConfig){
       draftConfig=deepClone(state.config);
       renderConfigPhoneShare();
+      restoreConfigPhonePosition(configPhonePosition);
     }else{
       renderLaunchView();
     }
@@ -13100,8 +15147,7 @@ async function quickSharePhones(origin='launch'){
     if(fromConfig){
       draftConfig=deepClone(state.config);
       renderConfig();
-      const step=$('#configPhonesStep');
-      if(step)step.scrollIntoView({behavior:'smooth',block:'center'});
+      restoreConfigPhonePosition(configPhonePosition);
     }else{
       renderLaunchView();
     }
@@ -13122,6 +15168,7 @@ async function quickSharePhones(origin='launch'){
     if(fromConfig){
       draftConfig=deepClone(state.config);
       renderConfig();
+      restoreConfigPhonePosition(configPhonePosition);
     }else{
       renderLaunchView();
     }
@@ -13191,7 +15238,85 @@ function storedOwnerToken(){
   const q=new URLSearchParams(location.search);
   return q.get('ownerToken')||localStorage.getItem(OWNER_TOKEN_STORAGE_KEY)||''
 }
+
 function setStoredOwnerToken(token){if(token)localStorage.setItem(OWNER_TOKEN_STORAGE_KEY,token)}
+
+function ownerDeviceShareUrl(){
+  if(!isSecurityOwner())throw new Error('Cet appareil n’est pas reconnu comme propriétaire.');
+  if(!securityEnabled())throw new Error('Activez d’abord le PIN propriétaire.');
+  if(!cloudCfg?.sessionId||!cloudCfg?.url||!cloudCfg?.key)
+    throw new Error('Aucune session partagée active. Préparez d’abord les téléphones ou connectez la session Supabase.');
+
+  const adminToken=storedAdminToken();
+  const ownerToken=storedOwnerToken();
+  if(!adminToken)throw new Error('Jeton administrateur introuvable sur cet appareil.');
+  if(!ownerToken)throw new Error('Jeton propriétaire introuvable sur cet appareil.');
+
+  const u=new URL(currentBaseUrl());
+  u.searchParams.delete('tester');
+  u.searchParams.delete('accessCode');
+  u.searchParams.delete('adminToken');
+  u.searchParams.delete('ownerToken');
+  u.searchParams.delete('appBuild');
+
+  u.searchParams.set('appBuild','195');
+  u.searchParams.set('session',cloudCfg.sessionId);
+  u.searchParams.set('supabaseUrl',cloudCfg.url);
+  u.searchParams.set('supabaseKey',cloudCfg.key);
+  u.searchParams.set('adminToken',adminToken);
+  u.searchParams.set('ownerToken',ownerToken);
+  return u.toString();
+}
+function closeOwnerDeviceModal(){
+  $('#ownerDeviceModal')?.classList.remove('show');
+}
+async function openOwnerDeviceModal(){
+  if(!securityEnabled()){
+    alert('Activez d’abord la sécurité et votre PIN propriétaire.');
+    return;
+  }
+  if(!isSecurityOwner()){
+    await refreshOwnerAuthorization();
+  }
+  if(!isSecurityOwner()){
+    alert('Cette fonction est réservée à l’appareil propriétaire.');
+    return;
+  }
+
+  let link='';
+  try{
+    link=ownerDeviceShareUrl();
+  }catch(e){
+    alert(e.message||String(e));
+    return;
+  }
+
+  const modal=$('#ownerDeviceModal');
+  const qr=$('#ownerDeviceQr');
+  const status=$('#ownerDeviceStatus');
+  if(!modal||!qr)return;
+
+  qr.innerHTML='';
+  if(window.QRCode){
+    try{
+      new QRCode(qr,{
+        text:link,
+        width:240,
+        height:240,
+        correctLevel:QRCode.CorrectLevel.M
+      });
+      if(status)status.textContent='Scannez ce QR code avec le nouvel appareil. Il rejoindra la même session comme propriétaire.';
+    }catch(e){
+      if(status)status.textContent='Le QR code n’a pas pu être généré. Utilisez « Copier le lien propriétaire ».';
+    }
+  }else{
+    if(status)status.textContent='Bibliothèque QR indisponible. Utilisez « Copier le lien propriétaire ».';
+  }
+
+  $('#ownerDeviceCopyBtn').onclick=()=>copyText(link,'Lien propriétaire copié ✓');
+  modal.classList.add('show');
+}
+
 async function verifyOwnerToken(token=storedOwnerToken()){
   const s=securityConfig();
   if(!s?.ownerTokenHash||!token)return false;
@@ -13199,7 +15324,9 @@ async function verifyOwnerToken(token=storedOwnerToken()){
   return h===s.ownerTokenHash
 }
 async function refreshOwnerAuthorization(){
-  securityOwnerAuthorized=await verifyOwnerToken();
+  const tok=storedOwnerToken();
+  securityOwnerAuthorized=await verifyOwnerToken(tok);
+  if(securityOwnerAuthorized&&tok)setStoredOwnerToken(tok);
   updateSecurityButtons();
   return securityOwnerAuthorized
 }
@@ -13310,6 +15437,8 @@ function updateSecurityButtons(){
     home.textContent=enabled?'🔐 Modifier mon PIN':'🔐 Activer la sécurité administrateur';
     home.style.display=guestTester||enabled&&!isSecurityOwner()?'none':'inline-flex'
   }
+  const ownerBtn=$('#ownerNewDeviceBtn');
+  if(ownerBtn)ownerBtn.style.display=(!guestTester&&enabled&&isSecurityOwner())?'inline-flex':'none';
 }
 async function openSecurityModal(){
   if(guestTester)return;
@@ -13327,6 +15456,8 @@ async function openSecurityModal(){
   $('#securityPin1').value='';$('#securityPin2').value='';
   $('#securityLockNowBtn').style.display=enabled?'inline-flex':'none';
   $('#securitySaveBtn').textContent=enabled?'Changer mon PIN':'Continuer';
+  const ownerBtn=$('#ownerNewDeviceBtn');
+  if(ownerBtn)ownerBtn.style.display=enabled&&isSecurityOwner()?'inline-flex':'none';
   $('#securityModal').classList.add('show');
   setTimeout(()=>$('#securityPin1')?.focus(),50)
 }
@@ -13445,6 +15576,9 @@ fetchCloudState=async function(...args){
 };
 
 $('#adminSecurityBtn').onclick=openSecurityModal;
+$('#ownerNewDeviceBtn').onclick=openOwnerDeviceModal;
+$('#ownerDeviceCloseBtn').onclick=closeOwnerDeviceModal;
+$('#ownerDeviceModal').onclick=e=>{if(e.target.id==='ownerDeviceModal')closeOwnerDeviceModal()};
 $('#adminLockBtn').onclick=()=>{
   if(!securityEnabled())openSecurityModal();
   else if(adminAccessState()==='unlocked')lockAdminNow();
@@ -13558,7 +15692,7 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
         }
       }catch(e){}
     });
-    navigator.serviceWorker.register('./service-worker.js?v=162',{updateViaCache:'none'}).then(reg=>{
+    navigator.serviceWorker.register('./service-worker.js?v=195',{updateViaCache:'none'}).then(reg=>{
       try{reg.update()}catch(e){}
       console.log('Service worker actif',reg.scope)
     }).catch(err=>console.warn('Service worker non installé',err))
@@ -13837,6 +15971,9 @@ function closeSimpleResultsHub(){
   bind('archivesBackHubBtn',()=>openResultsArchiveHub());
 
   bind('simpleResultsPdfBtn',()=>openCurrentReport());
+  bind('productSheetsBtn',()=>openProductSheets());
+  bind('productSheetsBackBtn',()=>closeProductSheets());
+  bind('saveProductSheetsBtn',()=>saveProductSheets());
   bind('simpleResultsEmailBtn',()=>emailCurrentReport());
   bind('simpleResultsArchiveBtn',()=>archiveCurrentJury());
   bind('simpleResultsMoreBtn',()=>toggleSimpleResultsDetails());
