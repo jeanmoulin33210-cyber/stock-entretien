@@ -29,7 +29,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v206</title>
+<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v207</title>
 <style>
 :root{
   --bg:#f4f7fb; --panel:#fff; --ink:#172033; --muted:#667085; --line:#e5eaf0;
@@ -4489,8 +4489,8 @@ body.tester-preview-mode #testerView{
 
 </head>
 <body>
-<div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v206</div>
-<script>(function(){try{var e=document.getElementById('v199Diag');var r=window.__JM_REQUESTED_ROLE_V199||'local';e.textContent='v206 · demandé: '+r;setTimeout(function(){if(e)e.style.opacity='.35'},7000)}catch(_){}})();</script>
+<div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v207</div>
+<script>(function(){try{var e=document.getElementById('v199Diag');var r=window.__JM_REQUESTED_ROLE_V199||'local';e.textContent='v207 · demandé: '+r;setTimeout(function(){if(e)e.style.opacity='.35'},7000)}catch(_){}})();</script>
 
 <!-- V197 : bascule automatique des identités Propriétaire/Testeur selon le lien ouvert -->
 <script id="v197-cache-reset">
@@ -4502,7 +4502,7 @@ body.tester-preview-mode #testerView{
 </script>
 <div id="ipadStartupDiagnostic">
   <strong id="ipadDiagTitle">Vérification de l’application…</strong>
-  <span id="ipadDiagText">Version v206.</span>
+  <span id="ipadDiagText">Version v207.</span>
   <div class="diag-actions">
     <button class="diag-refresh" type="button" onclick="window.forceIpadAppRefresh()">Forcer l’actualisation iPad</button>
     <button class="diag-close" type="button" onclick="document.getElementById('ipadStartupDiagnostic').style.display='none'">Fermer</button>
@@ -4550,19 +4550,19 @@ body.tester-preview-mode #testerView{
     var badge=document.getElementById('appBuildBadge');
     if(engineOk){
       if(badge){
-        badge.innerHTML='v206 · OK';
+        badge.innerHTML='v207 · OK';
         badge.style.background='#e6f5ee';
         badge.style.color='#146c4e';
       }
     }else{
       if(badge){
-        badge.innerHTML='v206 · moteur arrêté';
+        badge.innerHTML='v207 · moteur arrêté';
         badge.style.background='#fff0d8';
         badge.style.color='#8c5a00';
       }
       showDiag(
         'L’application ne s’est pas démarrée',
-        'Le fichier v206 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
+        'Le fichier v207 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
       );
     }
   },5000);
@@ -4574,7 +4574,7 @@ body.tester-preview-mode #testerView{
   <div class="brandmark">TC</div>
   <div class="topbar-title"><strong id="headerTitle">Tests culinaires</strong><span id="headerSub">Groupe Marchés Nouvelle-Aquitaine</span></div>
   <span class="cloud-status" id="cloudStatus">● Local</span>
-  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v206</span>
+  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v207</span>
   <button class="btn btn-secondary btn-small admin-security-btn" id="adminLockBtn">🔐 Sécurité</button>
   <button class="btn btn-secondary btn-small" id="homeBtn">Accueil</button>
 </header>
@@ -16478,27 +16478,69 @@ document.addEventListener('fullscreenchange',()=>{
 .product-lot-choice-v174 .v200-sheet-status.done{color:#137653}
 </style>
 <script id="v200-product-sheet-home-status-script">
+/* v207 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
 (function(){
   function sheetLots(){
     try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
-    var base=(typeof productLotsV174==='function') ? productLotsV174() : [];
+
+    /* v207 — même périmètre que « Réception chauffeur » :
+       uniquement les lots encore actifs. Les anciens jurys fermés / archivés
+       ne doivent plus gonfler le compteur « Fiches à compléter ». */
     var prepared=(typeof loadPreparedJurys==='function') ? loadPreparedJurys() : [];
-    return base.map(function(row){
+    var active=[];
+
+    if(typeof allReceptionLots==='function'){
+      try{ active=allReceptionLots()||[]; }catch(e){ active=[]; }
+    }
+
+    /* Repli de sécurité si le moteur Réception n'est pas disponible. */
+    if(!active.length){
+      var base=(typeof productLotsV174==='function') ? productLotsV174() : [];
+      active=base.filter(function(row){
+        var st=null;
+        if(row.current) st=state;
+        else {
+          var rec=prepared.find(function(x){ return String(x && x.id)===String(row.id); });
+          st=rec && rec.state;
+        }
+        var cfg=st && st.config;
+        return !!(cfg && cfg.products && cfg.products.length && !(cfg.juryClose&&cfg.juryClose.closedAt) && !(cfg._archive&&cfg._archive.archivedAt));
+      }).map(function(row){
+        return {
+          id:row.id,
+          kind:row.current?'current':'prepared',
+          lotName:row.name,
+          products:row.products,
+          suppliers:new Array(Number(row.suppliers||0))
+        };
+      });
+    }
+
+    return active.map(function(item){
+      var isCurrent=item.kind==='current' || String(item.id)===String(state&&state.config&&state.config._preparedId||'__current__');
       var st=null;
-      if(row.current) st=state;
+      if(isCurrent) st=state;
       else {
-        var rec=prepared.find(function(x){ return String(x && x.id)===String(row.id); });
+        var rec=prepared.find(function(x){ return String(x && x.id)===String(item.id); });
         st=rec && rec.state;
       }
+      if(!st || !st.config || !Array.isArray(st.config.products) || !st.config.products.length) return null;
+
       var prog={total:0,filled:0};
-      try{ if(st && typeof productSheetsProgress==='function') prog=productSheetsProgress(st); }catch(e){}
+      try{ if(typeof productSheetsProgress==='function') prog=productSheetsProgress(st); }catch(e){}
       var key=(prog.total>0 && prog.filled>=prog.total) ? 'done' : (prog.filled>0 ? 'partial' : 'pending');
-      return Object.assign({},row,{
+      var supplierCount=Array.isArray(item.suppliers) ? item.suppliers.length : Number(item.suppliers||0);
+      return {
+        id:String(item.id),
+        current:isCurrent,
+        name:item.lotName||st.config.lotName||'Lot préparé',
+        products:Number(item.products||st.config.products.length||0),
+        suppliers:supplierCount,
         sheetTotal:Number(prog.total||0),
         sheetFilled:Number(prog.filled||0),
         sheetStatus:key
-      });
-    });
+      };
+    }).filter(Boolean);
   }
 
   function pendingLots(){ return sheetLots().filter(function(x){ return x.sheetStatus!=='done'; }); }
