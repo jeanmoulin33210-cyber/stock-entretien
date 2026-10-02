@@ -1,12 +1,35 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script id="v199-role-bootstrap">
+(function(){
+  try{
+    var q=new URLSearchParams(location.search);
+    var wanted=q.get('tester') ? ('tester:'+String(Math.max(1,Number(q.get('tester'))||1))) : ((q.get('adminToken')||q.get('ownerToken')) ? 'admin' : '');
+    if(!wanted)return;
+    var last=localStorage.getItem('jm_tc_last_requested_role_v199')||'';
+    if(last!==wanted){
+      var remove=[];
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i)||'';
+        if(k.indexOf('jm-tc-auth-')===0)remove.push(k);
+        if(/^sb-.*-auth-token$/.test(k))remove.push(k);
+      }
+      for(var j=0;j<remove.length;j++)localStorage.removeItem(remove[j]);
+      localStorage.removeItem('jm_test_culinaire_access_v20');
+      localStorage.setItem('jm_tc_last_requested_role_v199',wanted);
+    }
+    window.__JM_REQUESTED_ROLE_V199=wanted;
+  }catch(e){}
+})();
+</script>
+
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v195</title>
+<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v206</title>
 <style>
 :root{
   --bg:#f4f7fb; --panel:#fff; --ink:#172033; --muted:#667085; --line:#e5eaf0;
@@ -1315,6 +1338,7 @@ body.live-fullscreen #liveDayView{max-width:none;padding:18px 24px}body.live-ful
 .simple-command{min-height:132px;padding:18px}.simple-command strong{font-size:17px}.simple-command span{font-size:12px}
 .advanced-tools{margin-top:16px;border-top:1px solid rgba(255,255,255,.16);padding-top:12px}.advanced-tools summary{cursor:pointer;list-style:none;display:inline-flex;align-items:center;gap:6px;padding:8px 11px;border:1px solid rgba(255,255,255,.16);border-radius:11px;background:rgba(255,255,255,.08);font-size:11px;font-weight:900;color:rgba(255,255,255,.86)}.advanced-tools summary::-webkit-details-marker{display:none}.advanced-tools-body{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-top:10px}.advanced-tools-body .btn{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);color:#fff}.advanced-tools-body .pwa-status{color:rgba(255,255,255,.72)}
 #pwaInstallCard,.my-juries{display:none!important}
+#preparedJuriesHome{display:none!important} /* v206: doublon supprimé de l’accueil; accès via « Choisir un jury » */
 .simple-results-choices{display:grid;gap:10px;margin-top:14px}.simple-choice-btn{width:100%;border:1px solid var(--line);background:#fff;border-radius:14px;padding:13px;display:grid;grid-template-columns:40px 1fr;gap:11px;align-items:center;text-align:left}.simple-choice-btn>span{width:40px;height:40px;border-radius:12px;background:#eef6fb;display:grid;place-items:center;font-size:20px}.simple-choice-btn strong{display:block;color:#234b64;font-size:14px}.simple-choice-btn small{display:block;color:var(--muted);margin-top:3px;font-size:10px}.simple-choice-btn:hover{border-color:#9bc4da;background:#fafdff}
 /* V72 — accueil épuré : actions d’abord, résumé discret ensuite */
 .simple-home-hero #homeMeta,.simple-home-hero #homeJuryStrip,.simple-home-hero .home-status-summary{display:none!important}
@@ -2256,9 +2280,11 @@ body.live-fullscreen #liveDayView{max-width:none;padding:18px 24px}body.live-ful
 
 
 /* V166 — Accès rapide Réception chauffeur depuis l'accueil */
-.home-quick-reception{display:flex;justify-content:center;margin:13px auto 2px;max-width:760px}
+.home-quick-reception{display:grid;gap:8px;justify-content:stretch;margin:13px auto 2px;max-width:760px}
 .home-reception-btn{width:100%;appearance:none;border:1px solid rgba(255,255,255,.28);background:rgba(255,255,255,.14);color:#fff;border-radius:15px;padding:11px 16px;display:flex;align-items:center;justify-content:center;gap:11px;text-align:left;transition:.18s ease}
 .home-reception-btn:hover{transform:translateY(-1px);background:rgba(255,255,255,.20)}
+.home-reception-btn.reception-history-btn{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.20)}
+.home-reception-btn.reception-history-btn:hover{background:rgba(255,255,255,.14)}
 .home-reception-btn .quick-icon{width:35px;height:35px;border-radius:11px;display:grid;place-items:center;background:rgba(255,255,255,.18);font-size:19px;flex:0 0 auto}
 .home-reception-btn strong{display:block;font-size:14px;line-height:1.2}
 .home-reception-btn span{display:block;font-size:10px;color:rgba(255,255,255,.76);margin-top:3px;line-height:1.3}
@@ -4435,18 +4461,48 @@ body.tester-preview-mode #testerView{
 </style>
 
 <!-- V194 : base v192 complète, sans régression fonctionnelle -->
+
+<style id="v197-force-home-tools">
+#homeView .home-quick-tools-v174{
+  display:grid !important;
+  visibility:visible !important;
+  opacity:1 !important;
+  position:relative !important;
+  z-index:20 !important;
+  grid-template-columns:1fr 1fr !important;
+  gap:10px !important;
+  max-width:760px !important;
+  margin:13px auto 2px !important;
+}
+#homeView .home-quick-reception,
+#homeView #homeReceptionBtn,
+#homeView #homeReceptionHistoryBtn,
+#homeView #homeProductSheetsBtnV174{
+  display:flex !important;
+  visibility:visible !important;
+  opacity:1 !important;
+}
+@media(max-width:720px){
+  #homeView .home-quick-tools-v174{grid-template-columns:1fr !important}
+}
+</style>
+
 </head>
 <body>
-<script id="v195-cache-reset">
+<div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v206</div>
+<script>(function(){try{var e=document.getElementById('v199Diag');var r=window.__JM_REQUESTED_ROLE_V199||'local';e.textContent='v206 · demandé: '+r;setTimeout(function(){if(e)e.style.opacity='.35'},7000)}catch(_){}})();</script>
+
+<!-- V197 : bascule automatique des identités Propriétaire/Testeur selon le lien ouvert -->
+<script id="v197-cache-reset">
 (function(){
   try{
-    if('caches' in window){caches.keys().then(function(keys){return Promise.all(keys.filter(function(k){return k.indexOf('tests-culinaires-')===0 && k!=='tests-culinaires-v195-20261002'}).map(function(k){return caches.delete(k)}));}).catch(function(){});}
+    if('caches' in window){caches.keys().then(function(keys){return Promise.all(keys.filter(function(k){return k.indexOf('tests-culinaires-')===0 && k!=='tests-culinaires-v197-20261002'}).map(function(k){return caches.delete(k)}));}).catch(function(){});}
   }catch(e){}
 })();
 </script>
 <div id="ipadStartupDiagnostic">
   <strong id="ipadDiagTitle">Vérification de l’application…</strong>
-  <span id="ipadDiagText">Version v195.</span>
+  <span id="ipadDiagText">Version v206.</span>
   <div class="diag-actions">
     <button class="diag-refresh" type="button" onclick="window.forceIpadAppRefresh()">Forcer l’actualisation iPad</button>
     <button class="diag-close" type="button" onclick="document.getElementById('ipadStartupDiagnostic').style.display='none'">Fermer</button>
@@ -4494,19 +4550,19 @@ body.tester-preview-mode #testerView{
     var badge=document.getElementById('appBuildBadge');
     if(engineOk){
       if(badge){
-        badge.innerHTML='v195 · OK';
+        badge.innerHTML='v206 · OK';
         badge.style.background='#e6f5ee';
         badge.style.color='#146c4e';
       }
     }else{
       if(badge){
-        badge.innerHTML='v195 · moteur arrêté';
+        badge.innerHTML='v206 · moteur arrêté';
         badge.style.background='#fff0d8';
         badge.style.color='#8c5a00';
       }
       showDiag(
         'L’application ne s’est pas démarrée',
-        'Le fichier v195 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
+        'Le fichier v206 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
       );
     }
   },5000);
@@ -4518,7 +4574,7 @@ body.tester-preview-mode #testerView{
   <div class="brandmark">TC</div>
   <div class="topbar-title"><strong id="headerTitle">Tests culinaires</strong><span id="headerSub">Groupe Marchés Nouvelle-Aquitaine</span></div>
   <span class="cloud-status" id="cloudStatus">● Local</span>
-  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v195</span>
+  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v206</span>
   <button class="btn btn-secondary btn-small admin-security-btn" id="adminLockBtn">🔐 Sécurité</button>
   <button class="btn btn-secondary btn-small" id="homeBtn">Accueil</button>
 </header>
@@ -4577,14 +4633,27 @@ body.tester-preview-mode #testerView{
       <div class="home-quick-reception">
         <button class="home-reception-btn" id="homeReceptionBtn" type="button">
           <span class="quick-icon">🚚</span>
-          <span><strong>Réception chauffeur</strong><span>Températures · conformité · signature</span></span>
+          <span><strong>Réception chauffeur</strong><span>À réceptionner · réceptions partielles</span></span>
           <span class="home-reception-badge" id="homeReceptionBadge">0</span>
         </button>
+        <button class="home-reception-btn reception-history-btn" id="homeReceptionHistoryBtn" type="button">
+          <span class="quick-icon">✅</span>
+          <span><strong>Réceptions enregistrées</strong><span>Consulter les réceptions terminées</span></span>
+          <span class="home-reception-badge" id="homeReceptionHistoryBadge">0</span>
+        </button>
       </div>
-      <button class="home-product-btn-v174" id="homeProductSheetsBtnV174" type="button">
-        <span class="quick-icon">📋</span>
-        <span><strong>Fiches produits</strong><span>Traçabilité · conformité · annexes</span></span>
-      </button>
+      <div class="home-quick-reception home-quick-products-v200">
+        <button class="home-product-btn-v174" id="homeProductSheetsBtnV174" type="button">
+          <span class="quick-icon">📋</span>
+          <span><strong>Fiches à compléter</strong><span>Traçabilité · conformité · annexes</span></span>
+          <span class="home-reception-badge" id="homeProductSheetsPendingBadgeV200">0</span>
+        </button>
+        <button class="home-product-btn-v174 product-history-btn-v200" id="homeProductSheetsDoneBtnV200" type="button">
+          <span class="quick-icon">✅</span>
+          <span><strong>Fiches terminées</strong><span>Consulter les fiches produits complètes</span></span>
+          <span class="home-reception-badge" id="homeProductSheetsDoneBadgeV200">0</span>
+        </button>
+      </div>
     </div>
     <details class="advanced-tools" id="advancedTools">
       <summary>⚙️ Outils avancés</summary>
@@ -4968,8 +5037,9 @@ body.tester-preview-mode #testerView{
         </div>
         <div class="field wide">
           <label>Fournisseur</label>
-          <input id="receptionSupplier" list="receptionSupplierOptions" autocomplete="off" placeholder="Choisir ou saisir le fournisseur">
-          <datalist id="receptionSupplierOptions"></datalist>
+          <select id="receptionSupplier">
+            <option value="">— Choisir le fournisseur —</option>
+          </select>
         </div>
         <div class="field">
           <label>T° véhicule (°C)</label>
@@ -6029,6 +6099,17 @@ body.tester-preview-mode #testerView{
     <div class="reception-lot-list" id="receptionLotList"></div>
     <div class="modal-actions">
       <button class="btn btn-ghost" id="receptionLotCancelBtn" type="button">Annuler</button>
+    </div>
+  </div>
+</div>
+
+<div class="modal-backdrop" id="receptionHistoryModal">
+  <div class="modal" style="max-width:560px">
+    <h3>✅ Réceptions enregistrées</h3>
+    <p>Consultez les lots dont la réception est terminée.</p>
+    <div class="reception-lot-list" id="receptionHistoryList"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" id="receptionHistoryCancelBtn" type="button">Fermer</button>
     </div>
   </div>
 </div>
@@ -7200,6 +7281,50 @@ function receptionSupplierNames(cfg=receptionConfig()){
   return [...new Set(names)];
 }
 
+function receptionConfiguredSupplierNames(cfg=receptionConfig()){
+  if(!cfg||typeof cfg!=='object')return[];
+  const configured=(Array.isArray(cfg.supplierNames)?cfg.supplierNames:[])
+    .map(x=>String(x||'').trim()).filter(Boolean);
+  if(configured.length)return [...new Set(configured)];
+  /* Compatibilité anciens jurys : si la liste Fournisseurs n'existait pas,
+     on reprend uniquement les fournisseurs réellement portés par les échantillons. */
+  const names=[];
+  for(const p of (Array.isArray(cfg.products)?cfg.products:[])){
+    for(const sm of (Array.isArray(p?.samples)?p.samples:[])){
+      const n=String(sm?.supplier||'').trim();
+      if(n)names.push(n);
+    }
+  }
+  return [...new Set(names)];
+}
+
+function blankReceptionRecordAfterSave(cfg=receptionConfig()){
+  const products=cfg?.products||[];
+  return{
+    id:uid('reception'),
+    establishment:'',
+    date:'',
+    time:'',
+    supplier:'',
+    vehicleTemp:'',
+    driverName:'',
+    receiverName:'',
+    lines:products.map((p,i)=>({
+      productId:p.id||'',
+      productName:String(p.name||`Produit ${i+1}`),
+      received:true,
+      productTemp:'',
+      interiorTemp:'',
+      dlc:'',
+      packaging:'',
+      decision:'',
+      observations:''
+    })),
+    driverSignature:'',
+    validatedAt:null
+  };
+}
+
 function receptionTemperatureOptions(selected=''){
   const values=[];
   for(let t=8;t>=-20;t--)values.push(t);
@@ -7245,7 +7370,7 @@ function normalizeReceptionRecord(rec,cfg=receptionConfig()){
   const incoming=rec&&typeof rec==='object'?rec:{};
   const byId=new Map((incoming.lines||[]).map(x=>[String(x.productId||x.productName||''),x]));
   base.id=incoming.id||base.id;
-  base.establishment=String(incoming.establishment||base.establishment);
+  base.establishment=Object.prototype.hasOwnProperty.call(incoming,'establishment')?String(incoming.establishment||''):base.establishment;
   base.date=String(incoming.date||base.date);
   base.time=String(incoming.time||base.time);
   base.supplier=String(incoming.supplier||'');
@@ -7371,38 +7496,79 @@ function openProductSheetsFromHomeV174(){
 }
 
 
-function availableReceptionLots(){
+function receptionJuryKey(cfg=receptionConfig()){
+  if(!cfg||typeof cfg!=='object')return '';
+  return String(cfg._preparedId||cfg._juryInstanceId||cfg.juryInstanceId||cfg.lotName||'').trim();
+}
+function receptionStatusForConfig(cfg){
+  const suppliers=receptionSupplierNames(cfg);
+  const juryKey=receptionJuryKey(cfg);
+  const valid=(Array.isArray(cfg?.receptions)?cfg.receptions:[])
+    .filter(r=>r&&r.validatedAt&&juryKey&&String(r.receptionJuryKey||'')===juryKey);
+  if(!valid.length)return{key:'pending',label:'À réceptionner'};
+  if(!suppliers.length)return{key:'done',label:'Réception enregistrée'};
+  const key=name=>String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const received=new Set(valid.map(r=>key(r.supplier)).filter(Boolean));
+  const done=suppliers.filter(name=>received.has(key(name))).length;
+  if(done>=suppliers.length)return{key:'done',label:'Réception enregistrée'};
+  return{key:'partial',label:`Réception partielle ${done}/${suppliers.length}`};
+}
+function allReceptionLots(){
   try{ensureCurrentPrepSaved()}catch(e){}
-  const choices=[],seen=new Set();
+
+  /* Réception chauffeur : afficher les lots actifs sans masquer automatiquement
+     un lot à cause d'anciennes données copiées. Une seule ligne par lot.
+     Le statut est informatif : À réceptionner / Réception partielle / enregistrée. */
+  const choices=[],seenIds=new Set(),seenLots=new Set();
+  const lotKey=name=>String(name||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+
   const currentCfg=state?.config||{};
   const currentId=String(currentCfg._preparedId||'__current__');
 
-  if(currentCfg?.products?.length && !currentCfg?.juryClose?.closedAt){
+  if(currentCfg?.products?.length && !currentCfg?.juryClose?.closedAt && !currentCfg?._archive?.archivedAt){
+    const currentLotName=currentCfg.lotName||'Lot en cours';
     choices.push({
       id:currentId,
       kind:'current',
-      lotName:currentCfg.lotName||'Lot en cours',
+      lotName:currentLotName,
       suppliers:receptionSupplierNames(currentCfg),
       products:(currentCfg.products||[]).length,
-      savedAt:state?.updatedAt||''
+      savedAt:state?.updatedAt||'',
+      receptionStatus:receptionStatusForConfig(currentCfg)
     });
-    seen.add(currentId);
+    seenIds.add(currentId);
+    const key=lotKey(currentLotName);
+    if(key)seenLots.add(key);
   }
 
-  for(const rec of loadPreparedJurys()){
+  const prepared=[...(loadPreparedJurys()||[])].sort((a,b)=>
+    String(b?.savedAt||b?.state?.config?._preparedAt||'')
+      .localeCompare(String(a?.savedAt||a?.state?.config?._preparedAt||''))
+  );
+
+  for(const rec of prepared){
     const cfg=rec?.state?.config||{};
-    if(!cfg?.products?.length || cfg?.juryClose?.closedAt)continue;
+    if(!cfg?.products?.length || cfg?.juryClose?.closedAt || cfg?._archive?.archivedAt)continue;
     const id=String(rec.id||cfg._preparedId||'');
-    if(!id || seen.has(id))continue;
+    if(!id || seenIds.has(id))continue;
+
+    const lotName=cfg.lotName||rec.name||'Lot préparé';
+    const key=lotKey(lotName);
+    if(key && seenLots.has(key))continue;
+
     choices.push({
       id,
       kind:'prepared',
-      lotName:cfg.lotName||rec.name||'Lot préparé',
+      lotName,
       suppliers:receptionSupplierNames(cfg),
       products:(cfg.products||[]).length,
-      savedAt:rec.savedAt||''
+      savedAt:rec.savedAt||cfg._preparedAt||'',
+      receptionStatus:receptionStatusForConfig(cfg)
     });
-    seen.add(id);
+    seenIds.add(id);
+    if(key)seenLots.add(key);
   }
 
   return choices.sort((a,b)=>{
@@ -7411,8 +7577,17 @@ function availableReceptionLots(){
     return String(b.savedAt||'').localeCompare(String(a.savedAt||''));
   });
 }
+function availableReceptionLots(){
+  return allReceptionLots().filter(c=>(c?.receptionStatus?.key||'pending')!=='done');
+}
+function completedReceptionLots(){
+  return allReceptionLots().filter(c=>(c?.receptionStatus?.key||'pending')==='done');
+}
 function closeReceptionLotPicker(){
   $('#receptionLotModal')?.classList.remove('show');
+}
+function closeReceptionHistoryPicker(){
+  $('#receptionHistoryModal')?.classList.remove('show');
 }
 function activateReceptionLot(choice){
   closeReceptionLotPicker();
@@ -7456,8 +7631,9 @@ function showReceptionLotPicker(choices){
   list.innerHTML=choices.length?choices.map((c,i)=>{
     const suppliers=c.suppliers?.length?`${c.suppliers.length} fournisseur${c.suppliers.length>1?'s':''}`:'Aucun fournisseur renseigné';
     const products=`${c.products} produit${c.products>1?'s':''}`;
+    const rs=c.receptionStatus||{key:'pending',label:'À réceptionner'};
     return `<button type="button" class="reception-lot-choice ${c.kind==='current'?'current':''}" data-reception-lot="${escapeHtml(c.id)}">
-      <span><strong>${escapeHtml(c.lotName)}</strong><span>${products} · ${suppliers}${c.kind==='current'?' · lot actuellement ouvert':''}</span></span>
+      <span><strong>${escapeHtml(c.lotName)}</strong><span>${products} · ${suppliers}${c.kind==='current'?' · lot actuellement ouvert':''}</span><span style="display:block;margin-top:4px;font-size:11px;font-weight:900;color:${rs.key==='done'?'#137653':rs.key==='partial'?'#8b5b00':'#9a5b00'}">${escapeHtml(rs.label)}</span></span>
       <span class="lot-arrow">›</span>
     </button>`;
   }).join(''):'<div class="reception-lot-empty">Aucun lot disponible pour une réception.</div>';
@@ -7470,11 +7646,93 @@ function showReceptionLotPicker(choices){
   });
   modal.classList.add('show');
 }
+function latestValidatedReceptionIndex(cfg){
+  const list=Array.isArray(cfg?.receptions)?cfg.receptions:[];
+  const juryKey=receptionJuryKey(cfg);
+  let best=-1,bestAt='';
+  list.forEach((r,i)=>{
+    if(!r?.validatedAt)return;
+    if(juryKey && String(r.receptionJuryKey||'')!==juryKey)return;
+    const at=String(r.validatedAt||'');
+    if(best<0 || at>bestAt){best=i;bestAt=at;}
+  });
+  return best;
+}
+function activateReceptionHistoryLot(choice){
+  closeReceptionHistoryPicker();
+  draftConfig=null;
+
+  if(choice?.kind==='current'){
+    const idx=latestValidatedReceptionIndex(state?.config||{});
+    if(idx<0){alert('Aucune fiche de réception enregistrée pour ce lot.');return;}
+    openReceptionView(idx);
+    return;
+  }
+
+  try{
+    if(state?.config?._preparedId && !isJuryClosed())saveState();
+  }catch(e){}
+
+  const rec=loadPreparedJurys().find(x=>String(x.id)===String(choice?.id));
+  if(!rec?.state){
+    alert('Cette réception enregistrée est introuvable.');
+    return;
+  }
+
+  state=deepClone(rec.state);
+  if(!state.config)state.config={};
+  if(!state.config._preparedId)state.config._preparedId=rec.id;
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+
+  currentTester=1;
+  currentProduct=state.config.products?.[0]?.id||'';
+  currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';
+  adminProduct=currentProduct;
+  selectedAdminSample='';
+
+  const idx=latestValidatedReceptionIndex(state.config);
+  if(idx<0){alert('Aucune fiche de réception enregistrée pour ce lot.');return;}
+  openReceptionView(idx);
+}
+function showReceptionHistoryPicker(choices){
+  const modal=$('#receptionHistoryModal'),list=$('#receptionHistoryList');
+  if(!modal||!list)return;
+  const intro=modal.querySelector('p');
+  if(intro)intro.textContent=choices.length>1
+    ?`${choices.length} lots ont une réception terminée. Touchez un lot pour consulter sa fiche.`
+    :'1 lot a une réception terminée. Touchez-le pour consulter sa fiche.';
+  list.innerHTML=choices.length?choices.map(c=>{
+    const suppliers=c.suppliers?.length?`${c.suppliers.length} fournisseur${c.suppliers.length>1?'s':''}`:'Aucun fournisseur renseigné';
+    const products=`${c.products} produit${c.products>1?'s':''}`;
+    return `<button type="button" class="reception-lot-choice" data-reception-history="${escapeHtml(c.id)}">
+      <span><strong>${escapeHtml(c.lotName)}</strong><span>${products} · ${suppliers}</span><span style="display:block;margin-top:4px;font-size:11px;font-weight:900;color:#137653">✓ Réception enregistrée</span></span>
+      <span class="lot-arrow">›</span>
+    </button>`;
+  }).join(''):'<div class="reception-lot-empty">Aucune réception terminée pour le moment.</div>';
+
+  list.querySelectorAll('[data-reception-history]').forEach(btn=>{
+    btn.onclick=()=>{
+      const choice=choices.find(c=>String(c.id)===String(btn.dataset.receptionHistory));
+      if(choice)activateReceptionHistoryLot(choice);
+    };
+  });
+  modal.classList.add('show');
+}
+function openReceptionHistoryFromHome(){
+  draftConfig=null;
+  const choices=completedReceptionLots();
+  if(!choices.length){
+    alert('Aucune réception terminée pour le moment.');
+    return;
+  }
+  showReceptionHistoryPicker(choices);
+}
+
 function openReceptionFromHome(){
   draftConfig=null;
   const choices=availableReceptionLots();
   if(!choices.length){
-    alert('Aucun lot n’est prêt pour une réception. Créez d’abord un lot dans « Choix des échantillons ».');
+    alert('Aucune réception en attente. Consultez « Réceptions enregistrées » pour l’historique.');
     return;
   }
   showReceptionLotPicker(choices);
@@ -7490,16 +7748,17 @@ function changeReceptionLot(){
 }
 function renderHomeReceptionBadge(){
   const badge=$('#homeReceptionBadge');
-  if(!badge)return;
-  const lots=availableReceptionLots();
-  if(lots.length>1){
-    badge.textContent=String(lots.length);
-    badge.title=`${lots.length} lots disponibles pour une réception`;
-    return;
+  const historyBadge=$('#homeReceptionHistoryBadge');
+  const pending=availableReceptionLots();
+  const done=completedReceptionLots();
+  if(badge){
+    badge.textContent=String(pending.length);
+    badge.title=pending.length?`${pending.length} lot${pending.length>1?'s':''} à réceptionner ou partiellement réceptionné${pending.length>1?'s':''}`:'Aucune réception en attente';
   }
-  const count=Array.isArray(state?.config?.receptions)?state.config.receptions.length:0;
-  badge.textContent=String(count);
-  badge.title=count?`${count} réception${count>1?'s':''} enregistrée${count>1?'s':''}`:'Aucune réception enregistrée';
+  if(historyBadge){
+    historyBadge.textContent=String(done.length);
+    historyBadge.title=done.length?`${done.length} lot${done.length>1?'s':''} avec réception terminée`:'Aucune réception terminée';
+  }
 }
 
 function openReceptionView(index=-1){
@@ -7534,12 +7793,13 @@ function renderReceptionForm(){
   $('#receptionReceiverName').value=receptionDraft.receiverName||'';
 
   const supplierInput=$('#receptionSupplier');
-  const supplierOptions=$('#receptionSupplierOptions');
-  const suppliers=receptionSupplierNames(cfg);
+  const suppliers=receptionConfiguredSupplierNames(cfg);
   const selected=String(receptionDraft.supplier||'');
-  const choices=[...new Set([selected,...suppliers].filter(Boolean))];
-  if(supplierOptions)supplierOptions.innerHTML=choices.map(name=>`<option value="${escapeHtml(name)}"></option>`).join('');
-  if(supplierInput)supplierInput.value=selected;
+  if(supplierInput){
+    supplierInput.innerHTML='<option value="">— Choisir le fournisseur —</option>'+
+      suppliers.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
+    supplierInput.value=suppliers.includes(selected)?selected:'';
+  }
 
   const lines=$('#receptionLines');
   lines.innerHTML=receptionDraft.lines.map((line,i)=>`
@@ -7554,8 +7814,8 @@ function renderReceptionForm(){
         <div class="field"><label>T° produit (°C)</label><select data-rec-product-temp="${i}">${receptionTemperatureOptions(line.productTemp??'')}</select></div>
         <div class="field"><label>T° intérieur produit (°C)</label><select data-rec-interior-temp="${i}">${receptionTemperatureOptions(line.interiorTemp??'')}</select></div>
         <div class="field"><label>DLC — Date limite de consommation / DDM</label><input type="date" data-rec-dlc="${i}" value="${escapeHtml(line.dlc||'')}"></div>
-        <div class="field"><label>État emballage</label><select data-rec-packaging="${i}"><option value="conforme">Conforme</option><option value="non-conforme">Non conforme</option></select></div>
-        <div class="field"><label>Décision</label><select data-rec-decision="${i}"><option value="acceptation">Acceptation</option><option value="refus">Refus</option></select></div>
+        <div class="field"><label>État emballage</label><select data-rec-packaging="${i}"><option value="">— Choisir —</option><option value="conforme">Conforme</option><option value="non-conforme">Non conforme</option></select></div>
+        <div class="field"><label>Décision</label><select data-rec-decision="${i}"><option value="">— Choisir —</option><option value="acceptation">Acceptation</option><option value="refus">Refus</option></select></div>
         <div class="field obs"><label>Observations</label><input data-rec-observations="${i}" value="${escapeHtml(line.observations||'')}" placeholder="Observation éventuelle"></div>
       </div>
     </article>`).join('');
@@ -7584,8 +7844,8 @@ function captureReceptionForm(){
     productTemp:String(document.querySelector(`[data-rec-product-temp="${i}"]`)?.value??'').trim(),
     interiorTemp:String(document.querySelector(`[data-rec-interior-temp="${i}"]`)?.value??'').trim(),
     dlc:document.querySelector(`[data-rec-dlc="${i}"]`)?.value||'',
-    packaging:document.querySelector(`[data-rec-packaging="${i}"]`)?.value||'conforme',
-    decision:document.querySelector(`[data-rec-decision="${i}"]`)?.value||'acceptation',
+    packaging:document.querySelector(`[data-rec-packaging="${i}"]`)?.value||'',
+    decision:document.querySelector(`[data-rec-decision="${i}"]`)?.value||'',
     observations:document.querySelector(`[data-rec-observations="${i}"]`)?.value.trim()||''
   }));
   receptionDraft.driverSignature=signatureCanvasData('receptionSignature');
@@ -7600,6 +7860,8 @@ async function saveReceptionForm(){
   if(!rec.driverSignature){alert('La signature du livreur est nécessaire pour émarger la réception.');return}
 
   rec.validatedAt=new Date().toISOString();
+  rec.receptionJuryKey=receptionJuryKey(cfg);
+  rec.receptionSource='reception-module';
   cfg.receptionEstablishment=rec.establishment||cfg.receptionEstablishment||'';
   const list=receptionList(cfg);
   if(receptionEditingIndex>=0 && list[receptionEditingIndex])list[receptionEditingIndex]=deepClone(rec);
@@ -7613,9 +7875,14 @@ async function saveReceptionForm(){
     if(typeof syncDirtyToCloud==='function'){try{await syncDirtyToCloud()}catch(e){}}
   }
 
-  renderReceptionSavedList();
   renderReceptionConfigStatus();
-  toast('Réception émargée et enregistrée ✓');
+
+  /* Une fois la réception enregistrée et signée, repartir sur une fiche neuve
+     entièrement vierge pour éviter de réutiliser par erreur les données du camion précédent. */
+  receptionEditingIndex=-1;
+  receptionDraft=blankReceptionRecordAfterSave(cfg);
+  renderReceptionForm();
+  toast('Réception émargée et enregistrée ✓ · Nouvelle fiche prête');
 }
 function renderReceptionSavedList(){
   const box=$('#receptionSavedList'),cfg=receptionConfig();
@@ -13104,19 +13371,48 @@ $('#statsResetBtn').onclick=resetStats;
 $('#statsCsvBtn').onclick=exportStatsCsv;
 $('#statsHomeBtn').onclick=renderHome;
 $('#archiveJuryBtn').onclick=archiveCurrentJury;$('#samplesSetupBtn').onclick=openSampleSetup;(function(){
+  // v206 — « Préparer le jury » : moins sensible pendant le défilement tactile.
+  // On supprime l'ouverture directe sur touchend : le bouton s'ouvre uniquement
+  // sur un vrai clic/tap, et un petit glissement vertical annule l'ouverture.
   var b=$('#configureBtn');
   if(!b)return;
-  b.onclick=function(e){return prepareJuryFromHomeV181(e);};
-  if('ontouchend' in window){
-    b.addEventListener('touchend',function(e){
-      if(e && e.cancelable)e.preventDefault();
-      prepareJuryFromHomeV181(e);
-    },{passive:false});
-  }
+  var sx=0, sy=0, moved=false, blockClickUntil=0;
+  var PREP_MOVE_TOLERANCE=5; // px : très léger glissement = défilement, pas ouverture
+  var PREP_BLOCK_MS=450;
+  b.style.touchAction='pan-y';
+  b.addEventListener('touchstart',function(e){
+    var t=e.touches&&e.touches[0];
+    if(!t)return;
+    sx=t.clientX; sy=t.clientY; moved=false;
+  },{passive:true});
+  b.addEventListener('touchmove',function(e){
+    var t=e.touches&&e.touches[0];
+    if(!t||moved)return;
+    var dx=t.clientX-sx, dy=t.clientY-sy;
+    if(Math.sqrt(dx*dx+dy*dy)>PREP_MOVE_TOLERANCE){
+      moved=true;
+      blockClickUntil=Date.now()+PREP_BLOCK_MS;
+    }
+  },{passive:true});
+  b.addEventListener('touchend',function(){
+    if(moved)blockClickUntil=Date.now()+PREP_BLOCK_MS;
+  },{passive:true});
+  b.addEventListener('touchcancel',function(){
+    moved=true;
+    blockClickUntil=Date.now()+PREP_BLOCK_MS;
+  },{passive:true});
+  b.onclick=function(e){
+    if(moved || Date.now()<blockClickUntil){
+      if(e){ e.preventDefault?.(); e.stopPropagation?.(); }
+      moved=false;
+      return false;
+    }
+    return prepareJuryFromHomeV181(e);
+  };
 })();$('#prepareJuryCancelBtn').onclick=closePrepareJuryChooser;$('#juryBtn').onclick=openJuryFlow;$('#statsBtn').onclick=renderStats;$('#dashboardNewJuryBtn').onclick=prepareJuryFromHomeV181;$('#dashboardAllArchivesBtn').onclick=renderArchives;$('#launchHomeBtn').onclick=renderHome;$('#launchEditBtn').onclick=openConfig;$('#officialLaunchBtn').onclick=officialLaunch;$('#launchQrBtn').onclick=()=>renderQrCodes('launchView');$('#launchCloudBtn').onclick=()=>typeof quickSharePhones==='function'?quickSharePhones():null;$('#configPrintArticlesBtn').onclick=printArticleNumbers;$('#configEmailArticlesBtn').onclick=emailArticleNumbersPdf;$('#configPreparePhonesBtn').onclick=preparePhonesFromConfig;$('#configQrBtn').onclick=openConfigQrCodes;$('#configEmailQrPdfBtn').onclick=sendQrPdfFromConfig;$('#juryChooserBackBtn').onclick=renderHome;$('#projectionBackBtn').onclick=returnFromProjection;$('#projectionPrevBtn').onclick=()=>setProjectionSlide(projectionSlideIndex-1);$('#projectionNextBtn').onclick=()=>setProjectionSlide(projectionSlideIndex+1);$('#projectionPauseBtn').onclick=toggleProjectionRotation;$('#projectionFullscreenBtn').onclick=toggleProjectionFullscreen;$('#exitTesterPreviewBtn').onclick=exitTesterPreview;
 $('#closeJuryBtn').onclick=closeJuryOfficially;$('#resultsCloseJuryBtn').onclick=closeJuryOfficially;
 $('#juryHomeBtn').onclick=renderHome;$('#juryQrBtn').onclick=openQrCodesFromJury;$('#juryProjectionBtn').onclick=openProjectionView;$('#juryTesterPreviewBtn').onclick=startTesterPreview;$('#juryResultsBtn').onclick=()=>openSimplifiedResults();$('#juryShareBtn').onclick=()=>typeof renderCloudPage==='function'?renderCloudPage():null;$('#resultsBtn').onclick=()=>openResultsArchiveHub();$('#backupBtn').onclick=backup;$('#restoreBtn').onclick=()=>$('#restoreFile').click();$('#restoreFile').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value=''};
-$('#sampleAddProductBtn')?.addEventListener('click',addSetupProduct);$('#sampleAddSupplierBtn')?.addEventListener('click',addSetupSupplier);$('#sampleSetupBackBtn').onclick=renderHome;$('#homeReceptionBtn').onclick=openReceptionFromHome;$('#homeProductSheetsBtnV174').onclick=openProductSheetsFromHomeV174;$('#productLotCancelV174').onclick=closeProductLotModalV174;$('#receptionLotCancelBtn').onclick=closeReceptionLotPicker;$('#configReceptionBtn').onclick=()=>openReceptionView(-1);$('#receptionBackBtn').onclick=closeReceptionView;$('#receptionChangeLotBtn').onclick=changeReceptionLot;$('#receptionNewBtn').onclick=newReceptionForm;$('#receptionPrintBtn').onclick=printReceptionPaper;$('#receptionPdfBtn').onclick=downloadReceptionPaperPdf;$('#receptionSaveBtn').onclick=saveReceptionForm;$('#clearReceptionSignature').onclick=()=>clearSignature('receptionSignature');$('#sampleSetupContinueBtn').onclick=()=>commitSampleMaster({continueToJury:true});$('#cancelConfigTopBtn').onclick=cancelCreateJury;$('#addProductBtn').onclick=addProduct;$('#blankTestBtn').onclick=showBlankLotEntry;$('#blankLotConfirmBtn').onclick=createBlankDraftFromName;$('#blankLotName').addEventListener('keydown',e=>{if(e.key==='Enter')createBlankDraftFromName()});$('#marketLotSelect').onchange=updateMarketLotInfo;$('#useMarketLotBtn').onclick=()=>flashCreateButton($('#useMarketLotBtn'),'✓ CRÉATION EN COURS…',prepareMarketLot);$('#customTemplateSelect').onchange=updateCustomTemplateButtons;$('#useCustomTemplateBtn').onclick=useCustomTemplate;$('#addCustomToMarketBtn').onclick=addSelectedCustomTemplateToMarket;$('#saveCustomTemplateBtn').onclick=saveCurrentDraftAsCustomTemplate;$('#deleteCustomTemplateBtn').onclick=deleteCustomTemplate;$('#useArchiveTemplateBtn').onclick=useArchiveTemplate;const testerCountInput=$('#cfgTesterCount');
+$('#sampleAddProductBtn')?.addEventListener('click',addSetupProduct);$('#sampleAddSupplierBtn')?.addEventListener('click',addSetupSupplier);$('#sampleSetupBackBtn').onclick=renderHome;$('#homeReceptionBtn').onclick=openReceptionFromHome;$('#homeReceptionHistoryBtn').onclick=openReceptionHistoryFromHome;$('#homeProductSheetsBtnV174').onclick=openProductSheetsFromHomeV174;$('#productLotCancelV174').onclick=closeProductLotModalV174;$('#receptionLotCancelBtn').onclick=closeReceptionLotPicker;$('#receptionHistoryCancelBtn').onclick=closeReceptionHistoryPicker;$('#configReceptionBtn').onclick=()=>openReceptionView(-1);$('#receptionBackBtn').onclick=closeReceptionView;$('#receptionChangeLotBtn').onclick=changeReceptionLot;$('#receptionNewBtn').onclick=newReceptionForm;$('#receptionPrintBtn').onclick=printReceptionPaper;$('#receptionPdfBtn').onclick=downloadReceptionPaperPdf;$('#receptionSaveBtn').onclick=saveReceptionForm;$('#clearReceptionSignature').onclick=()=>clearSignature('receptionSignature');$('#sampleSetupContinueBtn').onclick=()=>commitSampleMaster({continueToJury:true});$('#cancelConfigTopBtn').onclick=cancelCreateJury;$('#addProductBtn').onclick=addProduct;$('#blankTestBtn').onclick=showBlankLotEntry;$('#blankLotConfirmBtn').onclick=createBlankDraftFromName;$('#blankLotName').addEventListener('keydown',e=>{if(e.key==='Enter')createBlankDraftFromName()});$('#marketLotSelect').onchange=updateMarketLotInfo;$('#useMarketLotBtn').onclick=()=>flashCreateButton($('#useMarketLotBtn'),'✓ CRÉATION EN COURS…',prepareMarketLot);$('#customTemplateSelect').onchange=updateCustomTemplateButtons;$('#useCustomTemplateBtn').onclick=useCustomTemplate;$('#addCustomToMarketBtn').onclick=addSelectedCustomTemplateToMarket;$('#saveCustomTemplateBtn').onclick=saveCurrentDraftAsCustomTemplate;$('#deleteCustomTemplateBtn').onclick=deleteCustomTemplate;$('#useArchiveTemplateBtn').onclick=useArchiveTemplate;const testerCountInput=$('#cfgTesterCount');
 const syncTesterCountFromField=()=>{
   if(!draftConfig)return;
   syncTopDraft();
@@ -13165,8 +13461,17 @@ function loadCloudCfg(){
   if(q.get('supabaseUrl')) cloudCfg.url=q.get('supabaseUrl');
   if(q.get('supabaseKey')) cloudCfg.key=q.get('supabaseKey');
   if(q.get('session')) cloudCfg.sessionId=q.get('session');
-  if(q.get('tester')) guestTester=Math.max(1,Number(q.get('tester'))||1);
-  if(q.get('accessCode')) cloudCfg.accessCode=q.get('accessCode');
+
+  /* V199 — le rôle demandé par le lien gagne TOUJOURS sur un ancien rôle local. */
+  const forcedRole=window.__JM_REQUESTED_ROLE_V199||'';
+  const ownerOrAdminLink=forcedRole==='admin'||!!(q.get('ownerToken')||q.get('adminToken'));
+  if(ownerOrAdminLink){
+    guestTester=null;
+    cloudCfg.accessCode='';
+  }else if(forcedRole.indexOf('tester:')===0||q.get('tester')){
+    guestTester=forcedRole.indexOf('tester:')===0?Math.max(1,Number(forcedRole.split(':')[1])||1):Math.max(1,Number(q.get('tester'))||1);
+    if(q.get('accessCode'))cloudCfg.accessCode=q.get('accessCode');
+  }
 }
 function saveCloudCfg(){
   localStorage.setItem(CLOUD_STORAGE_KEY,JSON.stringify({url:cloudCfg.url,key:cloudCfg.key,sessionId:cloudCfg.sessionId}));
@@ -13246,7 +13551,7 @@ function makePublicCloudConfig(cfg){
 }
 function shareUrl(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','163');
+  u.searchParams.set('appBuild','199');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -13272,10 +13577,20 @@ function renderShareLinks(){
     d.querySelector('button').onclick=()=>copyText(shareUrl(i),`Lien ${name} copié`);box.appendChild(d)
   }
 }
+function cloudAuthStorageKey(){
+  const project=String(cloudCfg.url||'').replace(/\W+/g,'-').slice(-28)||'project';
+  const session=String(cloudCfg.sessionId||'local').replace(/\W+/g,'-').slice(-24)||'session';
+  const wanted=requestedCloudIdentity();
+  const role=wanted?.role==='tester' ? `tester-${wanted.testerNo||1}` : wanted?.role==='admin' ? 'admin-owner' : 'neutral';
+  return `jm-tc-auth-${project}-${session}-${role}`;
+}
 function buildCloudClient(){
   if(!cloudCfg.url||!cloudCfg.key)throw new Error('Renseignez le Project URL et la clé publique Supabase.');
   if(!window.supabase?.createClient)throw new Error('La bibliothèque Supabase n’a pas pu être chargée.');
-  const storageKey='jm-tc-auth-'+String(cloudCfg.url).replace(/\W+/g,'-').slice(-42);
+
+  /* V198 — une identité Supabase distincte par session ET par rôle.
+     Ainsi le même téléphone peut être T1, T2 puis Propriétaire sans effacer Chrome. */
+  const storageKey=cloudAuthStorageKey();
   cloudClient=window.supabase.createClient(cloudCfg.url.trim(),cloudCfg.key.trim(),{
     auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey}
   })
@@ -13304,8 +13619,41 @@ function rpcsMissing(error){
   const s=String(error?.message||error||'');
   return /function .* does not exist|schema cache|PGRST202|42883/i.test(s)
 }
+function requestedCloudIdentity(){
+  const forced=window.__JM_REQUESTED_ROLE_V199||'';
+  if(forced.indexOf('tester:')===0)return {role:'tester',testerNo:Math.max(1,Number(forced.split(':')[1])||1)};
+  if(forced==='admin')return {role:'admin',testerNo:null};
+  const q=new URLSearchParams(location.search);
+  if(q.get('tester'))return {role:'tester',testerNo:Math.max(1,Number(q.get('tester'))||1)};
+  if(q.get('adminToken')||q.get('ownerToken'))return {role:'admin',testerNo:null};
+  return null;
+}
+async function rotateAnonymousCloudIdentity(){
+  try{await cloudClient.auth.signOut({scope:'local'})}catch(e){}
+  const r=await cloudClient.auth.signInAnonymously();
+  if(r.error)throw r.error;
+  cloudUserId=r.data?.session?.user?.id||null;
+  if(!cloudUserId)throw new Error('Impossible de créer une nouvelle identité sécurisée pour cet accès.');
+  return cloudUserId;
+}
+function membershipMatchesRequestedIdentity(m,wanted){
+  if(!m||!wanted)return true;
+  if(wanted.role==='admin')return m.role==='admin';
+  return m.role==='tester'&&Number(m.tester_no||0)===Number(wanted.testerNo||0);
+}
 async function joinSecureSession(){
+  const wanted=requestedCloudIdentity();
   let m=await membershipForCurrentUser();
+
+  /* V197 — le lien ouvert est prioritaire sur l'identité anonyme mémorisée.
+     Un téléphone peut donc passer Propriétaire -> T1 -> T2 -> Propriétaire
+     sans vider Chrome ni les données du site. Chaque changement de rôle crée
+     automatiquement une nouvelle identité Supabase, puis vérifie le code du lien. */
+  if(m&&wanted&&!membershipMatchesRequestedIdentity(m,wanted)){
+    await rotateAnonymousCloudIdentity();
+    m=null;
+  }
+
   if(m){cloudRole=m.role;cloudTesterNo=m.tester_no||null;return m}
   if(guestTester){
     if(!cloudCfg.accessCode)throw new Error('Lien testeur incomplet : le code d’accès sécurisé est absent. Demandez un nouveau lien à l’administrateur.');
@@ -15259,7 +15607,7 @@ function ownerDeviceShareUrl(){
   u.searchParams.delete('ownerToken');
   u.searchParams.delete('appBuild');
 
-  u.searchParams.set('appBuild','195');
+  u.searchParams.set('appBuild','199');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -15545,7 +15893,7 @@ currentBaseUrl=function(){
 }
 shareUrl=function(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','162');
+  u.searchParams.set('appBuild','199');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -16048,5 +16396,278 @@ document.addEventListener('fullscreenchange',()=>{
   };
 })();
 </script>
+
+<script id="v197-home-tools-guard">
+(function(){
+  function ensureHomeTools(){
+    var home=document.getElementById('homeView');
+    if(!home)return;
+    var grid=home.querySelector('.home-command-grid');
+    var wrap=home.querySelector('.home-quick-tools-v174');
+    if(!wrap && grid){
+      wrap=document.createElement('div');
+      wrap.className='home-quick-tools-v174';
+      wrap.innerHTML='<div class="home-quick-reception"><button class="home-reception-btn" id="homeReceptionBtn" type="button"><span class="quick-icon">🚚</span><span><strong>Réception chauffeur</strong><span>À réceptionner · réceptions partielles</span></span><span class="home-reception-badge" id="homeReceptionBadge">0</span></button><button class="home-reception-btn reception-history-btn" id="homeReceptionHistoryBtn" type="button"><span class="quick-icon">✅</span><span><strong>Réceptions enregistrées</strong><span>Consulter les réceptions terminées</span></span><span class="home-reception-badge" id="homeReceptionHistoryBadge">0</span></button></div><div class="home-quick-reception home-quick-products-v200"><button class="home-product-btn-v174" id="homeProductSheetsBtnV174" type="button"><span class="quick-icon">📋</span><span><strong>Fiches à compléter</strong><span>Traçabilité · conformité · annexes</span></span><span class="home-reception-badge" id="homeProductSheetsPendingBadgeV200">0</span></button><button class="home-product-btn-v174 product-history-btn-v200" id="homeProductSheetsDoneBtnV200" type="button"><span class="quick-icon">✅</span><span><strong>Fiches terminées</strong><span>Consulter les fiches produits complètes</span></span><span class="home-reception-badge" id="homeProductSheetsDoneBadgeV200">0</span></button></div>';
+      grid.insertAdjacentElement('afterend',wrap);
+    }
+    var r=document.getElementById('homeReceptionBtn');
+    var h=document.getElementById('homeReceptionHistoryBtn');
+    var f=document.getElementById('homeProductSheetsBtnV174');
+    if(wrap){
+      wrap.style.setProperty('display','grid','important');
+      wrap.style.setProperty('visibility','visible','important');
+      wrap.style.setProperty('opacity','1','important');
+    }
+    if(r){
+      r.style.setProperty('display','flex','important');
+      r.onclick=function(){
+        if(typeof openReceptionFromHome==='function')openReceptionFromHome();
+        else alert('Réception chauffeur : moteur non chargé.');
+      };
+    }
+    if(h){
+      h.style.setProperty('display','flex','important');
+      h.onclick=function(){
+        if(typeof openReceptionHistoryFromHome==='function')openReceptionHistoryFromHome();
+        else alert('Réceptions enregistrées : moteur non chargé.');
+      };
+    }
+    if(f){
+      f.style.setProperty('display','flex','important');
+      f.onclick=function(){
+        if(typeof openProductSheetsFromHomeV174==='function')openProductSheetsFromHomeV174();
+        else if(typeof openProductSheets==='function')openProductSheets();
+        else alert('Fiches produits : moteur non chargé.');
+      };
+    }
+  }
+  function clearOldAppCache(){
+    try{
+      if(window.caches&&caches.keys){
+        caches.keys().then(function(keys){
+          keys.forEach(function(k){
+            if(String(k).indexOf('tests-culinaires')>=0)caches.delete(k);
+          });
+        }).catch(function(){});
+      }
+    }catch(e){}
+  }
+  if(document.readyState==='loading'){
+    document.addEventListener('DOMContentLoaded',function(){
+      ensureHomeTools(); clearOldAppCache();
+      setTimeout(ensureHomeTools,300);
+      setTimeout(ensureHomeTools,1500);
+    });
+  }else{
+    ensureHomeTools(); clearOldAppCache();
+    setTimeout(ensureHomeTools,300);
+    setTimeout(ensureHomeTools,1500);
+  }
+})();
+</script>
+
+
+<style id="v200-product-sheet-home-status-style">
+#homeView .home-quick-products-v200{margin:0;max-width:none}
+#homeView .home-quick-products-v200 .home-product-btn-v174{min-height:66px}
+#homeView .home-quick-products-v200 .product-history-btn-v200{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.20)}
+#homeView .home-quick-products-v200 .product-history-btn-v200:hover{background:rgba(255,255,255,.14)}
+.product-lot-choice-v174 .v200-sheet-status{display:block;margin-top:4px;font-size:11px!important;font-weight:900;line-height:1.3}
+.product-lot-choice-v174 .v200-sheet-status.pending{color:#9a5b00}
+.product-lot-choice-v174 .v200-sheet-status.partial{color:#8b5b00}
+.product-lot-choice-v174 .v200-sheet-status.done{color:#137653}
+</style>
+<script id="v200-product-sheet-home-status-script">
+(function(){
+  function sheetLots(){
+    try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
+    var base=(typeof productLotsV174==='function') ? productLotsV174() : [];
+    var prepared=(typeof loadPreparedJurys==='function') ? loadPreparedJurys() : [];
+    return base.map(function(row){
+      var st=null;
+      if(row.current) st=state;
+      else {
+        var rec=prepared.find(function(x){ return String(x && x.id)===String(row.id); });
+        st=rec && rec.state;
+      }
+      var prog={total:0,filled:0};
+      try{ if(st && typeof productSheetsProgress==='function') prog=productSheetsProgress(st); }catch(e){}
+      var key=(prog.total>0 && prog.filled>=prog.total) ? 'done' : (prog.filled>0 ? 'partial' : 'pending');
+      return Object.assign({},row,{
+        sheetTotal:Number(prog.total||0),
+        sheetFilled:Number(prog.filled||0),
+        sheetStatus:key
+      });
+    });
+  }
+
+  function pendingLots(){ return sheetLots().filter(function(x){ return x.sheetStatus!=='done'; }); }
+  function doneLots(){ return sheetLots().filter(function(x){ return x.sheetStatus==='done'; }); }
+
+  function renderBadges(){
+    var pending=pendingLots(), done=doneLots();
+    var a=document.getElementById('homeProductSheetsPendingBadgeV200');
+    var b=document.getElementById('homeProductSheetsDoneBadgeV200');
+    if(a){
+      a.textContent=String(pending.length);
+      a.title=pending.length ? pending.length+' lot'+(pending.length>1?'s':'')+' avec des fiches à compléter' : 'Aucune fiche produit à compléter';
+    }
+    if(b){
+      b.textContent=String(done.length);
+      b.title=done.length ? done.length+' lot'+(done.length>1?'s':'')+' avec toutes les fiches produits terminées' : 'Aucune fiche produit terminée';
+    }
+  }
+
+  function statusText(row){
+    if(row.sheetStatus==='done') return '✓ Toutes les fiches produits sont complètes';
+    if(!row.sheetTotal) return 'Fiches à compléter';
+    if(row.sheetFilled>0) return row.sheetFilled+'/'+row.sheetTotal+' fiches complètes';
+    return 'À compléter · 0/'+row.sheetTotal+' fiche'+(row.sheetTotal>1?'s':'')+' complète'+(row.sheetTotal>1?'s':'');
+  }
+
+  function showPicker(rows,mode){
+    var modal=document.getElementById('productLotModalV174');
+    var list=document.getElementById('productLotListV174');
+    if(!modal||!list)return;
+    var h=modal.querySelector('h3');
+    var p=modal.querySelector('p');
+    var cancel=document.getElementById('productLotCancelV174');
+    if(mode==='done'){
+      if(h)h.textContent='✅ Fiches produits terminées';
+      if(p)p.textContent=rows.length>1 ? rows.length+' lots ont toutes leurs fiches produits terminées. Touchez un lot pour les consulter.' : '1 lot a toutes ses fiches produits terminées. Touchez-le pour consulter ses fiches.';
+      if(cancel)cancel.textContent='Fermer';
+    }else{
+      if(h)h.textContent='📋 Fiches produits à compléter';
+      if(p)p.textContent=rows.length>1 ? rows.length+' lots ont encore des fiches à compléter. Sélectionnez le lot à continuer.' : '1 lot a encore des fiches à compléter. Touchez-le pour continuer.';
+      if(cancel)cancel.textContent='Annuler';
+    }
+    list.innerHTML=rows.map(function(r){
+      var products=r.products+' produit'+(r.products>1?'s':'');
+      var suppliers=r.suppliers+' fournisseur'+(r.suppliers>1?'s':'');
+      var cls=r.sheetStatus==='done'?'done':(r.sheetStatus==='partial'?'partial':'pending');
+      return '<button type="button" class="product-lot-choice-v174" data-product-lot-v200="'+escapeHtml(String(r.id))+'">'+
+        '<span><strong>'+escapeHtml(r.name)+'</strong><span>'+products+' · '+suppliers+(r.current?' · lot actuellement ouvert':'')+'</span><span class="v200-sheet-status '+cls+'">'+escapeHtml(statusText(r))+'</span></span><span style="font-size:18px;color:#4e819d">›</span></button>';
+    }).join('');
+    list.querySelectorAll('[data-product-lot-v200]').forEach(function(btn){
+      btn.onclick=function(){
+        var row=rows.find(function(r){return String(r.id)===String(btn.dataset.productLotV200);});
+        if(row && typeof openProductLotV174==='function') openProductLotV174(row);
+      };
+    });
+    modal.classList.add('show');
+  }
+
+  window.openProductSheetsFromHomeV174=function(){
+    var rows=pendingLots();
+    if(!rows.length){
+      alert('Aucune fiche produit à compléter. Consultez « Fiches terminées » pour les fiches complètes.');
+      return;
+    }
+    showPicker(rows,'pending');
+  };
+
+  window.openProductSheetsDoneFromHomeV200=function(){
+    var rows=doneLots();
+    if(!rows.length){
+      alert('Aucune fiche produit terminée pour le moment.');
+      return;
+    }
+    showPicker(rows,'done');
+  };
+
+  window.renderProductSheetHomeBadgesV200=renderBadges;
+
+  function bindButtons(){
+    var pending=document.getElementById('homeProductSheetsBtnV174');
+    var done=document.getElementById('homeProductSheetsDoneBtnV200');
+    if(pending)pending.onclick=function(){window.openProductSheetsFromHomeV174();};
+    if(done)done.onclick=function(){window.openProductSheetsDoneFromHomeV200();};
+  }
+
+  try{
+    if(typeof window.renderHome==='function'){
+      var oldRenderHome=window.renderHome;
+      window.renderHome=function(){
+        var out=oldRenderHome.apply(this,arguments);
+        try{ bindButtons(); renderBadges(); }catch(e){}
+        return out;
+      };
+    }
+  }catch(e){}
+
+  try{
+    if(typeof window.saveProductSheets==='function'){
+      var oldSaveProductSheets=window.saveProductSheets;
+      window.saveProductSheets=async function(){
+        var out=await oldSaveProductSheets.apply(this,arguments);
+        try{ renderBadges(); }catch(e){}
+        return out;
+      };
+    }
+  }catch(e){}
+
+  bindButtons();
+  renderBadges();
+  setTimeout(function(){bindButtons();renderBadges();},400);
+  setTimeout(function(){bindButtons();renderBadges();},1700);
+})();
+</script>
+
+
+<!-- v206 : protection tactile générale + réglage spécifique moins sensible pour « Préparer le jury » -->
+<style>
+  /* Autorise clairement le défilement vertical sur les commandes tactiles. */
+  button, a, [role="button"], [onclick] { touch-action: pan-y; }
+</style>
+<script>
+(function(){
+  'use strict';
+  var startX=0, startY=0, moved=false, tracking=false, suppressClickUntil=0;
+  var MOVE_TOLERANCE=10; // pixels CSS : un vrai glissement n'est pas un clic
+  var SUPPRESS_MS=320;   // bloque uniquement le clic fantôme juste après le glissement
+
+  function point(ev){
+    var t=(ev.touches&&ev.touches[0])||(ev.changedTouches&&ev.changedTouches[0]);
+    return t ? {x:t.clientX,y:t.clientY} : null;
+  }
+  function interactiveTarget(el){
+    return el && el.closest ? el.closest('button, a, [role="button"], [onclick]') : null;
+  }
+
+  document.addEventListener('touchstart', function(ev){
+    if(!interactiveTarget(ev.target)) { tracking=false; moved=false; return; }
+    var p=point(ev); if(!p) return;
+    startX=p.x; startY=p.y; moved=false; tracking=true;
+  }, {passive:true, capture:true});
+
+  document.addEventListener('touchmove', function(ev){
+    if(!tracking || moved) return;
+    var p=point(ev); if(!p) return;
+    var dx=p.x-startX, dy=p.y-startY;
+    if(Math.sqrt(dx*dx+dy*dy) > MOVE_TOLERANCE) moved=true;
+  }, {passive:true, capture:true});
+
+  document.addEventListener('touchend', function(){
+    if(tracking && moved) suppressClickUntil=Date.now()+SUPPRESS_MS;
+    tracking=false;
+  }, {passive:true, capture:true});
+
+  document.addEventListener('touchcancel', function(){
+    tracking=false; moved=false;
+  }, {passive:true, capture:true});
+
+  document.addEventListener('click', function(ev){
+    if(Date.now() < suppressClickUntil && interactiveTarget(ev.target)){
+      ev.preventDefault();
+      ev.stopPropagation();
+      if(ev.stopImmediatePropagation) ev.stopImmediatePropagation();
+    }
+  }, true);
+})();
+</script>
+
+
+
+
 </body>
 </html>
