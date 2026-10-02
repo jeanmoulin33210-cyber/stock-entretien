@@ -1,12 +1,35 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
+<script id="v199-role-bootstrap">
+(function(){
+  try{
+    var q=new URLSearchParams(location.search);
+    var wanted=q.get('tester') ? ('tester:'+String(Math.max(1,Number(q.get('tester'))||1))) : ((q.get('adminToken')||q.get('ownerToken')) ? 'admin' : '');
+    if(!wanted)return;
+    var last=localStorage.getItem('jm_tc_last_requested_role_v199')||'';
+    if(last!==wanted){
+      var remove=[];
+      for(var i=0;i<localStorage.length;i++){
+        var k=localStorage.key(i)||'';
+        if(k.indexOf('jm-tc-auth-')===0)remove.push(k);
+        if(/^sb-.*-auth-token$/.test(k))remove.push(k);
+      }
+      for(var j=0;j<remove.length;j++)localStorage.removeItem(remove[j]);
+      localStorage.removeItem('jm_test_culinaire_access_v20');
+      localStorage.setItem('jm_tc_last_requested_role_v199',wanted);
+    }
+    window.__JM_REQUESTED_ROLE_V199=wanted;
+  }catch(e){}
+})();
+</script>
+
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v196</title>
+<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v197</title>
 <style>
 :root{
   --bg:#f4f7fb; --panel:#fff; --ink:#172033; --muted:#667085; --line:#e5eaf0;
@@ -4436,7 +4459,7 @@ body.tester-preview-mode #testerView{
 
 <!-- V194 : base v192 complète, sans régression fonctionnelle -->
 
-<style id="v196-force-home-tools">
+<style id="v197-force-home-tools">
 #homeView .home-quick-tools-v174{
   display:grid !important;
   visibility:visible !important;
@@ -4462,16 +4485,20 @@ body.tester-preview-mode #testerView{
 
 </head>
 <body>
-<script id="v196-cache-reset">
+<div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v199</div>
+<script>(function(){try{var e=document.getElementById('v199Diag');var r=window.__JM_REQUESTED_ROLE_V199||'local';e.textContent='v199 · demandé: '+r;setTimeout(function(){if(e)e.style.opacity='.35'},7000)}catch(_){}})();</script>
+
+<!-- V197 : bascule automatique des identités Propriétaire/Testeur selon le lien ouvert -->
+<script id="v197-cache-reset">
 (function(){
   try{
-    if('caches' in window){caches.keys().then(function(keys){return Promise.all(keys.filter(function(k){return k.indexOf('tests-culinaires-')===0 && k!=='tests-culinaires-v196-20261002'}).map(function(k){return caches.delete(k)}));}).catch(function(){});}
+    if('caches' in window){caches.keys().then(function(keys){return Promise.all(keys.filter(function(k){return k.indexOf('tests-culinaires-')===0 && k!=='tests-culinaires-v197-20261002'}).map(function(k){return caches.delete(k)}));}).catch(function(){});}
   }catch(e){}
 })();
 </script>
 <div id="ipadStartupDiagnostic">
   <strong id="ipadDiagTitle">Vérification de l’application…</strong>
-  <span id="ipadDiagText">Version v196.</span>
+  <span id="ipadDiagText">Version v197.</span>
   <div class="diag-actions">
     <button class="diag-refresh" type="button" onclick="window.forceIpadAppRefresh()">Forcer l’actualisation iPad</button>
     <button class="diag-close" type="button" onclick="document.getElementById('ipadStartupDiagnostic').style.display='none'">Fermer</button>
@@ -4519,19 +4546,19 @@ body.tester-preview-mode #testerView{
     var badge=document.getElementById('appBuildBadge');
     if(engineOk){
       if(badge){
-        badge.innerHTML='v196 · OK';
+        badge.innerHTML='v197 · OK';
         badge.style.background='#e6f5ee';
         badge.style.color='#146c4e';
       }
     }else{
       if(badge){
-        badge.innerHTML='v196 · moteur arrêté';
+        badge.innerHTML='v197 · moteur arrêté';
         badge.style.background='#fff0d8';
         badge.style.color='#8c5a00';
       }
       showDiag(
         'L’application ne s’est pas démarrée',
-        'Le fichier v196 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
+        'Le fichier v197 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
       );
     }
   },5000);
@@ -4543,7 +4570,7 @@ body.tester-preview-mode #testerView{
   <div class="brandmark">TC</div>
   <div class="topbar-title"><strong id="headerTitle">Tests culinaires</strong><span id="headerSub">Groupe Marchés Nouvelle-Aquitaine</span></div>
   <span class="cloud-status" id="cloudStatus">● Local</span>
-  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v196</span>
+  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v199</span>
   <button class="btn btn-secondary btn-small admin-security-btn" id="adminLockBtn">🔐 Sécurité</button>
   <button class="btn btn-secondary btn-small" id="homeBtn">Accueil</button>
 </header>
@@ -13190,8 +13217,17 @@ function loadCloudCfg(){
   if(q.get('supabaseUrl')) cloudCfg.url=q.get('supabaseUrl');
   if(q.get('supabaseKey')) cloudCfg.key=q.get('supabaseKey');
   if(q.get('session')) cloudCfg.sessionId=q.get('session');
-  if(q.get('tester')) guestTester=Math.max(1,Number(q.get('tester'))||1);
-  if(q.get('accessCode')) cloudCfg.accessCode=q.get('accessCode');
+
+  /* V199 — le rôle demandé par le lien gagne TOUJOURS sur un ancien rôle local. */
+  const forcedRole=window.__JM_REQUESTED_ROLE_V199||'';
+  const ownerOrAdminLink=forcedRole==='admin'||!!(q.get('ownerToken')||q.get('adminToken'));
+  if(ownerOrAdminLink){
+    guestTester=null;
+    cloudCfg.accessCode='';
+  }else if(forcedRole.indexOf('tester:')===0||q.get('tester')){
+    guestTester=forcedRole.indexOf('tester:')===0?Math.max(1,Number(forcedRole.split(':')[1])||1):Math.max(1,Number(q.get('tester'))||1);
+    if(q.get('accessCode'))cloudCfg.accessCode=q.get('accessCode');
+  }
 }
 function saveCloudCfg(){
   localStorage.setItem(CLOUD_STORAGE_KEY,JSON.stringify({url:cloudCfg.url,key:cloudCfg.key,sessionId:cloudCfg.sessionId}));
@@ -13271,7 +13307,7 @@ function makePublicCloudConfig(cfg){
 }
 function shareUrl(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','163');
+  u.searchParams.set('appBuild','199');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -13297,10 +13333,20 @@ function renderShareLinks(){
     d.querySelector('button').onclick=()=>copyText(shareUrl(i),`Lien ${name} copié`);box.appendChild(d)
   }
 }
+function cloudAuthStorageKey(){
+  const project=String(cloudCfg.url||'').replace(/\W+/g,'-').slice(-28)||'project';
+  const session=String(cloudCfg.sessionId||'local').replace(/\W+/g,'-').slice(-24)||'session';
+  const wanted=requestedCloudIdentity();
+  const role=wanted?.role==='tester' ? `tester-${wanted.testerNo||1}` : wanted?.role==='admin' ? 'admin-owner' : 'neutral';
+  return `jm-tc-auth-${project}-${session}-${role}`;
+}
 function buildCloudClient(){
   if(!cloudCfg.url||!cloudCfg.key)throw new Error('Renseignez le Project URL et la clé publique Supabase.');
   if(!window.supabase?.createClient)throw new Error('La bibliothèque Supabase n’a pas pu être chargée.');
-  const storageKey='jm-tc-auth-'+String(cloudCfg.url).replace(/\W+/g,'-').slice(-42);
+
+  /* V198 — une identité Supabase distincte par session ET par rôle.
+     Ainsi le même téléphone peut être T1, T2 puis Propriétaire sans effacer Chrome. */
+  const storageKey=cloudAuthStorageKey();
   cloudClient=window.supabase.createClient(cloudCfg.url.trim(),cloudCfg.key.trim(),{
     auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey}
   })
@@ -13329,8 +13375,41 @@ function rpcsMissing(error){
   const s=String(error?.message||error||'');
   return /function .* does not exist|schema cache|PGRST202|42883/i.test(s)
 }
+function requestedCloudIdentity(){
+  const forced=window.__JM_REQUESTED_ROLE_V199||'';
+  if(forced.indexOf('tester:')===0)return {role:'tester',testerNo:Math.max(1,Number(forced.split(':')[1])||1)};
+  if(forced==='admin')return {role:'admin',testerNo:null};
+  const q=new URLSearchParams(location.search);
+  if(q.get('tester'))return {role:'tester',testerNo:Math.max(1,Number(q.get('tester'))||1)};
+  if(q.get('adminToken')||q.get('ownerToken'))return {role:'admin',testerNo:null};
+  return null;
+}
+async function rotateAnonymousCloudIdentity(){
+  try{await cloudClient.auth.signOut({scope:'local'})}catch(e){}
+  const r=await cloudClient.auth.signInAnonymously();
+  if(r.error)throw r.error;
+  cloudUserId=r.data?.session?.user?.id||null;
+  if(!cloudUserId)throw new Error('Impossible de créer une nouvelle identité sécurisée pour cet accès.');
+  return cloudUserId;
+}
+function membershipMatchesRequestedIdentity(m,wanted){
+  if(!m||!wanted)return true;
+  if(wanted.role==='admin')return m.role==='admin';
+  return m.role==='tester'&&Number(m.tester_no||0)===Number(wanted.testerNo||0);
+}
 async function joinSecureSession(){
+  const wanted=requestedCloudIdentity();
   let m=await membershipForCurrentUser();
+
+  /* V197 — le lien ouvert est prioritaire sur l'identité anonyme mémorisée.
+     Un téléphone peut donc passer Propriétaire -> T1 -> T2 -> Propriétaire
+     sans vider Chrome ni les données du site. Chaque changement de rôle crée
+     automatiquement une nouvelle identité Supabase, puis vérifie le code du lien. */
+  if(m&&wanted&&!membershipMatchesRequestedIdentity(m,wanted)){
+    await rotateAnonymousCloudIdentity();
+    m=null;
+  }
+
   if(m){cloudRole=m.role;cloudTesterNo=m.tester_no||null;return m}
   if(guestTester){
     if(!cloudCfg.accessCode)throw new Error('Lien testeur incomplet : le code d’accès sécurisé est absent. Demandez un nouveau lien à l’administrateur.');
@@ -15284,7 +15363,7 @@ function ownerDeviceShareUrl(){
   u.searchParams.delete('ownerToken');
   u.searchParams.delete('appBuild');
 
-  u.searchParams.set('appBuild','195');
+  u.searchParams.set('appBuild','199');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -15570,7 +15649,7 @@ currentBaseUrl=function(){
 }
 shareUrl=function(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','162');
+  u.searchParams.set('appBuild','199');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -16074,7 +16153,7 @@ document.addEventListener('fullscreenchange',()=>{
 })();
 </script>
 
-<script id="v196-home-tools-guard">
+<script id="v197-home-tools-guard">
 (function(){
   function ensureHomeTools(){
     var home=document.getElementById('homeView');
