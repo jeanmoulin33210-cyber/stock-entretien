@@ -7425,36 +7425,78 @@ function openProductSheetsFromHomeV174(){
 
 function availableReceptionLots(){
   try{ensureCurrentPrepSaved()}catch(e){}
-  const choices=[],seen=new Set();
+
+  /* Réception chauffeur : n'afficher que les lots encore à réceptionner.
+     - une seule ligne par lot ;
+     - le lot courant reste prioritaire ;
+     - un lot avec plusieurs fournisseurs reste visible tant que chacun
+       n'a pas au moins une réception validée ;
+     - aucune donnée enregistrée n'est supprimée. */
+  const choices=[],seenIds=new Set(),seenLots=new Set();
+  const lotKey=name=>String(name||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const supplierKey=name=>String(name||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const receptionComplete=cfg=>{
+    const suppliers=receptionSupplierNames(cfg);
+    if(!suppliers.length)return false;
+    const received=new Set(
+      (Array.isArray(cfg?.receptions)?cfg.receptions:[])
+        .filter(r=>r&&r.validatedAt)
+        .map(r=>supplierKey(r.supplier))
+        .filter(Boolean)
+    );
+    return suppliers.every(name=>received.has(supplierKey(name)));
+  };
+
   const currentCfg=state?.config||{};
   const currentId=String(currentCfg._preparedId||'__current__');
 
-  if(currentCfg?.products?.length && !currentCfg?.juryClose?.closedAt){
+  if(currentCfg?.products?.length && !currentCfg?.juryClose?.closedAt && !receptionComplete(currentCfg)){
+    const currentLotName=currentCfg.lotName||'Lot en cours';
     choices.push({
       id:currentId,
       kind:'current',
-      lotName:currentCfg.lotName||'Lot en cours',
+      lotName:currentLotName,
       suppliers:receptionSupplierNames(currentCfg),
       products:(currentCfg.products||[]).length,
       savedAt:state?.updatedAt||''
     });
-    seen.add(currentId);
+    seenIds.add(currentId);
+    const key=lotKey(currentLotName);
+    if(key)seenLots.add(key);
   }
 
-  for(const rec of loadPreparedJurys()){
+  const prepared=[...(loadPreparedJurys()||[])].sort((a,b)=>
+    String(b?.savedAt||b?.state?.config?._preparedAt||'')
+      .localeCompare(String(a?.savedAt||a?.state?.config?._preparedAt||''))
+  );
+
+  for(const rec of prepared){
     const cfg=rec?.state?.config||{};
-    if(!cfg?.products?.length || cfg?.juryClose?.closedAt)continue;
+    if(!cfg?.products?.length || cfg?.juryClose?.closedAt || cfg?._archive?.archivedAt || receptionComplete(cfg))continue;
+    const suppliers=receptionSupplierNames(cfg);
+    if(!suppliers.length)continue;
+
     const id=String(rec.id||cfg._preparedId||'');
-    if(!id || seen.has(id))continue;
+    if(!id || seenIds.has(id))continue;
+
+    const lotName=cfg.lotName||rec.name||'Lot préparé';
+    const key=lotKey(lotName);
+    if(key && seenLots.has(key))continue;
+
     choices.push({
       id,
       kind:'prepared',
-      lotName:cfg.lotName||rec.name||'Lot préparé',
-      suppliers:receptionSupplierNames(cfg),
+      lotName,
+      suppliers,
       products:(cfg.products||[]).length,
-      savedAt:rec.savedAt||''
+      savedAt:rec.savedAt||cfg._preparedAt||''
     });
-    seen.add(id);
+    seenIds.add(id);
+    if(key)seenLots.add(key);
   }
 
   return choices.sort((a,b)=>{
