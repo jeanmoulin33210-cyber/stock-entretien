@@ -17017,8 +17017,9 @@ document.addEventListener('fullscreenchange',()=>{
 </script>
 
 <script id="v207-reset-lots-script">
-/* V207 — remise à zéro réversible des listes de lots.
-   Ne touche ni au PIN, ni à la sécurité, ni aux archives, ni aux accès cloud. */
+/* V207 — remise à zéro complète et réversible des lots.
+   Conserve le PIN, la sécurité, les archives et les modèles.
+   Déconnecte seulement l'ancienne session jury pour éviter qu'elle recrée les lots. */
 (function(){
   'use strict';
   const BACKUP_KEY='jm_tc_lots_reset_backup_v207';
@@ -17030,7 +17031,8 @@ document.addEventListener('fullscreenchange',()=>{
       SAMPLE_LOT_HISTORY_STORAGE_KEY,
       SAMPLE_MASTER_STORAGE_KEY,
       SAMPLE_MASTER_META_STORAGE_KEY,
-      SAMPLE_PRODUCTS_STORAGE_KEY
+      SAMPLE_PRODUCTS_STORAGE_KEY,
+      (typeof RECOVERY_STORAGE_KEY!=='undefined'?RECOVERY_STORAGE_KEY:'jm_test_culinaire_recovery_v29')
     ];
   }
   function updateButtons(){
@@ -17045,13 +17047,69 @@ document.addEventListener('fullscreenchange',()=>{
     if(!ok)alert('Code PIN incorrect. Aucune donnée n’a été modifiée.');
     return ok;
   }
+  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return null;}}
+  function currentSecurity(){
+    try{
+      if(state?.config?.security)return clone(state.config.security);
+    }catch(e){}
+    try{
+      const rows=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
+      for(const r of (Array.isArray(rows)?rows:[])){
+        if(r?.state?.config?.security)return clone(r.state.config.security);
+      }
+    }catch(e){}
+    return null;
+  }
+  function blankState(security){
+    const cfg={
+      _juryInstanceId:(typeof uid==='function'?uid('jury'):'jury_'+Date.now()),
+      lotName:'',
+      lotNumber:'',
+      lotTitle:'',
+      supplierNames:[],
+      supplierResponseCount:0,
+      receptions:[],
+      receptionEstablishment:'',
+      subtitle:'',
+      criteria:(typeof defaultCriteria==='function'?defaultCriteria():[]),
+      testerCount:6,
+      testerNames:Array.from({length:6},(_,i)=>`Testeur ${i+1}`),
+      products:[],
+      security:security||null
+    };
+    if(typeof makeInitialState==='function')return makeInitialState(cfg);
+    const testers={};for(let i=1;i<=6;i++)testers[i]={name:`Testeur ${i}`,answers:{},validatedAt:null};
+    return {version:4,config:cfg,testers,updatedAt:null};
+  }
+  async function detachOldJurySession(){
+    try{
+      if(typeof cloudChannel!=='undefined'&&cloudChannel&&cloudClient)await cloudClient.removeChannel(cloudChannel);
+    }catch(e){}
+    try{
+      if(typeof cloudPresenceChannel!=='undefined'&&cloudPresenceChannel&&cloudClient)await cloudClient.removeChannel(cloudPresenceChannel);
+    }catch(e){}
+    try{if(typeof cloudReady!=='undefined')cloudReady=false;}catch(e){}
+    try{if(typeof cloudRole!=='undefined')cloudRole=null;}catch(e){}
+    try{if(typeof cloudTesterNo!=='undefined')cloudTesterNo=null;}catch(e){}
+    try{
+      if(typeof cloudCfg!=='undefined'){
+        cloudCfg.sessionId='';
+        cloudCfg.accessCode='';
+        if(typeof saveCloudCfg==='function')saveCloudCfg();
+      }
+    }catch(e){}
+    try{
+      if(typeof CLOUD_ACCESS_STORAGE_KEY!=='undefined')localStorage.removeItem(CLOUD_ACCESS_STORAGE_KEY);
+      else localStorage.removeItem('jm_test_culinaire_access_v20');
+    }catch(e){}
+  }
+
   async function resetLots(){
     const ok=confirm(
-      'Réinitialiser la liste des lots ?\n\n'+
+      'Repartir complètement de zéro pour les lots ?\n\n'+
       'Une copie de sécurité sera conservée sur ce téléphone.\n'+
-      'Les listes de lots et jurys préparés seront vidées.\n\n'+
-      'Le PIN, la sécurité, les archives et les accès téléphones ne seront pas supprimés.\n'+
-      'Le jury actuellement ouvert peut rester seul visible : c’est normal.'
+      'Tous les lots, jurys préparés, réceptions, fiches produits et sauvegardes de reprise seront vidés.\n\n'+
+      'Le PIN, la sécurité, les archives et les modèles seront conservés.'
     );
     if(!ok)return;
     if(!(await checkPin()))return;
@@ -17064,37 +17122,37 @@ document.addEventListener('fullscreenchange',()=>{
 
     const backup={createdAt:new Date().toISOString(),items:{}};
     for(const k of lotKeys())backup.items[k]=localStorage.getItem(k);
-    try{backup.currentState=localStorage.getItem(STORAGE_KEY)}catch(e){}
+    backup.currentState=localStorage.getItem(STORAGE_KEY);
+    try{
+      backup.cloudConfig=localStorage.getItem(typeof CLOUD_STORAGE_KEY!=='undefined'?CLOUD_STORAGE_KEY:'jm_test_culinaire_cloud_v1');
+      backup.cloudAccess=localStorage.getItem(typeof CLOUD_ACCESS_STORAGE_KEY!=='undefined'?CLOUD_ACCESS_STORAGE_KEY:'jm_test_culinaire_access_v20');
+    }catch(e){}
     localStorage.setItem(BACKUP_KEY,JSON.stringify(backup));
     localStorage.setItem(CLEAN_KEY,'1');
 
+    const security=currentSecurity();
+    await detachOldJurySession();
+
     for(const k of lotKeys())localStorage.removeItem(k);
 
-    /* Le jury courant reste en mémoire pour ne pas casser le PIN/sécurité.
-       On le remet seul dans la bibliothèque s'il existe réellement. */
-    try{
-      if(state?.config?._preparedId && Array.isArray(state?.config?.products) && state.config.products.length){
-        savePreparedJurys([{
-          id:String(state.config._preparedId),
-          savedAt:new Date().toISOString(),
-          name:String(state.config.lotName||'Jury courant'),
-          state:deepClone(state)
-        }]);
-      }
-    }catch(e){console.warn('Jury courant non recopié après remise à zéro',e)}
+    state=blankState(security);
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    try{currentTester=1;currentProduct='';currentSample='';adminProduct='';selectedAdminSample='';}catch(e){}
 
     updateButtons();
-    try{renderHome()}catch(e){}
-    try{renderHomeReceptionBadge?.()}catch(e){}
-    try{renderProductSheetHomeBadgesV200?.()}catch(e){}
-    alert('Liste des lots réinitialisée.\n\nUne sauvegarde a été conservée. Vous pouvez maintenant recréer les lots proprement. Le jury courant peut rester visible seul.');
+    alert(
+      'Les lots ont été remis complètement à zéro.\n\n'+
+      'Le PIN et les archives sont conservés.\n'+
+      'Une sauvegarde permet de restaurer les anciens lots depuis « Outils avancés ».'
+    );
+    location.reload();
   }
 
   async function restoreLots(){
     const raw=localStorage.getItem(BACKUP_KEY);
     if(!raw){alert('Aucune sauvegarde des anciens lots n’est disponible.');return}
     if(!(await checkPin()))return;
-    if(!confirm('Restaurer les anciennes listes de lots enregistrées avant la remise à zéro ?'))return;
+    if(!confirm('Restaurer tous les lots tels qu’ils étaient juste avant la remise à zéro ?'))return;
 
     try{
       const backup=JSON.parse(raw);
@@ -17104,6 +17162,18 @@ document.addEventListener('fullscreenchange',()=>{
         if(v===null||v===undefined)localStorage.removeItem(k);
         else localStorage.setItem(k,v);
       }
+      if(backup.currentState===null||backup.currentState===undefined)localStorage.removeItem(STORAGE_KEY);
+      else localStorage.setItem(STORAGE_KEY,backup.currentState);
+
+      try{
+        const ck=typeof CLOUD_STORAGE_KEY!=='undefined'?CLOUD_STORAGE_KEY:'jm_test_culinaire_cloud_v1';
+        const ak=typeof CLOUD_ACCESS_STORAGE_KEY!=='undefined'?CLOUD_ACCESS_STORAGE_KEY:'jm_test_culinaire_access_v20';
+        if(backup.cloudConfig===null||backup.cloudConfig===undefined)localStorage.removeItem(ck);
+        else localStorage.setItem(ck,backup.cloudConfig);
+        if(backup.cloudAccess===null||backup.cloudAccess===undefined)localStorage.removeItem(ak);
+        else localStorage.setItem(ak,backup.cloudAccess);
+      }catch(e){}
+
       localStorage.removeItem(CLEAN_KEY);
       updateButtons();
       alert('Anciens lots restaurés. La page va être rechargée.');
