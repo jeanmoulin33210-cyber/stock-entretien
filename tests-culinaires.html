@@ -6511,20 +6511,32 @@ function savePreparedJurys(rows){
 /* V207 — vue anti-doublons non destructive.
    Les copies brutes restent intactes dans localStorage. Pour l'affichage,
    les compteurs et le choix d'un jury, une seule version est retenue par lot. */
+function canonicalLotNameV207(cfg,fallback=''){
+  const num=String(cfg?.lotNumber||'').trim().replace(/^lot\s*/i,'');
+  const title=String(cfg?.lotTitle||'').trim();
+  if(num)return title?('Lot '+num+' — '+title):('Lot '+num);
+  return String(fallback||cfg?.lotName||'').trim();
+}
+function preparedDisplayNameV207(rec){
+  const cfg=rec?.state?.config||{};
+  return canonicalLotNameV207(cfg,cfg.lotName||rec?.name||'Jury');
+}
 function preparedLotKeyV207(rec){
   const cfg=rec?.state?.config||{};
-  /* La clé principale est exactement le nom visible du lot.
-     C'est volontaire : plusieurs anciennes versions ont stocké lotNumber
-     sous des formes différentes alors que l'écran affichait le même intitulé. */
-  const raw=String(cfg.lotName||rec?.name||'').trim();
-  const visible=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-  if(visible)return 'name:'+visible;
-
-  const direct=String(cfg.lotNumber||'').trim()
+  /* Le numéro de lot interne est la vraie identité.
+     Plusieurs anciennes copies pouvaient afficher par erreur le même lotName. */
+  const direct=String(cfg.lotNumber||'').trim().replace(/^lot\s*/i,'')
     .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-  return direct?'lot:'+direct:'id:'+String(rec?.id||'');
+  if(direct)return 'lot:'+direct;
+
+  const raw=String(cfg.lotName||rec?.name||'').trim();
+  const m=raw.match(/^\s*lot\s*([0-9A-Za-z._-]+)/i);
+  if(m&&m[1])return 'lot:'+String(m[1]).toLowerCase();
+
+  const visible=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  return visible?'name:'+visible:'id:'+String(rec?.id||'');
 }
 function preparedRichnessV207(rec){
   const st=rec?.state||{},cfg=st.config||{};
@@ -6711,7 +6723,7 @@ function renderJuryChooser(){
       }
 
       return `<article class="panel jury-choice-card ${current?'current':''}">
-        <h3>${escapeHtml(cfg.lotName||rec.name||'Jury')}</h3>
+        <h3>${escapeHtml(preparedDisplayNameV207(rec))}</h3>
         ${cfg.subtitle?`<p>${escapeHtml(cfg.subtitle)}</p>`:''}
         <span class="jury-choice-state ${statusClass}">${statusText}</span>
         <div class="jury-choice-meta">
@@ -6751,7 +6763,7 @@ function renderPreparedHome(){
 
   list.innerHTML=rows.map(rec=>{
     const st=rec.state||{},cfg=st.config||{},meta=preparedJuryMeta(st);
-    const title=escapeHtml(cfg.lotName||rec.name||'Jury');
+    const title=escapeHtml(preparedDisplayNameV207(rec));
     const subtitle=escapeHtml(cfg.subtitle||'');
     const phonesReady=phoneSharePrepared(cfg);
     const running=!!cfg.juryLaunch?.openedAt && !cfg.juryClose?.closedAt;
@@ -7467,7 +7479,7 @@ function productLotsV174(){
     rows.push({
       id:curId,
       current:true,
-      name:cfg.lotName||'Lot en cours',
+      name:canonicalLotNameV207(cfg,cfg.lotName||'Lot en cours'),
       products:cfg.products.length,
       suppliers:(cfg.supplierNames||[]).filter(x=>String(x||'').trim()).length
     });
@@ -7482,7 +7494,7 @@ function productLotsV174(){
     rows.push({
       id,
       current:false,
-      name:rcfg.lotName||rec.name||'Lot préparé',
+      name:canonicalLotNameV207(rcfg,rcfg.lotName||rec.name||'Lot préparé'),
       products:rcfg.products.length,
       suppliers:(rcfg.supplierNames||[]).filter(x=>String(x||'').trim()).length
     });
@@ -7588,7 +7600,7 @@ function allReceptionLots(){
   const currentId=String(currentCfg._preparedId||'__current__');
 
   if(currentCfg?.products?.length && !currentCfg?.juryClose?.closedAt && !currentCfg?._archive?.archivedAt){
-    const currentLotName=currentCfg.lotName||'Lot en cours';
+    const currentLotName=canonicalLotNameV207(currentCfg,currentCfg.lotName||'Lot en cours');
     choices.push({
       id:currentId,
       kind:'current',
@@ -7599,7 +7611,7 @@ function allReceptionLots(){
       receptionStatus:receptionStatusForConfig(currentCfg)
     });
     seenIds.add(currentId);
-    const key=lotKey(currentLotName);
+    const key=preparedLotKeyV207({id:currentId,state:{config:currentCfg},name:currentLotName});
     if(key)seenLots.add(key);
   }
 
@@ -7614,8 +7626,8 @@ function allReceptionLots(){
     const id=String(rec.id||cfg._preparedId||'');
     if(!id || seenIds.has(id))continue;
 
-    const lotName=cfg.lotName||rec.name||'Lot préparé';
-    const key=lotKey(lotName);
+    const lotName=preparedDisplayNameV207(rec);
+    const key=preparedLotKeyV207(rec);
     if(key && seenLots.has(key))continue;
 
     choices.push({
@@ -8182,7 +8194,7 @@ function prepareJuryFromHomeV180(event){
             id,
             key:`prepared:${id}`,
             kind:'prepared',
-            lotName:String(cfg.lotName||rec.name||'Jury préparé'),
+            lotName:preparedDisplayNameV207(rec),
             products:products.length,
             suppliers:suppliers.length,
             status:cfg?.juryLaunch?.openedAt
@@ -8383,7 +8395,7 @@ function prepareJuryChoices(){
       choices.push({
         id,
         kind:'prepared',
-        lotName:String(cfg.lotName||rec.name||'Jury préparé'),
+        lotName:preparedDisplayNameV207(rec),
         products:products.length,
         suppliers:receptionSupplierNames(cfg).length,
         current:id===currentId,
