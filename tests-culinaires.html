@@ -16731,5 +16731,184 @@ document.addEventListener('fullscreenchange',()=>{
 
 
 
+
+<!-- V207 correctif compteurs : reconstruire les lots actifs à partir des historiques locaux sans toucher au PIN -->
+<script id="v207-rebuild-active-lots">
+(function(){
+  'use strict';
+
+  function safeClone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return null;}}
+  function norm(s){
+    return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  }
+  function cfgSignature(cfg){
+    try{
+      if(typeof prepareJurySignatureFromConfig==='function'){
+        const s=prepareJurySignatureFromConfig(cfg);
+        if(s)return s;
+      }
+    }catch(e){}
+    const lot=norm(cfg?.lotName||'');
+    const products=(Array.isArray(cfg?.products)?cfg.products:[]).map(p=>norm(p?.name||'')).filter(Boolean).join('|');
+    const suppliers=(Array.isArray(cfg?.supplierNames)?cfg.supplierNames:[]).map(norm).filter(Boolean).sort().join('|');
+    return lot+'::'+products+'::'+suppliers;
+  }
+  function activeState(st){
+    const cfg=st?.config||{};
+    return !!(Array.isArray(cfg.products)&&cfg.products.length &&
+      !(cfg.juryClose&&cfg.juryClose.closedAt) &&
+      !(cfg._archive&&cfg._archive.archivedAt));
+  }
+  function knownClosedLots(){
+    const set=new Set();
+    try{
+      (loadPreparedJurys()||[]).forEach(r=>{
+        const cfg=r?.state?.config||{};
+        if(cfg?.juryClose?.closedAt||cfg?._archive?.archivedAt){
+          const n=norm(cfg.lotName||r?.name||''); if(n)set.add(n);
+        }
+      });
+    }catch(e){}
+    try{
+      (loadArchives()||[]).forEach(a=>{
+        const n=norm(a?.state?.config?.lotName||a?.config?.lotName||a?.lotName||a?.name||'');
+        if(n)set.add(n);
+      });
+    }catch(e){}
+    return set;
+  }
+  function makeStateFromSample(rec){
+    try{
+      const meta=rec?.meta&&typeof rec.meta==='object'?rec.meta:{};
+      const products=Array.isArray(rec?.products)?rec.products:[];
+      const lotName=String(rec?.lotName||lotNameFromSampleMeta(meta)||'').trim();
+      if(!lotName||!products.length)return null;
+      const suppliers=(Array.isArray(meta.supplierNames)?meta.supplierNames:[])
+        .map(x=>String(x||'').trim()).filter(Boolean);
+      const currentSecurity=safeClone(state?.config?.security||null);
+      const testerCount=Math.max(1,Number(state?.config?.testerCount||6));
+      const testerNames=Array.isArray(state?.config?.testerNames)
+        ?state.config.testerNames.slice(0,testerCount):[];
+
+      const cfg={
+        _juryInstanceId:uid('jury'),
+        _preparedId:String(rec?.id||uid('prepared')),
+        _preparedAt:String(rec?.savedAt||new Date().toISOString()),
+        _recoveredFromSampleHistoryV207:true,
+        lotName,
+        lotNumber:String(meta.lotNumber||''),
+        lotTitle:String(meta.lotTitle||''),
+        supplierNames:suppliers,
+        supplierResponseCount:suppliers.length,
+        receptions:[],
+        testerCount,
+        testerNames,
+        criteria:defaultCriteria(),
+        products:products.map((p,i)=>{
+          const oldSamples=Array.isArray(p?.samples)?p.samples:[];
+          let samples=[];
+          if(suppliers.length){
+            samples=suppliers.map((name,j)=>({
+              id:String(oldSamples[j]?.id||'').trim(),
+              supplier:name
+            }));
+          }else{
+            samples=oldSamples.map(s=>({
+              id:String(s?.id||'').trim(),
+              supplier:String(s?.supplier||'').trim()
+            }));
+          }
+          if(!samples.length)samples=[{id:'',supplier:''}];
+          return{
+            id:uid('p'),
+            code:String(i+1).padStart(2,'0'),
+            name:String(p?.name||'').trim()||('Produit '+(i+1)),
+            color:PALETTE[i%PALETTE.length],
+            criteria:defaultCriteria(),
+            samples
+          };
+        })
+      };
+      if(currentSecurity)cfg.security=currentSecurity;
+      const st=makeInitialState(cfg);
+      st.updatedAt=String(rec?.savedAt||new Date().toISOString());
+      return st;
+    }catch(e){
+      console.warn('Reconstruction lot historique impossible',e);
+      return null;
+    }
+  }
+
+  function rebuild(){
+    let rows=[];
+    try{rows=Array.isArray(loadPreparedJurys())?[...loadPreparedJurys()]:[];}catch(e){rows=[]}
+    const closed=knownClosedLots();
+    const sigs=new Set();
+    const names=new Set();
+
+    rows.forEach(r=>{
+      const cfg=r?.state?.config||{};
+      const s=cfgSignature(cfg); if(s)sigs.add(s);
+      const n=norm(cfg.lotName||r?.name||''); if(n)names.add(n);
+    });
+
+    let addedRecovery=0,addedHistory=0;
+
+    /* 1. Sauvegardes locales complètes : priorité car elles peuvent contenir
+       les réceptions et les fiches déjà saisies. */
+    try{
+      const snaps=typeof recoveryLoad==='function'?(recoveryLoad()||[]):[];
+      snaps.forEach(s=>{
+        const st=s?.state;
+        if(!activeState(st))return;
+        const cfg=st.config||{};
+        const n=norm(cfg.lotName||s?.lotName||'');
+        const sig=cfgSignature(cfg);
+        if((sig&&sigs.has(sig))||(n&&names.has(n))||(n&&closed.has(n)))return;
+        const id=String(cfg._preparedId||s?.id||uid('prepared'));
+        cfg._preparedId=id;
+        rows.push({id,savedAt:String(s?.createdAt||st.updatedAt||cfg._preparedAt||''),name:String(cfg.lotName||s?.lotName||'Jury récupéré'),state:safeClone(st)});
+        if(sig)sigs.add(sig); if(n)names.add(n); addedRecovery++;
+      });
+    }catch(e){console.warn('Sauvegardes locales non relues',e)}
+
+    /* 2. Historique « Choix des échantillons » : recrée seulement les lots
+       qui ne sont plus présents dans la bibliothèque des jurys. */
+    try{
+      const history=typeof loadSampleLotHistory==='function'?(loadSampleLotHistory()||[]):[];
+      history.forEach(rec=>{
+        const meta=rec?.meta&&typeof rec.meta==='object'?rec.meta:{};
+        const products=Array.isArray(rec?.products)?rec.products:[];
+        const lotName=String(rec?.lotName||lotNameFromSampleMeta(meta)||'').trim();
+        if(!lotName||!products.length)return;
+        const n=norm(lotName);
+        let sig='';
+        try{sig=String(rec?.signature||sampleLotSnapshotSignature(meta,products)||'')}catch(e){}
+        if((sig&&sigs.has(sig))||(n&&names.has(n))||(n&&closed.has(n)))return;
+        const st=makeStateFromSample(rec);
+        if(!st)return;
+        const id=String(st.config._preparedId);
+        rows.push({id,savedAt:String(rec?.savedAt||st.updatedAt||''),name:lotName,state:st});
+        if(sig)sigs.add(sig); if(n)names.add(n); addedHistory++;
+      });
+    }catch(e){console.warn('Historique des lots non relu',e)}
+
+    if(addedRecovery||addedHistory){
+      rows=rows.sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||''))).slice(0,30);
+      try{savePreparedJurys(rows)}catch(e){console.warn('Bibliothèque jurys non enregistrée',e)}
+    }
+
+    try{if(typeof renderHomeReceptionBadge==='function')renderHomeReceptionBadge();}catch(e){}
+    try{if(typeof renderProductSheetHomeBadgesV200==='function')renderProductSheetHomeBadgesV200();}catch(e){}
+    return {addedRecovery,addedHistory,total:rows.length};
+  }
+
+  window.rebuildActiveLotsV207=rebuild;
+  setTimeout(rebuild,120);
+  setTimeout(rebuild,800);
+  setTimeout(rebuild,2200);
+})();
+</script>
 </body>
 </html>
