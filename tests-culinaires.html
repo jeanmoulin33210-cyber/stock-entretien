@@ -6579,6 +6579,36 @@ function visiblePreparedJurysV207(rows){
     String(b?.savedAt||b?.state?.updatedAt||'').localeCompare(String(a?.savedAt||a?.state?.updatedAt||''))
   );
 }
+function sampleHistoryLotKeyV207(rec){
+  const meta=rec?.meta&&typeof rec.meta==='object'?rec.meta:{};
+  const direct=String(meta.lotNumber||'').trim().replace(/^lot\s*/i,'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  if(direct)return 'lot:'+direct;
+  const raw=String(rec?.lotName||lotNameFromSampleMeta(meta)||'').trim();
+  const m=raw.match(/^\s*lot\s*([0-9A-Za-z._-]+)/i);
+  if(m&&m[1])return 'lot:'+String(m[1]).toLowerCase();
+  const visible=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  return visible?'name:'+visible:'id:'+String(rec?.id||'');
+}
+function sampleHistoryDisplayNameV207(rec){
+  const meta=rec?.meta&&typeof rec.meta==='object'?rec.meta:{};
+  const num=String(meta.lotNumber||'').trim().replace(/^lot\s*/i,'');
+  const title=String(meta.lotTitle||'').trim();
+  if(num)return title?('Lot '+num+' — '+title):('Lot '+num);
+  return String(rec?.lotName||lotNameFromSampleMeta(meta)||'Lot').trim();
+}
+function sampleHistoryRichnessV207(rec){
+  const meta=rec?.meta&&typeof rec.meta==='object'?rec.meta:{};
+  const products=Array.isArray(rec?.products)?rec.products:[];
+  const suppliers=(Array.isArray(meta.supplierNames)?meta.supplierNames:[])
+    .filter(x=>String(x||'').trim()).length;
+  const ids=products.reduce((n,p)=>n+(Array.isArray(p?.samples)?p.samples.filter(s=>String(s?.id||'').trim()).length:0),0);
+  const namedProducts=products.filter(p=>String(p?.name||'').trim()).length;
+  const saved=Date.parse(rec?.savedAt||'')||0;
+  return suppliers*1e12 + namedProducts*1e9 + ids*1e6 + Math.min(saved/1e9,999999);
+}
 function upsertPreparedJury(st=state){
   if(!st?.config)return null;
   const id=st.config._preparedId||uid('prepared');
@@ -8367,21 +8397,24 @@ function prepareJuryLatestSampleChoice(){
 function prepareJuryChoices(){
   try{ensureCurrentPrepSaved()}catch(e){console.warn('Sauvegarde du jury courant non bloquante',e)}
 
-  const choices=[];
-  const signatures=new Set();
+  const byLot=new Map();
   const currentId=String(state?.config?._preparedId||'');
 
-  // Jurys déjà préparés. Un ancien enregistrement invalide est simplement ignoré.
+  function keep(key,choice,score){
+    if(!key)key='id:'+String(choice?.id||Math.random());
+    const old=byLot.get(key);
+    /* Un vrai jury préparé garde la priorité sur un simple historique du même lot.
+       Entre deux historiques, on conserve le plus complet. */
+    if(!old || score>old.score)byLot.set(key,{choice,score});
+  }
+
   let prepared=[];
   try{
     const raw=visiblePreparedJurysV207();
     prepared=(Array.isArray(raw)?raw:[])
       .filter(rec=>rec&&rec.state&&rec.state.config&&typeof rec.state.config==='object')
       .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
-  }catch(e){
-    console.warn('Liste des jurys préparés illisible',e);
-    prepared=[];
-  }
+  }catch(e){prepared=[]}
 
   for(const rec of prepared){
     try{
@@ -8391,69 +8424,56 @@ function prepareJuryChoices(){
       if(!products.length)continue;
       const id=String(rec.id||cfg._preparedId||'').trim();
       if(!id)continue;
+      const key=preparedLotKeyV207(rec);
       const signature=prepareJurySignatureFromConfig(cfg);
-      choices.push({
-        id,
-        kind:'prepared',
-        lotName:preparedDisplayNameV207(rec),
-        products:products.length,
-        suppliers:receptionSupplierNames(cfg).length,
+      keep(key,{
+        id,kind:'prepared',lotName:preparedDisplayNameV207(rec),
+        products:products.length,suppliers:receptionSupplierNames(cfg).length,
         current:id===currentId,
         running:!!cfg.juryLaunch?.openedAt&&!cfg.juryClose?.closedAt,
-        signature
-      });
-      if(signature)signatures.add(signature);
-    }catch(e){
-      console.warn('Jury ancien ignoré',e);
-    }
+        signature,sortAt:String(rec.savedAt||rec.state?.updatedAt||'')
+      }, 1e18+preparedRichnessV207(rec));
+    }catch(e){console.warn('Jury ancien ignoré',e)}
   }
 
-  // Lots sauvegardés depuis « Choix des échantillons ».
   let history=[];
   try{
     const raw=loadSampleLotHistory();
-    history=(Array.isArray(raw)?raw:[])
-      .filter(rec=>rec&&typeof rec==='object')
-      .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
-  }catch(e){
-    console.warn('Historique des lots illisible',e);
-    history=[];
-  }
+    history=(Array.isArray(raw)?raw:[]).filter(rec=>rec&&typeof rec==='object');
+  }catch(e){history=[]}
 
   for(const rec of history){
     try{
       const products=Array.isArray(rec.products)?rec.products:[];
       const meta=rec.meta&&typeof rec.meta==='object'?rec.meta:{};
       if(!products.length)continue;
-      const lotName=String(rec.lotName||lotNameFromSampleMeta(meta)||'').trim();
+      const lotName=sampleHistoryDisplayNameV207(rec);
       if(!lotName)continue;
       const id=String(rec.id||uid('samplelot')).trim();
       const signature=String(rec.signature||sampleLotSnapshotSignature(meta,products));
-      if(signature&&signatures.has(signature))continue;
-      choices.push({
-        id,
-        kind:'sampleLot',
-        lotName,
+      const key=sampleHistoryLotKeyV207(rec);
+      keep(key,{
+        id,kind:'sampleLot',lotName,
         products:products.filter(p=>String(p?.name||'').trim()).length||products.length,
         suppliers:(Array.isArray(meta.supplierNames)?meta.supplierNames:[]).filter(x=>String(x||'').trim()).length,
-        current:false,
-        running:false,
-        signature,
-        snapshot:{...rec,id,meta,products}
-      });
-      if(signature)signatures.add(signature);
-    }catch(e){
-      console.warn('Lot ancien ignoré',e);
-    }
+        current:false,running:false,signature,
+        snapshot:{...rec,id,meta,products},sortAt:String(rec.savedAt||'')
+      }, sampleHistoryRichnessV207(rec));
+    }catch(e){console.warn('Lot ancien ignoré',e)}
   }
 
-  // Compatibilité avec le dernier lot des anciennes versions.
   const latest=prepareJuryLatestSampleChoice();
-  if(latest&&(!latest.signature||!signatures.has(latest.signature))){
-    choices.unshift(latest);
+  if(latest){
+    try{
+      const pseudo={id:latest.id,lotName:latest.lotName,meta:latest.meta,products:latest.sampleProducts,savedAt:''};
+      const key=sampleHistoryLotKeyV207(pseudo);
+      keep(key,{...latest,sortAt:''},sampleHistoryRichnessV207(pseudo));
+    }catch(e){}
   }
 
-  return choices;
+  return [...byLot.values()].map(x=>x.choice).sort((a,b)=>
+    String(b.sortAt||'').localeCompare(String(a.sortAt||''))
+  );
 }
 function activatePrepareJuryChoice(choice){
   closePrepareJuryChooser();
@@ -16915,55 +16935,64 @@ document.addEventListener('fullscreenchange',()=>{
   function rebuild(){
     let rows=[];
     try{rows=Array.isArray(loadPreparedJurys())?[...loadPreparedJurys()]:[];}catch(e){rows=[]}
-    const closed=knownClosedLots();
-    const sigs=new Set();
-    const names=new Set();
 
+    const keys=new Set();
     rows.forEach(r=>{
-      const cfg=r?.state?.config||{};
-      const s=cfgSignature(cfg); if(s)sigs.add(s);
-      const n=norm(cfg.lotName||r?.name||''); if(n)names.add(n);
+      try{const k=preparedLotKeyV207(r);if(k)keys.add(k)}catch(e){}
     });
 
     let addedRecovery=0,addedHistory=0;
 
-    /* 1. Sauvegardes locales complètes : priorité car elles peuvent contenir
-       les réceptions et les fiches déjà saisies. */
+    /* Sauvegardes complètes d'abord : elles peuvent contenir les réceptions
+       déjà terminées et les fiches déjà saisies. */
     try{
       const snaps=typeof recoveryLoad==='function'?(recoveryLoad()||[]):[];
+      const best=new Map();
       snaps.forEach(s=>{
-        const st=s?.state;
-        if(!activeState(st))return;
+        const st=s?.state;if(!activeState(st))return;
         const cfg=st.config||{};
-        const n=norm(cfg.lotName||s?.lotName||'');
-        const sig=cfgSignature(cfg);
-        if((sig&&sigs.has(sig))||(n&&names.has(n))||(n&&closed.has(n)))return;
-        const id=String(cfg._preparedId||s?.id||uid('prepared'));
-        cfg._preparedId=id;
-        rows.push({id,savedAt:String(s?.createdAt||st.updatedAt||cfg._preparedAt||''),name:String(cfg.lotName||s?.lotName||'Jury récupéré'),state:safeClone(st)});
-        if(sig)sigs.add(sig); if(n)names.add(n); addedRecovery++;
+        const fake={id:s?.id,name:s?.lotName,state:st,savedAt:s?.createdAt};
+        const key=preparedLotKeyV207(fake);
+        if(!key)return;
+        const old=best.get(key);
+        const score=preparedRichnessV207(fake);
+        if(!old||score>old.score)best.set(key,{s,st,fake,score});
       });
+      for(const [key,x] of best){
+        if(keys.has(key))continue;
+        const cfg=x.st.config||{};
+        const id=String(cfg._preparedId||x.s?.id||uid('prepared'));
+        cfg._preparedId=id;
+        rows.push({id,savedAt:String(x.s?.createdAt||x.st.updatedAt||cfg._preparedAt||''),name:canonicalLotNameV207(cfg,cfg.lotName||x.s?.lotName||'Jury récupéré'),state:safeClone(x.st)});
+        keys.add(key);addedRecovery++;
+      }
     }catch(e){console.warn('Sauvegardes locales non relues',e)}
 
-    /* 2. Historique « Choix des échantillons » : recrée seulement les lots
-       qui ne sont plus présents dans la bibliothèque des jurys. */
+    /* Puis l'historique Choix des échantillons : une seule version, la plus
+       complète, par vrai numéro de lot. */
     try{
       const history=typeof loadSampleLotHistory==='function'?(loadSampleLotHistory()||[]):[];
+      const best=new Map();
       history.forEach(rec=>{
-        const meta=rec?.meta&&typeof rec.meta==='object'?rec.meta:{};
         const products=Array.isArray(rec?.products)?rec.products:[];
-        const lotName=String(rec?.lotName||lotNameFromSampleMeta(meta)||'').trim();
-        if(!lotName||!products.length)return;
-        const n=norm(lotName);
-        let sig='';
-        try{sig=String(rec?.signature||sampleLotSnapshotSignature(meta,products)||'')}catch(e){}
-        if((sig&&sigs.has(sig))||(n&&names.has(n))||(n&&closed.has(n)))return;
-        const st=makeStateFromSample(rec);
-        if(!st)return;
-        const id=String(st.config._preparedId);
-        rows.push({id,savedAt:String(rec?.savedAt||st.updatedAt||''),name:lotName,state:st});
-        if(sig)sigs.add(sig); if(n)names.add(n); addedHistory++;
+        if(!products.length)return;
+        const key=sampleHistoryLotKeyV207(rec);
+        if(!key)return;
+        const old=best.get(key),score=sampleHistoryRichnessV207(rec);
+        if(!old||score>old.score)best.set(key,{rec,score});
       });
+
+      for(const [key,x] of best){
+        if(keys.has(key))continue;
+        const rec=x.rec;
+        const st=makeStateFromSample(rec);
+        if(!st)continue;
+        const id=String(st.config._preparedId);
+        const name=sampleHistoryDisplayNameV207(rec);
+        st.config.lotName=name;
+        rows.push({id,savedAt:String(rec?.savedAt||st.updatedAt||''),name,state:st});
+        keys.add(key);addedHistory++;
+      }
     }catch(e){console.warn('Historique des lots non relu',e)}
 
     if(addedRecovery||addedHistory){
@@ -16973,9 +17002,8 @@ document.addEventListener('fullscreenchange',()=>{
 
     try{if(typeof renderHomeReceptionBadge==='function')renderHomeReceptionBadge();}catch(e){}
     try{if(typeof renderProductSheetHomeBadgesV200==='function')renderProductSheetHomeBadgesV200();}catch(e){}
-    return {addedRecovery,addedHistory,total:rows.length};
+    return {addedRecovery,addedHistory,total:rows.length,unique:keys.size};
   }
-
   window.rebuildActiveLotsV207=rebuild;
   setTimeout(rebuild,120);
   setTimeout(rebuild,800);
