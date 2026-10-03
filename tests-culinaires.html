@@ -15698,16 +15698,83 @@ async function ensureOwnerIdentity(){
 function isSecurityOwner(){return !!securityOwnerAuthorized}
 function isAdminSessionUnlocked(){return sessionStorage.getItem(ADMIN_UNLOCK_SESSION_KEY)==='1'}
 function setAdminSessionUnlocked(v){if(v)sessionStorage.setItem(ADMIN_UNLOCK_SESSION_KEY,'1');else sessionStorage.removeItem(ADMIN_UNLOCK_SESSION_KEY)}
+function knownSecurityConfigsV208(){
+  const out=[],seen=new Set();
+  const add=s=>{
+    if(!s||!s.pinHash||!s.pinSalt||!s.adminTokenHash)return;
+    const k=[s.adminTokenHash,s.pinSalt,s.pinHash].join('|');
+    if(seen.has(k))return;
+    seen.add(k);out.push(s);
+  };
+  try{add(state?.config?.security)}catch(e){}
+  try{
+    const rows=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
+    (Array.isArray(rows)?rows:[]).forEach(r=>add(r?.state?.config?.security));
+  }catch(e){}
+  try{
+    const rows=JSON.parse(localStorage.getItem(ARCHIVE_STORAGE_KEY)||'[]');
+    (Array.isArray(rows)?rows:[]).forEach(r=>add(r?.state?.config?.security||r?.config?.security));
+  }catch(e){}
+  try{
+    const rows=JSON.parse(localStorage.getItem(RECOVERY_STORAGE_KEY)||'[]');
+    (Array.isArray(rows)?rows:[]).forEach(r=>add(r?.state?.config?.security||r?.snapshot?.state?.config?.security));
+  }catch(e){}
+  /* Dernier recours : anciennes clés de l'application conservées dans ce navigateur. */
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i)||'';
+      if(!/test_culinaire|jury|prepared|recovery|backup/i.test(k))continue;
+      const raw=localStorage.getItem(k);if(!raw||raw.length<2)continue;
+      let v;try{v=JSON.parse(raw)}catch(e){continue}
+      const walk=(x,d=0)=>{
+        if(!x||d>4)return;
+        if(Array.isArray(x)){x.forEach(y=>walk(y,d+1));return}
+        if(typeof x!=='object')return;
+        add(x?.config?.security);add(x?.state?.config?.security);add(x?.security);
+        ['prepared','preparedJurys','jurys','juries','rows','items','snapshots','backups','history','states','data'].forEach(p=>{
+          if(x[p]!=null)walk(x[p],d+1);
+        });
+      };
+      walk(v,0);
+    }
+  }catch(e){}
+  return out;
+}
+function adoptSecurityConfigV208(s){
+  try{
+    if(!s||!state?.config)return;
+    const cur=state.config.security||{};
+    state.config.security={...s,
+      ownerTokenHash:s.ownerTokenHash||cur.ownerTokenHash||null,
+      ownerSecurityVersion:s.ownerSecurityVersion||cur.ownerSecurityVersion||1,
+      updatedAt:new Date().toISOString()
+    };
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  }catch(e){}
+}
 async function verifyAdminToken(token=storedAdminToken()){
   if(!securityEnabled())return true;
   if(!token)return false;
   const h=await secureHash('admin:'+token);
-  return h===securityConfig().adminTokenHash
+  const candidates=knownSecurityConfigsV208();
+  const match=candidates.find(s=>s.adminTokenHash===h);
+  if(match){
+    if(match!==securityConfig())adoptSecurityConfigV208(match);
+    return true;
+  }
+  return false;
 }
 async function verifyPin(pin){
-  const s=securityConfig();if(!s?.pinHash||!s?.pinSalt)return false;
-  const h=await secureHash('pin:'+s.pinSalt+':'+pin);
-  return h===s.pinHash
+  if(!pin)return false;
+  const candidates=knownSecurityConfigsV208();
+  for(const s of candidates){
+    const h=await secureHash('pin:'+s.pinSalt+':'+pin);
+    if(h===s.pinHash){
+      if(s!==securityConfig())adoptSecurityConfigV208(s);
+      return true;
+    }
+  }
+  return false;
 }
 function adminAccessState(){
   if(guestTester)return 'guest';
