@@ -15758,6 +15758,21 @@ async function refreshAdminAuthorization({forceGate=false}={}){
     adminSecurityAuthorized=true;adminSecurityChecking=false;
     document.body.classList.remove('admin-locked','admin-denied');updateSecurityButtons();return true
   }
+
+  /* Correctif PIN : une fois le bon PIN saisi, une synchronisation cloud
+     ne doit jamais reverrouiller immédiatement l'application. */
+  if(isAdminSessionUnlocked()){
+    adminSecurityAuthorized=true;
+    adminSecurityChecking=false;
+    document.body.classList.remove('admin-locked','admin-denied');
+    try{
+      if(securityConfig()?.ownerTokenHash)await refreshOwnerAuthorization();
+    }catch(e){}
+    updateSecurityButtons();
+    if(forceGate)showView(adminRequestedView||'homeView');
+    return true
+  }
+
   adminSecurityChecking=true;renderAdminGate();
   adminSecurityAuthorized=await verifyAdminToken();
   adminSecurityChecking=false;
@@ -15766,7 +15781,7 @@ async function refreshAdminAuthorization({forceGate=false}={}){
     if(securityConfig()?.ownerTokenHash)await refreshOwnerAuthorization();
   }
   updateSecurityButtons();
-  if(forceGate||!adminSecurityAuthorized||!isAdminSessionUnlocked())showView(adminRequestedView||'homeView');
+  showView(adminRequestedView||'homeView');
   return adminSecurityAuthorized
 }
 function updateSecurityButtons(){
