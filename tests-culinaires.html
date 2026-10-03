@@ -16876,5 +16876,222 @@ document.addEventListener('fullscreenchange',()=>{
   setTimeout(function(){syncLibrary(true);},12000);
 })();
 </script>
+
+<!-- v208 : récupération non destructive des anciens jurys depuis le navigateur et les anciennes sessions Supabase -->
+<script id="v208-recover-old-juries">
+(function(){
+  'use strict';
+
+  function norm(s){
+    return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  }
+  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return null;}}
+  function validState(st){
+    return !!(st&&st.config&&Array.isArray(st.config.products)&&st.config.products.length);
+  }
+  function activeState(st){
+    var cfg=st&&st.config||{};
+    return validState(st)&&!(cfg.juryClose&&cfg.juryClose.closedAt)&&!(cfg._archive&&cfg._archive.archivedAt);
+  }
+  function recFromState(st,hintId,hintName,hintDate){
+    st=clone(st); if(!validState(st))return null;
+    var cfg=st.config||{};
+    var id=String(cfg._preparedId||hintId||'').trim();
+    var name=String(cfg.lotName||hintName||'Jury récupéré').trim()||'Jury récupéré';
+    if(!id)id='recovered-'+norm(name).replace(/\s+/g,'-')+'-'+Math.random().toString(36).slice(2,7);
+    cfg._preparedId=id;
+    return {id:id,savedAt:String(hintDate||st.updatedAt||cfg._preparedAt||''),name:name,state:st};
+  }
+  function richness(rec){
+    try{
+      var st=rec&&rec.state||{},cfg=st.config||{},score=0;
+      var ps=Array.isArray(cfg.products)?cfg.products:[];
+      score+=ps.length*20;
+      ps.forEach(function(p){score+=(Array.isArray(p.samples)?p.samples.length:0)*5;});
+      var rs=Array.isArray(cfg.receptions)?cfg.receptions:[];
+      score+=rs.length*40;
+      rs.forEach(function(x){if(x&&x.validatedAt)score+=100;if(x&&x.driverSignature)score+=25;});
+      var sheets=cfg.productSheets&&typeof cfg.productSheets==='object'?cfg.productSheets:{};
+      score+=Object.keys(sheets).length*20;
+      var testers=st.testers&&typeof st.testers==='object'?st.testers:{};
+      Object.keys(testers).forEach(function(k){
+        var t=testers[k]||{},a=t.answers||{};
+        score+=Object.keys(a).length*3;if(t.validatedAt)score+=10;
+      });
+      return score;
+    }catch(e){return 0;}
+  }
+  function addCandidate(map,rec,source){
+    if(!rec||!activeState(rec.state))return;
+    var nameKey=norm(rec.name||rec.state?.config?.lotName);
+    var idKey=String(rec.id||'');
+    var key=idKey?'id:'+idKey:'name:'+nameKey;
+    var existing=map.get(key);
+    if(!existing&&nameKey){
+      for(const [k,v] of map.entries()){
+        if(norm(v.rec.name||v.rec.state?.config?.lotName)===nameKey){existing=v;key=k;break;}
+      }
+    }
+    if(!existing||richness(rec)>richness(existing.rec)){
+      map.set(key,{rec:rec,source:source});
+    }
+  }
+  function scanObject(v,map,source,depth){
+    if(depth>5||v==null)return;
+    if(Array.isArray(v)){
+      v.forEach(function(x){scanObject(x,map,source,depth+1);});
+      return;
+    }
+    if(typeof v!=='object')return;
+
+    if(validState(v)){
+      addCandidate(map,recFromState(v,'','',v.updatedAt),source);
+    }
+    if(validState(v.state)){
+      addCandidate(map,recFromState(v.state,v.id,v.name,v.savedAt||v.createdAt),source);
+    }
+    if(v.snapshot&&validState(v.snapshot.state)){
+      addCandidate(map,recFromState(v.snapshot.state,v.snapshot.id,v.snapshot.lotName,v.snapshot.createdAt),source);
+    }
+    if(v.snapshot&&validState(v.snapshot)){
+      addCandidate(map,recFromState(v.snapshot,v.snapshot.id,v.snapshot.lotName,v.snapshot.createdAt),source);
+    }
+
+    var keys=['prepared','preparedJurys','jurys','juries','rows','items','snapshots','backups','history','states','data'];
+    keys.forEach(function(k){if(v[k]!=null)scanObject(v[k],map,source,depth+1);});
+  }
+  function scanLocal(map){
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i)||'';
+      if(!/test_culinaire|jury|prepared|recovery|backup/i.test(k))continue;
+      if(/^jm-tc-auth-/.test(k))continue;
+      var raw=localStorage.getItem(k);
+      if(!raw||raw.length<2)continue;
+      try{scanObject(JSON.parse(raw),map,'navigateur : '+k,0);}catch(e){}
+    }
+    try{
+      (typeof loadPreparedJurys==='function'?loadPreparedJurys():[]).forEach(function(rec){
+        if(rec&&rec.state)addCandidate(map,recFromState(rec.state,rec.id,rec.name,rec.savedAt), 'bibliothèque actuelle');
+      });
+    }catch(e){}
+  }
+
+  async function scanCloud(map){
+    if(!window.supabase?.createClient||typeof DEFAULT_SUPABASE_URL==='undefined'||typeof DEFAULT_SUPABASE_KEY==='undefined')return 0;
+    var authKeys=[];
+    for(var i=0;i<localStorage.length;i++){
+      var k=localStorage.key(i)||'';
+      if(/^jm-tc-auth-/.test(k)&&/-admin-owner$/.test(k))authKeys.push(k);
+    }
+    var sessionSeen=new Set(), found=0;
+    for(const storageKey of authKeys){
+      try{
+        var client=window.supabase.createClient(DEFAULT_SUPABASE_URL,DEFAULT_SUPABASE_KEY,{
+          auth:{persistSession:true,autoRefreshToken:false,detectSessionInUrl:false,storageKey:storageKey}
+        });
+        var s=await client.auth.getSession();
+        if(!s?.data?.session?.user)continue;
+        var mr=await client.from('test_culinaire_memberships').select('session_id,role,tester_no').eq('role','admin');
+        if(mr.error||!Array.isArray(mr.data))continue;
+        var ids=mr.data.map(function(x){return x.session_id;}).filter(Boolean).filter(function(x){
+          if(sessionSeen.has(x))return false;sessionSeen.add(x);return true;
+        });
+        if(!ids.length)continue;
+        for(var p=0;p<ids.length;p+=20){
+          var batch=ids.slice(p,p+20);
+          var sr=await client.from('test_culinaire_sessions').select('session_id,config,updated_at').in('session_id',batch);
+          if(sr.error||!Array.isArray(sr.data))continue;
+          sr.data.forEach(function(row){
+            if(!row||!validState({config:row.config}))return;
+            var st=makeInitialState?makeInitialState(row.config):{config:row.config,testers:{}};
+            if(!st.config)st.config=row.config;
+            var rec=recFromState(st,'cloud-'+row.session_id,row.config?.lotName,row.updated_at);
+            if(rec){addCandidate(map,rec,'Supabase');found++;}
+          });
+        }
+      }catch(e){console.warn('Récupération ancienne session',e);}
+    }
+    return found;
+  }
+
+  function mergeRecovered(map){
+    var existing=[];
+    try{existing=typeof loadPreparedJurys==='function'?(loadPreparedJurys()||[]):[];}catch(e){existing=[];}
+    var byName=new Map();
+    existing.forEach(function(r){byName.set(norm(r?.name||r?.state?.config?.lotName),r);});
+    var added=0,upgraded=0;
+    for(const x of map.values()){
+      var rec=x.rec;
+      var nk=norm(rec.name||rec.state?.config?.lotName);
+      var current=byName.get(nk);
+      if(!current){
+        existing.push(rec);byName.set(nk,rec);added++;
+      }else if(richness(rec)>richness(current)){
+        var idx=existing.indexOf(current);
+        if(idx>=0)existing[idx]=rec;
+        byName.set(nk,rec);upgraded++;
+      }
+    }
+    existing=existing.filter(function(r){return r&&r.state&&activeState(r.state);})
+      .sort(function(a,b){return String(b.savedAt||'').localeCompare(String(a.savedAt||''));})
+      .slice(0,30);
+    if(typeof savePreparedJurys==='function')savePreparedJurys(existing);
+    try{if(typeof renderHome==='function')renderHome();}catch(e){}
+    try{if(typeof renderHomeReceptionBadge==='function')renderHomeReceptionBadge();}catch(e){}
+    try{if(typeof renderProductSheetHomeBadgesV200==='function')renderProductSheetHomeBadgesV200();}catch(e){}
+    return {added:added,upgraded:upgraded,total:existing.length};
+  }
+
+  async function recoverOldJurys(){
+    var btn=document.getElementById('recoverOldJurysV208Btn');
+    if(btn){btn.disabled=true;btn.textContent='Recherche…';}
+    try{
+      var map=new Map();
+      scanLocal(map);
+      var localCount=map.size;
+      var cloudCount=await scanCloud(map);
+      var rows=Array.from(map.values());
+      if(!rows.length){
+        alert('Aucun ancien jury supplémentaire n’a été retrouvé dans le navigateur ni dans les anciennes sessions cloud accessibles.');
+        return;
+      }
+      var names=rows.map(function(x){return '• '+(x.rec.name||'Jury')+' — '+x.source;}).slice(0,15);
+      var more=rows.length>15?'\n• … '+(rows.length-15)+' autre(s)':'';
+      var ok=confirm(
+        rows.length+' jury(s) actif(s) retrouvé(s).\n\n'+names.join('\n')+more+
+        '\n\nCette récupération est non destructive : elle ajoute les jurys manquants et garde la version la plus complète lorsqu’un lot existe déjà. Continuer ?'
+      );
+      if(!ok)return;
+      var res=mergeRecovered(map);
+      try{if(typeof syncPreparedLibraryV208==='function')await syncPreparedLibraryV208();}catch(e){}
+      alert('Récupération terminée.\n\nAjoutés : '+res.added+'\nEnrichis : '+res.upgraded+'\nJurys actifs disponibles : '+res.total+'\n\nLes compteurs de l’accueil ont été recalculés.');
+    }catch(e){
+      console.error(e);
+      alert('La récupération a rencontré une erreur : '+(e?.message||e));
+    }finally{
+      if(btn){btn.disabled=false;btn.textContent='♻️ Récupérer anciens jurys';}
+    }
+  }
+
+  function installButton(){
+    if(document.getElementById('recoverOldJurysV208Btn'))return;
+    var host=document.querySelector('.advanced-tools-body');
+    if(!host)return;
+    var b=document.createElement('button');
+    b.type='button';
+    b.className='btn btn-small';
+    b.id='recoverOldJurysV208Btn';
+    b.textContent='♻️ Récupérer anciens jurys';
+    b.onclick=recoverOldJurys;
+    host.appendChild(b);
+  }
+
+  window.recoverOldJurysV208=recoverOldJurys;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(installButton,300);});
+  else setTimeout(installButton,300);
+  setTimeout(installButton,1500);
+})();
+</script>
 </body>
 </html>
