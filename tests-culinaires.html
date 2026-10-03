@@ -6507,6 +6507,61 @@ function loadPreparedJurys(){
 function savePreparedJurys(rows){
   localStorage.setItem(PREPARED_JURY_STORAGE_KEY,JSON.stringify(Array.isArray(rows)?rows:[]));
 }
+
+/* V207 — vue anti-doublons non destructive.
+   Les copies brutes restent intactes dans localStorage. Pour l'affichage,
+   les compteurs et le choix d'un jury, une seule version est retenue par lot. */
+function preparedLotKeyV207(rec){
+  const cfg=rec?.state?.config||{};
+  const direct=String(cfg.lotNumber||'').trim();
+  if(direct)return 'lot:'+direct.toLowerCase();
+  const raw=String(cfg.lotName||rec?.name||'').trim();
+  const m=raw.match(/^\s*lot\s*([0-9A-Za-z._-]+)/i);
+  if(m&&m[1])return 'lot:'+String(m[1]).toLowerCase();
+  return 'name:'+raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function preparedRichnessV207(rec){
+  const st=rec?.state||{},cfg=st.config||{};
+  const products=Array.isArray(cfg.products)?cfg.products:[];
+  const samples=products.reduce((n,p)=>n+(Array.isArray(p?.samples)?p.samples.length:0),0);
+  const suppliers=(typeof receptionSupplierNames==='function')
+    ?receptionSupplierNames(cfg).length
+    :(Array.isArray(cfg.supplierNames)?cfg.supplierNames.filter(x=>String(x||'').trim()).length:0);
+  const running=!!cfg?.juryLaunch?.openedAt&&!cfg?.juryClose?.closedAt;
+  const validatedReceptions=(Array.isArray(cfg.receptions)?cfg.receptions:[])
+    .filter(x=>x&&x.validatedAt).length;
+  let filledSheets=0;
+  try{
+    if(typeof productSheetsProgress==='function')filledSheets=Number(productSheetsProgress(st)?.filled||0);
+  }catch(e){}
+  const testers=Math.max(0,Number(cfg.testerCount||0));
+  const saved=Date.parse(rec?.savedAt||st?.updatedAt||cfg?._preparedAt||'')||0;
+
+  /* Priorité à une version réellement lancée, puis à la structure la plus complète.
+     Les données déjà saisies servent ensuite de départage, puis la date la plus récente. */
+  return (running?1e15:0)
+    + products.length*1e12
+    + samples*1e9
+    + suppliers*1e7
+    + validatedReceptions*1e5
+    + filledSheets*1e3
+    + testers*10
+    + Math.min(saved/1e12,9);
+}
+function visiblePreparedJurysV207(rows){
+  const src=Array.isArray(rows)?rows:(typeof loadPreparedJurys==='function'?loadPreparedJurys():[]);
+  const groups=new Map();
+  for(const rec of src){
+    if(!rec?.state?.config)continue;
+    const key=preparedLotKeyV207(rec)||('id:'+String(rec.id||''));
+    const old=groups.get(key);
+    if(!old||preparedRichnessV207(rec)>preparedRichnessV207(old))groups.set(key,rec);
+  }
+  return [...groups.values()].sort((a,b)=>
+    String(b?.savedAt||b?.state?.updatedAt||'').localeCompare(String(a?.savedAt||a?.state?.updatedAt||''))
+  );
+}
 function upsertPreparedJury(st=state){
   if(!st?.config)return null;
   const id=st.config._preparedId||uid('prepared');
@@ -6606,7 +6661,7 @@ function renderJuryChooser(){
   const list=$('#juryChooserList');
   if(!list)return;
 
-  const rows=loadPreparedJurys()
+  const rows=visiblePreparedJurysV207()
     .filter(rec=>rec?.state?.config && !rec.state.config?.juryClose?.closedAt)
     .sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
 
@@ -6678,7 +6733,7 @@ function renderPreparedHome(){
   const section=$('#preparedJuriesHome'),list=$('#preparedHomeList'),count=$('#preparedHomeCount');
   if(!section||!list||!count)return;
 
-  const rows=loadPreparedJurys().filter(rec=>!rec?.state?.config?.juryClose?.closedAt);
+  const rows=visiblePreparedJurysV207().filter(rec=>!rec?.state?.config?.juryClose?.closedAt);
   section.hidden=!rows.length;
   count.textContent=rows.length;
 
@@ -7414,7 +7469,7 @@ function productLotsV174(){
     seen.add(curId);
   }
 
-  for(const rec of loadPreparedJurys()){
+  for(const rec of visiblePreparedJurysV207()){
     const rcfg=rec?.state?.config||{};
     if(!rcfg.products?.length)continue;
     const id=String(rec.id||rcfg._preparedId||'');
@@ -7543,7 +7598,7 @@ function allReceptionLots(){
     if(key)seenLots.add(key);
   }
 
-  const prepared=[...(loadPreparedJurys()||[])].sort((a,b)=>
+  const prepared=[...(visiblePreparedJurysV207()||[])].sort((a,b)=>
     String(b?.savedAt||b?.state?.config?._preparedAt||'')
       .localeCompare(String(a?.savedAt||a?.state?.config?._preparedAt||''))
   );
@@ -8302,7 +8357,7 @@ function prepareJuryChoices(){
   // Jurys déjà préparés. Un ancien enregistrement invalide est simplement ignoré.
   let prepared=[];
   try{
-    const raw=loadPreparedJurys();
+    const raw=visiblePreparedJurysV207();
     prepared=(Array.isArray(raw)?raw:[])
       .filter(rec=>rec&&rec.state&&rec.state.config&&typeof rec.state.config==='object')
       .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
@@ -8612,7 +8667,7 @@ function renderMyJuriesDashboard(){
   const prep=$('#prepLane'),run=$('#runLane'),done=$('#doneLane');
   if(!prep||!run||!done)return;
   const phase=currentJuryPhase();
-  const prepared=loadPreparedJurys();
+  const prepared=visiblePreparedJurysV207();
   const archives=loadArchives().sort((a,b)=>String(b.archivedAt||'').localeCompare(String(a.archivedAt||'')));
   const currentArchiveId=state.config?._archive?.archiveId||null;
   const recentArchives=archives.filter(a=>a.id!==currentArchiveId).slice(0,4);
@@ -8649,7 +8704,7 @@ function renderMyJuriesDashboard(){
 }
 
 function renderHome(){ensureCurrentPrepSaved();updateHeader();showView('homeView');renderHomeReceptionBadge();const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
-const preparedCount=loadPreparedJurys().filter(r=>!r?.state?.config?.juryClose?.closedAt).length;
+const preparedCount=visiblePreparedJurysV207().filter(r=>!r?.state?.config?.juryClose?.closedAt).length;
 $('#juryBtnTitle').textContent=preparedCount>1
   ?'Choisir un jury'
   :(opened||m.done)
@@ -9083,7 +9138,7 @@ async function officialLaunch(){
   renderJuryView();
 }
 function openJuryFlow(){
-  const prepared=loadPreparedJurys().filter(r=>!r?.state?.config?.juryClose?.closedAt);
+  const prepared=visiblePreparedJurysV207().filter(r=>!r?.state?.config?.juryClose?.closedAt);
 
   if(prepared.length>1){
     renderJuryChooser();
