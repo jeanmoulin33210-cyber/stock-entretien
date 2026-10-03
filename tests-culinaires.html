@@ -15713,7 +15713,10 @@ function adminAccessState(){
   if(guestTester)return 'guest';
   if(!securityEnabled())return 'unprotected';
   if(adminSecurityChecking)return 'checking';
-  if(!adminSecurityAuthorized)return 'denied';
+  /* V207 correctif : sur l'appareil propriétaire, le PIN suffit pour ouvrir
+     l'administration. L'absence d'un ancien jeton admin ne doit plus empêcher
+     l'affichage du clavier PIN. Les liens testeurs restent bloqués par guestTester. */
+  if(!adminSecurityAuthorized)return 'locked';
   if(!isAdminSessionUnlocked())return 'locked';
   return 'unlocked'
 }
@@ -15871,6 +15874,8 @@ async function unlockAdmin(){
   if(!pin){toast('Saisissez votre code PIN');return}
   const ok=await verifyPin(pin);
   if(!ok){$('#adminPinInput').value='';$('#adminPinInput').focus();toast('Code PIN incorrect');return}
+  /* V207 correctif : un PIN valide réautorise l'administration locale. */
+  adminSecurityAuthorized=true;
   setAdminSessionUnlocked(true);document.body.classList.remove('admin-locked','admin-denied');$('#adminPinInput').value='';updateSecurityButtons();
   const target=adminRequestedView||'homeView';
   if(target==='homeView')renderHome();
