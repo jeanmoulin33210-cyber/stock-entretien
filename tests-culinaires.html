@@ -29,7 +29,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v208</title>
+<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v207</title>
 <style>
 :root{
   --bg:#f4f7fb; --panel:#fff; --ink:#172033; --muted:#667085; --line:#e5eaf0;
@@ -4489,8 +4489,8 @@ body.tester-preview-mode #testerView{
 
 </head>
 <body>
-<div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v208</div>
-<script>(function(){try{var e=document.getElementById('v199Diag');var r=window.__JM_REQUESTED_ROLE_V199||'local';e.textContent='v208 · demandé: '+r;setTimeout(function(){if(e)e.style.opacity='.35'},7000)}catch(_){}})();</script>
+<div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v207</div>
+<script>(function(){try{var e=document.getElementById('v199Diag');var r=window.__JM_REQUESTED_ROLE_V199||'local';e.textContent='v207 · demandé: '+r;setTimeout(function(){if(e)e.style.opacity='.35'},7000)}catch(_){}})();</script>
 
 <!-- V197 : bascule automatique des identités Propriétaire/Testeur selon le lien ouvert -->
 <script id="v197-cache-reset">
@@ -4502,7 +4502,7 @@ body.tester-preview-mode #testerView{
 </script>
 <div id="ipadStartupDiagnostic">
   <strong id="ipadDiagTitle">Vérification de l’application…</strong>
-  <span id="ipadDiagText">Version v208.</span>
+  <span id="ipadDiagText">Version v207.</span>
   <div class="diag-actions">
     <button class="diag-refresh" type="button" onclick="window.forceIpadAppRefresh()">Forcer l’actualisation iPad</button>
     <button class="diag-close" type="button" onclick="document.getElementById('ipadStartupDiagnostic').style.display='none'">Fermer</button>
@@ -4550,19 +4550,19 @@ body.tester-preview-mode #testerView{
     var badge=document.getElementById('appBuildBadge');
     if(engineOk){
       if(badge){
-        badge.innerHTML='v208 · OK';
+        badge.innerHTML='v207 · OK';
         badge.style.background='#e6f5ee';
         badge.style.color='#146c4e';
       }
     }else{
       if(badge){
-        badge.innerHTML='v208 · moteur arrêté';
+        badge.innerHTML='v207 · moteur arrêté';
         badge.style.background='#fff0d8';
         badge.style.color='#8c5a00';
       }
       showDiag(
         'L’application ne s’est pas démarrée',
-        'Le fichier v208 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
+        'Le fichier v207 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
       );
     }
   },5000);
@@ -4574,7 +4574,7 @@ body.tester-preview-mode #testerView{
   <div class="brandmark">TC</div>
   <div class="topbar-title"><strong id="headerTitle">Tests culinaires</strong><span id="headerSub">Groupe Marchés Nouvelle-Aquitaine</span></div>
   <span class="cloud-status" id="cloudStatus">● Local</span>
-  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v208</span>
+  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v207</span>
   <button class="btn btn-secondary btn-small admin-security-btn" id="adminLockBtn">🔐 Sécurité</button>
   <button class="btn btn-secondary btn-small" id="homeBtn">Accueil</button>
 </header>
@@ -15698,83 +15698,16 @@ async function ensureOwnerIdentity(){
 function isSecurityOwner(){return !!securityOwnerAuthorized}
 function isAdminSessionUnlocked(){return sessionStorage.getItem(ADMIN_UNLOCK_SESSION_KEY)==='1'}
 function setAdminSessionUnlocked(v){if(v)sessionStorage.setItem(ADMIN_UNLOCK_SESSION_KEY,'1');else sessionStorage.removeItem(ADMIN_UNLOCK_SESSION_KEY)}
-function knownSecurityConfigsV208(){
-  const out=[],seen=new Set();
-  const add=s=>{
-    if(!s||!s.pinHash||!s.pinSalt||!s.adminTokenHash)return;
-    const k=[s.adminTokenHash,s.pinSalt,s.pinHash].join('|');
-    if(seen.has(k))return;
-    seen.add(k);out.push(s);
-  };
-  try{add(state?.config?.security)}catch(e){}
-  try{
-    const rows=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
-    (Array.isArray(rows)?rows:[]).forEach(r=>add(r?.state?.config?.security));
-  }catch(e){}
-  try{
-    const rows=JSON.parse(localStorage.getItem(ARCHIVE_STORAGE_KEY)||'[]');
-    (Array.isArray(rows)?rows:[]).forEach(r=>add(r?.state?.config?.security||r?.config?.security));
-  }catch(e){}
-  try{
-    const rows=JSON.parse(localStorage.getItem(RECOVERY_STORAGE_KEY)||'[]');
-    (Array.isArray(rows)?rows:[]).forEach(r=>add(r?.state?.config?.security||r?.snapshot?.state?.config?.security));
-  }catch(e){}
-  /* Dernier recours : anciennes clés de l'application conservées dans ce navigateur. */
-  try{
-    for(let i=0;i<localStorage.length;i++){
-      const k=localStorage.key(i)||'';
-      if(!/test_culinaire|jury|prepared|recovery|backup/i.test(k))continue;
-      const raw=localStorage.getItem(k);if(!raw||raw.length<2)continue;
-      let v;try{v=JSON.parse(raw)}catch(e){continue}
-      const walk=(x,d=0)=>{
-        if(!x||d>4)return;
-        if(Array.isArray(x)){x.forEach(y=>walk(y,d+1));return}
-        if(typeof x!=='object')return;
-        add(x?.config?.security);add(x?.state?.config?.security);add(x?.security);
-        ['prepared','preparedJurys','jurys','juries','rows','items','snapshots','backups','history','states','data'].forEach(p=>{
-          if(x[p]!=null)walk(x[p],d+1);
-        });
-      };
-      walk(v,0);
-    }
-  }catch(e){}
-  return out;
-}
-function adoptSecurityConfigV208(s){
-  try{
-    if(!s||!state?.config)return;
-    const cur=state.config.security||{};
-    state.config.security={...s,
-      ownerTokenHash:s.ownerTokenHash||cur.ownerTokenHash||null,
-      ownerSecurityVersion:s.ownerSecurityVersion||cur.ownerSecurityVersion||1,
-      updatedAt:new Date().toISOString()
-    };
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-  }catch(e){}
-}
 async function verifyAdminToken(token=storedAdminToken()){
   if(!securityEnabled())return true;
   if(!token)return false;
   const h=await secureHash('admin:'+token);
-  const candidates=knownSecurityConfigsV208();
-  const match=candidates.find(s=>s.adminTokenHash===h);
-  if(match){
-    if(match!==securityConfig())adoptSecurityConfigV208(match);
-    return true;
-  }
-  return false;
+  return h===securityConfig().adminTokenHash
 }
 async function verifyPin(pin){
-  if(!pin)return false;
-  const candidates=knownSecurityConfigsV208();
-  for(const s of candidates){
-    const h=await secureHash('pin:'+s.pinSalt+':'+pin);
-    if(h===s.pinHash){
-      if(s!==securityConfig())adoptSecurityConfigV208(s);
-      return true;
-    }
-  }
-  return false;
+  const s=securityConfig();if(!s?.pinHash||!s?.pinSalt)return false;
+  const h=await secureHash('pin:'+s.pinSalt+':'+pin);
+  return h===s.pinHash
 }
 function adminAccessState(){
   if(guestTester)return 'guest';
@@ -16550,7 +16483,7 @@ document.addEventListener('fullscreenchange',()=>{
   function sheetLots(){
     try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
 
-    /* v208 — même périmètre que « Réception chauffeur » :
+    /* v207 — même périmètre que « Réception chauffeur » :
        uniquement les lots encore actifs. Les anciens jurys fermés / archivés
        ne doivent plus gonfler le compteur « Fiches à compléter ». */
     var prepared=(typeof loadPreparedJurys==='function') ? loadPreparedJurys() : [];
@@ -16778,387 +16711,5 @@ document.addEventListener('fullscreenchange',()=>{
 
 
 
-
-<!-- v208 : bibliothèque des lots actifs synchronisée entre version locale et GitHub via la session Supabase propriétaire -->
-<script id="v208-prepared-library-sync">
-(function(){
-  'use strict';
-  var FIELD='_preparedLibraryV208';
-  var rawLoadPrepared=loadPreparedJurys;
-  var rawSavePrepared=savePreparedJurys;
-  var syncing=false;
-
-  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
-  function stripNestedLibrary(st){
-    var x=clone(st||{});
-    try{if(x&&x.config)delete x.config[FIELD];}catch(e){}
-    return x;
-  }
-  function cleanRecord(rec){
-    if(!rec||typeof rec!=='object')return null;
-    var st=stripNestedLibrary(rec.state||{});
-    var cfg=st&&st.config||{};
-    var id=String(rec.id||cfg._preparedId||'').trim();
-    if(!id)return null;
-    if(cfg&&!cfg._preparedId)cfg._preparedId=id;
-    return {id:id,savedAt:String(rec.savedAt||st.updatedAt||cfg._preparedAt||''),name:String(rec.name||cfg.lotName||'Jury préparé'),state:st};
-  }
-  function isActive(rec){
-    var cfg=rec&&rec.state&&rec.state.config||{};
-    return !!(Array.isArray(cfg.products)&&cfg.products.length&&!(cfg.juryClose&&cfg.juryClose.closedAt)&&!(cfg._archive&&cfg._archive.archivedAt));
-  }
-  function richness(rec){
-    try{
-      var st=rec&&rec.state||{},cfg=st.config||{},score=0;
-      var products=Array.isArray(cfg.products)?cfg.products:[];
-      score+=products.length*20;
-      products.forEach(function(p){score+=(Array.isArray(p.samples)?p.samples.length:0)*5;});
-      var receptions=Array.isArray(cfg.receptions)?cfg.receptions:[];
-      score+=receptions.length*30;
-      receptions.forEach(function(rr){
-        if(rr&&rr.validatedAt)score+=80;
-        if(rr&&rr.driverSignature)score+=20;
-        (Array.isArray(rr&&rr.lines)?rr.lines:[]).forEach(function(line){
-          if(!line)return;
-          ['productTemp','interiorTemp','dlc','packaging','decision','observations'].forEach(function(k){if(String(line[k]??'').trim())score+=2;});
-        });
-      });
-      var sheets=cfg.productSheets&&typeof cfg.productSheets==='object'?cfg.productSheets:{};
-      Object.keys(sheets).forEach(function(k){
-        score+=8;var rr=sheets[k]||{};
-        Object.keys(rr).forEach(function(f){if(String(rr[f]??'').trim())score+=1;});
-      });
-      var testers=st.testers&&typeof st.testers==='object'?st.testers:{};
-      Object.keys(testers).forEach(function(t){
-        var a=testers[t]&&testers[t].answers||{};
-        score+=Object.keys(a).length*2;
-        if(testers[t]&&testers[t].validatedAt)score+=5;
-      });
-      return score;
-    }catch(e){return 0;}
-  }
-  function choose(a,b){
-    if(!a)return b;if(!b)return a;
-    var sa=richness(a),sb=richness(b);
-    if(sa!==sb)return sb>sa?b:a;
-    return String(b.savedAt||'')>String(a.savedAt||'')?b:a;
-  }
-  function mergeRows(){
-    var map=new Map();
-    for(var ai=0;ai<arguments.length;ai++){
-      var rows=Array.isArray(arguments[ai])?arguments[ai]:[];
-      rows.forEach(function(row){
-        var rr=cleanRecord(row);if(!rr)return;
-        map.set(rr.id,choose(map.get(rr.id),rr));
-      });
-    }
-    return Array.from(map.values()).sort(function(a,b){return String(b.savedAt||'').localeCompare(String(a.savedAt||''));}).slice(0,30);
-  }
-  function currentRecord(){
-    try{
-      var cfg=state&&state.config||{};
-      var id=String(cfg._preparedId||'').trim();
-      if(!id||!Array.isArray(cfg.products)||!cfg.products.length)return null;
-      return cleanRecord({id:id,savedAt:state.updatedAt||cfg._preparedAt||'',name:cfg.lotName||'Jury préparé',state:state});
-    }catch(e){return null;}
-  }
-  function rawLocalRows(){
-    var rows=[];try{rows=rawLoadPrepared()||[];}catch(e){rows=[];}
-    var cur=currentRecord();
-    return mergeRows(rows,cur?[cur]:[]);
-  }
-  function cloudLibraryRows(){
-    try{return Array.isArray(state&&state.config&&state.config[FIELD])?state.config[FIELD]:[];}catch(e){return[];}
-  }
-  function activeCloudCopy(rows){return mergeRows(rows).filter(isActive).map(cleanRecord).slice(0,30);}
-  function same(a,b){try{return JSON.stringify(a)===JSON.stringify(b);}catch(e){return false;}}
-  function refreshCounters(){
-    try{if(typeof renderHomeReceptionBadge==='function')renderHomeReceptionBadge();}catch(e){}
-    try{if(typeof renderProductSheetHomeBadgesV200==='function')renderProductSheetHomeBadgesV200();}catch(e){}
-  }
-  async function syncLibrary(push){
-    if(syncing)return;syncing=true;
-    try{
-      var local=rawLocalRows(),cloud=cloudLibraryRows(),merged=mergeRows(local,cloud);
-      var localOnly=[];try{localOnly=rawLoadPrepared()||[];}catch(e){}
-      var mergedForLocal=mergeRows(localOnly,merged);
-      if(!same(localOnly,mergedForLocal))rawSavePrepared(mergedForLocal);
-      if(state&&state.config){
-        var cloudCopy=activeCloudCopy(merged);
-        var before=Array.isArray(state.config[FIELD])?state.config[FIELD]:[];
-        if(!same(before,cloudCopy)){
-          state.config[FIELD]=cloudCopy;
-          try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}
-        }
-        if(push&&typeof cloudReady!=='undefined'&&cloudReady&&typeof cloudRole!=='undefined'&&cloudRole==='admin'){
-          try{
-            if(typeof syncDirtyToCloud==='function')await syncDirtyToCloud();
-            else if(typeof scheduleCloudSync==='function')scheduleCloudSync();
-          }catch(e){console.warn('v208 sync lots cloud',e);}
-        }
-      }
-      refreshCounters();
-    }finally{syncing=false;}
-  }
-
-  loadPreparedJurys=function(){
-    var local=[];try{local=rawLoadPrepared()||[];}catch(e){}
-    var merged=mergeRows(local,cloudLibraryRows());
-    if(!same(local,merged))try{rawSavePrepared(merged);}catch(e){}
-    return merged;
-  };
-
-  savePreparedJurys=function(rows){
-    var clean=mergeRows(Array.isArray(rows)?rows:[],cloudLibraryRows());
-    rawSavePrepared(clean);
-    try{
-      if(state&&state.config){
-        var cloudCopy=activeCloudCopy(clean);
-        if(!same(state.config[FIELD]||[],cloudCopy)){
-          state.config[FIELD]=cloudCopy;
-          try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}
-          if(typeof cloudReady!=='undefined'&&cloudReady&&typeof cloudRole!=='undefined'&&cloudRole==='admin'&&typeof scheduleCloudSync==='function')scheduleCloudSync();
-        }
-      }
-    }catch(e){}
-    refreshCounters();
-  };
-
-  try{
-    if(typeof reloadCloudConfig==='function'){
-      var oldReloadCloudConfigV208=reloadCloudConfig;
-      reloadCloudConfig=async function(){
-        var out=await oldReloadCloudConfigV208.apply(this,arguments);
-        await syncLibrary(true);
-        return out;
-      };
-    }
-  }catch(e){}
-
-  window.syncPreparedLibraryV208=function(){return syncLibrary(true);};
-  setTimeout(function(){syncLibrary(false);},100);
-  setTimeout(function(){syncLibrary(true);},900);
-  setTimeout(function(){syncLibrary(true);},2500);
-  setTimeout(function(){syncLibrary(true);},6000);
-  setTimeout(function(){syncLibrary(true);},12000);
-})();
-</script>
-
-<!-- v208 : récupération non destructive des anciens jurys depuis le navigateur et les anciennes sessions Supabase -->
-<script id="v208-recover-old-juries">
-(function(){
-  'use strict';
-
-  function norm(s){
-    return String(s||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
-      .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-  }
-  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return null;}}
-  function validState(st){
-    return !!(st&&st.config&&Array.isArray(st.config.products)&&st.config.products.length);
-  }
-  function activeState(st){
-    var cfg=st&&st.config||{};
-    return validState(st)&&!(cfg.juryClose&&cfg.juryClose.closedAt)&&!(cfg._archive&&cfg._archive.archivedAt);
-  }
-  function recFromState(st,hintId,hintName,hintDate){
-    st=clone(st); if(!validState(st))return null;
-    var cfg=st.config||{};
-    var id=String(cfg._preparedId||hintId||'').trim();
-    var name=String(cfg.lotName||hintName||'Jury récupéré').trim()||'Jury récupéré';
-    if(!id)id='recovered-'+norm(name).replace(/\s+/g,'-')+'-'+Math.random().toString(36).slice(2,7);
-    cfg._preparedId=id;
-    return {id:id,savedAt:String(hintDate||st.updatedAt||cfg._preparedAt||''),name:name,state:st};
-  }
-  function richness(rec){
-    try{
-      var st=rec&&rec.state||{},cfg=st.config||{},score=0;
-      var ps=Array.isArray(cfg.products)?cfg.products:[];
-      score+=ps.length*20;
-      ps.forEach(function(p){score+=(Array.isArray(p.samples)?p.samples.length:0)*5;});
-      var rs=Array.isArray(cfg.receptions)?cfg.receptions:[];
-      score+=rs.length*40;
-      rs.forEach(function(x){if(x&&x.validatedAt)score+=100;if(x&&x.driverSignature)score+=25;});
-      var sheets=cfg.productSheets&&typeof cfg.productSheets==='object'?cfg.productSheets:{};
-      score+=Object.keys(sheets).length*20;
-      var testers=st.testers&&typeof st.testers==='object'?st.testers:{};
-      Object.keys(testers).forEach(function(k){
-        var t=testers[k]||{},a=t.answers||{};
-        score+=Object.keys(a).length*3;if(t.validatedAt)score+=10;
-      });
-      return score;
-    }catch(e){return 0;}
-  }
-  function addCandidate(map,rec,source){
-    if(!rec||!activeState(rec.state))return;
-    var nameKey=norm(rec.name||rec.state?.config?.lotName);
-    var idKey=String(rec.id||'');
-    var key=idKey?'id:'+idKey:'name:'+nameKey;
-    var existing=map.get(key);
-    if(!existing&&nameKey){
-      for(const [k,v] of map.entries()){
-        if(norm(v.rec.name||v.rec.state?.config?.lotName)===nameKey){existing=v;key=k;break;}
-      }
-    }
-    if(!existing||richness(rec)>richness(existing.rec)){
-      map.set(key,{rec:rec,source:source});
-    }
-  }
-  function scanObject(v,map,source,depth){
-    if(depth>5||v==null)return;
-    if(Array.isArray(v)){
-      v.forEach(function(x){scanObject(x,map,source,depth+1);});
-      return;
-    }
-    if(typeof v!=='object')return;
-
-    if(validState(v)){
-      addCandidate(map,recFromState(v,'','',v.updatedAt),source);
-    }
-    if(validState(v.state)){
-      addCandidate(map,recFromState(v.state,v.id,v.name,v.savedAt||v.createdAt),source);
-    }
-    if(v.snapshot&&validState(v.snapshot.state)){
-      addCandidate(map,recFromState(v.snapshot.state,v.snapshot.id,v.snapshot.lotName,v.snapshot.createdAt),source);
-    }
-    if(v.snapshot&&validState(v.snapshot)){
-      addCandidate(map,recFromState(v.snapshot,v.snapshot.id,v.snapshot.lotName,v.snapshot.createdAt),source);
-    }
-
-    var keys=['prepared','preparedJurys','jurys','juries','rows','items','snapshots','backups','history','states','data'];
-    keys.forEach(function(k){if(v[k]!=null)scanObject(v[k],map,source,depth+1);});
-  }
-  function scanLocal(map){
-    for(var i=0;i<localStorage.length;i++){
-      var k=localStorage.key(i)||'';
-      if(!/test_culinaire|jury|prepared|recovery|backup/i.test(k))continue;
-      if(/^jm-tc-auth-/.test(k))continue;
-      var raw=localStorage.getItem(k);
-      if(!raw||raw.length<2)continue;
-      try{scanObject(JSON.parse(raw),map,'navigateur : '+k,0);}catch(e){}
-    }
-    try{
-      (typeof loadPreparedJurys==='function'?loadPreparedJurys():[]).forEach(function(rec){
-        if(rec&&rec.state)addCandidate(map,recFromState(rec.state,rec.id,rec.name,rec.savedAt), 'bibliothèque actuelle');
-      });
-    }catch(e){}
-  }
-
-  async function scanCloud(map){
-    if(!window.supabase?.createClient||typeof DEFAULT_SUPABASE_URL==='undefined'||typeof DEFAULT_SUPABASE_KEY==='undefined')return 0;
-    var authKeys=[];
-    for(var i=0;i<localStorage.length;i++){
-      var k=localStorage.key(i)||'';
-      if(/^jm-tc-auth-/.test(k)&&/-admin-owner$/.test(k))authKeys.push(k);
-    }
-    var sessionSeen=new Set(), found=0;
-    for(const storageKey of authKeys){
-      try{
-        var client=window.supabase.createClient(DEFAULT_SUPABASE_URL,DEFAULT_SUPABASE_KEY,{
-          auth:{persistSession:true,autoRefreshToken:false,detectSessionInUrl:false,storageKey:storageKey}
-        });
-        var s=await client.auth.getSession();
-        if(!s?.data?.session?.user)continue;
-        var mr=await client.from('test_culinaire_memberships').select('session_id,role,tester_no').eq('role','admin');
-        if(mr.error||!Array.isArray(mr.data))continue;
-        var ids=mr.data.map(function(x){return x.session_id;}).filter(Boolean).filter(function(x){
-          if(sessionSeen.has(x))return false;sessionSeen.add(x);return true;
-        });
-        if(!ids.length)continue;
-        for(var p=0;p<ids.length;p+=20){
-          var batch=ids.slice(p,p+20);
-          var sr=await client.from('test_culinaire_sessions').select('session_id,config,updated_at').in('session_id',batch);
-          if(sr.error||!Array.isArray(sr.data))continue;
-          sr.data.forEach(function(row){
-            if(!row||!validState({config:row.config}))return;
-            var st=makeInitialState?makeInitialState(row.config):{config:row.config,testers:{}};
-            if(!st.config)st.config=row.config;
-            var rec=recFromState(st,'cloud-'+row.session_id,row.config?.lotName,row.updated_at);
-            if(rec){addCandidate(map,rec,'Supabase');found++;}
-          });
-        }
-      }catch(e){console.warn('Récupération ancienne session',e);}
-    }
-    return found;
-  }
-
-  function mergeRecovered(map){
-    var existing=[];
-    try{existing=typeof loadPreparedJurys==='function'?(loadPreparedJurys()||[]):[];}catch(e){existing=[];}
-    var byName=new Map();
-    existing.forEach(function(r){byName.set(norm(r?.name||r?.state?.config?.lotName),r);});
-    var added=0,upgraded=0;
-    for(const x of map.values()){
-      var rec=x.rec;
-      var nk=norm(rec.name||rec.state?.config?.lotName);
-      var current=byName.get(nk);
-      if(!current){
-        existing.push(rec);byName.set(nk,rec);added++;
-      }else if(richness(rec)>richness(current)){
-        var idx=existing.indexOf(current);
-        if(idx>=0)existing[idx]=rec;
-        byName.set(nk,rec);upgraded++;
-      }
-    }
-    existing=existing.filter(function(r){return r&&r.state&&activeState(r.state);})
-      .sort(function(a,b){return String(b.savedAt||'').localeCompare(String(a.savedAt||''));})
-      .slice(0,30);
-    if(typeof savePreparedJurys==='function')savePreparedJurys(existing);
-    try{if(typeof renderHome==='function')renderHome();}catch(e){}
-    try{if(typeof renderHomeReceptionBadge==='function')renderHomeReceptionBadge();}catch(e){}
-    try{if(typeof renderProductSheetHomeBadgesV200==='function')renderProductSheetHomeBadgesV200();}catch(e){}
-    return {added:added,upgraded:upgraded,total:existing.length};
-  }
-
-  async function recoverOldJurys(){
-    var btn=document.getElementById('recoverOldJurysV208Btn');
-    if(btn){btn.disabled=true;btn.textContent='Recherche…';}
-    try{
-      var map=new Map();
-      scanLocal(map);
-      var localCount=map.size;
-      var cloudCount=await scanCloud(map);
-      var rows=Array.from(map.values());
-      if(!rows.length){
-        alert('Aucun ancien jury supplémentaire n’a été retrouvé dans le navigateur ni dans les anciennes sessions cloud accessibles.');
-        return;
-      }
-      var names=rows.map(function(x){return '• '+(x.rec.name||'Jury')+' — '+x.source;}).slice(0,15);
-      var more=rows.length>15?'\n• … '+(rows.length-15)+' autre(s)':'';
-      var ok=confirm(
-        rows.length+' jury(s) actif(s) retrouvé(s).\n\n'+names.join('\n')+more+
-        '\n\nCette récupération est non destructive : elle ajoute les jurys manquants et garde la version la plus complète lorsqu’un lot existe déjà. Continuer ?'
-      );
-      if(!ok)return;
-      var res=mergeRecovered(map);
-      try{if(typeof syncPreparedLibraryV208==='function')await syncPreparedLibraryV208();}catch(e){}
-      alert('Récupération terminée.\n\nAjoutés : '+res.added+'\nEnrichis : '+res.upgraded+'\nJurys actifs disponibles : '+res.total+'\n\nLes compteurs de l’accueil ont été recalculés.');
-    }catch(e){
-      console.error(e);
-      alert('La récupération a rencontré une erreur : '+(e?.message||e));
-    }finally{
-      if(btn){btn.disabled=false;btn.textContent='♻️ Récupérer anciens jurys';}
-    }
-  }
-
-  function installButton(){
-    if(document.getElementById('recoverOldJurysV208Btn'))return;
-    var host=document.querySelector('.advanced-tools-body');
-    if(!host)return;
-    var b=document.createElement('button');
-    b.type='button';
-    b.className='btn btn-small';
-    b.id='recoverOldJurysV208Btn';
-    b.textContent='♻️ Récupérer anciens jurys';
-    b.onclick=recoverOldJurys;
-    host.appendChild(b);
-  }
-
-  window.recoverOldJurysV208=recoverOldJurys;
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',function(){setTimeout(installButton,300);});
-  else setTimeout(installButton,300);
-  setTimeout(installButton,1500);
-})();
-</script>
 </body>
 </html>
