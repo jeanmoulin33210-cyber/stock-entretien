@@ -4672,6 +4672,8 @@ body.tester-preview-mode #testerView{
         <button class="btn btn-small" id="adminSecurityBtn">🔐 Sécurité administrateur</button>
         <button class="btn btn-small" id="backupBtn">💾 Sauvegarder</button>
         <button class="btn btn-small" id="restoreBtn">↥ Restaurer</button>
+        <button class="btn btn-small" id="resetLotsBtnV207">🧹 Réinitialiser les lots</button>
+        <button class="btn btn-small" id="restoreLotsBtnV207" style="display:none">↩️ Restaurer les anciens lots</button>
         <input type="file" id="restoreFile" accept="application/json" hidden>
       </div>
     </details>
@@ -16933,6 +16935,9 @@ document.addEventListener('fullscreenchange',()=>{
   }
 
   function rebuild(){
+    if(localStorage.getItem('jm_tc_lots_clean_mode_v207')==='1'){
+      return {addedRecovery:0,addedHistory:0,total:(loadPreparedJurys?.()||[]).length,unique:0,cleanMode:true};
+    }
     let rows=[];
     try{rows=Array.isArray(loadPreparedJurys())?[...loadPreparedJurys()]:[];}catch(e){rows=[]}
 
@@ -17008,6 +17013,119 @@ document.addEventListener('fullscreenchange',()=>{
   setTimeout(rebuild,120);
   setTimeout(rebuild,800);
   setTimeout(rebuild,2200);
+})();
+</script>
+
+<script id="v207-reset-lots-script">
+/* V207 — remise à zéro réversible des listes de lots.
+   Ne touche ni au PIN, ni à la sécurité, ni aux archives, ni aux accès cloud. */
+(function(){
+  'use strict';
+  const BACKUP_KEY='jm_tc_lots_reset_backup_v207';
+  const CLEAN_KEY='jm_tc_lots_clean_mode_v207';
+
+  function lotKeys(){
+    return [
+      PREPARED_JURY_STORAGE_KEY,
+      SAMPLE_LOT_HISTORY_STORAGE_KEY,
+      SAMPLE_MASTER_STORAGE_KEY,
+      SAMPLE_MASTER_META_STORAGE_KEY,
+      SAMPLE_PRODUCTS_STORAGE_KEY
+    ];
+  }
+  function updateButtons(){
+    const restore=document.getElementById('restoreLotsBtnV207');
+    if(restore)restore.style.display=localStorage.getItem(BACKUP_KEY)?'':'none';
+  }
+  async function checkPin(){
+    if(typeof securityEnabled!=='function'||!securityEnabled())return true;
+    const pin=prompt('Saisissez votre code PIN administrateur pour confirmer.');
+    if(pin===null)return false;
+    const ok=await verifyPin(String(pin).trim());
+    if(!ok)alert('Code PIN incorrect. Aucune donnée n’a été modifiée.');
+    return ok;
+  }
+  async function resetLots(){
+    const ok=confirm(
+      'Réinitialiser la liste des lots ?\n\n'+
+      'Une copie de sécurité sera conservée sur ce téléphone.\n'+
+      'Les listes de lots et jurys préparés seront vidées.\n\n'+
+      'Le PIN, la sécurité, les archives et les accès téléphones ne seront pas supprimés.\n'+
+      'Le jury actuellement ouvert peut rester seul visible : c’est normal.'
+    );
+    if(!ok)return;
+    if(!(await checkPin()))return;
+
+    const existing=localStorage.getItem(BACKUP_KEY);
+    if(existing){
+      const replace=confirm('Une ancienne sauvegarde des lots existe déjà. La remplacer par l’état actuel ?');
+      if(!replace)return;
+    }
+
+    const backup={createdAt:new Date().toISOString(),items:{}};
+    for(const k of lotKeys())backup.items[k]=localStorage.getItem(k);
+    try{backup.currentState=localStorage.getItem(STORAGE_KEY)}catch(e){}
+    localStorage.setItem(BACKUP_KEY,JSON.stringify(backup));
+    localStorage.setItem(CLEAN_KEY,'1');
+
+    for(const k of lotKeys())localStorage.removeItem(k);
+
+    /* Le jury courant reste en mémoire pour ne pas casser le PIN/sécurité.
+       On le remet seul dans la bibliothèque s'il existe réellement. */
+    try{
+      if(state?.config?._preparedId && Array.isArray(state?.config?.products) && state.config.products.length){
+        savePreparedJurys([{
+          id:String(state.config._preparedId),
+          savedAt:new Date().toISOString(),
+          name:String(state.config.lotName||'Jury courant'),
+          state:deepClone(state)
+        }]);
+      }
+    }catch(e){console.warn('Jury courant non recopié après remise à zéro',e)}
+
+    updateButtons();
+    try{renderHome()}catch(e){}
+    try{renderHomeReceptionBadge?.()}catch(e){}
+    try{renderProductSheetHomeBadgesV200?.()}catch(e){}
+    alert('Liste des lots réinitialisée.\n\nUne sauvegarde a été conservée. Vous pouvez maintenant recréer les lots proprement. Le jury courant peut rester visible seul.');
+  }
+
+  async function restoreLots(){
+    const raw=localStorage.getItem(BACKUP_KEY);
+    if(!raw){alert('Aucune sauvegarde des anciens lots n’est disponible.');return}
+    if(!(await checkPin()))return;
+    if(!confirm('Restaurer les anciennes listes de lots enregistrées avant la remise à zéro ?'))return;
+
+    try{
+      const backup=JSON.parse(raw);
+      const items=backup?.items||{};
+      for(const k of lotKeys()){
+        const v=items[k];
+        if(v===null||v===undefined)localStorage.removeItem(k);
+        else localStorage.setItem(k,v);
+      }
+      localStorage.removeItem(CLEAN_KEY);
+      updateButtons();
+      alert('Anciens lots restaurés. La page va être rechargée.');
+      location.reload();
+    }catch(e){
+      console.error(e);
+      alert('La sauvegarde des lots est illisible. Aucune restauration n’a été faite.');
+    }
+  }
+
+  function bind(){
+    const a=document.getElementById('resetLotsBtnV207');
+    const b=document.getElementById('restoreLotsBtnV207');
+    if(a)a.onclick=resetLots;
+    if(b)b.onclick=restoreLots;
+    updateButtons();
+  }
+  window.resetLotsV207=resetLots;
+  window.restoreLotsV207=restoreLots;
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);
+  else bind();
+  setTimeout(bind,500);
 })();
 </script>
 </body>
