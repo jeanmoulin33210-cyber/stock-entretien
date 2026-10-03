@@ -6513,13 +6513,18 @@ function savePreparedJurys(rows){
    les compteurs et le choix d'un jury, une seule version est retenue par lot. */
 function preparedLotKeyV207(rec){
   const cfg=rec?.state?.config||{};
-  const direct=String(cfg.lotNumber||'').trim();
-  if(direct)return 'lot:'+direct.toLowerCase();
+  /* La clé principale est exactement le nom visible du lot.
+     C'est volontaire : plusieurs anciennes versions ont stocké lotNumber
+     sous des formes différentes alors que l'écran affichait le même intitulé. */
   const raw=String(cfg.lotName||rec?.name||'').trim();
-  const m=raw.match(/^\s*lot\s*([0-9A-Za-z._-]+)/i);
-  if(m&&m[1])return 'lot:'+String(m[1]).toLowerCase();
-  return 'name:'+raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+  const visible=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  if(visible)return 'name:'+visible;
+
+  const direct=String(cfg.lotNumber||'').trim()
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  return direct?'lot:'+direct:'id:'+String(rec?.id||'');
 }
 function preparedRichnessV207(rec){
   const st=rec?.state||{},cfg=st.config||{};
