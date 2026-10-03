@@ -4489,8 +4489,8 @@ body.tester-preview-mode #testerView{
 
 </head>
 <body>
-<div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v207</div>
-<script>(function(){try{var e=document.getElementById('v199Diag');var r=window.__JM_REQUESTED_ROLE_V199||'local';e.textContent='v207 · demandé: '+r;setTimeout(function(){if(e)e.style.opacity='.35'},7000)}catch(_){}})();</script>
+<div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v208</div>
+<script>(function(){try{var e=document.getElementById('v199Diag');var r=window.__JM_REQUESTED_ROLE_V199||'local';e.textContent='v208 · demandé: '+r;setTimeout(function(){if(e)e.style.opacity='.35'},7000)}catch(_){}})();</script>
 
 <!-- V197 : bascule automatique des identités Propriétaire/Testeur selon le lien ouvert -->
 <script id="v197-cache-reset">
@@ -4502,7 +4502,7 @@ body.tester-preview-mode #testerView{
 </script>
 <div id="ipadStartupDiagnostic">
   <strong id="ipadDiagTitle">Vérification de l’application…</strong>
-  <span id="ipadDiagText">Version v207.</span>
+  <span id="ipadDiagText">Version v208.</span>
   <div class="diag-actions">
     <button class="diag-refresh" type="button" onclick="window.forceIpadAppRefresh()">Forcer l’actualisation iPad</button>
     <button class="diag-close" type="button" onclick="document.getElementById('ipadStartupDiagnostic').style.display='none'">Fermer</button>
@@ -4550,19 +4550,19 @@ body.tester-preview-mode #testerView{
     var badge=document.getElementById('appBuildBadge');
     if(engineOk){
       if(badge){
-        badge.innerHTML='v207 · OK';
+        badge.innerHTML='v208 · OK';
         badge.style.background='#e6f5ee';
         badge.style.color='#146c4e';
       }
     }else{
       if(badge){
-        badge.innerHTML='v207 · moteur arrêté';
+        badge.innerHTML='v208 · moteur arrêté';
         badge.style.background='#fff0d8';
         badge.style.color='#8c5a00';
       }
       showDiag(
         'L’application ne s’est pas démarrée',
-        'Le fichier v207 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
+        'Le fichier v208 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
       );
     }
   },5000);
@@ -4574,7 +4574,7 @@ body.tester-preview-mode #testerView{
   <div class="brandmark">TC</div>
   <div class="topbar-title"><strong id="headerTitle">Tests culinaires</strong><span id="headerSub">Groupe Marchés Nouvelle-Aquitaine</span></div>
   <span class="cloud-status" id="cloudStatus">● Local</span>
-  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v207</span>
+  <span id="appBuildBadge" style="font-size:10px;font-weight:800;padding:5px 8px;border-radius:999px;background:#eef3f6;color:#526777;white-space:nowrap">v208</span>
   <button class="btn btn-secondary btn-small admin-security-btn" id="adminLockBtn">🔐 Sécurité</button>
   <button class="btn btn-secondary btn-small" id="homeBtn">Accueil</button>
 </header>
@@ -16483,15 +16483,14 @@ document.addEventListener('fullscreenchange',()=>{
   function sheetLots(){
     try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
 
-    /* v208 — les fiches commencent après une réception chauffeur terminée.
-       On ne reprend donc plus tous les anciens lots préparés/non clôturés :
-       seuls les lots dont la réception est entièrement validée alimentent
-       « Fiches à compléter » / « Fiches terminées ». */
+    /* v208 — même périmètre que « Réception chauffeur » :
+       uniquement les lots encore actifs. Les anciens jurys fermés / archivés
+       ne doivent plus gonfler le compteur « Fiches à compléter ». */
     var prepared=(typeof loadPreparedJurys==='function') ? loadPreparedJurys() : [];
     var active=[];
 
-    if(typeof completedReceptionLots==='function'){
-      try{ active=completedReceptionLots()||[]; }catch(e){ active=[]; }
+    if(typeof allReceptionLots==='function'){
+      try{ active=allReceptionLots()||[]; }catch(e){ active=[]; }
     }
 
     /* Repli de sécurité si le moteur Réception n'est pas disponible. */
@@ -16712,5 +16711,170 @@ document.addEventListener('fullscreenchange',()=>{
 
 
 
+
+<!-- v208 : bibliothèque des lots actifs synchronisée entre version locale et GitHub via la session Supabase propriétaire -->
+<script id="v208-prepared-library-sync">
+(function(){
+  'use strict';
+  var FIELD='_preparedLibraryV208';
+  var rawLoadPrepared=loadPreparedJurys;
+  var rawSavePrepared=savePreparedJurys;
+  var syncing=false;
+
+  function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return v;}}
+  function stripNestedLibrary(st){
+    var x=clone(st||{});
+    try{if(x&&x.config)delete x.config[FIELD];}catch(e){}
+    return x;
+  }
+  function cleanRecord(rec){
+    if(!rec||typeof rec!=='object')return null;
+    var st=stripNestedLibrary(rec.state||{});
+    var cfg=st&&st.config||{};
+    var id=String(rec.id||cfg._preparedId||'').trim();
+    if(!id)return null;
+    if(cfg&&!cfg._preparedId)cfg._preparedId=id;
+    return {id:id,savedAt:String(rec.savedAt||st.updatedAt||cfg._preparedAt||''),name:String(rec.name||cfg.lotName||'Jury préparé'),state:st};
+  }
+  function isActive(rec){
+    var cfg=rec&&rec.state&&rec.state.config||{};
+    return !!(Array.isArray(cfg.products)&&cfg.products.length&&!(cfg.juryClose&&cfg.juryClose.closedAt)&&!(cfg._archive&&cfg._archive.archivedAt));
+  }
+  function richness(rec){
+    try{
+      var st=rec&&rec.state||{},cfg=st.config||{},score=0;
+      var products=Array.isArray(cfg.products)?cfg.products:[];
+      score+=products.length*20;
+      products.forEach(function(p){score+=(Array.isArray(p.samples)?p.samples.length:0)*5;});
+      var receptions=Array.isArray(cfg.receptions)?cfg.receptions:[];
+      score+=receptions.length*30;
+      receptions.forEach(function(rr){
+        if(rr&&rr.validatedAt)score+=80;
+        if(rr&&rr.driverSignature)score+=20;
+        (Array.isArray(rr&&rr.lines)?rr.lines:[]).forEach(function(line){
+          if(!line)return;
+          ['productTemp','interiorTemp','dlc','packaging','decision','observations'].forEach(function(k){if(String(line[k]??'').trim())score+=2;});
+        });
+      });
+      var sheets=cfg.productSheets&&typeof cfg.productSheets==='object'?cfg.productSheets:{};
+      Object.keys(sheets).forEach(function(k){
+        score+=8;var rr=sheets[k]||{};
+        Object.keys(rr).forEach(function(f){if(String(rr[f]??'').trim())score+=1;});
+      });
+      var testers=st.testers&&typeof st.testers==='object'?st.testers:{};
+      Object.keys(testers).forEach(function(t){
+        var a=testers[t]&&testers[t].answers||{};
+        score+=Object.keys(a).length*2;
+        if(testers[t]&&testers[t].validatedAt)score+=5;
+      });
+      return score;
+    }catch(e){return 0;}
+  }
+  function choose(a,b){
+    if(!a)return b;if(!b)return a;
+    var sa=richness(a),sb=richness(b);
+    if(sa!==sb)return sb>sa?b:a;
+    return String(b.savedAt||'')>String(a.savedAt||'')?b:a;
+  }
+  function mergeRows(){
+    var map=new Map();
+    for(var ai=0;ai<arguments.length;ai++){
+      var rows=Array.isArray(arguments[ai])?arguments[ai]:[];
+      rows.forEach(function(row){
+        var rr=cleanRecord(row);if(!rr)return;
+        map.set(rr.id,choose(map.get(rr.id),rr));
+      });
+    }
+    return Array.from(map.values()).sort(function(a,b){return String(b.savedAt||'').localeCompare(String(a.savedAt||''));}).slice(0,30);
+  }
+  function currentRecord(){
+    try{
+      var cfg=state&&state.config||{};
+      var id=String(cfg._preparedId||'').trim();
+      if(!id||!Array.isArray(cfg.products)||!cfg.products.length)return null;
+      return cleanRecord({id:id,savedAt:state.updatedAt||cfg._preparedAt||'',name:cfg.lotName||'Jury préparé',state:state});
+    }catch(e){return null;}
+  }
+  function rawLocalRows(){
+    var rows=[];try{rows=rawLoadPrepared()||[];}catch(e){rows=[];}
+    var cur=currentRecord();
+    return mergeRows(rows,cur?[cur]:[]);
+  }
+  function cloudLibraryRows(){
+    try{return Array.isArray(state&&state.config&&state.config[FIELD])?state.config[FIELD]:[];}catch(e){return[];}
+  }
+  function activeCloudCopy(rows){return mergeRows(rows).filter(isActive).map(cleanRecord).slice(0,30);}
+  function same(a,b){try{return JSON.stringify(a)===JSON.stringify(b);}catch(e){return false;}}
+  function refreshCounters(){
+    try{if(typeof renderHomeReceptionBadge==='function')renderHomeReceptionBadge();}catch(e){}
+    try{if(typeof renderProductSheetHomeBadgesV200==='function')renderProductSheetHomeBadgesV200();}catch(e){}
+  }
+  async function syncLibrary(push){
+    if(syncing)return;syncing=true;
+    try{
+      var local=rawLocalRows(),cloud=cloudLibraryRows(),merged=mergeRows(local,cloud);
+      var localOnly=[];try{localOnly=rawLoadPrepared()||[];}catch(e){}
+      var mergedForLocal=mergeRows(localOnly,merged);
+      if(!same(localOnly,mergedForLocal))rawSavePrepared(mergedForLocal);
+      if(state&&state.config){
+        var cloudCopy=activeCloudCopy(merged);
+        var before=Array.isArray(state.config[FIELD])?state.config[FIELD]:[];
+        if(!same(before,cloudCopy)){
+          state.config[FIELD]=cloudCopy;
+          try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}
+        }
+        if(push&&typeof cloudReady!=='undefined'&&cloudReady&&typeof cloudRole!=='undefined'&&cloudRole==='admin'){
+          try{
+            if(typeof syncDirtyToCloud==='function')await syncDirtyToCloud();
+            else if(typeof scheduleCloudSync==='function')scheduleCloudSync();
+          }catch(e){console.warn('v208 sync lots cloud',e);}
+        }
+      }
+      refreshCounters();
+    }finally{syncing=false;}
+  }
+
+  loadPreparedJurys=function(){
+    var local=[];try{local=rawLoadPrepared()||[];}catch(e){}
+    var merged=mergeRows(local,cloudLibraryRows());
+    if(!same(local,merged))try{rawSavePrepared(merged);}catch(e){}
+    return merged;
+  };
+
+  savePreparedJurys=function(rows){
+    var clean=mergeRows(Array.isArray(rows)?rows:[],cloudLibraryRows());
+    rawSavePrepared(clean);
+    try{
+      if(state&&state.config){
+        var cloudCopy=activeCloudCopy(clean);
+        if(!same(state.config[FIELD]||[],cloudCopy)){
+          state.config[FIELD]=cloudCopy;
+          try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){}
+          if(typeof cloudReady!=='undefined'&&cloudReady&&typeof cloudRole!=='undefined'&&cloudRole==='admin'&&typeof scheduleCloudSync==='function')scheduleCloudSync();
+        }
+      }
+    }catch(e){}
+    refreshCounters();
+  };
+
+  try{
+    if(typeof reloadCloudConfig==='function'){
+      var oldReloadCloudConfigV208=reloadCloudConfig;
+      reloadCloudConfig=async function(){
+        var out=await oldReloadCloudConfigV208.apply(this,arguments);
+        await syncLibrary(true);
+        return out;
+      };
+    }
+  }catch(e){}
+
+  window.syncPreparedLibraryV208=function(){return syncLibrary(true);};
+  setTimeout(function(){syncLibrary(false);},100);
+  setTimeout(function(){syncLibrary(true);},900);
+  setTimeout(function(){syncLibrary(true);},2500);
+  setTimeout(function(){syncLibrary(true);},6000);
+  setTimeout(function(){syncLibrary(true);},12000);
+})();
+</script>
 </body>
 </html>
