@@ -29,7 +29,7 @@
 <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
 <meta http-equiv="Pragma" content="no-cache" />
 <meta http-equiv="Expires" content="0" />
-<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v207</title>
+<title>Tests culinaires — Groupe Marchés Nouvelle-Aquitaine v208</title>
 <style>
 :root{
   --bg:#f4f7fb; --panel:#fff; --ink:#172033; --muted:#667085; --line:#e5eaf0;
@@ -16483,14 +16483,15 @@ document.addEventListener('fullscreenchange',()=>{
   function sheetLots(){
     try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
 
-    /* v207 — même périmètre que « Réception chauffeur » :
-       uniquement les lots encore actifs. Les anciens jurys fermés / archivés
-       ne doivent plus gonfler le compteur « Fiches à compléter ». */
+    /* v208 — les fiches commencent après une réception chauffeur terminée.
+       On ne reprend donc plus tous les anciens lots préparés/non clôturés :
+       seuls les lots dont la réception est entièrement validée alimentent
+       « Fiches à compléter » / « Fiches terminées ». */
     var prepared=(typeof loadPreparedJurys==='function') ? loadPreparedJurys() : [];
     var active=[];
 
-    if(typeof allReceptionLots==='function'){
-      try{ active=allReceptionLots()||[]; }catch(e){ active=[]; }
+    if(typeof completedReceptionLots==='function'){
+      try{ active=completedReceptionLots()||[]; }catch(e){ active=[]; }
     }
 
     /* Repli de sécurité si le moteur Réception n'est pas disponible. */
