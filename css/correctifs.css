@@ -2042,3 +2042,56 @@ body.tester-preview-mode #testerView{
   #homeView .home-quick-tools-v174{grid-template-columns:1fr !important}
 }
 
+
+
+/* V229 — Résultats : une seule direction claire à la fois */
+#adminView:not(.show-results-details) .report-note-card{
+  display:none!important;
+}
+#adminView:not(.show-results-details) .simple-results-advanced-action{
+  display:none!important;
+}
+.simple-results-actions{
+  border:2px solid #d8eaf3;
+  background:#f8fcfe;
+}
+.simple-results-actions-copy{
+  min-width:250px;
+}
+.simple-results-actions-copy #simpleResultsNextTitle{
+  font-size:18px;
+  line-height:1.2;
+}
+.simple-results-actions-copy #simpleResultsHint{
+  max-width:430px;
+  font-size:11px;
+}
+.simple-results-action-buttons .simple-results-next-btn{
+  box-shadow:0 7px 18px rgba(31,95,139,.16);
+}
+.simple-results-action-buttons .btn:disabled{
+  opacity:.48;
+  cursor:not-allowed;
+}
+#adminView:not(.show-results-details) .results-hero{
+  max-width:900px;
+  margin-left:auto;
+  margin-right:auto;
+}
+#adminView:not(.show-results-details) .results-identity h2{
+  font-size:24px;
+}
+#adminView:not(.show-results-details) .results-layout{
+  margin-top:8px;
+}
+#adminView:not(.show-results-details) #rankingTitle{
+  font-size:20px;
+}
+@media(max-width:760px){
+  .simple-results-actions-copy{
+    min-width:0;
+  }
+  .simple-results-action-buttons{
+    grid-template-columns:1fr;
+  }
+}
