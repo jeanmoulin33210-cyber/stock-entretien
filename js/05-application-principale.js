@@ -3965,9 +3965,10 @@ async function copyQrSheetToClipboard(){
 }
 
 async function qrShareOpenGmail(){
-  /* Gmail ne permet pas à une page web externe d'insérer automatiquement une
-     image dans un nouveau message. On copie donc d'abord l'image des QR codes,
-     puis on explique clairement le Ctrl+V AVANT d'ouvrir Gmail. */
+  /* V216 : méthode fiable sur ordinateur.
+     Gmail Web n'autorise pas un autre site à injecter automatiquement une image
+     dans un brouillon. On télécharge donc une seule image PNG contenant tous les
+     QR codes, puis on ouvre Gmail avec le texte et les liens déjà remplis. */
   const gmailTab=window.open('about:blank','_blank');
   if(!gmailTab){
     alert('Chrome a bloqué l’ouverture de Gmail. Autorisez les fenêtres pop-up pour ce site puis réessayez.');
@@ -3977,30 +3978,33 @@ async function qrShareOpenGmail(){
   try{
     await prepareQrSharingContext();
 
-    const qrCopied=await copyQrSheetToClipboard();
+    const qrBlob=await buildQrClipboardPng();
+    const filename=`QR-codes-${safePdfFileName(state.config?.lotName||'jury')}.png`;
+    const qrUrl=URL.createObjectURL(qrBlob);
+    const dl=document.createElement('a');
+    dl.href=qrUrl;
+    dl.download=filename;
+    document.body.appendChild(dl);
+    dl.click();
+    dl.remove();
+    setTimeout(()=>URL.revokeObjectURL(qrUrl),8000);
+
     const subject=`Accès testeurs — ${state.config?.lotName||'Jury culinaire'}`;
-    const body=`Bonjour,\n\nVoici les accès individuels au jury ${state.config?.lotName||'Jury culinaire'}.\n\n${qrShareLinksText()}\n\nMerci d’utiliser uniquement le lien correspondant à votre numéro de testeur.\n\nCordialement`;
+    const body=`Bonjour,\n\nVoici les accès individuels au jury ${state.config?.lotName||'Jury culinaire'}.\n\n${qrShareLinksText()}\n\nLes QR codes sont également joints sous forme d’image.\nMerci d’utiliser uniquement le lien ou le QR code correspondant à votre numéro de testeur.\n\nCordialement`;
     const url='https://mail.google.com/mail/?view=cm&fs=1&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 
-    if(qrCopied){
-      alert(
-        'Les QR codes sont prêts et copiés.\n\n'+
-        'Gmail va maintenant s’ouvrir. Dans le message, cliquez sous le texte puis faites Ctrl + V : les QR codes apparaîtront directement dans le mail.\n\n'+
-        'Après l’envoi, fermez l’onglet Gmail pour revenir à l’application.'
-      );
-    }else{
-      alert(
-        'Gmail va s’ouvrir avec les liens des testeurs.\n\n'+
-        'Chrome n’a pas autorisé la copie automatique de l’image des QR codes. Utilisez ensuite « Télécharger le PDF des QR codes » si vous voulez les joindre.'
-      );
-    }
+    alert(
+      'L’image des QR codes vient d’être téléchargée :\n\n'+filename+'\n\n'+
+      'Gmail va maintenant s’ouvrir. Dans le message, cliquez sur le trombone 📎 et choisissez ce fichier dans Téléchargements.\n\n'+
+      'Après l’envoi, fermez l’onglet Gmail : l’application est restée ouverte derrière.'
+    );
 
     gmailTab.location.href=url;
     closeQrShareModal();
   }catch(e){
     try{gmailTab.close()}catch(_){}
     console.error(e);
-    alert(`Impossible d’ouvrir Gmail. ${e?.message||e}`);
+    alert(`Impossible de préparer Gmail et les QR codes. ${e?.message||e}`);
   }
 }
 
