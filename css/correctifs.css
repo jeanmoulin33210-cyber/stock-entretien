@@ -1597,8 +1597,57 @@ body.tester-preview-mode #testerView{
   #testerView .score-pill{
     min-height:90px;
   }
+  /* V221 — sur téléphone, tous les choix doivent être visibles sans
+     défilement horizontal. Les 7 choix passent sur 2 lignes (4 + 3). */
   #testerView .scale{
-    grid-template-columns:repeat(7,80px)!important;
+    display:grid!important;
+    grid-template-columns:repeat(4,minmax(0,1fr))!important;
+    gap:7px!important;
+    overflow:visible!important;
+    width:100%!important;
+  }
+  #testerView .scale.six{
+    grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  }
+  #testerView .choice{
+    min-width:0!important;
+    min-height:96px!important;
+    padding:8px 4px!important;
+  }
+  #testerView .choice .youth-face{
+    width:34px!important;
+    height:34px!important;
+    font-size:19px!important;
+  }
+  #testerView .choice .pts{
+    font-size:18px!important;
+  }
+  #testerView .choice .lbl{
+    min-height:24px!important;
+    font-size:9px!important;
+    line-height:1.12!important;
+    overflow-wrap:anywhere;
+  }
+  #testerView .q-head{
+    grid-template-columns:42px minmax(0,1fr)!important;
+  }
+  #testerView .q-num{
+    width:42px!important;
+    min-width:42px!important;
+    height:42px!important;
+  }
+  #testerView .q-score{
+    grid-column:1/-1;
+    justify-self:start;
+    margin-left:53px!important;
+    margin-top:-4px!important;
+  }
+  #testerView .validation-panel{
+    align-items:stretch!important;
+    flex-direction:column!important;
+  }
+  #testerView .validation-panel .btn{
+    width:100%;
   }
   #testerView .sample-actions{
     position:static;
