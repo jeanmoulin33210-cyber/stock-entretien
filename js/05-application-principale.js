@@ -3906,16 +3906,100 @@ function closeQrShareModal(){
   $('#qrShareModal')?.classList.remove('show');
 }
 
+function qrImageElement(dataUrl){
+  return new Promise((resolve,reject)=>{
+    const img=new Image();
+    img.onload=()=>resolve(img);
+    img.onerror=()=>reject(new Error('Impossible de préparer l’image des QR codes.'));
+    img.src=dataUrl;
+  });
+}
+
+async function buildQrClipboardPng(){
+  const count=Math.max(1,Number(state.config?.testerCount||0));
+  const cols=Math.min(3,count);
+  const rows=Math.ceil(count/cols);
+  const cardW=360,cardH=430,pad=28;
+  const canvas=document.createElement('canvas');
+  canvas.width=cols*cardW;
+  canvas.height=rows*cardH;
+  const ctx=canvas.getContext('2d');
+  ctx.fillStyle='#ffffff';
+  ctx.fillRect(0,0,canvas.width,canvas.height);
+  ctx.fillStyle='#111111';
+  ctx.textAlign='center';
+
+  for(let i=1;i<=count;i++){
+    const col=(i-1)%cols,row=Math.floor((i-1)/cols);
+    const x=col*cardW,y=row*cardH;
+    const name=state.testers?.[i]?.name||state.config?.testerNames?.[i-1]||`Testeur ${i}`;
+    const qr=await qrDataUrlForLink(shareUrl(i));
+    const img=await qrImageElement(qr);
+
+    ctx.strokeStyle='#d7dde3';
+    ctx.lineWidth=2;
+    ctx.strokeRect(x+12,y+12,cardW-24,cardH-24);
+    ctx.fillStyle='#111111';
+    ctx.font='bold 28px Arial';
+    ctx.fillText(`Testeur ${i}`,x+cardW/2,y+48);
+    ctx.font='18px Arial';
+    ctx.fillText(name,x+cardW/2,y+78);
+    ctx.drawImage(img,x+pad+20,y+105,cardW-(pad+20)*2,cardW-(pad+20)*2);
+  }
+
+  return await new Promise((resolve,reject)=>{
+    canvas.toBlob(blob=>blob?resolve(blob):reject(new Error('Impossible de créer l’image des QR codes.')),'image/png');
+  });
+}
+
+async function copyQrSheetToClipboard(){
+  if(!navigator.clipboard?.write || typeof ClipboardItem==='undefined')return false;
+  try{
+    const blob=await buildQrClipboardPng();
+    await navigator.clipboard.write([new ClipboardItem({'image/png':blob})]);
+    return true;
+  }catch(e){
+    console.warn('Copie QR dans le presse-papiers impossible',e);
+    return false;
+  }
+}
+
 async function qrShareOpenGmail(){
+  /* Ouvrir l'onglet tout de suite, pendant le clic utilisateur, pour éviter que
+     Chrome ne remplace l'application si le pop-up est bloqué après les attentes async. */
+  const gmailTab=window.open('about:blank','_blank');
+  if(!gmailTab){
+    alert('Chrome a bloqué l’ouverture de Gmail. Autorisez les fenêtres pop-up pour ce site puis réessayez.');
+    return;
+  }
+
   try{
     await prepareQrSharingContext();
+
+    const qrCopied=await copyQrSheetToClipboard();
     const subject=`Accès testeurs — ${state.config?.lotName||'Jury culinaire'}`;
     const body=`Bonjour,\n\nVoici les accès individuels au jury ${state.config?.lotName||'Jury culinaire'}.\n\n${qrShareLinksText()}\n\nMerci d’utiliser uniquement le lien correspondant à votre numéro de testeur.\n\nCordialement`;
     const url='https://mail.google.com/mail/?view=cm&fs=1&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-    const w=window.open(url,'_blank','noopener');
-    if(!w)window.location.href=url;
+
+    gmailTab.location.href=url;
     closeQrShareModal();
+
+    setTimeout(()=>{
+      if(qrCopied){
+        alert(
+          'Gmail s’est ouvert dans un nouvel onglet.\n\n'+
+          'Les QR codes sont aussi copiés dans le presse-papiers : dans le message Gmail, faites Ctrl + V pour les ajouter.\n\n'+
+          'Après l’envoi, fermez simplement l’onglet Gmail : l’application est restée ouverte derrière.'
+        );
+      }else{
+        alert(
+          'Gmail s’est ouvert dans un nouvel onglet et l’application est restée ouverte.\n\n'+
+          'Votre navigateur n’a pas permis de copier automatiquement l’image des QR codes. Vous pouvez utiliser « Télécharger le PDF des QR codes ».'
+        );
+      }
+    },250);
   }catch(e){
+    try{gmailTab.close()}catch(_){}
     console.error(e);
     alert(`Impossible d’ouvrir Gmail. ${e?.message||e}`);
   }
