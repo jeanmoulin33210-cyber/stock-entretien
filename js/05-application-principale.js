@@ -5863,10 +5863,24 @@ function receptionDefaultsForSample(st,p,sm){
   }
   return{};
 }
+function syncReceptionIntoProductSheet(rec,d={}){
+  if(!rec||typeof rec!=='object')return rec;
+  /* V227 — la T° produit de la fiche de réception est la donnée de référence.
+     Elle est recopiée même si la fiche produit existait déjà avant la réception. */
+  if(d.deliveryTemp!==undefined && d.deliveryTemp!==null && String(d.deliveryTemp).trim()!==''){
+    rec.deliveryTemp=String(d.deliveryTemp);
+  }
+  /* Les autres informations de réception restent des valeurs par défaut :
+     elles ne remplacent pas une saisie déjà faite dans la fiche produit. */
+  if(!String(rec.packagingConformity||'').trim() && d.packagingConformity)rec.packagingConformity=d.packagingConformity;
+  if(!String(rec.dlc||'').trim() && d.dlc)rec.dlc=d.dlc;
+  if(!String(rec.observations||'').trim() && d.observations)rec.observations=d.observations;
+  return rec;
+}
 function ensureProductSheetRecord(st,p,sm){
   const store=productSheetStore(st),k=productSheetKey(p.id,sm.id);
-  if(store[k])return store[k];
   const d=receptionDefaultsForSample(st,p,sm);
+  if(store[k])return syncReceptionIntoProductSheet(store[k],d);
   store[k]={
     productId:p.id,sampleId:sm.id,supplier:sm.supplier||'',
     brand:'',characteristics:'',labeling:'',weight:'',
@@ -5875,7 +5889,7 @@ function ensureProductSheetRecord(st,p,sm){
     manufacturingDate:'',ddm:'',dlc:d.dlc||'',supplierLot:'',
     deliveryTemp:d.deliveryTemp??'',observations:d.observations||''
   };
-  return store[k];
+  return syncReceptionIntoProductSheet(store[k],d);
 }
 function productSheetStats(st,p,sm){
   const stats=stateSampleStats(st,p,sm);
@@ -6010,7 +6024,7 @@ function renderProductSheets(){
         <div class="field"><label>Conforme à la fiche technique</label><select data-ps-field="technicalSheet"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
         <div class="field"><label>Température à la livraison conforme</label><select data-ps-field="deliveryTempConformity"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
         <div class="field"><label>Emballage / conditionnement conforme</label><select data-ps-field="packagingConformity"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
-        <div class="field"><label>T° produit à la livraison</label><select data-ps-field="deliveryTemp">${receptionTemperatureOptions(r.deliveryTemp??'')}</select></div>
+        <div class="field"><label>T° produit à la livraison <span class="small">· reprise de la réception</span></label><select data-ps-field="deliveryTemp">${receptionTemperatureOptions(r.deliveryTemp??'')}</select></div>
         <div class="field"><label>Date de fabrication</label><input type="date" data-ps-field="manufacturingDate" value="${escapeHtml(r.manufacturingDate||'')}"></div>
         <div class="field"><label>DDM / utilisation optimale</label><input type="date" data-ps-field="ddm" value="${escapeHtml(r.ddm||'')}"></div>
         <div class="field"><label>DLC — Date limite de consommation</label><input type="date" data-ps-field="dlc" value="${escapeHtml(r.dlc||'')}"></div>
