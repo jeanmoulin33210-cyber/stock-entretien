@@ -1600,7 +1600,7 @@ function renderReceptionForm(){
       <div class="reception-line-grid">
         <div class="field"><label>T° produit (°C)</label><select data-rec-product-temp="${i}">${receptionTemperatureOptions(line.productTemp??'')}</select></div>
         <div class="field"><label>T° intérieur produit (°C)</label><select data-rec-interior-temp="${i}">${receptionTemperatureOptions(line.interiorTemp??'')}</select></div>
-        <div class="field"><label>DLC — Date limite de consommation / DDM</label><input type="date" data-rec-dlc="${i}" value="${escapeHtml(line.dlc||'')}"></div>
+        <div class="field"><label>DLC / DDM <span style="color:#b42318">*</span></label><input type="date" data-rec-dlc="${i}" value="${escapeHtml(line.dlc||'')}" required></div>
         <div class="field"><label>État emballage</label><select data-rec-packaging="${i}"><option value="">— Choisir —</option><option value="conforme">Conforme</option><option value="non-conforme">Non conforme</option></select></div>
         <div class="field"><label>Décision</label><select data-rec-decision="${i}"><option value="">— Choisir —</option><option value="acceptation">Acceptation</option><option value="refus">Refus</option></select></div>
         <div class="field obs"><label>Observations</label><input data-rec-observations="${i}" value="${escapeHtml(line.observations||'')}" placeholder="Observation éventuelle"></div>
@@ -1644,6 +1644,21 @@ async function saveReceptionForm(){
   if(!rec.date){alert('Indiquez la date de réception.');$('#receptionDate')?.focus();return}
   if(!rec.supplier){alert('Choisissez le fournisseur.');$('#receptionSupplier')?.focus();return}
   if(!rec.lines.some(x=>x.received!==false)){alert('Cochez au moins un produit reçu.');return}
+
+  // V210 : une réception ne peut plus être validée sans DLC / DDM
+  // pour chacun des produits réellement reçus.
+  const missingDlcIndex=rec.lines.findIndex(x=>x.received!==false && !String(x.dlc||'').trim());
+  if(missingDlcIndex>=0){
+    const line=rec.lines[missingDlcIndex]||{};
+    alert(`Impossible de valider la réception.\n\nLa DLC / DDM est obligatoire pour le produit : ${line.productName||('Produit '+(missingDlcIndex+1))}.`);
+    const target=document.querySelector(`[data-rec-dlc="${missingDlcIndex}"]`);
+    if(target){
+      target.focus();
+      target.scrollIntoView({behavior:'smooth',block:'center'});
+    }
+    return;
+  }
+
   if(!rec.driverSignature){alert('La signature du livreur est nécessaire pour émarger la réception.');return}
 
   rec.validatedAt=new Date().toISOString();
