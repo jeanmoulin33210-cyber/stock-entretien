@@ -169,7 +169,9 @@ function adminAccessState(){
   if(guestTester)return 'guest';
   if(!securityEnabled())return 'unprotected';
   if(adminSecurityChecking)return 'checking';
-  if(!adminSecurityAuthorized)return 'denied';
+  /* Sur l'appareil propriétaire, le PIN doit toujours pouvoir ouvrir l'administration.
+     L'absence d'un ancien jeton admin ne doit pas masquer le clavier PIN. */
+  if(!adminSecurityAuthorized)return 'locked';
   if(!isAdminSessionUnlocked())return 'locked';
   return 'unlocked'
 }
@@ -211,6 +213,21 @@ async function refreshAdminAuthorization({forceGate=false}={}){
     adminSecurityAuthorized=true;adminSecurityChecking=false;
     document.body.classList.remove('admin-locked','admin-denied');updateSecurityButtons();return true
   }
+
+  /* Une fois le bon PIN saisi, une synchronisation cloud ne doit plus
+     reverrouiller immédiatement l'application. */
+  if(isAdminSessionUnlocked()){
+    adminSecurityAuthorized=true;
+    adminSecurityChecking=false;
+    document.body.classList.remove('admin-locked','admin-denied');
+    try{
+      if(securityConfig()?.ownerTokenHash)await refreshOwnerAuthorization();
+    }catch(e){}
+    updateSecurityButtons();
+    if(forceGate)showView(adminRequestedView||'homeView');
+    return true
+  }
+
   adminSecurityChecking=true;renderAdminGate();
   adminSecurityAuthorized=await verifyAdminToken();
   adminSecurityChecking=false;
@@ -219,7 +236,7 @@ async function refreshAdminAuthorization({forceGate=false}={}){
     if(securityConfig()?.ownerTokenHash)await refreshOwnerAuthorization();
   }
   updateSecurityButtons();
-  if(forceGate||!adminSecurityAuthorized||!isAdminSessionUnlocked())showView(adminRequestedView||'homeView');
+  showView(adminRequestedView||'homeView');
   return adminSecurityAuthorized
 }
 function updateSecurityButtons(){
@@ -327,6 +344,8 @@ async function unlockAdmin(){
   if(!pin){toast('Saisissez votre code PIN');return}
   const ok=await verifyPin(pin);
   if(!ok){$('#adminPinInput').value='';$('#adminPinInput').focus();toast('Code PIN incorrect');return}
+  /* Un PIN valide réautorise l'administration locale. */
+  adminSecurityAuthorized=true;
   setAdminSessionUnlocked(true);document.body.classList.remove('admin-locked','admin-denied');$('#adminPinInput').value='';updateSecurityButtons();
   const target=adminRequestedView||'homeView';
   if(target==='homeView')renderHome();
