@@ -1,0 +1,13 @@
+/* v200-product-sheet-home-status-style */
+#homeView .home-quick-products-v200{margin:0;max-width:none}
+#homeView .home-quick-products-v200 .home-product-btn-v174{min-height:66px}
+#homeView .home-quick-products-v200 .product-history-btn-v200{background:rgba(255,255,255,.08);border-color:rgba(255,255,255,.20)}
+#homeView .home-quick-products-v200 .product-history-btn-v200:hover{background:rgba(255,255,255,.14)}
+.product-lot-choice-v174 .v200-sheet-status{display:block;margin-top:4px;font-size:11px!important;font-weight:900;line-height:1.3}
+.product-lot-choice-v174 .v200-sheet-status.pending{color:#9a5b00}
+.product-lot-choice-v174 .v200-sheet-status.partial{color:#8b5b00}
+.product-lot-choice-v174 .v200-sheet-status.done{color:#137653}
+
+  /* Autorise clairement le défilement vertical sur les commandes tactiles. */
+  button, a, [role="button"], [onclick] { touch-action: pan-y; }
+
