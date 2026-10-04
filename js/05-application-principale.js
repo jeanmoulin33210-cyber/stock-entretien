@@ -3902,6 +3902,10 @@ async function sendQrPdfFromConfig(){
       });
       toast('PDF prêt à être envoyé ✓');
     }else{
+      /* V212 : sur les ordinateurs qui ne savent pas partager un PDF directement,
+         on télécharge d'abord le fichier puis on ouvre la messagerie par défaut.
+         Un navigateur ne peut pas ajouter automatiquement une pièce jointe à un
+         lien mailto ; le PDF reste donc dans Téléchargements, prêt à être joint. */
       const url=URL.createObjectURL(blob);
       const a=document.createElement('a');
       a.href=url;
@@ -3909,8 +3913,21 @@ async function sendQrPdfFromConfig(){
       document.body.appendChild(a);
       a.click();
       a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),3000);
-      alert('Le PDF a été téléchargé. Vous pouvez maintenant le joindre à votre e-mail.');
+      setTimeout(()=>URL.revokeObjectURL(url),5000);
+
+      const subject=`QR codes des testeurs — ${state.config?.lotName||'Jury'}`;
+      const body=`Bonjour,\n\nVous trouverez les QR codes des testeurs pour le jury ${state.config?.lotName||'Jury'}.\n\nLe fichier PDF vient d'être téléchargé : ${filename}\nMerci de l'ajouter en pièce jointe à ce message.\n\nCordialement`;
+      const mail=document.createElement('a');
+      mail.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+      mail.style.display='none';
+      document.body.appendChild(mail);
+      mail.click();
+      mail.remove();
+
+      setTimeout(()=>alert(
+        'Le PDF des QR codes a été téléchargé et votre messagerie a été appelée.\n\n'+
+        'Si aucun logiciel de messagerie ne s’ouvre, ouvrez Gmail / Outlook puis joignez le fichier « '+filename+' » depuis Téléchargements.'
+      ),250);
     }
   }catch(e){
     if(e?.name!=='AbortError'){
