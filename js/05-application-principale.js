@@ -2571,34 +2571,56 @@ function stopTesterLaunchWait(){
 async function refreshTesterLaunchState(){
   if(testerPreviewMode||!cloudReady||cloudRole!=='tester'||!cloudClient||!cloudCfg?.sessionId)return false;
   try{
+    let openedAt='',instanceId='';
+
+    /* Voie normale : configuration publique de la session. */
     const {data,error}=await cloudClient.rpc('test_culinaire_get_public_session',{p_session_id:cloudCfg.sessionId});
-    if(error)return false;
-    const row=Array.isArray(data)?data[0]:data;
-    const remote=row?.public_config;
-    if(!remote)return false;
-
-    const launch=remote.juryLaunch||null;
-    const launchId=String(launch?.instanceId||'').trim();
-    const remoteId=String(remote.juryInstanceId||launchId||'').trim();
-
-    /* V219 : certains jurys créés avec une ancienne version n'avaient pas encore
-       juryInstanceId dans public_config. Si le lancement sécurisé porte déjà son
-       instanceId, on l'utilise pour remettre le téléphone sur la même identité. */
-    if(remoteId){
-      state.config.juryInstanceId=remoteId;
-      state.config._juryInstanceId=remoteId;
+    if(!error){
+      const row=Array.isArray(data)?data[0]:data;
+      const remote=row?.public_config;
+      const launch=remote?.juryLaunch||null;
+      openedAt=String(launch?.openedAt||'');
+      instanceId=String(launch?.instanceId||remote?.juryInstanceId||'').trim();
+      if(remote?.juryClose?.closedAt)state.config.juryClose={closedAt:remote.juryClose.closedAt};
     }
-    state.config.juryLaunch=launch&&launch.openedAt?{
-      openedAt:launch.openedAt,
-      instanceId:launchId||remoteId
-    }:null;
-    if(remote.juryClose?.closedAt)state.config.juryClose={closedAt:remote.juryClose.closedAt};
+
+    /* V220 : secours fiable par la table que le testeur lit déjà pour ses réponses. */
+    if(!openedAt){
+      const {data:markers,error:markerError}=await cloudClient
+        .from('test_culinaire_reponses')
+        .select('remarks,updated_at')
+        .eq('session_id',cloudCfg.sessionId)
+        .eq('tester_no',cloudTesterNo)
+        .eq('product_id','__meta__')
+        .eq('sample_id','__launch__')
+        .limit(1);
+      if(!markerError&&markers?.length){
+        const remarks=Array.isArray(markers[0].remarks)?markers[0].remarks:[];
+        openedAt=String(remarks[0]||markers[0].updated_at||'');
+        instanceId=String(remarks[1]||'').trim();
+      }
+    }
+
+    if(openedAt){
+      if(instanceId){
+        state.config.juryInstanceId=instanceId;
+        state.config._juryInstanceId=instanceId;
+      }else{
+        instanceId=ensureJuryInstanceId(state.config);
+      }
+      state.config.juryLaunch={openedAt,instanceId};
+      originalSaveState();
+      return true;
+    }
+
+    state.config.juryLaunch=null;
     originalSaveState();
-    return isJuryOfficiallyOpen();
+    return false;
   }catch(e){
     return false;
   }
 }
+
 function startTesterLaunchWait(){
   if(testerLaunchWaitTimer||!testerMustWaitForLaunch())return;
   const check=async()=>{
@@ -2845,34 +2867,43 @@ async function publishOfficialLaunchToCloud(){
   }
 
   const instanceId=ensureJuryInstanceId(state.config);
-  if(!state.config.juryLaunch?.openedAt){
-    throw new Error('Le lancement local du jury est introuvable.');
-  }
+  const openedAt=state.config.juryLaunch?.openedAt;
+  if(!openedAt)throw new Error('Le lancement local du jury est introuvable.');
+
   state.config.juryLaunch.instanceId=instanceId;
   state.config.juryLaunch.sessionId=cloudCfg.sessionId;
 
-  const publicConfig=makePublicCloudConfig(state.config);
-  const {data,error}=await cloudClient
+  /* V220 : deux preuves du lancement.
+     1) public_config pour le fonctionnement normal,
+     2) une ligne __launch__ par testeur dans la table des réponses.
+     Cette seconde voie utilise exactement le canal que les téléphones savent déjà lire. */
+  const {error}=await cloudClient
     .from('test_culinaire_sessions')
     .update({
       config:state.config,
-      public_config:publicConfig,
+      public_config:makePublicCloudConfig(state.config),
       updated_at:new Date().toISOString()
     })
-    .eq('session_id',cloudCfg.sessionId)
-    .select('session_id,public_config')
-    .maybeSingle();
-
+    .eq('session_id',cloudCfg.sessionId);
   if(error)throw error;
-  if(!data?.session_id){
-    throw new Error('La session du jury n’a pas été retrouvée sur le serveur.');
-  }
 
-  const saved=data.public_config||{};
-  const savedId=String(saved.juryInstanceId||'').trim();
-  const savedLaunchId=String(saved.juryLaunch?.instanceId||'').trim();
-  if(!saved.juryLaunch?.openedAt || !savedId || savedLaunchId!==savedId || savedId!==instanceId){
-    throw new Error('Le serveur n’a pas confirmé l’ouverture du jury.');
+  const launchRows=[];
+  for(let t=1;t<=Number(state.config.testerCount||0);t++){
+    launchRows.push({
+      session_id:cloudCfg.sessionId,
+      tester_no:t,
+      product_id:'__meta__',
+      sample_id:'__launch__',
+      choices:[],
+      remarks:[openedAt,instanceId],
+      updated_at:new Date().toISOString()
+    });
+  }
+  if(launchRows.length){
+    const {error:markerError}=await cloudClient
+      .from('test_culinaire_reponses')
+      .upsert(launchRows,{onConflict:'session_id,tester_no,product_id,sample_id'});
+    if(markerError)throw markerError;
   }
 
   lastCloudConfigHash=hashJson(state.config);
