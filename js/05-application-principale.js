@@ -617,7 +617,7 @@ function renderArchiveDashboardCard(rec){
   return `<article class="jury-mini-card">
     <div class="top"><div><div class="eyebrow">Archivé le ${escapeHtml(date)}</div><h4>${escapeHtml(p)}</h4><p>${escapeHtml(cfg.subtitle||'')}</p></div><span class="jury-mini-badge done">Archivé</span></div>
     <div class="jury-mini-meta"><span>${meta.products} produit${meta.products>1?'s':''}</span><span>${meta.samples} échantillon${meta.samples>1?'s':''}</span><span>${meta.testers} testeur${meta.testers>1?'s':''}</span></div>
-    <div class="jury-mini-actions"><button class="btn btn-primary" data-dash-archive-dossier="${escapeHtml(rec.id)}">Dossier</button><button class="btn btn-secondary" data-dash-archive-summary="${escapeHtml(rec.id)}">Synthèse</button><button class="btn btn-secondary" data-dash-archive-report="${escapeHtml(rec.id)}">Rapport</button><button class="btn btn-secondary" data-dash-archive-minutes="${escapeHtml(rec.id)}">PV</button><button class="btn btn-secondary" data-dash-archive-copy="${escapeHtml(rec.id)}">Reprendre</button></div>
+    <div class="jury-mini-actions"><button class="btn btn-primary" data-dash-archive-dossier="${escapeHtml(rec.id)}">Dossier</button><button class="btn btn-secondary" data-dash-archive-summary="${escapeHtml(rec.id)}">Synthèse</button><button class="btn btn-secondary" data-dash-archive-report="${escapeHtml(rec.id)}">Rapport</button><button class="btn btn-secondary" data-dash-archive-minutes="${escapeHtml(rec.id)}">PV</button><button class="btn btn-secondary" data-dash-archive-copy="${escapeHtml(rec.id)}">Créer à partir de ce jury</button></div>
   </article>`;
 }
 function preserveClosedJuryBeforeNew(){
@@ -2473,14 +2473,14 @@ function renderMyJuriesDashboard(){
 
 function renderHome(){ensureCurrentPrepSaved();updateHeader();showView('homeView');renderHomeReceptionBadge();const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
 const preparedCount=loadPreparedJurys().filter(r=>!r?.state?.config?.juryClose?.closedAt).length;
-$('#juryBtnTitle').textContent=preparedCount>1
-  ?'Choisir un jury'
-  :(opened||m.done)
-    ?'Reprendre le jury'
-    :preparedCount===1
-      ?'Lancer le jury'
-      :closed
-        ?'Voir le jury fermé'
+$('#juryBtnTitle').textContent=closed
+  ?'Voir le jury fermé'
+  :preparedCount>1
+    ?'Choisir un jury'
+    :(opened||m.done)
+      ?'Reprendre le jury'
+      :preparedCount===1
+        ?'Lancer le jury'
         :'Lancer le jury';
 $('#juryBtnSub').textContent='';
 const ac=loadArchives().length;const ah=$('#archiveHomeCount');if(ah)ah.textContent=ac?`${ac} jury${ac>1?'s':''} archivé${ac>1?'s':''}`:'Aucun jury archivé';renderMyJuriesDashboard();renderPreparedHome()}
