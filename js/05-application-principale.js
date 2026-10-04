@@ -5855,26 +5855,45 @@ function receptionDefaultsForSample(st,p,sm){
     const line=(r?.lines||[]).find(x=>String(x.productId||'')===String(p?.id||'') || String(x.productName||'')===String(p?.name||''));
     if(!line || line.received===false)continue;
     return{
+      receptionFound:true,
+      receptionDate:r?.date||'',
+      receptionTime:r?.time||'',
+      receptionEstablishment:r?.establishment||'',
+      receptionSupplier:r?.supplier||'',
+      receptionVehicleTemp:r?.vehicleTemp??'',
+      receptionDriverName:r?.driverName||'',
+      receptionReceiverName:r?.receiverName||'',
       deliveryTemp:line.productTemp??'',
+      receptionInteriorTemp:line.interiorTemp??'',
       packagingConformity:line.packaging==='non-conforme'?'non':'oui',
+      receptionPackaging:line.packaging||'',
       dlc:line.dlc||'',
-      observations:line.observations||''
+      receptionDecision:line.decision||'',
+      receptionObservations:line.observations||''
     };
   }
   return{};
 }
 function syncReceptionIntoProductSheet(rec,d={}){
   if(!rec||typeof rec!=='object')return rec;
-  /* V227 — la T° produit de la fiche de réception est la donnée de référence.
-     Elle est recopiée même si la fiche produit existait déjà avant la réception. */
+  /* V228 — toutes les informations disponibles sur la fiche de réception
+     sont reprises automatiquement dans la fiche produit. */
+  const receptionFields=[
+    'receptionFound','receptionDate','receptionTime','receptionEstablishment',
+    'receptionSupplier','receptionVehicleTemp','receptionDriverName',
+    'receptionReceiverName','receptionInteriorTemp','receptionPackaging',
+    'receptionDecision','receptionObservations'
+  ];
+  for(const key of receptionFields){
+    if(Object.prototype.hasOwnProperty.call(d,key))rec[key]=d[key];
+  }
   if(d.deliveryTemp!==undefined && d.deliveryTemp!==null && String(d.deliveryTemp).trim()!==''){
     rec.deliveryTemp=String(d.deliveryTemp);
   }
-  /* Les autres informations de réception restent des valeurs par défaut :
-     elles ne remplacent pas une saisie déjà faite dans la fiche produit. */
-  if(!String(rec.packagingConformity||'').trim() && d.packagingConformity)rec.packagingConformity=d.packagingConformity;
-  if(!String(rec.dlc||'').trim() && d.dlc)rec.dlc=d.dlc;
-  if(!String(rec.observations||'').trim() && d.observations)rec.observations=d.observations;
+  if(d.packagingConformity)rec.packagingConformity=d.packagingConformity;
+  if(d.dlc)rec.dlc=d.dlc;
+  /* Une observation de réception reste visible séparément pour ne pas écraser
+     une observation complémentaire saisie dans la fiche produit. */
   return rec;
 }
 function ensureProductSheetRecord(st,p,sm){
@@ -5887,7 +5906,7 @@ function ensureProductSheetRecord(st,p,sm){
     technicalSheet:'',deliveryTempConformity:'',
     packagingConformity:d.packagingConformity||'',
     manufacturingDate:'',ddm:'',dlc:d.dlc||'',supplierLot:'',
-    deliveryTemp:d.deliveryTemp??'',observations:d.observations||''
+    deliveryTemp:d.deliveryTemp??'',observations:d.receptionObservations||''
   };
   return syncReceptionIntoProductSheet(store[k],d);
 }
@@ -6031,6 +6050,22 @@ function renderProductSheets(){
         <div class="field"><label>N° de lot fournisseur</label><input data-ps-field="supplierLot" value="${escapeHtml(r.supplierLot||'')}" placeholder="N° de lot"></div>
         <div class="field full"><label>Observations</label><textarea data-ps-field="observations" placeholder="Observations éventuelles">${escapeHtml(r.observations||'')}</textarea></div>
       </div>
+      ${r.receptionFound?`<div class="product-sheet-auto" style="margin-top:10px">
+        <strong>🚚 Données reprises automatiquement de la fiche de réception</strong>
+        <div class="criterion-mini">
+          <span>Date : ${escapeHtml(formatClosureDate(r.receptionDate)||'—')} ${escapeHtml(r.receptionTime||'')}</span>
+          <span>Fournisseur : ${escapeHtml(r.receptionSupplier||sm.supplier||'—')}</span>
+          <span>T° véhicule : ${escapeHtml(String(r.receptionVehicleTemp??'')||'—')} °C</span>
+          <span>T° produit : ${escapeHtml(String(r.deliveryTemp??'')||'—')} °C</span>
+          <span>T° intérieur : ${escapeHtml(String(r.receptionInteriorTemp??'')||'—')} °C</span>
+          <span>DLC / DDM : ${escapeHtml(r.dlc?formatClosureDate(r.dlc):'—')}</span>
+          <span>Emballage : ${escapeHtml(r.receptionPackaging==='non-conforme'?'Non conforme':r.receptionPackaging==='conforme'?'Conforme':r.receptionPackaging||'—')}</span>
+          <span>Décision : ${escapeHtml(r.receptionDecision==='refus'?'Refus':r.receptionDecision==='acceptation'?'Acceptation':r.receptionDecision||'—')}</span>
+          <span>Livreur : ${escapeHtml(r.receptionDriverName||'—')}</span>
+          <span>Réceptionnaire : ${escapeHtml(r.receptionReceiverName||'—')}</span>
+          <span>Observation réception : ${escapeHtml(r.receptionObservations||'RAS')}</span>
+        </div>
+      </div>`:''}
       <div class="product-sheet-auto">
         <strong>Résultats sensoriels repris automatiquement : ${st.count?`${fmt(st.avg65)} /65 · ${fmt(st.note5)} /5`:'aucune évaluation complète pour le moment'}</strong>
         <div class="criterion-mini">${st.criteria.map(c=>`<span>${escapeHtml(c.name)} : ${st.count?`${fmt(c.avg)}/${fmt(c.max)}`:'—'}</span>`).join('')}</div>
@@ -6083,6 +6118,7 @@ function productSheetAnnexHtml(st){
           <tr><th>Emballage / conditionnement</th><td>${yn(r.packagingConformity)}</td><th>Date fabrication</th><td>${reportEsc(r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—')}</td></tr>
           <tr><th>DDM / utilisation optimale</th><td>${reportEsc(r.ddm?formatClosureDate(r.ddm):'—')}</td><th>DLC</th><td>${reportEsc(r.dlc?formatClosureDate(r.dlc):'—')}</td></tr>
           <tr><th>Observations</th><td colspan="3">${reportEsc(r.observations||'—')}</td></tr>
+          ${r.receptionFound?`<tr><th>Réception</th><td colspan="3">${reportEsc(formatClosureDate(r.receptionDate))} ${reportEsc(r.receptionTime||'')} · T° véhicule ${reportEsc(String(r.receptionVehicleTemp??'')||'—')} °C · T° produit ${reportEsc(String(r.deliveryTemp??'')||'—')} °C · T° intérieur ${reportEsc(String(r.receptionInteriorTemp??'')||'—')} °C · ${reportEsc(r.receptionDecision==='refus'?'Refus':'Acceptation')}</td></tr>`:''}
         </tbody></table>
         <div class="product-annex-score"><strong>Résultat sensoriel du jury : ${ss.count?`${fmt(ss.avg65)} /65 · ${fmt(ss.note5)} /5`:'—'}</strong><div>${ss.criteria.map(c=>`${reportEsc(c.name)} : ${ss.count?`${fmt(c.avg)}/${fmt(c.max)}`:'—'}`).join(' · ')}</div></div>
       </div>`;
