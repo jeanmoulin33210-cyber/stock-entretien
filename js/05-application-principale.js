@@ -2577,15 +2577,20 @@ async function refreshTesterLaunchState(){
     const remote=row?.public_config;
     if(!remote)return false;
 
-    const remoteId=String(remote.juryInstanceId||'').trim();
     const launch=remote.juryLaunch||null;
+    const launchId=String(launch?.instanceId||'').trim();
+    const remoteId=String(remote.juryInstanceId||launchId||'').trim();
+
+    /* V219 : certains jurys créés avec une ancienne version n'avaient pas encore
+       juryInstanceId dans public_config. Si le lancement sécurisé porte déjà son
+       instanceId, on l'utilise pour remettre le téléphone sur la même identité. */
     if(remoteId){
       state.config.juryInstanceId=remoteId;
       state.config._juryInstanceId=remoteId;
     }
     state.config.juryLaunch=launch&&launch.openedAt?{
       openedAt:launch.openedAt,
-      instanceId:String(launch.instanceId||'')
+      instanceId:launchId||remoteId
     }:null;
     if(remote.juryClose?.closedAt)state.config.juryClose={closedAt:remote.juryClose.closedAt};
     originalSaveState();
@@ -3278,9 +3283,38 @@ async function openQrCodesFromJury(){
   }
 }
 
+let runningJuryCloudSyncBusy=false;
+let runningJuryCloudSyncAt=0;
+
+async function ensureRunningJuryCloudSync(){
+  if(runningJuryCloudSyncBusy)return;
+  if(!isJuryOfficiallyOpen()||isJuryClosed())return;
+  if(typeof guestTester!=='undefined'&&guestTester)return;
+
+  const now=Date.now();
+  if(now-runningJuryCloudSyncAt<5000)return;
+  runningJuryCloudSyncAt=now;
+  runningJuryCloudSyncBusy=true;
+
+  try{
+    if(!cloudReady||cloudRole!=='admin'){
+      await ensurePreparedShareConnected();
+    }
+    await publishOfficialLaunchToCloud();
+  }catch(e){
+    console.warn('Synchronisation automatique du lancement impossible',e);
+  }finally{
+    runningJuryCloudSyncBusy=false;
+  }
+}
+
 function renderJuryView(){
   updateHeader();
   showView('juryView');
+
+  /* V219 : un jury déjà marqué « en cours » se republie automatiquement
+     vers les téléphones. Cela répare aussi les jurys lancés avant la correction V218. */
+  setTimeout(()=>{try{ensureRunningJuryCloudSync()}catch(e){}},0);
 
   const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();
   const totalTesters=Math.max(1,Number(cfg.testerCount||0));
