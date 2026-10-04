@@ -5657,6 +5657,7 @@ function renderClosure(){
   renderClosureStatus(c);
   setupSignatureCanvas('chairSignature',c.chairSignature||'');
   setupSignatureCanvas('coSignature',c.coSignature||'');
+  setClosureSaveIndicator('✓ Enregistré automatiquement');
 }
 function captureClosureForm(){
   const c=normalizeClosureMembers();
@@ -5677,6 +5678,30 @@ function captureClosureForm(){
   state.config.closure=c;
   return c;
 }
+let closureAutosaveTimer=null;
+function setClosureSaveIndicator(text){
+  const b=$('#saveClosureBtn');
+  if(b)b.textContent=text;
+}
+function scheduleClosureAutosave(){
+  clearTimeout(closureAutosaveTimer);
+  setClosureSaveIndicator('Enregistrement automatique…');
+  closureAutosaveTimer=setTimeout(async()=>{
+    try{
+      const c=captureClosureForm();
+      saveState();
+      renderClosureStatus(c);
+      setClosureSaveIndicator('✓ Enregistré automatiquement');
+      if(typeof syncDirtyToCloud==='function'){
+        try{await syncDirtyToCloud()}catch(e){}
+      }
+    }catch(e){
+      console.warn('Enregistrement automatique de la clôture impossible',e);
+      setClosureSaveIndicator('Enregistrer la fiche');
+    }
+  },500);
+}
+
 async function saveClosure(){
   const c=captureClosureForm();
   saveState();
@@ -5686,6 +5711,8 @@ async function saveClosure(){
   if(typeof syncDirtyToCloud==='function'){
     try{await syncDirtyToCloud()}catch(e){}
   }
+
+  setClosureSaveIndicator('✓ Enregistré automatiquement');
 
   if(ready){
     toast('Fiche de clôture complète et enregistrée ✓');
@@ -5725,11 +5752,12 @@ function setupSignatureCanvas(id,dataUrl){
   };
   const start=e=>{e.preventDefault();drawing=true;last=point(e);canvas.dataset.hasInk='1'};
   const move=e=>{if(!drawing)return;e.preventDefault();const p=point(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p};
-  const end=e=>{if(!drawing)return;e.preventDefault();drawing=false;last=null};
+  const end=e=>{if(!drawing)return;e.preventDefault();drawing=false;last=null;scheduleClosureAutosave()};
   canvas.addEventListener('pointerdown',start);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);canvas.addEventListener('pointerleave',end);
 }
 function clearSignature(id){
   const c=document.getElementById(id);if(!c)return;c.getContext('2d').clearRect(0,0,c.width,c.height);c.dataset.hasInk='';
+  scheduleClosureAutosave();
 }
 function closureReport(){
   captureClosureForm();saveState();openCurrentReport();
@@ -7499,17 +7527,18 @@ function copyArchiveAsNew(id){return duplicateArchive(id)}
 $('#homeBtn').onclick=renderHome;$('#archivesBtn').onclick=renderArchives;$('#archivesHomeBtn').onclick=renderHome;$('#archivesBackHubBtn').onclick=()=>openResultsArchiveHub();$('#archiveMoreFiltersBtn').onclick=()=>toggleArchiveFilters();
 $('#closureBackBtn').onclick=()=>{captureClosureForm();saveState();renderAdmin()};
 $('#saveClosureBtn').onclick=saveClosure;
-['closureDate','closurePlace','closureChair'].forEach(id=>{
+['closureDate','closurePlace','closureChair','closureChairRole','closureCoSigner','closureCoSignerRole','closureNotes'].forEach(id=>{
   const el=$('#'+id);
-  if(el)el.addEventListener('input',()=>{
-    const c={
-      date:$('#closureDate')?.value||'',
-      place:$('#closurePlace')?.value||'',
-      chair:$('#closureChair')?.value||''
-    };
-    renderClosureStatus(c);
-  });
+  if(el){
+    el.addEventListener('input',scheduleClosureAutosave);
+    el.addEventListener('change',scheduleClosureAutosave);
+  }
 });
+const closureMembersEl=$('#closureMembers');
+if(closureMembersEl){
+  closureMembersEl.addEventListener('input',scheduleClosureAutosave);
+  closureMembersEl.addEventListener('change',scheduleClosureAutosave);
+}
 $('#closureMinutesBtn').onclick=()=>{captureClosureForm();saveState();openCurrentMinutes()};
 $('#closureDossierBtn').onclick=()=>{captureClosureForm();saveState();openCurrentDossier()};
 $('#closureSummaryBtn').onclick=()=>{captureClosureForm();saveState();openCurrentSummary()};
