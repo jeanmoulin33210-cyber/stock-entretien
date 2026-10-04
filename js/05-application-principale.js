@@ -2625,7 +2625,27 @@ function renderTesterWaitingForLaunch(){
   $('.sample-actions').style.display='none';
   const vp=$('#validationPanel');
   vp.className='panel tester-closed-screen';
-  vp.innerHTML='<div class="lock">🔒</div><h2>Accès verrouillé</h2><p>Le jury n’a pas encore été lancé. Vous ne pouvez pas accéder aux produits, aux questions ni à la validation tant que le responsable n’a pas appuyé sur « Lancer ce jury ».</p><span class="date">L’accès s’ouvrira automatiquement après le lancement officiel.</span>';
+  vp.innerHTML='<div class="lock">🔒</div><h2>Accès verrouillé</h2><p id="testerLaunchWaitText">Le jury n’a pas encore été lancé. Vous ne pouvez pas accéder aux produits, aux questions ni à la validation tant que le responsable n’a pas appuyé sur « Lancer ce jury ».</p><span class="date">L’accès se vérifie automatiquement toutes les secondes.</span><button class="btn btn-primary" id="testerCheckLaunchBtn" type="button" style="margin-top:14px">🔄 Vérifier maintenant</button>';
+  const verifyBtn=$('#testerCheckLaunchBtn');
+  if(verifyBtn)verifyBtn.onclick=async()=>{
+    verifyBtn.disabled=true;
+    verifyBtn.textContent='⏳ Vérification…';
+    try{
+      if(cloudRole==='tester')await refreshTesterLaunchState();
+      else if(typeof reloadCloudConfig==='function')await reloadCloudConfig();
+      if(isJuryOfficiallyOpen()){
+        stopTesterLaunchWait();
+        renderTesterSelectors();
+        renderSample();
+        toast('Jury lancé ✓ — vous pouvez commencer');
+        return;
+      }
+      const txt=$('#testerLaunchWaitText');
+      if(txt)txt.textContent='Le lancement n’est pas encore visible sur ce téléphone. Le contrôle automatique continue.';
+    }catch(e){}
+    verifyBtn.disabled=false;
+    verifyBtn.textContent='🔄 Vérifier maintenant';
+  };
   startTesterLaunchWait();
 }
 function fmtLaunchDate(v){
@@ -2814,6 +2834,46 @@ async function copyAllTesterLinks(){
   for(let i=1;i<=state.config.testerCount;i++)lines.push(`${state.testers[i]?.name||`Testeur ${i}`} : ${shareUrl(i)}`);
   await copyText(lines.join('\n'),'Tous les liens testeurs ont été copiés');
 }
+async function publishOfficialLaunchToCloud(){
+  if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId){
+    throw new Error('La session partagée administrateur n’est pas connectée.');
+  }
+
+  const instanceId=ensureJuryInstanceId(state.config);
+  if(!state.config.juryLaunch?.openedAt){
+    throw new Error('Le lancement local du jury est introuvable.');
+  }
+  state.config.juryLaunch.instanceId=instanceId;
+  state.config.juryLaunch.sessionId=cloudCfg.sessionId;
+
+  const publicConfig=makePublicCloudConfig(state.config);
+  const {data,error}=await cloudClient
+    .from('test_culinaire_sessions')
+    .update({
+      config:state.config,
+      public_config:publicConfig,
+      updated_at:new Date().toISOString()
+    })
+    .eq('session_id',cloudCfg.sessionId)
+    .select('session_id,public_config')
+    .maybeSingle();
+
+  if(error)throw error;
+  if(!data?.session_id){
+    throw new Error('La session du jury n’a pas été retrouvée sur le serveur.');
+  }
+
+  const saved=data.public_config||{};
+  const savedId=String(saved.juryInstanceId||'').trim();
+  const savedLaunchId=String(saved.juryLaunch?.instanceId||'').trim();
+  if(!saved.juryLaunch?.openedAt || !savedId || savedLaunchId!==savedId || savedId!==instanceId){
+    throw new Error('Le serveur n’a pas confirmé l’ouverture du jury.');
+  }
+
+  lastCloudConfigHash=hashJson(state.config);
+  return true;
+}
+
 async function officialLaunch(){
   const blocking=launchBlockingError();
   if(blocking){
@@ -2821,7 +2881,23 @@ async function officialLaunch(){
     return;
   }
   if(isJuryOfficiallyOpen()){
-    renderJuryView();
+    const launchBtn=$('#officialLaunchBtn');
+    try{
+      if(launchBtn){
+        launchBtn.disabled=true;
+        launchBtn.textContent='⏳ Synchronisation des téléphones…';
+      }
+      await ensurePreparedShareConnected();
+      await publishOfficialLaunchToCloud();
+      toast('Jury synchronisé ✓ — téléphones déverrouillés');
+      renderJuryView();
+    }catch(e){
+      if(launchBtn){
+        launchBtn.disabled=false;
+        launchBtn.textContent='▶ Synchroniser le jury';
+      }
+      alert(`Le jury est lancé sur cet appareil, mais les téléphones ne sont pas encore déverrouillés.\n\n${e?.message||e}\n\nRéessayez avec le bouton « Synchroniser le jury ».`);
+    }
     return;
   }
 
@@ -2879,19 +2955,11 @@ async function officialLaunch(){
   originalSaveState();
   upsertPreparedJury(state);
 
-  /* V163 — le lancement n'est validé qu'après écriture confirmée côté serveur.
-     L'ancienne synchronisation masquait les erreurs et pouvait laisser les téléphones verrouillés. */
+  /* V218 — le lancement n'est validé qu'après lecture de confirmation
+     de la même session côté serveur. Cela évite un faux « Jury lancé » local
+     quand aucune ligne Supabase n'a réellement été mise à jour. */
   try{
-    if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId){
-      throw new Error('La session partagée administrateur n’est pas connectée.');
-    }
-    const {error}=await cloudClient.from('test_culinaire_sessions').update({
-      config:state.config,
-      public_config:makePublicCloudConfig(state.config),
-      updated_at:new Date().toISOString()
-    }).eq('session_id',cloudCfg.sessionId);
-    if(error)throw error;
-    lastCloudConfigHash=hashJson(state.config);
+    await publishOfficialLaunchToCloud();
   }catch(e){
     delete state.config.juryLaunch;
     originalSaveState();
