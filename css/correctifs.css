@@ -2095,3 +2095,163 @@ body.tester-preview-mode #testerView{
     grid-template-columns:1fr;
   }
 }
+
+
+/* V230 — ambiance générale moins blanche, plus chaleureuse et lisible */
+:root{
+  --bg:#edf4f8;
+  --panel:#ffffff;
+  --line:#d9e4eb;
+  --shadow:0 16px 36px rgba(28,61,84,.10);
+}
+html,body{
+  background:
+    radial-gradient(circle at 12% 0%, rgba(91,161,196,.13), transparent 30%),
+    radial-gradient(circle at 92% 18%, rgba(71,155,126,.08), transparent 28%),
+    linear-gradient(180deg,#eaf2f7 0%,#f4f8fa 46%,#edf4f7 100%)!important;
+  background-attachment:fixed!important;
+}
+.topbar{
+  background:rgba(246,250,252,.94)!important;
+  border-bottom-color:#d6e3eb!important;
+  box-shadow:0 4px 16px rgba(32,64,84,.055);
+}
+.panel{
+  border-color:#d7e3eb!important;
+  box-shadow:0 9px 24px rgba(28,59,80,.065)!important;
+}
+.field input,
+.field select,
+.field textarea,
+.sample-table input,
+.remarks textarea,
+#reportNoteInput{
+  background:#fbfdfe!important;
+  border-color:#d5e1e8!important;
+}
+table th{
+  background:#eef4f7!important;
+  color:#526c7e!important;
+}
+.btn-secondary{
+  background:#e6f0f6!important;
+  color:#214e69!important;
+}
+.btn-ghost{
+  background:#fbfdfe!important;
+  border-color:#d5e1e8!important;
+}
+.hint{
+  background:#edf7fb!important;
+  border-color:#cfe5f0!important;
+}
+.section-title h2,
+.results-card h3,
+.closure-card h3,
+.product-sheet-card h3{
+  color:#173f5b;
+}
+
+/* Accueil : trois états visuellement distincts. */
+#homeView .prepared-juries-home,
+#homeView .pwa-install-card{
+  background:#f8fbfd!important;
+}
+#homeView .my-jury-kpi:nth-child(1){
+  background:#fff8ec!important;
+  border-color:#f0dfbd!important;
+}
+#homeView .my-jury-kpi:nth-child(2){
+  background:#eef7fc!important;
+  border-color:#cfe4f0!important;
+}
+#homeView .my-jury-kpi:nth-child(3){
+  background:#eef8f3!important;
+  border-color:#cee7db!important;
+}
+#homeView .jury-lane.prep{
+  background:#fffaf1!important;
+  border-color:#eedfbe!important;
+}
+#homeView .jury-lane.run{
+  background:#f1f8fc!important;
+  border-color:#cfe3ee!important;
+}
+#homeView .jury-lane.done{
+  background:#f1f9f5!important;
+  border-color:#cee6da!important;
+}
+
+/* Résultats : le bloc d'action et les cartes ressortent mieux du fond. */
+#adminView .simple-results-actions{
+  background:linear-gradient(135deg,#f3f9fc,#edf6fa)!important;
+  border-color:#cbdfe9!important;
+}
+#adminView .results-card,
+#adminView .report-note-card{
+  background:#fdfefe!important;
+}
+#adminView .kpi:nth-child(1){
+  background:#eef7fc!important;
+}
+#adminView .kpi:nth-child(2){
+  background:#eef8f3!important;
+}
+#adminView .kpi:nth-child(3){
+  background:#fff8ec!important;
+}
+#adminView .kpi:nth-child(4){
+  background:#f3f1fb!important;
+}
+#adminView .rank-card{
+  background:#fbfdfe!important;
+}
+#adminView .rank-card.selected{
+  background:#eef7fc!important;
+}
+
+/* Clôture, lancement, fiches : légères nuances pour mieux séparer les zones. */
+#closureView .closure-status-card,
+#launchView .launch-simple-state,
+#finishView .finish-state{
+  background:#eef7fc!important;
+}
+#closureView .closure-card,
+#closureView .signature-card,
+#productSheetsView .product-sheet-card,
+#launchView .launch-card,
+#juryChooserView .jury-chooser-head{
+  background:#fbfdfe!important;
+}
+
+/* États métier plus faciles à repérer. */
+.status-chip.done,
+.closure-status-card.ready,
+.results-status-card.closed,
+.results-status-card.final{
+  background:#edf8f3!important;
+  border-color:#cae5d8!important;
+}
+.status-chip:not(.done):not(.error),
+.closure-status-card.incomplete{
+  background:#fff8e9!important;
+  border-color:#efdfb8!important;
+}
+
+/* Tester : conserver le contraste tout en évitant le grand blanc. */
+#testerView .question-card,
+#testerView .validation-panel{
+  background:#fbfdfe!important;
+}
+#testerView .choice{
+  background:#f7fafc!important;
+}
+#testerView .choice.selected{
+  background:#e6f2f8!important;
+}
+
+@media(max-width:700px){
+  html,body{
+    background:linear-gradient(180deg,#eaf2f7 0%,#f3f7fa 48%,#edf4f7 100%)!important;
+  }
+}
