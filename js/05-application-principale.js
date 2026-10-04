@@ -3872,25 +3872,94 @@ async function buildAllTesterQrPdf(){
   const blob=doc.output('blob');
   return {blob,filename,count}
 }
-async function sendQrPdfFromConfig(){
-  const btn=$('#configEmailQrPdfBtn');
+function qrShareLinksText(){
+  const count=Math.max(1,Number(state.config?.testerCount||0));
+  const lines=[];
+  for(let i=1;i<=count;i++){
+    const name=state.testers?.[i]?.name||state.config?.testerNames?.[i-1]||`Testeur ${i}`;
+    lines.push(`${name} : ${shareUrl(i)}`);
+  }
+  return lines.join('\n');
+}
+
+async function prepareQrSharingContext(){
+  if(!phoneSharePrepared(draftConfig))throw new Error('Préparez d’abord les téléphones.');
+
+  /* Reprendre le jury réellement enregistré avant de partager ses accès. */
+  if(state.config?._preparedId!==draftConfig?._preparedId){
+    commitDraftForPhonePreparation();
+  }
+
+  if(!launchShareReady())await ensurePreparedShareConnected();
+}
+
+function openQrShareModal(){
   if(!phoneSharePrepared(draftConfig)){
     alert('Préparez d’abord les téléphones.');
-    return
+    return;
   }
+  const modal=$('#qrShareModal');
+  if(modal)modal.classList.add('show');
+}
 
-  const oldText=btn?.textContent||'';
-  if(btn){
-    btn.disabled=true;
-    btn.textContent='⏳ Création du PDF…';
-  }
+function closeQrShareModal(){
+  $('#qrShareModal')?.classList.remove('show');
+}
 
+async function qrShareOpenGmail(){
   try{
-    /* Reprendre le jury réellement enregistré avant de fabriquer le PDF. */
-    if(state.config?._preparedId!==draftConfig?._preparedId){
-      commitDraftForPhonePreparation();
-    }
+    await prepareQrSharingContext();
+    const subject=`Accès testeurs — ${state.config?.lotName||'Jury culinaire'}`;
+    const body=`Bonjour,\n\nVoici les accès individuels au jury ${state.config?.lotName||'Jury culinaire'}.\n\n${qrShareLinksText()}\n\nMerci d’utiliser uniquement le lien correspondant à votre numéro de testeur.\n\nCordialement`;
+    const url='https://mail.google.com/mail/?view=cm&fs=1&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+    const w=window.open(url,'_blank','noopener');
+    if(!w)window.location.href=url;
+    closeQrShareModal();
+  }catch(e){
+    console.error(e);
+    alert(`Impossible d’ouvrir Gmail. ${e?.message||e}`);
+  }
+}
 
+async function qrShareDownloadPdf(){
+  const btn=$('#qrShareDownloadBtn');
+  const old=btn?.textContent||'📄 Télécharger le PDF des QR codes';
+  try{
+    if(btn){btn.disabled=true;btn.textContent='⏳ Création du PDF…'}
+    await prepareQrSharingContext();
+    const {blob,filename}=await buildAllTesterQrPdf();
+    const url=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=url;a.download=filename;
+    document.body.appendChild(a);a.click();a.remove();
+    setTimeout(()=>URL.revokeObjectURL(url),5000);
+    closeQrShareModal();
+    toast('PDF des QR codes téléchargé ✓');
+  }catch(e){
+    console.error(e);
+    alert(`Impossible de créer le PDF. ${e?.message||e}`);
+  }finally{
+    if(btn){btn.disabled=false;btn.textContent=old}
+  }
+}
+
+async function qrShareCopyLinks(){
+  try{
+    await prepareQrSharingContext();
+    await copyText(qrShareLinksText(),'Tous les liens testeurs ont été copiés ✓');
+    closeQrShareModal();
+  }catch(e){
+    console.error(e);
+    alert(`Impossible de copier les liens. ${e?.message||e}`);
+  }
+}
+
+async function qrShareNativePdf(){
+  const btn=$('#qrShareNativeBtn');
+  const old=btn?.textContent||'📱 Partager le PDF';
+  try{
+    if(btn){btn.disabled=true;btn.textContent='⏳ Préparation…'}
+    await prepareQrSharingContext();
     const {blob,filename,count}=await buildAllTesterQrPdf();
     const file=new File([blob],filename,{type:'application/pdf'});
 
@@ -3900,46 +3969,23 @@ async function sendQrPdfFromConfig(){
         text:`Voici les ${count} QR codes des testeurs.`,
         files:[file]
       });
-      toast('PDF prêt à être envoyé ✓');
+      closeQrShareModal();
+      toast('PDF partagé ✓');
     }else{
-      /* V212 : sur les ordinateurs qui ne savent pas partager un PDF directement,
-         on télécharge d'abord le fichier puis on ouvre la messagerie par défaut.
-         Un navigateur ne peut pas ajouter automatiquement une pièce jointe à un
-         lien mailto ; le PDF reste donc dans Téléchargements, prêt à être joint. */
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),5000);
-
-      const subject=`QR codes des testeurs — ${state.config?.lotName||'Jury'}`;
-      const body=`Bonjour,\n\nVous trouverez les QR codes des testeurs pour le jury ${state.config?.lotName||'Jury'}.\n\nLe fichier PDF vient d'être téléchargé : ${filename}\nMerci de l'ajouter en pièce jointe à ce message.\n\nCordialement`;
-      const mail=document.createElement('a');
-      mail.href='mailto:?subject='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-      mail.style.display='none';
-      document.body.appendChild(mail);
-      mail.click();
-      mail.remove();
-
-      setTimeout(()=>alert(
-        'Le PDF des QR codes a été téléchargé et votre messagerie a été appelée.\n\n'+
-        'Si aucun logiciel de messagerie ne s’ouvre, ouvrez Gmail / Outlook puis joignez le fichier « '+filename+' » depuis Téléchargements.'
-      ),250);
+      alert('Le partage direct de fichiers n’est pas disponible sur cet appareil. Utilisez « Télécharger le PDF » ou « Ouvrir Gmail ».');
     }
   }catch(e){
     if(e?.name!=='AbortError'){
       console.error(e);
-      alert(`Impossible de préparer le PDF. ${e?.message||e}`);
+      alert(`Impossible de partager le PDF. ${e?.message||e}`);
     }
   }finally{
-    if(btn){
-      btn.textContent=oldText||'📧 Envoyer les QR codes en PDF';
-      renderConfigPhoneShare();
-    }
+    if(btn){btn.disabled=false;btn.textContent=old}
   }
+}
+
+function sendQrPdfFromConfig(){
+  openQrShareModal();
 }
 
 async function openConfigQrCodes(){
