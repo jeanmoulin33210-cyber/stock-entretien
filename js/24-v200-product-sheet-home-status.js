@@ -1,6 +1,7 @@
 /* v207 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
 (function(){
   function sheetLots(){
+    if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
     try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
 
     /* v207 — même périmètre que « Réception chauffeur » :
