@@ -1,75 +1,14 @@
 (function(){
   function repairAfterLotsResetV207(){
     var CLEAN_KEY='jm_tc_lots_clean_mode_v207';
-    var BACKUP_KEY='jm_tc_lots_reset_backup_v207';
     if(!localStorage.getItem(CLEAN_KEY))return false;
 
-    function clone(v){try{return JSON.parse(JSON.stringify(v));}catch(e){return null;}}
-    function backupSecurity(){
-      try{
-        var raw=localStorage.getItem(BACKUP_KEY);
-        if(!raw)return null;
-        var data=JSON.parse(raw);
-        var items=data&&data.items||{};
-        var stateKey=(typeof STORAGE_KEY!=='undefined'?STORAGE_KEY:'jm_test_culinaire_param_v2');
-        var oldRaw=items[stateKey];
-        if(!oldRaw)return null;
-        var old=JSON.parse(oldRaw);
-        return old&&old.config&&old.config.security?clone(old.config.security):null;
-      }catch(e){return null;}
-    }
-    function makeBlank(sec){
-      var count=6;
-      var cfg={
-        _emptyAfterReset:true,
-        _juryInstanceId:(typeof uid==='function'?uid('jury'):'jury_reset_'+Date.now()),
-        lotName:'',lotNumber:'',lotTitle:'',subtitle:'',
-        supplierNames:[],supplierResponseCount:0,receptions:[],receptionEstablishment:'',
-        criteria:(typeof defaultCriteria==='function'?defaultCriteria():[]),
-        testerCount:count,
-        testerNames:Array.from({length:count},function(_,i){return 'Testeur '+(i+1);}),
-        products:[],
-        security:sec||null
-      };
-      var testers={};
-      for(var i=1;i<=count;i++)testers[i]={name:'Testeur '+i,answers:{},validatedAt:null};
-      return {version:4,config:cfg,testers:testers,updatedAt:null};
-    }
-
-    var sec=backupSecurity();
-    var clean=makeBlank(sec);
-    try{state=clean;}catch(e){}
-    try{
-      currentTester=1;currentProduct='';currentSample='';adminProduct='';selectedAdminSample='';
-    }catch(e){}
-    try{
-      var stateKey=(typeof STORAGE_KEY!=='undefined'?STORAGE_KEY:'jm_test_culinaire_param_v2');
-      localStorage.setItem(stateKey,JSON.stringify(clean));
-    }catch(e){}
-    try{
-      var preparedKey=(typeof PREPARED_JURY_STORAGE_KEY!=='undefined'?PREPARED_JURY_STORAGE_KEY:'jm_test_culinaire_prepared_v97');
-      var historyKey=(typeof SAMPLE_LOT_HISTORY_STORAGE_KEY!=='undefined'?SAMPLE_LOT_HISTORY_STORAGE_KEY:'jm_test_culinaire_sample_lot_history_v178');
-      var masterKey=(typeof SAMPLE_MASTER_STORAGE_KEY!=='undefined'?SAMPLE_MASTER_STORAGE_KEY:'jm_test_culinaire_sample_master_v1');
-      var metaKey=(typeof SAMPLE_MASTER_META_STORAGE_KEY!=='undefined'?SAMPLE_MASTER_META_STORAGE_KEY:'jm_test_culinaire_sample_master_meta_v1');
-      var productsKey=(typeof SAMPLE_PRODUCTS_STORAGE_KEY!=='undefined'?SAMPLE_PRODUCTS_STORAGE_KEY:'jm_test_culinaire_sample_products_v1');
-      [preparedKey,historyKey,masterKey,metaKey,productsKey,'jm_test_culinaire_recovery_v29'].forEach(function(k){localStorage.removeItem(k);});
-    }catch(e){}
-
-    try{
-      if(typeof adminSecurityAuthorized!=='undefined')adminSecurityAuthorized=true;
-      if(typeof securityOwnerAuthorized!=='undefined' && sec && sec.ownerTokenHash && typeof storedOwnerToken==='function'){
-        /* L'autorisation propriétaire sera réévaluée par le moteur sécurité. */
-        securityOwnerAuthorized=false;
-      }
-    }catch(e){}
-
-    /* V208 : le mode nettoyage doit être strictement ponctuel.
-       Une fois la remise à zéro appliquée au premier chargement, on retire le
-       marqueur. Sinon chaque actualisation suivante efface aussi les nouveaux
-       lots créés après la remise à zéro. */
+    /* V209 : le bouton Réinitialiser efface déjà les lots AVANT le rechargement.
+       Le marqueur sert seulement à signaler que cette opération vient d'avoir lieu.
+       Il ne faut surtout pas ré-effacer les données au chargement suivant, sinon
+       un nouveau lot créé après la remise à zéro disparaît au prochain Ctrl+F5. */
     try{localStorage.removeItem(CLEAN_KEY);}catch(e){}
-
-    return true;
+    return false;
   }
 
   function ensureHomeTools(){
