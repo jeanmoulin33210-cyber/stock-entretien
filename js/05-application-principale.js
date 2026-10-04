@@ -2496,14 +2496,17 @@ function fmtCloseDate(v){
   if(!v)return '';
   try{return new Date(v).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return v}
 }
-async function closeJuryOfficially(){
+async function closeJuryOfficially(options={}){
+  const automatic=options?.automatic===true;
   if(isJuryClosed()){renderClosure();return}
   if(!juryReadyToClose()){
-    alert('Le jury ne peut être fermé que lorsque tous les testeurs ont terminé et validé leur test.');
+    if(!automatic)alert('Le jury ne peut être fermé que lorsque tous les testeurs ont terminé et validé leur test.');
     return;
   }
-  const ok=confirm('Fermer officiellement le jury ?\n\nAprès fermeture, tous les accès testeurs seront bloqués et aucune note ne pourra être modifiée. Vous passerez ensuite à la fiche de clôture, au rapport final puis à l’archivage.');
-  if(!ok)return;
+  if(!automatic){
+    const ok=confirm('Fermer officiellement le jury ?\n\nAprès fermeture, tous les accès testeurs seront bloqués et aucune note ne pourra être modifiée. Vous passerez ensuite à la fiche de clôture, au rapport final puis à l’archivage.');
+    if(!ok)return;
+  }
   state.config.juryClose={
     closedAt:new Date().toISOString(),
     openedAt:state.config?.juryLaunch?.openedAt||null,
@@ -2517,7 +2520,7 @@ async function closeJuryOfficially(){
   saveState();
   removePreparedJury(state.config?._preparedId);
   if(typeof syncDirtyToCloud==='function'){try{await syncDirtyToCloud()}catch(e){}}
-  toast('Jury fermé — accès testeurs verrouillés ✓');
+  toast(automatic?'Jury terminé automatiquement ✓':'Jury fermé — accès testeurs verrouillés ✓');
   renderClosure();
 }
 function renderResultsWorkflow(){
@@ -3339,6 +3342,20 @@ async function ensureRunningJuryCloudSync(){
   }
 }
 
+let automaticJuryCloseBusy=false;
+
+async function autoCloseJuryIfReady(){
+  if(automaticJuryCloseBusy||isJuryClosed()||!juryReadyToClose())return;
+  automaticJuryCloseBusy=true;
+  try{
+    await closeJuryOfficially({automatic:true});
+  }catch(e){
+    console.error('Fermeture automatique du jury impossible',e);
+  }finally{
+    automaticJuryCloseBusy=false;
+  }
+}
+
 function renderJuryView(){
   updateHeader();
   showView('juryView');
@@ -3374,7 +3391,8 @@ function renderJuryView(){
   progressBar.style.width=`${progressPct}%`;
 
   if(completedTesters===totalTesters){
-    progressDetail.textContent='Tout le monde a terminé. Vous pouvez maintenant terminer le jury.';
+    progressDetail.textContent='Tout le monde a terminé. Le jury se termine automatiquement.';
+    setTimeout(()=>{try{autoCloseJuryIfReady()}catch(e){}},250);
   }else if(m.done===0){
     progressDetail.textContent='En attente des premières réponses.';
   }else{
