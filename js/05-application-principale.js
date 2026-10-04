@@ -428,11 +428,9 @@ function renderJuryChooser(){
       if(running){
         buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','resume')">▶ ${current?'Reprendre ce jury':'Ouvrir ce jury'}</button>`;
       }else if(phonesReady){
-        buttons=`
-          <button type="button" class="btn btn-secondary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','edit')">Modifier</button>
-          <button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','launch')">▶ Lancer ce jury</button>`;
+        buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','launch')">▶ Continuer vers le lancement</button>`;
       }else{
-        buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','edit');setTimeout(()=>document.getElementById('configPhonesStep')?.scrollIntoView({behavior:'smooth',block:'center'}),120)">${phonesRefresh?'↻ Recharger les téléphones':'📱 Préparer ce jury'}</button>`;
+        buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','launch')">${phonesRefresh?'↻ Vérifier les téléphones':'📱 Préparer les téléphones'}</button>`;
       }
 
       return `<article class="panel jury-choice-card ${current?'current':''}">
@@ -2823,7 +2821,26 @@ function renderLaunchView(){
   renderLaunchLinks();
 
   const shareStep=$('#launchShareStep');
-  if(shareStep)shareStep.style.display='none';
+  if(shareStep)shareStep.style.display='';
+
+  const shareHint=$('#launchShareHint');
+  const shareState=$('#launchShareState');
+  const cloudBtn=$('#launchCloudBtn');
+  if(shareHint){
+    shareHint.textContent=blocking
+      ?'Corrigez d’abord le jury dans « Plus d’options > Modifier le jury ».'
+      :phonesReady
+        ?'Les accès testeurs sont prêts. Vous pouvez afficher les QR codes ou vérifier à nouveau les téléphones.'
+        :'Préparez les accès testeurs ici. Ensuite le bouton « Lancer ce jury » se débloquera.';
+  }
+  if(shareState){
+    shareState.textContent=phonesReady?'Prêt ✓':'À faire';
+    shareState.classList.toggle('ready',phonesReady);
+  }
+  if(cloudBtn){
+    cloudBtn.disabled=!!blocking||opened;
+    cloudBtn.textContent=phonesReady?'↻ Vérifier les téléphones':'📱 Préparer les téléphones';
+  }
 
   const btn=$('#officialLaunchBtn');
   const canLaunch=!blocking&&phonesReady&&!opened;
@@ -2834,6 +2851,10 @@ function renderLaunchView(){
   if(openStep){
     openStep.classList.toggle('ready',canLaunch);
     openStep.classList.toggle('locked',!canLaunch&&!opened);
+    const txt=openStep.querySelector('.launch-step-copy span');
+    if(txt)txt.textContent=phonesReady
+      ?'Les téléphones sont prêts. Vous pouvez ouvrir officiellement le jury.'
+      :'Le lancement se débloquera dès que les téléphones seront préparés.';
   }
 }
 function renderLaunchLinks(){
@@ -3036,12 +3057,11 @@ function openJuryFlow(){
 
     if(running){
       activatePreparedJury(rec.id,'resume');
-    }else if(phoneSharePrepared(rec?.state?.config)){
-      activatePreparedJury(rec.id,'launch');
     }else{
-      activatePreparedJury(rec.id,'edit');
-      setTimeout(()=>$('#configPhonesStep')?.scrollIntoView({behavior:'smooth',block:'center'}),120);
-      toast('Préparez les téléphones avant de lancer.');
+      activatePreparedJury(rec.id,'launch');
+      if(!phoneSharePrepared(rec?.state?.config)){
+        setTimeout(()=>toast('Étape 1 : préparez les téléphones.'),120);
+      }
     }
     return;
   }
