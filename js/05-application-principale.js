@@ -1184,6 +1184,7 @@ function closeProductLotModalV174(){
   $('#productLotModalV174')?.classList.remove('show');
 }
 function productLotsV174(){
+  if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
   const rows=[],seen=new Set();
   const cfg=state?.config||{};
   const curId=String(cfg._preparedId||'__current__');
@@ -1299,6 +1300,7 @@ function receptionStatusForConfig(cfg){
   return{key:'partial',label:`Réception partielle ${done}/${suppliers.length}`};
 }
 function allReceptionLots(){
+  if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
   try{ensureCurrentPrepSaved()}catch(e){}
 
   /* Réception chauffeur : afficher les lots actifs sans masquer automatiquement
@@ -2078,6 +2080,7 @@ function prepareJuryLatestSampleChoice(){
   }
 }
 function prepareJuryChoices(){
+  if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
   try{ensureCurrentPrepSaved()}catch(e){console.warn('Sauvegarde du jury courant non bloquante',e)}
 
   const choices=[];
