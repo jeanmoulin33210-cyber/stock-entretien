@@ -3965,8 +3965,9 @@ async function copyQrSheetToClipboard(){
 }
 
 async function qrShareOpenGmail(){
-  /* Ouvrir l'onglet tout de suite, pendant le clic utilisateur, pour éviter que
-     Chrome ne remplace l'application si le pop-up est bloqué après les attentes async. */
+  /* Gmail ne permet pas à une page web externe d'insérer automatiquement une
+     image dans un nouveau message. On copie donc d'abord l'image des QR codes,
+     puis on explique clairement le Ctrl+V AVANT d'ouvrir Gmail. */
   const gmailTab=window.open('about:blank','_blank');
   if(!gmailTab){
     alert('Chrome a bloqué l’ouverture de Gmail. Autorisez les fenêtres pop-up pour ce site puis réessayez.');
@@ -3981,23 +3982,21 @@ async function qrShareOpenGmail(){
     const body=`Bonjour,\n\nVoici les accès individuels au jury ${state.config?.lotName||'Jury culinaire'}.\n\n${qrShareLinksText()}\n\nMerci d’utiliser uniquement le lien correspondant à votre numéro de testeur.\n\nCordialement`;
     const url='https://mail.google.com/mail/?view=cm&fs=1&su='+encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
 
+    if(qrCopied){
+      alert(
+        'Les QR codes sont prêts et copiés.\n\n'+
+        'Gmail va maintenant s’ouvrir. Dans le message, cliquez sous le texte puis faites Ctrl + V : les QR codes apparaîtront directement dans le mail.\n\n'+
+        'Après l’envoi, fermez l’onglet Gmail pour revenir à l’application.'
+      );
+    }else{
+      alert(
+        'Gmail va s’ouvrir avec les liens des testeurs.\n\n'+
+        'Chrome n’a pas autorisé la copie automatique de l’image des QR codes. Utilisez ensuite « Télécharger le PDF des QR codes » si vous voulez les joindre.'
+      );
+    }
+
     gmailTab.location.href=url;
     closeQrShareModal();
-
-    setTimeout(()=>{
-      if(qrCopied){
-        alert(
-          'Gmail s’est ouvert dans un nouvel onglet.\n\n'+
-          'Les QR codes sont aussi copiés dans le presse-papiers : dans le message Gmail, faites Ctrl + V pour les ajouter.\n\n'+
-          'Après l’envoi, fermez simplement l’onglet Gmail : l’application est restée ouverte derrière.'
-        );
-      }else{
-        alert(
-          'Gmail s’est ouvert dans un nouvel onglet et l’application est restée ouverte.\n\n'+
-          'Votre navigateur n’a pas permis de copier automatiquement l’image des QR codes. Vous pouvez utiliser « Télécharger le PDF des QR codes ».'
-        );
-      }
-    },250);
   }catch(e){
     try{gmailTab.close()}catch(_){}
     console.error(e);
