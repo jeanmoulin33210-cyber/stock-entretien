@@ -249,6 +249,19 @@
     updateRestore();
   }
 
+  function forceZeroBadgesAfterResetV207(){
+    if(!localStorage.getItem('jm_tc_lots_clean_mode_v207'))return;
+    [
+      'homeReceptionBadge',
+      'homeReceptionHistoryBadge',
+      'homeProductSheetsPendingBadgeV200',
+      'homeProductSheetsDoneBadgeV200'
+    ].forEach(function(id){
+      var el=document.getElementById(id);
+      if(el)el.textContent='0';
+    });
+  }
+
   function clearOldAppCache(){
     try{
       if(window.caches&&caches.keys){
@@ -262,12 +275,12 @@
   }
   if(document.readyState==='loading'){
     document.addEventListener('DOMContentLoaded',function(){
-      var repaired=repairAfterLotsResetV207(); ensureHomeTools(); ensureResetLotsToolV207(); clearOldAppCache(); if(repaired){try{renderHome();}catch(e){}}
+      var repaired=repairAfterLotsResetV207(); ensureHomeTools(); ensureResetLotsToolV207(); forceZeroBadgesAfterResetV207(); clearOldAppCache(); if(repaired){try{renderHome();}catch(e){}}
       setTimeout(function(){var repaired=repairAfterLotsResetV207();ensureHomeTools();ensureResetLotsToolV207();if(repaired){try{renderHome();}catch(e){}}},300);
       setTimeout(function(){var repaired=repairAfterLotsResetV207();ensureHomeTools();ensureResetLotsToolV207();if(repaired){try{renderHome();}catch(e){}}},1500);
     });
   }else{
-    var repaired=repairAfterLotsResetV207(); ensureHomeTools(); ensureResetLotsToolV207(); clearOldAppCache(); if(repaired){try{renderHome();}catch(e){}}
+    var repaired=repairAfterLotsResetV207(); ensureHomeTools(); ensureResetLotsToolV207(); forceZeroBadgesAfterResetV207(); clearOldAppCache(); if(repaired){try{renderHome();}catch(e){}}
     setTimeout(function(){ensureHomeTools();ensureResetLotsToolV207();},300);
     setTimeout(function(){ensureHomeTools();ensureResetLotsToolV207();},1500);
   }
