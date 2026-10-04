@@ -1878,6 +1878,17 @@ function prepareJuryFromHomeV180(event){
     try{
       const items=[];
       const used=new Set();
+      const preparedLogicalLots=new Set();
+
+      const normalizeLotText=(v)=>String(v||'').trim().toLowerCase().replace(/\s+/g,' ');
+      const logicalLotKey=(lotName,products)=>{
+        const names=(Array.isArray(products)?products:[])
+          .map(p=>normalizeLotText(typeof p==='string'?p:p?.name))
+          .filter(Boolean)
+          .sort();
+        const lot=normalizeLotText(lotName);
+        return lot ? `${lot}|${names.join('|')}` : '';
+      };
 
       const addItem=(item)=>{
         if(!item||!item.id)return;
@@ -1905,6 +1916,8 @@ function prepareJuryFromHomeV180(event){
           const suppliers=receptionSupplierNames(cfg);
           const phonesReady=phoneSharePrepared(cfg);
           const phonesRefresh=phoneShareNeedsRefresh(cfg);
+          const logicalKey=logicalLotKey(String(cfg.lotName||rec.name||'Jury préparé'),products);
+          if(logicalKey)preparedLogicalLots.add(logicalKey);
           addItem({
             id,
             key:`prepared:${id}`,
@@ -1938,6 +1951,11 @@ function prepareJuryFromHomeV180(event){
           if(!lotName||!products.length)continue;
 
           const signature=String(rec?.signature||sampleLotSnapshotSignature(meta,products));
+          const logicalKey=logicalLotKey(lotName,products);
+          // Un même lot ne doit apparaître qu'une seule fois. Si un jury préparé
+          // existe déjà pour exactement ce lot et ces produits, on garde l'état
+          // le plus avancé (le jury préparé) et on masque le doublon "lot enregistré".
+          if(logicalKey&&preparedLogicalLots.has(logicalKey))continue;
           addItem({
             id:String(rec.id||uid('samplelot')),
             key:`sample:${signature||rec.id}`,
