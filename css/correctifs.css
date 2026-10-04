@@ -1597,10 +1597,41 @@ body.tester-preview-mode #testerView{
   #testerView .score-pill{
     min-height:90px;
   }
-  /* V223 — retour à l’affichage testeur V220 choisi :
-     les 7 choix restent sur une seule ligne et se parcourent horizontalement. */
+  /* V224 — look V220 conservé, mais compact sur téléphone :
+     les 7 choix restent sur UNE seule ligne et tiennent dans la largeur du S24. */
   #testerView .scale{
-    grid-template-columns:repeat(7,80px)!important;
+    display:grid!important;
+    grid-template-columns:repeat(7,minmax(0,1fr))!important;
+    gap:4px!important;
+    width:100%!important;
+    overflow:visible!important;
+  }
+  #testerView .scale.six{
+    grid-template-columns:repeat(6,minmax(0,1fr))!important;
+  }
+  #testerView .choice{
+    min-width:0!important;
+    min-height:82px!important;
+    padding:6px 2px!important;
+    border-radius:13px!important;
+  }
+  #testerView .choice .youth-face{
+    width:27px!important;
+    height:27px!important;
+    font-size:16px!important;
+    margin-bottom:1px!important;
+  }
+  #testerView .choice .pts{
+    font-size:15px!important;
+    line-height:1!important;
+  }
+  #testerView .choice .lbl{
+    min-height:22px!important;
+    margin-top:2px!important;
+    font-size:7.5px!important;
+    line-height:1.05!important;
+    font-weight:800!important;
+    overflow-wrap:anywhere;
   }
   #testerView .sample-actions{
     position:static;
