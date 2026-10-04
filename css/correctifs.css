@@ -2255,3 +2255,143 @@ table th{
     background:linear-gradient(180deg,#eaf2f7 0%,#f3f7fa 48%,#edf4f7 100%)!important;
   }
 }
+
+
+/* V231 — contraste plus visible : moins de blanc sur tout le site */
+html,body{
+  background:
+    radial-gradient(circle at 10% 0%, rgba(70,145,185,.20), transparent 34%),
+    radial-gradient(circle at 92% 16%, rgba(55,145,112,.12), transparent 30%),
+    linear-gradient(180deg,#dbeaf2 0%,#e9f2f6 46%,#dfeaf0 100%)!important;
+}
+
+/* Le changement V230 était trop discret : les panneaux ne sont plus blancs purs. */
+.panel{
+  background:#f7fbfd!important;
+  border-color:#cbdbe5!important;
+  box-shadow:0 10px 26px rgba(28,59,80,.09)!important;
+}
+.topbar{
+  background:rgba(236,245,249,.96)!important;
+  border-bottom-color:#c7d9e3!important;
+}
+
+/* Cartes et formulaires : teinte bleue très légère mais bien perceptible. */
+.config-card,
+.product-config,
+.question-card,
+.results-card,
+.closure-card,
+.signature-card,
+.product-sheet-card,
+.launch-card,
+.jury-tester-card,
+.archive-card,
+.jury-mini-card,
+.reception-line-card,
+.reception-saved-item{
+  background:#f4f9fc!important;
+}
+.field input,
+.field select,
+.field textarea,
+.sample-table input,
+.remarks textarea,
+#reportNoteInput{
+  background:#ffffff!important;
+  border-color:#c8d9e3!important;
+}
+table{
+  background:#f8fbfd!important;
+}
+table th{
+  background:#dfeaf1!important;
+}
+table td{
+  background:#f8fbfd!important;
+}
+
+/* Zones principales avec vraie différence visuelle. */
+#adminView .simple-results-actions,
+#closureView .closure-status-card,
+#launchView .launch-simple-state,
+#finishView .finish-state{
+  background:#e6f2f8!important;
+  border-color:#bfd8e6!important;
+}
+#adminView .report-note-card{
+  background:#eef6fa!important;
+}
+#productSheetsView .product-sheet-auto{
+  background:#eaf4f8!important;
+  border-color:#c9dde8!important;
+}
+
+/* Accueil / tableaux de bord : couleurs légères mais visibles. */
+#homeView .jury-lane.prep{
+  background:#fff3dc!important;
+}
+#homeView .jury-lane.run{
+  background:#e5f2f9!important;
+}
+#homeView .jury-lane.done{
+  background:#e7f5ee!important;
+}
+#homeView .my-jury-kpi:nth-child(1){
+  background:#fff0d2!important;
+}
+#homeView .my-jury-kpi:nth-child(2){
+  background:#e3f1f9!important;
+}
+#homeView .my-jury-kpi:nth-child(3){
+  background:#e3f3eb!important;
+}
+
+/* Résultats : davantage de séparation entre les blocs. */
+#adminView .kpi:nth-child(1){background:#e1f1f9!important}
+#adminView .kpi:nth-child(2){background:#e3f3eb!important}
+#adminView .kpi:nth-child(3){background:#fff0d5!important}
+#adminView .kpi:nth-child(4){background:#ece8f8!important}
+#adminView .rank-card{
+  background:#f2f8fb!important;
+  border-color:#cbdde7!important;
+}
+#adminView .rank-card.selected{
+  background:#dceef7!important;
+}
+
+/* Tester : les questions ressortent mieux du fond général. */
+#testerView .question-card,
+#testerView .validation-panel{
+  background:#f4f9fc!important;
+}
+#testerView .choice{
+  background:#eef5f8!important;
+}
+#testerView .choice.selected{
+  background:#dceef7!important;
+}
+
+/* Les boutons secondaires prennent plus de présence. */
+.btn-secondary{
+  background:#dcebf3!important;
+  color:#1f506c!important;
+}
+.btn-ghost{
+  background:#f8fbfd!important;
+  border-color:#cbdbe4!important;
+}
+
+/* Petites zones "à compléter" et "terminé" plus faciles à repérer. */
+.closure-status-card.incomplete,
+.status-chip:not(.done):not(.error){
+  background:#fff1d7!important;
+  border-color:#ead29b!important;
+}
+.closure-status-card.ready,
+.status-chip.done,
+.results-status-card.closed,
+.results-status-card.final{
+  background:#e1f2e9!important;
+  border-color:#bedfce!important;
+}
