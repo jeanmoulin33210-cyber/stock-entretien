@@ -1679,12 +1679,14 @@ async function saveReceptionForm(){
 
   renderReceptionConfigStatus();
 
-  /* Une fois la réception enregistrée et signée, repartir sur une fiche neuve
-     entièrement vierge pour éviter de réutiliser par erreur les données du camion précédent. */
+  /* V211 : après "Enregistrer et émarger", la réception est terminée.
+     On prépare silencieusement une fiche neuve pour la prochaine réception,
+     puis on revient automatiquement à l'accueil afin d'éviter toute
+     modification involontaire d'une fiche déjà signée. */
   receptionEditingIndex=-1;
   receptionDraft=blankReceptionRecordAfterSave(cfg);
-  renderReceptionForm();
-  toast('Réception émargée et enregistrée ✓ · Nouvelle fiche prête');
+  renderHome();
+  toast('Réception émargée et enregistrée ✓');
 }
 function renderReceptionSavedList(){
   const box=$('#receptionSavedList'),cfg=receptionConfig();
