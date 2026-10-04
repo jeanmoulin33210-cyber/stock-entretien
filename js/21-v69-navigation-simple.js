@@ -60,6 +60,10 @@ function openSimplifiedResults(){
 }
 function syncSimpleResultsActions(){
   const hint=$('#simpleResultsHint');
+  const title=$('#simpleResultsNextTitle');
+  const closureBtn=$('#simpleResultsClosureBtn');
+  const sheetsBtn=$('#productSheetsBtn');
+  const reportBtn=$('#simpleResultsPdfBtn');
   const archiveBtn=$('#simpleResultsArchiveBtn');
   const moreBtn=$('#simpleResultsMoreBtn');
   if(!hint||!archiveBtn)return;
@@ -69,24 +73,66 @@ function syncSimpleResultsActions(){
   const max=state.config.testerCount*total;
   const complete=max>0&&done===max&&validatedCount()===state.config.testerCount;
   const closed=isJuryClosed();
-  const ready=closed&&closureIsReady();
+  const closureReady=closureIsReady();
+  const ps=(typeof productSheetsProgress==='function')?productSheetsProgress(state):{total:0,filled:0};
+  const sheetsReady=ps.total>0&&ps.filled===ps.total;
+  const archived=!!state.config?._archive?.archivedAt;
 
-  archiveBtn.disabled=!ready;
+  const stepButtons=[closureBtn,sheetsBtn,reportBtn,archiveBtn].filter(Boolean);
+  stepButtons.forEach(b=>{
+    b.classList.remove('btn-primary','simple-results-next-btn');
+    b.classList.add('btn-secondary');
+  });
 
-  if(ready){
-    hint.textContent='Le jury est finalisé. Vous pouvez télécharger le PDF ou l’archiver.';
-  }else if(!complete){
-    hint.textContent='Les résultats sont encore provisoires : tous les testeurs n’ont pas terminé et validé.';
+  if(closureBtn){
+    closureBtn.disabled=!closed;
+    closureBtn.textContent=closureReady?'✓ 1. Clôture':'✍️ 1. Clôture';
+  }
+  if(sheetsBtn){
+    sheetsBtn.disabled=!complete;
+    sheetsBtn.textContent=`📋 2. Fiches produits${ps.total?` (${ps.filled}/${ps.total})`:''}`;
+  }
+  if(reportBtn){
+    reportBtn.disabled=!(complete&&closed&&closureReady&&sheetsReady);
+    reportBtn.textContent='📄 3. Rapport final';
+  }
+  archiveBtn.disabled=!(complete&&closed&&closureReady&&sheetsReady);
+  archiveBtn.textContent=archived?'✓ 4. Archivé':'📁 4. Archiver';
+
+  const highlight=b=>{
+    if(!b)return;
+    b.classList.remove('btn-secondary');
+    b.classList.add('btn-primary','simple-results-next-btn');
+  };
+
+  if(!complete){
+    if(title)title.textContent='⏳ Jury encore en cours';
+    hint.textContent='Attendez que tous les testeurs aient terminé et validé. Le classement ci-dessous reste provisoire.';
   }else if(!closed){
-    hint.textContent='Tous les tests sont validés. Fermez d’abord le jury avant de pouvoir l’archiver.';
+    if(title)title.textContent='✓ Tous les testeurs ont terminé';
+    hint.textContent='Le jury se ferme automatiquement. Vous allez ensuite compléter la clôture.';
+  }else if(!closureReady){
+    if(title)title.textContent='👉 À faire maintenant : la clôture';
+    hint.textContent='Cliquez sur « 1. Clôture », renseignez les informations et signez. Ensuite revenez ici.';
+    highlight(closureBtn);
+  }else if(!sheetsReady){
+    if(title)title.textContent='👉 À faire maintenant : les fiches produits';
+    hint.textContent=`La clôture est faite. Complétez maintenant les fiches produits (${ps.filled}/${ps.total}). Les données de réception déjà saisies sont reprises automatiquement.`;
+    highlight(sheetsBtn);
+  }else if(!archived){
+    if(title)title.textContent='👉 Dernière étape : rapport puis archivage';
+    hint.textContent='Tout est complet. Ouvrez le rapport final, puis archivez le jury.';
+    highlight(reportBtn);
   }else{
-    hint.textContent='Le jury est fermé. Complétez la fiche de clôture avant l’archivage.';
+    if(title)title.textContent='✓ Jury terminé et archivé';
+    hint.textContent='Le dossier est terminé. Vous pouvez revoir le rapport ou consulter les archives.';
+    highlight(reportBtn);
   }
 
   if(moreBtn){
     moreBtn.textContent=$('#adminView')?.classList.contains('show-results-details')
       ?'Masquer les détails'
-      :'⚙️ Plus de détails';
+      :'⚙️ Détails';
   }
 }
 function toggleSimpleResultsDetails(){
@@ -129,6 +175,7 @@ function closeSimpleResultsHub(){
   bind('resultsBackHubBtn',()=>openResultsArchiveHub());
   bind('archivesBackHubBtn',()=>openResultsArchiveHub());
 
+  bind('simpleResultsClosureBtn',()=>renderClosure());
   bind('simpleResultsPdfBtn',()=>openCurrentReport());
   bind('productSheetsBtn',()=>openProductSheets());
   bind('productSheetsBackBtn',()=>closeProductSheets());
