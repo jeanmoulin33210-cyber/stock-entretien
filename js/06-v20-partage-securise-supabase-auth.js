@@ -118,7 +118,7 @@ function makePublicCloudConfig(cfg){
 }
 function shareUrl(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','219');
+  u.searchParams.set('appBuild','220');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -297,6 +297,16 @@ function rebuildLocalFromCloud(config,rows=[]){
   rows.forEach(r=>{
     const t=Number(r.tester_no);if(!state.testers[t])return;
     if(r.product_id==='__meta__'&&r.sample_id==='__validation__'){state.testers[t].validatedAt=Array.isArray(r.remarks)?(r.remarks[0]||null):null;return}
+    if(r.product_id==='__meta__'&&r.sample_id==='__launch__'){
+      const remarks=Array.isArray(r.remarks)?r.remarks:[];
+      const openedAt=String(remarks[0]||r.updated_at||'');
+      const instanceId=String(remarks[1]||state.config?.juryInstanceId||'').trim();
+      if(openedAt){
+        if(instanceId){state.config.juryInstanceId=instanceId;state.config._juryInstanceId=instanceId}
+        state.config.juryLaunch={openedAt,instanceId:instanceId||juryInstanceId(state.config)};
+      }
+      return
+    }
     const k=sampleKey(r.product_id,r.sample_id);
     state.testers[t].answers[k]={choices:Array.isArray(r.choices)?r.choices:Array(QUESTIONS.length).fill(null),remarks:Array.isArray(r.remarks)?r.remarks:Array(QUESTIONS.length).fill('')}
   });
@@ -420,12 +430,23 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
   (data||[]).forEach(r=>{
     const t=Number(r.tester_no);if(!state.testers[t])return;
     if(r.product_id==='__meta__'&&r.sample_id==='__validation__'){state.testers[t].validatedAt=Array.isArray(r.remarks)?(r.remarks[0]||null):null;return}
+    if(r.product_id==='__meta__'&&r.sample_id==='__launch__'){
+      const remarks=Array.isArray(r.remarks)?r.remarks:[];
+      const openedAt=String(remarks[0]||r.updated_at||'');
+      const instanceId=String(remarks[1]||state.config?.juryInstanceId||'').trim();
+      if(openedAt){
+        if(instanceId){state.config.juryInstanceId=instanceId;state.config._juryInstanceId=instanceId}
+        state.config.juryLaunch={openedAt,instanceId:instanceId||juryInstanceId(state.config)};
+      }
+      return
+    }
     state.testers[t].answers[sampleKey(r.product_id,r.sample_id)]={choices:r.choices||Array(QUESTIONS.length).fill(null),remarks:r.remarks||Array(QUESTIONS.length).fill('')}
   });
   originalSaveState();lastCloudAnswerHashes=new Map();
   (data||[]).forEach(r=>{
     const t=Number(r.tester_no);
     if(r.product_id==='__meta__'&&r.sample_id==='__validation__')lastCloudAnswerHashes.set(`${t}::__validation__`,hashJson(Array.isArray(r.remarks)?(r.remarks[0]||null):null));
+    else if(r.product_id==='__meta__'&&r.sample_id==='__launch__')return;
     else lastCloudAnswerHashes.set(`${t}::${sampleKey(r.product_id,r.sample_id)}`,hashJson({choices:r.choices||[],remarks:r.remarks||[]}))
   });
   if($('#adminView').classList.contains('active'))originalRenderAdmin();else if($('#liveDayView')?.classList.contains('active'))renderLiveDayCards();else if($('#launchView')?.classList.contains('active'))renderLaunchView();else if($('#juryView')?.classList.contains('active'))renderJuryView();else if($('#homeView').classList.contains('active'))originalRenderHome();else if($('#testerView').classList.contains('active'))renderSample()
