@@ -63,6 +63,12 @@
       }
     }catch(e){}
 
+    /* V208 : le mode nettoyage doit être strictement ponctuel.
+       Une fois la remise à zéro appliquée au premier chargement, on retire le
+       marqueur. Sinon chaque actualisation suivante efface aussi les nouveaux
+       lots créés après la remise à zéro. */
+    try{localStorage.removeItem(CLEAN_KEY);}catch(e){}
+
     return true;
   }
 
