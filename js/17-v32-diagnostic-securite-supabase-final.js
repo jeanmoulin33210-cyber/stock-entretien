@@ -95,9 +95,17 @@ async function ensurePhoneShareCredentials(){
 }
 
 async function ensurePreparedShareConnected(){
+  /* V248 — un jury déjà lancé peut être repris après rechargement sans perdre
+     sa session QR. On restaure d'abord les métadonnées connues. */
+  try{
+    if(typeof repairRunningPhoneShareMetadataV248==='function'){
+      repairRunningPhoneShareMetadataV248(state.config);
+    }
+  }catch(e){}
+
   const expected=currentJuryShareSessionId();
   if(!phoneSharePrepared(state.config)||!expected){
-    throw new Error('Les téléphones n’ont pas encore été préparés pour ce jury.')
+    throw new Error('La session QR de ce jury ne peut pas être retrouvée automatiquement.')
   }
   if(launchShareReady())return true;
 
@@ -118,6 +126,18 @@ async function ensurePreparedShareConnected(){
   cloudReady=true;
   saveCloudCfg();
   await subscribeCloud();
+
+  state.config._shareSessionId=expected;
+  if(state.config?.juryLaunch?.openedAt){
+    state.config.juryLaunch={...(state.config.juryLaunch||{}),sessionId:expected};
+  }
+  state.config._phoneShareSignature=phoneShareSignature(state.config);
+  originalSaveState();
+  try{
+    if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt){
+      upsertPreparedJury(state);
+    }
+  }catch(e){}
 
   if(typeof syncDirtyToCloud==='function'){
     lastCloudConfigHash='';
