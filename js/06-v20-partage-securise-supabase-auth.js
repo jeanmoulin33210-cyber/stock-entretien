@@ -118,7 +118,7 @@ function makePublicCloudConfig(cfg){
 }
 function shareUrl(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','255');
+  u.searchParams.set('appBuild','256');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -312,10 +312,72 @@ function testerPresenceNumbers(){
 }
 function refreshLiveDayIfOpen(){if(document.getElementById('liveDayView')?.classList.contains('active'))renderLiveDayCards()}
 
+function productSheetRichnessV256(cfg){
+  const store=cfg&&cfg.productSheets;
+  if(!store||typeof store!=='object')return {filled:0,nonEmpty:0,total:0};
+
+  const vals=Object.values(store);
+  let filled=0,nonEmpty=0;
+  for(const rec of vals){
+    if(!rec||typeof rec!=='object')continue;
+
+    const required=[
+      'brand','characteristics','labeling','weight','technicalSheet',
+      'deliveryTempConformity','packagingConformity','supplierLot','deliveryTemp'
+    ];
+    const complete=required.every(k=>String(rec[k]??'').trim()) &&
+      !!(String(rec.ddm||'').trim()||String(rec.dlc||'').trim());
+
+    if(complete)filled++;
+
+    if(Object.keys(rec).some(k=>
+      !['productId','sampleId','supplier'].includes(k) &&
+      String(rec[k]??'').trim()
+    ))nonEmpty++;
+  }
+  return {filled,nonEmpty,total:vals.length};
+}
+
+function preserveRicherAdminLocalDataV256(cfg,prev){
+  if(!cfg||!prev)return cfg;
+
+  try{
+    const remote=productSheetRichnessV256(cfg);
+    const local=productSheetRichnessV256(prev);
+
+    if(
+      local.filled>remote.filled ||
+      (local.filled===remote.filled && local.nonEmpty>remote.nonEmpty)
+    ){
+      if(prev.productSheets&&typeof prev.productSheets==='object'){
+        cfg.productSheets=deepClone(prev.productSheets);
+      }
+    }
+  }catch(e){}
+
+  try{
+    const remoteRec=Array.isArray(cfg.receptions)?cfg.receptions:[];
+    const localRec=Array.isArray(prev.receptions)?prev.receptions:[];
+    if(localRec.length>remoteRec.length){
+      cfg.receptions=deepClone(localRec);
+    }
+    if(!cfg.receptionEstablishment && prev.receptionEstablishment){
+      cfg.receptionEstablishment=prev.receptionEstablishment;
+    }
+  }catch(e){}
+
+  return cfg;
+}
+
 function restoreAdminShareMetadataV248(cfg,previousCfg=null){
   if(!cfg||typeof cfg!=='object'||cloudRole!=='admin')return cfg;
 
   const prev=previousCfg&&typeof previousCfg==='object'?previousCfg:{};
+
+  /* V256 — ne jamais écraser une fiche produit locale plus complète
+     par une configuration cloud moins riche. */
+  preserveRicherAdminLocalDataV256(cfg,prev);
+
   const sid=String(
     cfg._shareSessionId||
     cfg.juryLaunch?.sessionId||
