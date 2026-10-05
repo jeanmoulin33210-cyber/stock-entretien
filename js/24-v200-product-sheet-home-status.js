@@ -1,99 +1,118 @@
-/* v253 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
+/* v254 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
 (function(){
   function sheetLots(){
-    /* V253 — un ancien marqueur "lots remis à zéro" ne doit pas masquer
-       un jury actif recréé/repris ensuite. On ne l'honore que s'il n'existe
-       réellement aucun lot actif avec des produits. */
-    try{
-      if(localStorage.getItem('jm_tc_lots_clean_mode_v207')){
-        var hasCurrent=!!(state&&state.config&&Array.isArray(state.config.products)&&state.config.products.length);
-        var hasPrepared=false;
-        try{
-          if(typeof loadPreparedJurys==='function'){
-            hasPrepared=(loadPreparedJurys()||[]).some(function(rec){
-              var cfg=rec&&rec.state&&rec.state.config;
-              return !!(cfg&&Array.isArray(cfg.products)&&cfg.products.length&&
-                !(cfg.juryClose&&cfg.juryClose.closedAt)&&
-                !(cfg._archive&&cfg._archive.archivedAt));
-            });
-          }
-        }catch(e){}
-        if(hasCurrent||hasPrepared){
-          localStorage.removeItem('jm_tc_lots_clean_mode_v207');
-        }else{
-          return [];
-        }
-      }
-    }catch(e){}
-    try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
+    /* V254 — les compteurs Fiches produits sont calculés directement depuis
+       l'état courant et les jurys actifs sauvegardés. Ils ne dépendent plus
+       de la liste Réception chauffeur. */
+    var candidates=[];
+    var seen=new Set();
 
-    /* v253 — même périmètre que « Réception chauffeur » :
-       uniquement les lots encore actifs. Les anciens jurys fermés / archivés
-       ne doivent plus gonfler le compteur « Fiches à compléter ». */
-    var prepared=(typeof loadPreparedJurys==='function') ? loadPreparedJurys() : [];
-    var active=[];
-
-    if(typeof allReceptionLots==='function'){
-      try{ active=allReceptionLots()||[]; }catch(e){ active=[]; }
+    function activeState(st){
+      var cfg=st&&st.config;
+      return !!(cfg&&Array.isArray(cfg.products)&&cfg.products.length&&
+        !(cfg.juryClose&&cfg.juryClose.closedAt)&&
+        !(cfg._archive&&cfg._archive.archivedAt));
     }
-
-    /* Repli de sécurité si le moteur Réception n'est pas disponible. */
-    if(!active.length){
-      var base=(typeof productLotsV174==='function') ? productLotsV174() : [];
-      active=base.filter(function(row){
-        var st=null;
-        if(row.current) st=state;
-        else {
-          var rec=prepared.find(function(x){ return String(x && x.id)===String(row.id); });
-          st=rec && rec.state;
-        }
-        var cfg=st && st.config;
-        return !!(cfg && cfg.products && cfg.products.length && !(cfg.juryClose&&cfg.juryClose.closedAt) && !(cfg._archive&&cfg._archive.archivedAt));
-      }).map(function(row){
-        return {
-          id:row.id,
-          kind:row.current?'current':'prepared',
-          lotName:row.name,
-          products:row.products,
-          suppliers:new Array(Number(row.suppliers||0))
-        };
+    function stateKey(st,fallback){
+      var cfg=st&&st.config||{};
+      return String(
+        cfg._preparedId||
+        cfg._juryInstanceId||
+        cfg.juryInstanceId||
+        cfg.juryLaunch&&cfg.juryLaunch.instanceId||
+        fallback||
+        cfg.lotName||
+        ''
+      );
+    }
+    function addCandidate(st,meta){
+      if(!activeState(st))return;
+      var key=stateKey(st,meta&&meta.id);
+      if(!key||seen.has(key))return;
+      seen.add(key);
+      candidates.push({
+        state:st,
+        id:String((meta&&meta.id)||st.config._preparedId||key),
+        current:!!(meta&&meta.current),
+        source:(meta&&meta.source)||'prepared',
+        name:(meta&&meta.name)||st.config.lotName||'Lot préparé'
       });
     }
 
-    return active.map(function(item){
-      var isCurrent=item.kind==='current' || String(item.id)===String(state&&state.config&&state.config._preparedId||'__current__');
-      var st=null;
-      if(isCurrent) st=state;
-      else {
-        var rec=prepared.find(function(x){ return String(x && x.id)===String(item.id); });
-        st=rec && rec.state;
-      }
-      if(!st || !st.config || !Array.isArray(st.config.products) || !st.config.products.length) return null;
+    /* 1) État réellement ouvert sur l'appareil. */
+    try{ addCandidate(state,{id:state&&state.config&&state.config._preparedId||'__current__',current:true,source:'current'}); }catch(e){}
 
+    /* 2) Tous les jurys actifs sauvegardés. */
+    var prepared=[];
+    try{ prepared=(typeof loadPreparedJurys==='function')?(loadPreparedJurys()||[]):[]; }catch(e){ prepared=[]; }
+    prepared.forEach(function(rec){
+      addCandidate(rec&&rec.state,{
+        id:rec&&rec.id,
+        current:String(rec&&rec.id)===String(state&&state.config&&state.config._preparedId||''),
+        source:'prepared',
+        name:rec&&rec.name
+      });
+    });
+
+    /* 3) Secours très ciblé : la sauvegarde créée juste avant une réparation QR.
+       On ne l'utilise que si aucun jury actif normal n'est visible. */
+    if(!candidates.length){
+      try{
+        var qrBackup=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
+        if(activeState(qrBackup&&qrBackup.state)){
+          addCandidate(qrBackup.state,{
+            id:'__qr_backup_v251__',
+            current:false,
+            source:'qrBackup',
+            name:qrBackup.state.config.lotName||'Jury sauvegardé'
+          });
+        }
+      }catch(e){}
+    }
+
+    /* Un ancien marqueur "lots remis à zéro" ne doit plus masquer un jury
+       effectivement retrouvé ci-dessus. */
+    if(candidates.length){
+      try{ localStorage.removeItem('jm_tc_lots_clean_mode_v207'); }catch(e){}
+    }
+
+    return candidates.map(function(item){
+      var st=item.state;
+      var cfg=st.config||{};
       var prog={total:0,filled:0};
       try{ if(typeof productSheetsProgress==='function') prog=productSheetsProgress(st); }catch(e){}
-      var key=(prog.total>0 && prog.filled>=prog.total) ? 'done' : (prog.filled>0 ? 'partial' : 'pending');
-      var supplierCount=Array.isArray(item.suppliers) ? item.suppliers.length : Number(item.suppliers||0);
+
       var firstIssue=null;
       try{
         var validation=(typeof productSheetsValidation==='function') ? productSheetsValidation(st) : null;
         firstIssue=validation&&validation.issues&&validation.issues.length ? validation.issues[0] : null;
       }catch(e){}
 
+      var names=[];
+      try{
+        if(typeof supplierNamesFromConfigV254==='function')names=supplierNamesFromConfigV254(cfg)||[];
+        else if(typeof supplierNamesFromConfigV252==='function')names=supplierNamesFromConfigV252(cfg)||[];
+        else names=(cfg.supplierNames||[]).filter(function(x){return String(x||'').trim();});
+      }catch(e){ names=(cfg.supplierNames||[]).filter(function(x){return String(x||'').trim();}); }
+
+      var total=Number(prog.total||0),filled=Number(prog.filled||0);
+      var key=(total>0&&filled>=total)?'done':(filled>0?'partial':'pending');
+
       return {
-        id:String(item.id),
-        current:isCurrent,
-        name:item.lotName||st.config.lotName||'Lot préparé',
-        products:Number(item.products||st.config.products.length||0),
-        suppliers:supplierCount,
-        sheetTotal:Number(prog.total||0),
-        sheetFilled:Number(prog.filled||0),
-        sheetMissing:Math.max(0,Number(prog.total||0)-Number(prog.filled||0)),
+        id:item.id,
+        current:item.current,
+        source:item.source,
+        name:item.name||cfg.lotName||'Lot préparé',
+        products:Array.isArray(cfg.products)?cfg.products.length:0,
+        suppliers:names.length,
+        sheetTotal:total,
+        sheetFilled:filled,
+        sheetMissing:Math.max(0,total-filled),
         firstProductId:firstIssue?String(firstIssue.productId||''):'',
         firstSampleId:firstIssue?String(firstIssue.sampleId||''):'',
         sheetStatus:key
       };
-    }).filter(Boolean);
+    });
   }
 
   function pendingLots(){ return sheetLots().filter(function(x){ return x.sheetStatus!=='done'; }); }
@@ -147,7 +166,19 @@
     }).join('');
     list.querySelectorAll('[data-product-lot-v200]').forEach(function(btn){
       btn.onclick=function(){
-        var row=rows.find(function(r){return String(r.id)===String(btn.dataset.productLotV253);});
+        var row=rows.find(function(r){return String(r.id)===String(btn.dataset.productLotV200);});
+        if(row && row.source==='qrBackup'){
+          try{
+            var b=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
+            if(b&&b.state){
+              state=deepClone(b.state);
+              if(typeof upsertPreparedJury==='function')upsertPreparedJury(state);
+              localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+              row.current=true;
+              row.id=String(state.config&&state.config._preparedId||row.id);
+            }
+          }catch(e){}
+        }
         if(row && typeof openProductLotV174==='function') openProductLotV174(row);
       };
     });
@@ -163,9 +194,21 @@
 
     var missingCount=rows.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
 
-    /* V253 — s'il ne reste qu'une seule fiche, aller directement dessus. */
+    /* V254 — s'il ne reste qu'une seule fiche, aller directement dessus. */
     if(missingCount===1){
       var row=rows.find(function(r){ return Number(r.sheetMissing||0)>0; })||rows[0];
+      if(row && row.source==='qrBackup'){
+        try{
+          var b=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
+          if(b&&b.state){
+            state=deepClone(b.state);
+            if(typeof upsertPreparedJury==='function')upsertPreparedJury(state);
+            localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+            row.current=true;
+            row.id=String(state.config&&state.config._preparedId||row.id);
+          }
+        }catch(e){}
+      }
       if(row && typeof openProductLotV174==='function'){
         openProductLotV174(row);
         return;
