@@ -337,7 +337,7 @@ function dedupePreparedJurysV238(rows){
   return [...byKey.values(),...withoutKey]
     .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
 }
-function rawSupplierNamesV262(cfg){
+function rawSupplierNamesV263(cfg){
   const out=[],seen=new Set();
   const add=v=>{
     const raw=String(v||'').trim();
@@ -353,7 +353,7 @@ function rawSupplierNamesV262(cfg){
     (Array.isArray(p?.samples)?p.samples:[]).forEach(s=>add(s?.supplier))
   );
 
-  /* V262 — les fiches produits gardent leur fournisseur même si la liste
+  /* V263 — les fiches produits gardent leur fournisseur même si la liste
      générale ou l'échantillon a été perdu lors d'une reprise cloud. */
   const sheets=cfg?.productSheets&&typeof cfg.productSheets==='object'
     ?Object.values(cfg.productSheets):[];
@@ -366,7 +366,7 @@ function rawSupplierNamesV262(cfg){
   return out;
 }
 
-function healSampleSuppliersFromProductSheetsV262(cfg){
+function healSampleSuppliersFromProductSheetsV263(cfg){
   if(!cfg||typeof cfg!=='object'||!cfg.productSheets||typeof cfg.productSheets!=='object')return false;
   let changed=false;
   const products=Array.isArray(cfg.products)?cfg.products:[];
@@ -399,10 +399,10 @@ function supplierNamesFromConfigV252(cfg){
     seen.add(key);out.push(raw);
   };
 
-  rawSupplierNamesV262(cfg).forEach(add);
+  rawSupplierNamesV263(cfg).forEach(add);
 
-  if(!out.length && typeof recoverSupplierNamesFromBackupsV262==='function'){
-    try{recoverSupplierNamesFromBackupsV262(cfg).forEach(add)}catch(e){}
+  if(!out.length && typeof recoverSupplierNamesFromBackupsV263==='function'){
+    try{recoverSupplierNamesFromBackupsV263(cfg).forEach(add)}catch(e){}
   }
   return out;
 }
@@ -412,7 +412,7 @@ function healSupplierNamesV252(cfg){
   let changed=false;
 
   try{
-    if(healSampleSuppliersFromProductSheetsV262(cfg))changed=true;
+    if(healSampleSuppliersFromProductSheetsV263(cfg))changed=true;
   }catch(e){}
 
   const names=supplierNamesFromConfigV252(cfg);
@@ -1331,7 +1331,7 @@ function receptionSupplierNames(cfg=receptionConfig()){
   return [...new Set(names)];
 }
 
-function supplierBackupMatchV262(target,source){
+function supplierBackupMatchV263(target,source){
   if(!target||!source)return false;
 
   const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -1363,7 +1363,7 @@ function supplierBackupMatchV262(target,source){
   return overlap>0 && overlap===Math.min(tp.size,sp.size);
 }
 
-function recoverSupplierNamesFromBackupsV262(cfg){
+function recoverSupplierNamesFromBackupsV263(cfg){
   const states=[];
   const push=st=>{if(st?.config)states.push(st.config)};
 
@@ -1400,11 +1400,11 @@ function recoverSupplierNamesFromBackupsV262(cfg){
   };
 
   for(const source of states){
-    if(!supplierBackupMatchV262(cfg,source))continue;
-    rawSupplierNamesV262(source).forEach(add);
+    if(!supplierBackupMatchV263(cfg,source))continue;
+    rawSupplierNamesV263(source).forEach(add);
   }
 
-  /* V262 — source prioritaire supplémentaire : "Choix des échantillons".
+  /* V263 — source prioritaire supplémentaire : "Choix des échantillons".
      Les noms des fournisseurs sont conservés séparément dans les métadonnées
      du lot, même quand les échantillons ont perdu leur champ supplier. */
   try{
@@ -1416,7 +1416,7 @@ function recoverSupplierNamesFromBackupsV262(cfg){
       supplierNames:Array.isArray(meta?.supplierNames)?meta.supplierNames:[],
       products:loadSampleProducts()
     };
-    if(supplierBackupMatchV262(cfg,pseudo)){
+    if(supplierBackupMatchV263(cfg,pseudo)){
       (meta?.supplierNames||[]).forEach(add);
     }
   }catch(e){}
@@ -1432,7 +1432,7 @@ function recoverSupplierNamesFromBackupsV262(cfg){
         supplierNames:Array.isArray(meta.supplierNames)?meta.supplierNames:[],
         products:Array.isArray(rec?.products)?rec.products:[]
       };
-      if(!supplierBackupMatchV262(cfg,pseudo))continue;
+      if(!supplierBackupMatchV263(cfg,pseudo))continue;
       (meta.supplierNames||[]).forEach(add);
     }
   }catch(e){}
@@ -1440,7 +1440,7 @@ function recoverSupplierNamesFromBackupsV262(cfg){
   return out;
 }
 
-function addManualReceptionSupplierV262(cfg,name){
+function addManualReceptionSupplierV263(cfg,name){
   if(!cfg||typeof cfg!=='object')return '';
   const clean=String(name||'').trim();
   if(!clean)return '';
@@ -2280,20 +2280,20 @@ function renderReceptionForm(){
   const selected=String(receptionDraft.supplier||'').trim();
 
   if(supplierInput && supplierManual){
-    /* V262 — si aucun fournisseur n'est connu, ne pas afficher un menu vide :
+    /* V263 — si aucun fournisseur n'est connu, ne pas afficher un menu vide :
        on propose directement une saisie texte. */
     if(!suppliers.length){
       supplierInput.style.display='none';
       supplierManual.style.display='';
       supplierManual.value=selected;
       supplierManual.onchange=()=>{
-        const clean=addManualReceptionSupplierV262(cfg,supplierManual.value);
+        const clean=addManualReceptionSupplierV263(cfg,supplierManual.value);
         receptionDraft.supplier=clean||String(supplierManual.value||'').trim();
       };
       supplierManual.onblur=()=>{
         const clean=String(supplierManual.value||'').trim();
         if(clean){
-          receptionDraft.supplier=addManualReceptionSupplierV262(cfg,clean)||clean;
+          receptionDraft.supplier=addManualReceptionSupplierV263(cfg,clean)||clean;
         }
       };
     }else{
@@ -2330,7 +2330,7 @@ function renderReceptionForm(){
           supplierInput.value=receptionDraft.supplier||'';
           return;
         }
-        const clean=addManualReceptionSupplierV262(cfg,name);
+        const clean=addManualReceptionSupplierV263(cfg,name);
         if(!clean){
           supplierInput.value=receptionDraft.supplier||'';
           return;
@@ -2383,7 +2383,7 @@ function captureReceptionForm(){
     :String(supplierSelect?.value||'').trim();
   if(receptionDraft.supplier==='__manual_supplier_v260__')receptionDraft.supplier='';
   if(receptionDraft.supplier){
-    try{receptionDraft.supplier=addManualReceptionSupplierV262(cfg,receptionDraft.supplier)||receptionDraft.supplier}catch(e){}
+    try{receptionDraft.supplier=addManualReceptionSupplierV263(cfg,receptionDraft.supplier)||receptionDraft.supplier}catch(e){}
   }
   receptionDraft.vehicleTemp=String($('#receptionVehicleTemp').value??'').trim();
   receptionDraft.driverName=$('#receptionDriverName').value.trim();
@@ -6342,7 +6342,7 @@ function renderAdmin(){
   $('#resultsNote').classList.toggle('final',completeSession);
   $('#resultsNote').textContent=closed?'Le jury est fermé : aucune note ne peut plus être modifiée. Complétez la fiche de clôture, générez le rapport final puis archivez le dossier.':completeSession?'Toutes les fiches sont complètes et validées. Fermez officiellement le jury pour verrouiller définitivement les accès testeurs.':allComplete?'Toutes les dégustations sont complètes, mais les résultats restent provisoires jusqu’à la validation définitive de chaque testeur.':'Les classements restent provisoires tant que tous les testeurs n’ont pas terminé. Une fiche incomplète n’entre pas dans les moyennes.';
   const closeBtn=$('#resultsCloseJuryBtn');if(closeBtn){closeBtn.disabled=!completeSession||closed;closeBtn.textContent=closed?'🔒 Jury fermé':'🔒 Fermer le jury';closeBtn.title=closed?`Fermé le ${fmtCloseDate(juryCloseInfo().closedAt)}`:completeSession?'Bloquer définitivement les accès testeurs':'Tous les testeurs doivent valider avant la fermeture';}
-  const ab=$('#archiveJuryBtn');if(ab){const archived=!!state.config?._archive?.archivedAt;const archiveReady=closed&&closureIsReady();ab.disabled=!archiveReady;ab.textContent=archived?'🗂️ Mettre à jour l’archive':'🗂️ Archiver le jury';ab.title=archived?'Mettre à jour l’archive':!closed?'Fermez d’abord officiellement le jury':!closureIsReady()?'Complétez d’abord la fiche de clôture (date, lieu, responsable)':'Conserver le dossier complet dans les archives';}const rb=$('#reportBtn');if(rb){rb.textContent=completeSession?'📄 Rapport final':'📄 Rapport provisoire';rb.title=completeSession?'Générer le rapport final imprimable / PDF':'Générer un aperçu provisoire du rapport';}const mb=$('#minutesBtn');if(mb){const pvFinal=isJuryClosed()&&closureIsReady();mb.textContent=pvFinal?'📝 PV final':'📝 Projet de PV';mb.title=pvFinal?'Générer le procès-verbal final du jury':'Générer un projet de procès-verbal';}const db=$('#dossierBtn');if(db){const dFinal=isJuryClosed()&&closureIsReady()&&validated===state.config.testerCount;db.textContent=dFinal?'📚 Dossier final':'📚 Dossier provisoire';db.title=dFinal?'Générer le dossier complet final du jury':'Générer un dossier complet provisoire';}const sb=$('#summaryBtn');if(sb){const sFinal=isJuryClosed()&&closureIsReady()&&validated===state.config.testerCount;sb.textContent=sFinal?'📋 Synthèse finale':'📋 Synthèse jury';sb.title='Ouvrir une synthèse courte imprimable, avec option anonymisée';}const cb=$('#closureBtn');if(cb){cb.textContent=closureIsReady()?'✍️ Clôture renseignée ✓':'✍️ Fiche de clôture';cb.title=closureIsReady()?'Ouvrir ou modifier la fiche de clôture':'Renseigner date, lieu, participants et signatures';}const resetBtn=$('#resetAnswersBtn');if(resetBtn){resetBtn.style.display=closed?'none':'';}
+const rb=$('#reportBtn');if(rb){rb.textContent=completeSession?'📄 Rapport final':'📄 Rapport provisoire';rb.title=completeSession?'Générer le rapport final imprimable / PDF':'Générer un aperçu provisoire du rapport';}const mb=$('#minutesBtn');if(mb){const pvFinal=isJuryClosed()&&closureIsReady();mb.textContent=pvFinal?'📝 PV final':'📝 Projet de PV';mb.title=pvFinal?'Générer le procès-verbal final du jury':'Générer un projet de procès-verbal';}const db=$('#dossierBtn');if(db){const dFinal=isJuryClosed()&&closureIsReady()&&validated===state.config.testerCount;db.textContent=dFinal?'📚 Dossier final':'📚 Dossier provisoire';db.title=dFinal?'Générer le dossier complet final du jury':'Générer un dossier complet provisoire';}const sb=$('#summaryBtn');if(sb){const sFinal=isJuryClosed()&&closureIsReady()&&validated===state.config.testerCount;sb.textContent=sFinal?'📋 Synthèse finale':'📋 Synthèse jury';sb.title='Ouvrir une synthèse courte imprimable, avec option anonymisée';}const cb=$('#closureBtn');if(cb){cb.textContent=closureIsReady()?'✍️ Clôture renseignée ✓':'✍️ Fiche de clôture';cb.title=closureIsReady()?'Ouvrir ou modifier la fiche de clôture':'Renseigner date, lieu, participants et signatures';}const resetBtn=$('#resetAnswersBtn');if(resetBtn){resetBtn.style.display=closed?'none':'';}
   $('#adminKpis').innerHTML=`<div class="panel kpi"><small>Fiches terminées</small><strong>${done}</strong><span>sur ${max}</span></div><div class="panel kpi"><small>Tests validés</small><strong>${validated}</strong><span>sur ${state.config.testerCount}</span></div><div class="panel kpi"><small>Échantillons</small><strong>${total}</strong><span>${state.config.products.length} produit(s)</span></div><div class="panel kpi"><small>Avancement</small><strong>${max?Math.round(done/max*100):0} %</strong><span>${completeSession?'jury complet':'en cours'}</span></div>`;
   const tabs=$('#adminTabs');
   tabs.innerHTML=state.config.products.map(p=>`<button class="tab-btn ${adminProduct===p.id?'active':''}" data-id="${p.id}">${escapeHtml(p.name)}</button>`).join('')+`<button class="tab-btn ${adminProduct==='overall'?'active':''}" data-id="overall">Vue globale</button>`;
@@ -8577,6 +8577,20 @@ function renderArchiveFilterChips(f){
   box.innerHTML=chips.length?chips.map(x=>`<span class="archive-filter-chip">${escapeHtml(x)}</span>`).join(''):'<span style="font-size:9px;color:var(--muted)">Aucun filtre actif.</span>';
 }
 function renderArchives(){
+  setTimeout(()=>{
+    const b=$('#archiveCurrentFromArchivesBtn');
+    if(!b)return;
+    const archived=!!state.config?._archive?.archivedAt;
+    const ready=isJuryClosed()&&closureIsReady();
+    b.style.display=state?.config?.products?.length?'':'none';
+    b.disabled=!ready;
+    b.textContent=archived?'🗂️ Mettre à jour l’archive du jury actuel':'🗂️ Archiver le jury actuel';
+    b.title=archived?'Mettre à jour l’archive':
+      !isJuryClosed()?'Fermez d’abord officiellement le jury':
+      !closureIsReady()?'Complétez d’abord la fiche de clôture':
+      'Conserver le jury actuel dans les archives';
+  },0);
+
   updateHeader();showView('archivesView');$('#headerTitle').textContent='Archives des jurys';$('#headerSub').textContent='Historique filtrable des tests culinaires';
   const all=loadArchives();
   populateArchiveFilters(all);
@@ -8730,7 +8744,7 @@ $('#statsSupplier').onchange=renderStats;
 $('#statsResetBtn').onclick=resetStats;
 $('#statsCsvBtn').onclick=exportStatsCsv;
 $('#statsHomeBtn').onclick=renderHome;
-$('#archiveJuryBtn').onclick=archiveCurrentJury;$('#samplesSetupBtn').onclick=openSampleSetup;(function(){
+$('#archiveCurrentFromArchivesBtn').onclick=archiveCurrentJury;$('#samplesSetupBtn').onclick=openSampleSetup;(function(){
   // v206 — « Préparer le jury » : moins sensible pendant le défilement tactile.
   // On supprime l'ouverture directe sur touchend : le bouton s'ouvre uniquement
   // sur un vrai clic/tap, et un petit glissement vertical annule l'ouverture.
@@ -8783,5 +8797,5 @@ testerCountInput.onchange=syncTesterCountFromField;$('#cfgLotName').oninput=()=>
 $('#closeConfigPreviewBtn').onclick=closeConfigPreview;
 $('#configPreviewModal').onclick=e=>{if(e.target.id==='configPreviewModal')closeConfigPreview()};
 $('#testerHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#bottomHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#testerSelect').onchange=e=>{currentTester=Number(e.target.value);renderSample()};$('#productSelect').onchange=e=>{const targetPid=e.target.value;const target=getProduct(targetPid)?.samples?.[0];if(!target){e.target.value=currentProduct;return}if(!goToSample(targetPid,target.id))e.target.value=currentProduct};$('#sampleSelect').onchange=e=>{const target=e.target.value;if(!goToSample(currentProduct,target))e.target.value=currentSample};$('#prevSample').onclick=()=>moveSample(-1);$('#nextSample').onclick=()=>moveSample(1);
-$('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#productSheetsBtn').onclick=()=>openProductSheets();$('#productSheetsBackBtn').onclick=()=>closeProductSheets();$('#productSheetsHomeBtn').onclick=()=>{captureProductSheetForm();saveState();renderHome()};$('#saveProductSheetsBtn').onclick=()=>saveProductSheets();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsArchiveBtn').onclick=()=>archiveCurrentJury();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>renderHome();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
+$('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#productSheetsBtn').onclick=()=>openProductSheets();$('#productSheetsBackBtn').onclick=()=>closeProductSheets();$('#productSheetsHomeBtn').onclick=()=>{captureProductSheetForm();saveState();renderHome()};$('#saveProductSheetsBtn').onclick=()=>saveProductSheets();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>renderHome();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
 renderHome();
