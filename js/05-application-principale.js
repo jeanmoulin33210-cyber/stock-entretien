@@ -283,28 +283,112 @@ function saveState(){
   }catch(e){}
 }
 
+const PREPARED_DEDUPE_BACKUP_V238='jm_tc_prepared_dedupe_backup_v238';
+
+function preparedNormalizeV238(v){
+  return String(v||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function preparedLogicalKeyV238(st){
+  const cfg=st?.config||{};
+  const lot=preparedNormalizeV238(cfg.lotName||cfg.lotNumber||cfg.lotTitle||'');
+  if(!lot)return '';
+  const products=(Array.isArray(cfg.products)?cfg.products:[]).map(p=>{
+    const name=preparedNormalizeV238(p?.name||'');
+    const suppliers=(Array.isArray(p?.samples)?p.samples:[])
+      .map(s=>preparedNormalizeV238(s?.supplier||'')).filter(Boolean).sort().join(',');
+    return name+'['+suppliers+']';
+  }).filter(Boolean).sort().join('|');
+  const suppliers=(Array.isArray(cfg.supplierNames)?cfg.supplierNames:[])
+    .map(preparedNormalizeV238).filter(Boolean).sort().join('|');
+  return [lot,products,suppliers,Number(cfg.testerCount||0)].join('::');
+}
+function preparedProgressScoreV238(rec){
+  const st=rec?.state||{},cfg=st.config||{};
+  let score=0;
+  if(cfg?.juryClose?.closedAt)score+=900000000;
+  else if(cfg?.juryLaunch?.openedAt)score+=600000000;
+  if(cfg?._shareSessionId||cfg?.shareSessionId)score+=50000000;
+  if(Array.isArray(cfg?.receptions))score+=cfg.receptions.filter(r=>r?.validatedAt).length*1000000;
+  try{
+    if(typeof productSheetsProgress==='function'){
+      const p=productSheetsProgress(st)||{};
+      score+=Number(p.filled||0)*100000;
+    }
+  }catch(e){}
+  for(const t of Object.values(st?.testers||{})){
+    if(t?.validatedAt)score+=10000;
+    score+=Object.values(t?.answers||{}).filter(a=>Array.isArray(a?.choices)&&a.choices.some(v=>v!==null&&v!==undefined)).length*100;
+  }
+  const at=Date.parse(rec?.savedAt||cfg?._preparedAt||'')||0;
+  score+=Math.min(99999999,Math.floor(at/100000));
+  return score;
+}
+function dedupePreparedJurysV238(rows){
+  const src=Array.isArray(rows)?rows.filter(r=>r&&r.state&&r.state.config):[];
+  const byKey=new Map(),withoutKey=[];
+  for(const rec of src){
+    const key=preparedLogicalKeyV238(rec.state);
+    if(!key){withoutKey.push(rec);continue;}
+    const old=byKey.get(key);
+    if(!old||preparedProgressScoreV238(rec)>preparedProgressScoreV238(old))byKey.set(key,rec);
+  }
+  return [...byKey.values(),...withoutKey]
+    .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
+}
 function loadPreparedJurys(){
   try{
-    const rows=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
-    return Array.isArray(rows)?rows:[];
+    const raw=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
+    const rows=Array.isArray(raw)?raw:[];
+    const clean=dedupePreparedJurysV238(rows);
+    if(clean.length!==rows.length){
+      try{
+        if(!localStorage.getItem(PREPARED_DEDUPE_BACKUP_V238)){
+          localStorage.setItem(PREPARED_DEDUPE_BACKUP_V238,JSON.stringify({
+            createdAt:new Date().toISOString(),
+            rows
+          }));
+        }
+        localStorage.setItem(PREPARED_JURY_STORAGE_KEY,JSON.stringify(clean));
+      }catch(e){console.warn('Sauvegarde nettoyage doublons non bloquante',e)}
+    }
+    return clean;
   }catch(e){return[]}
 }
 function savePreparedJurys(rows){
-  localStorage.setItem(PREPARED_JURY_STORAGE_KEY,JSON.stringify(Array.isArray(rows)?rows:[]));
+  const clean=dedupePreparedJurysV238(Array.isArray(rows)?rows:[]);
+  localStorage.setItem(PREPARED_JURY_STORAGE_KEY,JSON.stringify(clean));
 }
 function upsertPreparedJury(st=state){
   if(!st?.config)return null;
-  const id=st.config._preparedId||uid('prepared');
+  let id=st.config._preparedId||uid('prepared');
   st.config._preparedId=id;
   st.config._preparedAt=st.config._preparedAt||new Date().toISOString();
+
+  const rows=loadPreparedJurys();
+  let i=rows.findIndex(x=>String(x.id)===String(id));
+
+  /* V238 : si le même lot a reçu accidentellement un nouvel identifiant,
+     réutiliser la fiche existante au lieu de créer un doublon. */
+  if(i<0){
+    const logical=preparedLogicalKeyV238(st);
+    if(logical){
+      i=rows.findIndex(x=>preparedLogicalKeyV238(x?.state)===logical);
+      if(i>=0){
+        id=String(rows[i].id||id);
+        st.config._preparedId=id;
+      }
+    }
+  }
+
   const rec={
     id,
     savedAt:new Date().toISOString(),
     name:st.config.lotName||'Jury préparé',
     state:deepClone(st)
   };
-  const rows=loadPreparedJurys();
-  const i=rows.findIndex(x=>x.id===id);
+
   if(i>=0)rows[i]=rec;
   else rows.unshift(rec);
   savePreparedJurys(rows.slice(0,30));
@@ -312,8 +396,86 @@ function upsertPreparedJury(st=state){
 }
 function removePreparedJury(id){
   if(!id)return;
-  savePreparedJurys(loadPreparedJurys().filter(x=>x.id!==id));
+  savePreparedJurys(loadPreparedJurys().filter(x=>String(x.id)!==String(id)));
 }
+function blankActiveStateV238(){
+  const security=state?.config?.security?deepClone(state.config.security):null;
+  const cfg={
+    _emptyAfterReset:true,
+    _juryInstanceId:uid('jury'),
+    lotName:'',lotNumber:'',lotTitle:'',subtitle:'',
+    supplierNames:[],supplierResponseCount:0,
+    receptions:[],receptionEstablishment:'',
+    criteria:defaultCriteria(),
+    testerCount:6,
+    testerNames:Array.from({length:6},(_,i)=>`Testeur ${i+1}`),
+    products:[],
+    security
+  };
+  return makeInitialState(cfg);
+}
+function setActiveStateAfterPreparedDeleteV238(remaining){
+  const rows=Array.isArray(remaining)?remaining:[];
+  if(rows.length){
+    state=deepClone(rows[0].state);
+    if(!state.config._preparedId)state.config._preparedId=rows[0].id;
+  }else{
+    state=blankActiveStateV238();
+  }
+  localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  currentTester=1;
+  currentProduct=state.config.products?.[0]?.id||'';
+  currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';
+  adminProduct=currentProduct;
+  selectedAdminSample='';
+}
+async function deletePreparedJuryV238(id){
+  const rows=loadPreparedJurys();
+  const rec=rows.find(x=>String(x.id)===String(id));
+  if(!rec)return;
+  const name=rec?.state?.config?.lotName||rec?.name||'ce jury';
+  if(!confirm(`Supprimer « ${name} » des jurys actifs ?\n\nLes archives ne seront pas touchées.`))return;
+
+  const remaining=rows.filter(x=>String(x.id)!==String(id));
+  savePreparedJurys(remaining);
+
+  if(String(state?.config?._preparedId||'')===String(id)){
+    try{
+      if(typeof disconnectCloud==='function')await disconnectCloud();
+    }catch(e){}
+    setActiveStateAfterPreparedDeleteV238(remaining);
+  }
+
+  toast('Jury actif supprimé ✓');
+  if(remaining.length)renderJuryChooser();
+  else renderHome();
+}
+async function clearPreparedJurysV238(){
+  const rows=loadPreparedJurys();
+  if(!rows.length){alert('Aucun jury actif à supprimer.');return;}
+  if(!confirm(
+    `Supprimer les ${rows.length} jury${rows.length>1?'s':''} actif${rows.length>1?'s':''} ?\n\n`+
+    'Cela remettra les compteurs Réception chauffeur et Fiches à compléter à zéro.\n'+
+    'Les archives et les modèles ne seront pas touchés.'
+  ))return;
+
+  try{
+    localStorage.setItem('jm_tc_active_juries_backup_v238',JSON.stringify({
+      createdAt:new Date().toISOString(),
+      rows
+    }));
+  }catch(e){}
+
+  savePreparedJurys([]);
+  try{
+    if(typeof disconnectCloud==='function')await disconnectCloud();
+  }catch(e){}
+  setActiveStateAfterPreparedDeleteV238([]);
+  toast('Jurys actifs supprimés ✓');
+  renderHome();
+}
+window.deletePreparedJuryV238=deletePreparedJuryV238;
+window.clearPreparedJurysV238=clearPreparedJurysV238;
 function ensureCurrentPrepSaved(){
   if(!state?.config||currentJuryPhase()!=='prep')return;
   if(!state.updatedAt)return; // ne transforme pas le jeu de démonstration initial en vrai jury
@@ -442,7 +604,10 @@ function renderJuryChooser(){
           <span>${meta.samples} échantillon${meta.samples>1?'s':''}</span>
           <span>${meta.testers} testeur${meta.testers>1?'s':''}</span>
         </div>
-        <div class="jury-choice-actions">${buttons}</div>
+        <div class="jury-choice-actions">
+          ${buttons}
+          <button type="button" class="btn btn-ghost jury-delete-active-v238" onclick="deletePreparedJuryV238('${escapeHtml(String(rec.id))}')">🗑️ Supprimer ce jury actif</button>
+        </div>
       </article>`;
     }catch(e){
       console.error(e);
