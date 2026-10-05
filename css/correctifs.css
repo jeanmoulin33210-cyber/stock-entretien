@@ -2511,3 +2511,60 @@ table td{
     font-size:9px!important;
   }
 }
+
+
+/* V237 — accueil mobile : garder 2 colonnes sans couper les mots */
+@media(max-width:720px){
+  #homeView #homeReceptionBtn,
+  #homeView #homeReceptionHistoryBtn,
+  #homeView #homeProductSheetsBtnV174,
+  #homeView #homeProductSheetsDoneBtnV200{
+    display:grid!important;
+    grid-template-columns:30px minmax(0,1fr) 26px!important;
+    align-items:center!important;
+    column-gap:6px!important;
+    padding:10px 8px!important;
+  }
+
+  #homeView .home-reception-btn .quick-icon,
+  #homeView .home-product-btn-v174 .quick-icon{
+    width:30px!important;
+    height:30px!important;
+    min-width:30px!important;
+  }
+
+  #homeView #homeReceptionBtn > span:not(.quick-icon):not(.home-reception-badge),
+  #homeView #homeReceptionHistoryBtn > span:not(.quick-icon):not(.home-reception-badge),
+  #homeView #homeProductSheetsBtnV174 > span:not(.quick-icon):not(.home-reception-badge),
+  #homeView #homeProductSheetsDoneBtnV200 > span:not(.quick-icon):not(.home-reception-badge){
+    min-width:0!important;
+    width:auto!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    hyphens:none!important;
+  }
+
+  #homeView .home-reception-btn strong,
+  #homeView .home-product-btn-v174 strong{
+    font-size:11.5px!important;
+    line-height:1.18!important;
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    hyphens:none!important;
+  }
+
+  #homeView .home-reception-btn > span > span,
+  #homeView .home-product-btn-v174 > span > span{
+    overflow-wrap:normal!important;
+    word-break:normal!important;
+    hyphens:none!important;
+  }
+
+  #homeView .home-reception-badge{
+    min-width:26px!important;
+    width:26px!important;
+    height:26px!important;
+    flex:0 0 26px!important;
+    margin-left:0!important;
+  }
+}
