@@ -2586,7 +2586,8 @@ body.live-fullscreen #liveDayView{max-width:none;padding:18px 24px}body.live-ful
 }
 .home-archive-after-tools .home-archive-final{
   width:calc((100% - 10px)/2)!important;
-  min-height:132px!important;
+  min-height:0!important;
+  height:auto!important;
   padding:11px 16px!important;
   border-radius:15px!important;
   align-items:center!important;
@@ -2621,10 +2622,19 @@ body.live-fullscreen #liveDayView{max-width:none;padding:18px 24px}body.live-ful
   }
   .home-archive-after-tools .home-archive-final{
     width:calc((100% - 10px)/2)!important;
-    min-height:132px!important;
+    min-height:0!important;
+    height:auto!important;
     padding:11px 13px!important;
   }
   .home-archive-after-tools .home-archive-final strong{
     font-size:13px!important;
   }
+}
+
+
+/* V268 — Archives : même hauteur naturelle que les autres cartes rapides */
+.home-archive-after-tools .home-archive-final{
+  min-height:0!important;
+  height:auto!important;
+  align-self:stretch!important;
 }
