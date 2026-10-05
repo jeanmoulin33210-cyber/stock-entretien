@@ -1379,11 +1379,24 @@ function productLotsV174(){
   }
   return rows;
 }
+function firstIncompleteProductSheetId(st=state){
+  try{
+    for(const p of st?.config?.products||[]){
+      for(const sm of p.samples||[]){
+        if(productSheetMissingFields(st,p,sm).length)return p.id;
+      }
+    }
+  }catch(e){}
+  return st?.config?.products?.[0]?.id||'';
+}
+
 function openProductLotV174(row){
   closeProductLotModalV174();
 
   if(row.current){
-    activeProductSheetId='';
+    /* V246 — ouvrir directement le premier produit qui possède encore
+       au moins une fiche fournisseur incomplète. */
+    activeProductSheetId=firstIncompleteProductSheetId(state);
     openProductSheets();
     return;
   }
@@ -1408,7 +1421,8 @@ function openProductLotV174(row){
   currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';
   adminProduct=currentProduct;
   selectedAdminSample='';
-  activeProductSheetId='';
+  /* V246 — même logique pour un lot préparé rechargé depuis l’accueil. */
+  activeProductSheetId=firstIncompleteProductSheetId(state);
   openProductSheets();
 }
 function openProductSheetsFromHomeV174(){
@@ -6128,7 +6142,7 @@ function ensureProductSheetRecord(st,p,sm){
   const d=receptionDefaultsForSample(st,p,sm);
   if(store[k]){
     const rec=syncReceptionIntoProductSheet(store[k],d);
-    /* V245 — si aucune observation n'est saisie, RAS est utilisé automatiquement. */
+    /* V246 — si aucune observation n'est saisie, RAS est utilisé automatiquement. */
     if(!String(rec.observations||'').trim())rec.observations='RAS';
     return rec;
   }
@@ -6177,7 +6191,7 @@ function productSheetMissingFields(st,p,sm){
   if(!String(r.ddm||'').trim() && !String(r.dlc||'').trim()){
     missing.push({key:'traceabilityDate',label:'Au moins une date : DDM ou DLC'});
   }
-  /* V245 — le résultat sensoriel est repris automatiquement du jury.
+  /* V246 — le résultat sensoriel est repris automatiquement du jury.
      Ce n'est pas un champ à saisir : il ne doit donc jamais compter comme
      élément manquant ni bloquer la fiche produit. */
   return missing;
@@ -6316,7 +6330,7 @@ function renderProductSheets(){
       const el=card.querySelector(`[data-ps-field="${field}"]`);if(el)el.value=r[field]||'';
     }
 
-    /* V245 — signaler clairement en rouge chaque champ obligatoire manquant. */
+    /* V246 — signaler clairement en rouge chaque champ obligatoire manquant. */
     const missing=productSheetMissingFields(state,p,sm);
     card.querySelectorAll('.field.missing-field').forEach(el=>el.classList.remove('missing-field'));
     card.querySelector('.product-sheet-auto')?.classList.remove('missing-auto');
@@ -6355,7 +6369,7 @@ function captureProductSheetForm(){
     const card=findProductSheetCard(box,sm.id);if(!card)continue;
     const r=ensureProductSheetRecord(state,p,sm);
     card.querySelectorAll('[data-ps-field]').forEach(el=>{r[el.dataset.psField]=el.value??''});
-    /* V245 — Observations : vide = RAS automatiquement avant enregistrement. */
+    /* V246 — Observations : vide = RAS automatiquement avant enregistrement. */
     if(!String(r.observations||'').trim()){
       r.observations='RAS';
       const obs=card.querySelector('[data-ps-field="observations"]');
@@ -6391,7 +6405,7 @@ async function saveProductSheets(){
     return;
   }
 
-  /* V245 — sur la dernière fiche seulement, si tout le dossier produit est
+  /* V246 — sur la dernière fiche seulement, si tout le dossier produit est
      complet, Enregistrer ramène directement à l’accueil. */
   if(currentComplete && currentIndex===products.length-1 && validation.ok){
     renderHome();
