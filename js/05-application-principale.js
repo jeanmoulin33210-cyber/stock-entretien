@@ -337,6 +337,58 @@ function dedupePreparedJurysV238(rows){
   return [...byKey.values(),...withoutKey]
     .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
 }
+function rawSupplierNamesV259(cfg){
+  const out=[],seen=new Set();
+  const add=v=>{
+    const raw=String(v||'').trim();
+    if(!raw)return;
+    const key=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(seen.has(key))return;
+    seen.add(key);out.push(raw);
+  };
+
+  (Array.isArray(cfg?.supplierNames)?cfg.supplierNames:[]).forEach(add);
+
+  (Array.isArray(cfg?.products)?cfg.products:[]).forEach(p=>
+    (Array.isArray(p?.samples)?p.samples:[]).forEach(s=>add(s?.supplier))
+  );
+
+  /* V259 — les fiches produits gardent leur fournisseur même si la liste
+     générale ou l'échantillon a été perdu lors d'une reprise cloud. */
+  const sheets=cfg?.productSheets&&typeof cfg.productSheets==='object'
+    ?Object.values(cfg.productSheets):[];
+  sheets.forEach(r=>{
+    add(r?.supplier);
+    add(r?.receptionSupplier);
+  });
+
+  (Array.isArray(cfg?.receptions)?cfg.receptions:[]).forEach(r=>add(r?.supplier));
+  return out;
+}
+
+function healSampleSuppliersFromProductSheetsV259(cfg){
+  if(!cfg||typeof cfg!=='object'||!cfg.productSheets||typeof cfg.productSheets!=='object')return false;
+  let changed=false;
+  const products=Array.isArray(cfg.products)?cfg.products:[];
+
+  for(const rec of Object.values(cfg.productSheets)){
+    const supplier=String(rec?.supplier||rec?.receptionSupplier||'').trim();
+    if(!supplier)continue;
+
+    let p=products.find(x=>String(x?.id||'')===String(rec?.productId||''));
+    if(!p&&products.length===1)p=products[0];
+    if(!p)continue;
+
+    const samples=Array.isArray(p.samples)?p.samples:[];
+    const sm=samples.find(x=>String(x?.id||'')===String(rec?.sampleId||''));
+    if(sm&&!String(sm.supplier||'').trim()){
+      sm.supplier=supplier;
+      changed=true;
+    }
+  }
+  return changed;
+}
+
 function supplierNamesFromConfigV252(cfg){
   const out=[],seen=new Set();
   const add=v=>{
@@ -346,23 +398,39 @@ function supplierNamesFromConfigV252(cfg){
     if(seen.has(key))return;
     seen.add(key);out.push(raw);
   };
-  (Array.isArray(cfg?.supplierNames)?cfg.supplierNames:[]).forEach(add);
-  (Array.isArray(cfg?.products)?cfg.products:[]).forEach(p=>
-    (Array.isArray(p?.samples)?p.samples:[]).forEach(s=>add(s?.supplier))
-  );
-  (Array.isArray(cfg?.receptions)?cfg.receptions:[]).forEach(r=>add(r?.supplier));
+
+  rawSupplierNamesV259(cfg).forEach(add);
+
+  if(!out.length && typeof recoverSupplierNamesFromBackupsV259==='function'){
+    try{recoverSupplierNamesFromBackupsV259(cfg).forEach(add)}catch(e){}
+  }
   return out;
 }
+
 function healSupplierNamesV252(cfg){
   if(!cfg||typeof cfg!=='object')return false;
+  let changed=false;
+
+  try{
+    if(healSampleSuppliersFromProductSheetsV259(cfg))changed=true;
+  }catch(e){}
+
   const names=supplierNamesFromConfigV252(cfg);
-  if(!names.length)return false;
+  if(!names.length)return changed;
+
   const old=(Array.isArray(cfg.supplierNames)?cfg.supplierNames:[])
     .map(x=>String(x||'').trim()).filter(Boolean);
   const same=old.length===names.length && old.every((x,i)=>x===names[i]);
-  cfg.supplierNames=names;
-  cfg.supplierResponseCount=names.length;
-  return !same;
+
+  if(!same){
+    cfg.supplierNames=names;
+    changed=true;
+  }
+  if(Number(cfg.supplierResponseCount||0)!==names.length){
+    cfg.supplierResponseCount=names.length;
+    changed=true;
+  }
+  return changed;
 }
 
 function loadPreparedJurys(){
@@ -1263,21 +1331,88 @@ function receptionSupplierNames(cfg=receptionConfig()){
   return [...new Set(names)];
 }
 
+function supplierBackupMatchV259(target,source){
+  if(!target||!source)return false;
+
+  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+
+  const lotNo=cfg=>{
+    const vals=[cfg?.lotNumber,cfg?.lotName,cfg?.lotTitle,cfg?.marketRef?.lot]
+      .map(v=>String(v||'').trim()).filter(Boolean);
+    for(const raw of vals){
+      const m=raw.match(/(?:^|\blot\s*)0*([0-9]{1,5})(?:\b|$)/i)||
+        raw.match(/\b0*([0-9]{1,5})\b/);
+      if(m)return String(Number(m[1]));
+    }
+    return '';
+  };
+
+  const tn=lotNo(target),sn=lotNo(source);
+  if(tn&&sn&&tn!==sn)return false;
+  if(tn&&sn&&tn===sn)return true;
+
+  const tl=norm(target.lotName||target.lotTitle||'');
+  const sl=norm(source.lotName||source.lotTitle||'');
+  if(tl&&sl&&tl===sl)return true;
+
+  const tp=new Set((Array.isArray(target.products)?target.products:[]).map(p=>norm(p?.name||'')).filter(Boolean));
+  const sp=new Set((Array.isArray(source.products)?source.products:[]).map(p=>norm(p?.name||'')).filter(Boolean));
+  let overlap=0;
+  for(const p of tp)if(sp.has(p))overlap++;
+  return overlap>0 && overlap===Math.min(tp.size,sp.size);
+}
+
+function recoverSupplierNamesFromBackupsV259(cfg){
+  const states=[];
+  const push=st=>{if(st?.config)states.push(st.config)};
+
+  try{
+    const qr=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
+    push(qr?.state);
+  }catch(e){}
+  try{
+    const recovery=JSON.parse(localStorage.getItem('jm_test_culinaire_recovery_v29')||'[]');
+    (Array.isArray(recovery)?recovery:[]).forEach(s=>push(s?.state));
+  }catch(e){}
+  try{
+    const a=JSON.parse(localStorage.getItem('jm_tc_active_juries_backup_v238')||'null');
+    (Array.isArray(a?.rows)?a.rows:[]).forEach(r=>push(r?.state));
+  }catch(e){}
+  try{
+    const d=JSON.parse(localStorage.getItem('jm_tc_prepared_dedupe_backup_v238')||'null');
+    (Array.isArray(d?.rows)?d.rows:[]).forEach(r=>push(r?.state));
+  }catch(e){}
+  try{
+    const reset=JSON.parse(localStorage.getItem('jm_tc_lots_reset_backup_v207')||'null');
+    const raw=reset?.items?.['jm_test_culinaire_prepared_v97'];
+    const rows=raw?JSON.parse(raw):[];
+    (Array.isArray(rows)?rows:[]).forEach(r=>push(r?.state));
+  }catch(e){}
+
+  const out=[],seen=new Set();
+  const add=v=>{
+    const raw=String(v||'').trim();
+    if(!raw)return;
+    const key=raw.normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+    if(seen.has(key))return;
+    seen.add(key);out.push(raw);
+  };
+
+  for(const source of states){
+    if(!supplierBackupMatchV259(cfg,source))continue;
+    rawSupplierNamesV259(source).forEach(add);
+  }
+  return out;
+}
+
 function receptionConfiguredSupplierNames(cfg=receptionConfig()){
   if(!cfg||typeof cfg!=='object')return[];
-  const configured=(Array.isArray(cfg.supplierNames)?cfg.supplierNames:[])
-    .map(x=>String(x||'').trim()).filter(Boolean);
-  if(configured.length)return [...new Set(configured)];
-  /* Compatibilité anciens jurys : si la liste Fournisseurs n'existait pas,
-     on reprend uniquement les fournisseurs réellement portés par les échantillons. */
-  const names=[];
-  for(const p of (Array.isArray(cfg.products)?cfg.products:[])){
-    for(const sm of (Array.isArray(p?.samples)?p.samples:[])){
-      const n=String(sm?.supplier||'').trim();
-      if(n)names.push(n);
-    }
-  }
-  return [...new Set(names)];
+
+  try{healSupplierNamesV252(cfg)}catch(e){}
+
+  const names=supplierNamesFromConfigV252(cfg);
+  return [...new Set(names.map(x=>String(x||'').trim()).filter(Boolean))];
 }
 
 function blankReceptionRecordAfterSave(cfg=receptionConfig()){
@@ -2044,6 +2179,12 @@ function renderHomeReceptionBadge(){
 
 function openReceptionView(index=-1){
   const cfg=receptionConfig();
+  try{
+    if(healSupplierNamesV252(cfg)&&cfg===state?.config){
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt)upsertPreparedJury(state);
+    }
+  }catch(e){}
   if(!cfg?.products?.length){
     alert('Ajoutez d’abord au moins un produit dans le jury.');
     return;
@@ -2063,6 +2204,7 @@ function openReceptionView(index=-1){
 function renderReceptionForm(){
   const cfg=receptionConfig();
   if(!cfg||!receptionDraft)return;
+  try{healSupplierNamesV252(cfg)}catch(e){}
   receptionDraft=normalizeReceptionRecord(receptionDraft,cfg);
 
   $('#receptionEstablishment').value=receptionDraft.establishment||'';
