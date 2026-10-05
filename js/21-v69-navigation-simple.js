@@ -167,13 +167,13 @@ function closeSimpleResultsHub(){
     if(el)el.onclick=fn;
   };
 
-  bind('resultsBtn',()=>openResultsArchiveHub());
+  bind('resultsBtn',()=>openSimplifiedResults());
   bind('hubResultsBtn',()=>openSimplifiedResults());
   bind('hubArchivesBtn',()=>renderArchives());
   bind('hubHomeBtn',()=>renderHome());
 
-  bind('resultsBackHubBtn',()=>openResultsArchiveHub());
-  bind('archivesBackHubBtn',()=>openResultsArchiveHub());
+  bind('resultsBackHubBtn',()=>renderHome());
+  bind('archivesBackHubBtn',()=>renderHome());
 
   bind('simpleResultsClosureBtn',()=>renderClosure());
   bind('simpleResultsPdfBtn',()=>openCurrentReport());
@@ -202,7 +202,7 @@ function closeSimpleResultsHub(){
 
 (function initSimpleHomeV69(){
   const results=document.getElementById('resultsBtn');
-  if(results)results.onclick=openResultsArchiveHub;
+  if(results)results.onclick=openSimplifiedResults;
   const current=document.getElementById('simpleCurrentResultsBtn');
   if(current)current.onclick=()=>{closeSimpleResultsHub();openSimplifiedResults()};
   const archives=document.getElementById('simpleArchivesBtn');
