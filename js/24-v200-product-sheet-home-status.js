@@ -1,10 +1,33 @@
-/* v252 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
+/* v253 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
 (function(){
   function sheetLots(){
-    if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
+    /* V253 — un ancien marqueur "lots remis à zéro" ne doit pas masquer
+       un jury actif recréé/repris ensuite. On ne l'honore que s'il n'existe
+       réellement aucun lot actif avec des produits. */
+    try{
+      if(localStorage.getItem('jm_tc_lots_clean_mode_v207')){
+        var hasCurrent=!!(state&&state.config&&Array.isArray(state.config.products)&&state.config.products.length);
+        var hasPrepared=false;
+        try{
+          if(typeof loadPreparedJurys==='function'){
+            hasPrepared=(loadPreparedJurys()||[]).some(function(rec){
+              var cfg=rec&&rec.state&&rec.state.config;
+              return !!(cfg&&Array.isArray(cfg.products)&&cfg.products.length&&
+                !(cfg.juryClose&&cfg.juryClose.closedAt)&&
+                !(cfg._archive&&cfg._archive.archivedAt));
+            });
+          }
+        }catch(e){}
+        if(hasCurrent||hasPrepared){
+          localStorage.removeItem('jm_tc_lots_clean_mode_v207');
+        }else{
+          return [];
+        }
+      }
+    }catch(e){}
     try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
 
-    /* v252 — même périmètre que « Réception chauffeur » :
+    /* v253 — même périmètre que « Réception chauffeur » :
        uniquement les lots encore actifs. Les anciens jurys fermés / archivés
        ne doivent plus gonfler le compteur « Fiches à compléter ». */
     var prepared=(typeof loadPreparedJurys==='function') ? loadPreparedJurys() : [];
@@ -74,12 +97,12 @@
   }
 
   function pendingLots(){ return sheetLots().filter(function(x){ return x.sheetStatus!=='done'; }); }
-  function doneLots(){ return sheetLots().filter(function(x){ return x.sheetStatus==='done'; }); }
+  function doneLots(){ return sheetLots().filter(function(x){ return Number(x.sheetFilled||0)>0; }); }
 
   function renderBadges(){
-    var pending=pendingLots(), done=doneLots();
-    var missingCount=pending.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
-    var doneCount=done.reduce(function(sum,row){ return sum+Number(row.sheetFilled||0); },0);
+    var all=sheetLots(), pending=all.filter(function(x){ return x.sheetStatus!=='done'; }), done=all.filter(function(x){ return x.sheetStatus==='done'; });
+    var missingCount=all.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
+    var doneCount=all.reduce(function(sum,row){ return sum+Number(row.sheetFilled||0); },0);
     var a=document.getElementById('homeProductSheetsPendingBadgeV200');
     var b=document.getElementById('homeProductSheetsDoneBadgeV200');
     if(a){
@@ -95,7 +118,7 @@
   function statusText(row){
     if(row.sheetStatus==='done') return '✓ Toutes les fiches produits sont complètes';
     if(!row.sheetTotal) return 'Fiches à compléter';
-    if(row.sheetFilled>0) return row.sheetFilled+'/'+row.sheetTotal+' fiches complètes';
+    if(row.sheetFilled>0) return row.sheetFilled+'/'+row.sheetTotal+' fiches complètes · '+row.sheetMissing+' à compléter';
     return 'À compléter · 0/'+row.sheetTotal+' fiche'+(row.sheetTotal>1?'s':'')+' complète'+(row.sheetTotal>1?'s':'');
   }
 
@@ -124,7 +147,7 @@
     }).join('');
     list.querySelectorAll('[data-product-lot-v200]').forEach(function(btn){
       btn.onclick=function(){
-        var row=rows.find(function(r){return String(r.id)===String(btn.dataset.productLotV252);});
+        var row=rows.find(function(r){return String(r.id)===String(btn.dataset.productLotV253);});
         if(row && typeof openProductLotV174==='function') openProductLotV174(row);
       };
     });
@@ -140,7 +163,7 @@
 
     var missingCount=rows.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
 
-    /* V252 — s'il ne reste qu'une seule fiche, aller directement dessus. */
+    /* V253 — s'il ne reste qu'une seule fiche, aller directement dessus. */
     if(missingCount===1){
       var row=rows.find(function(r){ return Number(r.sheetMissing||0)>0; })||rows[0];
       if(row && typeof openProductLotV174==='function'){
