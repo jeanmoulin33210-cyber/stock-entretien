@@ -4,8 +4,8 @@
       caches.keys().then(function(keys){
         return Promise.all(keys.filter(function(k){
           return (
-            (k.indexOf('tests-culinaires-')===0 && k!=='tests-culinaires-v249-20261005') ||
-            (k.indexOf('tc-offline-')===0 && k!=='tc-offline-v249-20261005')
+            (k.indexOf('tests-culinaires-')===0 && k!=='tests-culinaires-v250-20261005') ||
+            (k.indexOf('tc-offline-')===0 && k!=='tc-offline-v250-20261005')
           );
         }).map(function(k){return caches.delete(k)}));
       }).catch(function(){});
