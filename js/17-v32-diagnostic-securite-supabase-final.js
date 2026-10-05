@@ -94,12 +94,120 @@ async function ensurePhoneShareCredentials(){
   return true;
 }
 
+async function recoverRunningShareSessionFromCloudV249(){
+  const cfg=state?.config;
+  if(!cfg||!cfg.juryLaunch?.openedAt)return false;
+
+  try{
+    if(typeof recoverRunningPhoneShareLocalV249==='function'){
+      const sid=recoverRunningPhoneShareLocalV249(cfg);
+      if(sid&&phoneSharePrepared(cfg))return true;
+    }
+  }catch(e){}
+
+  const candidates=[];
+  const seen=new Set();
+  const addSid=s=>{
+    s=String(s||'').trim();
+    if(!s||seen.has(s))return;
+    seen.add(s);candidates.push(s);
+  };
+
+  try{addSid(cloudCfg?.sessionId)}catch(e){}
+  try{
+    const saved=JSON.parse(localStorage.getItem(CLOUD_STORAGE_KEY)||'{}');
+    addSid(saved?.sessionId);
+  }catch(e){}
+  try{
+    const reset=JSON.parse(localStorage.getItem('jm_tc_lots_reset_backup_v207')||'null');
+    const raw=reset?.items?.[CLOUD_STORAGE_KEY];
+    const saved=raw?JSON.parse(raw):null;
+    addSid(saved?.sessionId);
+  }catch(e){}
+  try{addSid(new URLSearchParams(location.search).get('session'))}catch(e){}
+
+  if(!candidates.length)return false;
+
+  const previousCloud={
+    url:String(cloudCfg?.url||''),
+    key:String(cloudCfg?.key||''),
+    sessionId:String(cloudCfg?.sessionId||''),
+    accessCode:String(cloudCfg?.accessCode||'')
+  };
+
+  for(const sid of candidates){
+    try{
+      cloudCfg.url=String(cloudCfg.url||DEFAULT_SUPABASE_URL).trim();
+      cloudCfg.key=String(cloudCfg.key||DEFAULT_SUPABASE_KEY).trim();
+      cloudCfg.sessionId=sid;
+      cloudCfg.accessCode='';
+      saveCloudCfg();
+
+      buildCloudClient();
+      setCloudStatus('syncing','● Recherche de la session QR…');
+      await ensureCloudAuth();
+      await joinSecureSession();
+      if(cloudRole!=='admin')throw new Error('Session non administrateur');
+
+      const {data,error}=await cloudClient
+        .from('test_culinaire_sessions')
+        .select('session_id,config')
+        .eq('session_id',sid)
+        .maybeSingle();
+      if(error||!data?.config)throw (error||new Error('Session introuvable'));
+
+      if(typeof shareRecoverySameJuryV249!=='function'||
+         !shareRecoverySameJuryV249(cfg,data.config)){
+        throw new Error('Cette session appartient à un autre jury');
+      }
+
+      if(typeof shareRecoveryMergeV249==='function'){
+        shareRecoveryMergeV249(cfg,data.config,sid);
+      }else{
+        cfg._shareSessionId=sid;
+        if(cfg.juryLaunch?.openedAt)cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:sid};
+        cfg._phoneShareSignature=phoneShareSignature(cfg);
+      }
+
+      cloudReady=true;
+      saveCloudCfg();
+      await subscribeCloud();
+      originalSaveState();
+      try{
+        if(typeof upsertPreparedJury==='function'&&!cfg?.juryClose?.closedAt){
+          upsertPreparedJury(state);
+        }
+      }catch(e){}
+      setCloudStatus('online','● Partagé sécurisé');
+      toast('Ancienne session QR retrouvée ✓');
+      return true;
+    }catch(e){
+      console.warn('Session QR candidate ignorée',sid,e);
+      try{
+        if(cloudChannel&&cloudClient)await cloudClient.removeChannel(cloudChannel);
+      }catch(err){}
+      try{
+        if(cloudPresenceChannel&&cloudClient)await cloudClient.removeChannel(cloudPresenceChannel);
+      }catch(err){}
+      cloudChannel=null;cloudPresenceChannel=null;cloudReady=false;cloudRole=null;cloudTesterNo=null;
+    }
+  }
+
+  cloudCfg.url=previousCloud.url||DEFAULT_SUPABASE_URL;
+  cloudCfg.key=previousCloud.key||DEFAULT_SUPABASE_KEY;
+  cloudCfg.sessionId=previousCloud.sessionId;
+  cloudCfg.accessCode=previousCloud.accessCode;
+  saveCloudCfg();
+  setCloudStatus('local','● Hors ligne');
+  return false;
+}
+
 async function ensurePreparedShareConnected(){
-  /* V248 — un jury déjà lancé peut être repris après rechargement sans perdre
+  /* V249 — un jury déjà lancé peut être repris après rechargement sans perdre
      sa session QR. On restaure d'abord les métadonnées connues. */
   try{
-    if(typeof repairRunningPhoneShareMetadataV248==='function'){
-      repairRunningPhoneShareMetadataV248(state.config);
+    if(typeof repairRunningPhoneShareMetadataV249==='function'){
+      repairRunningPhoneShareMetadataV249(state.config);
     }
   }catch(e){}
 
