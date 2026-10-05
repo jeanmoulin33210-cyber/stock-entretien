@@ -1513,11 +1513,132 @@ function receptionJuryKey(cfg=receptionConfig()){
   if(!cfg||typeof cfg!=='object')return '';
   return String(cfg._preparedId||cfg._juryInstanceId||cfg.juryInstanceId||cfg.lotName||'').trim();
 }
-function receptionNormV257(v){
+function receptionNormV258(v){
   return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 }
-function receptionSameJuryV257(a,b){
+function receptionLotNoV258(cfg){
+  const values=[
+    cfg?.lotNumber,cfg?.lotName,cfg?.lotTitle,cfg?.marketRef?.lot
+  ].map(v=>String(v||'').trim()).filter(Boolean);
+  for(const raw of values){
+    const m=raw.match(/(?:^|\blot\s*)0*([0-9]{1,5})(?:\b|$)/i)||
+      raw.match(/\b0*([0-9]{1,5})\b/);
+    if(m)return String(Number(m[1]));
+  }
+  return '';
+}
+function receptionProductNamesV258(cfg){
+  return new Set((Array.isArray(cfg?.products)?cfg.products:[])
+    .map(p=>receptionNormV258(p?.name||'')).filter(Boolean));
+}
+function receptionSupplierSetV258(cfg){
+  return new Set(receptionSupplierNames(cfg).map(receptionNormV258).filter(Boolean));
+}
+function receptionBusinessMatchScoreV258(target,source){
+  if(!target||!source)return 0;
+  let score=0;
+
+  const tn=receptionLotNoV258(target),sn=receptionLotNoV258(source);
+  if(tn&&sn){
+    if(tn!==sn)return 0;
+    score+=100;
+  }else{
+    const tl=receptionNormV258(target.lotName||target.lotTitle||'');
+    const sl=receptionNormV258(source.lotName||source.lotTitle||'');
+    if(tl&&sl&&tl===sl)score+=70;
+  }
+
+  const tp=receptionProductNamesV258(target),sp=receptionProductNamesV258(source);
+  let productOverlap=0;
+  for(const x of tp)if(sp.has(x))productOverlap++;
+  if(productOverlap)score+=Math.min(50,productOverlap*15);
+
+  const ts=receptionSupplierSetV258(target),ss=receptionSupplierSetV258(source);
+  let supplierOverlap=0;
+  for(const x of ts)if(ss.has(x))supplierOverlap++;
+  if(supplierOverlap)score+=Math.min(40,supplierOverlap*15);
+
+  return score;
+}
+function productSheetReceptionEvidenceV258(rec){
+  if(!rec||typeof rec!=='object')return false;
+  if(rec.receptionFound===true)return true;
+  return [
+    rec.receptionDate,rec.receptionTime,rec.receptionEstablishment,
+    rec.receptionSupplier,rec.receptionVehicleTemp,rec.receptionDriverName,
+    rec.receptionReceiverName,rec.receptionInteriorTemp,rec.receptionPackaging,
+    rec.receptionDecision,rec.receptionObservations
+  ].some(v=>String(v??'').trim());
+}
+function rebuildReceptionsFromProductSheetsV258(cfg){
+  const store=cfg?.productSheets;
+  if(!store||typeof store!=='object')return [];
+
+  const groups=new Map();
+  for(const p of (Array.isArray(cfg.products)?cfg.products:[])){
+    for(const sm of (Array.isArray(p?.samples)?p.samples:[])){
+      const rec=store[productSheetKey(p.id,sm.id)];
+      if(!productSheetReceptionEvidenceV258(rec))continue;
+
+      const supplier=String(rec.receptionSupplier||rec.supplier||sm.supplier||'').trim();
+      if(!supplier)continue;
+      const sk=receptionNormV258(supplier);
+      if(!groups.has(sk))groups.set(sk,{supplier,records:[]});
+      groups.get(sk).records.push({p,sm,rec});
+    }
+  }
+
+  const out=[];
+  for(const g of groups.values()){
+    const first=g.records[0]?.rec||{};
+    const date=String(first.receptionDate||'').trim();
+    const time=String(first.receptionTime||'').trim();
+    let validatedAt=new Date().toISOString();
+    if(date){
+      const d=new Date(date+(time?'T'+time:'T12:00'));
+      if(Number.isFinite(d.getTime()))validatedAt=d.toISOString();
+    }
+
+    const lines=(Array.isArray(cfg.products)?cfg.products:[]).map(p=>{
+      const hit=g.records.find(x=>String(x.p?.id)===String(p?.id));
+      const r=hit?.rec||{};
+      return{
+        productId:p?.id||'',
+        productName:String(p?.name||''),
+        received:!!hit,
+        productTemp:String(r.deliveryTemp??''),
+        interiorTemp:String(r.receptionInteriorTemp??''),
+        dlc:String(r.dlc||r.ddm||''),
+        packaging:String(r.receptionPackaging||(
+          r.packagingConformity==='non'?'non-conforme':
+          r.packagingConformity?'conforme':''
+        )),
+        decision:String(r.receptionDecision||'acceptation'),
+        observations:String(r.receptionObservations||'')
+      };
+    });
+
+    out.push({
+      id:uid('reception_recovered'),
+      establishment:String(first.receptionEstablishment||cfg.receptionEstablishment||''),
+      date:date||todayIsoLocal(),
+      time:time||'',
+      supplier:g.supplier,
+      vehicleTemp:String(first.receptionVehicleTemp??''),
+      driverName:String(first.receptionDriverName||''),
+      receiverName:String(first.receptionReceiverName||''),
+      lines,
+      driverSignature:'',
+      validatedAt,
+      receptionJuryKey:receptionJuryKey(cfg),
+      receptionSource:'recovered-from-product-sheets-v258',
+      recoveredAt:new Date().toISOString()
+    });
+  }
+  return out;
+}
+function receptionSameJuryV258(a,b){
   if(!a||!b)return false;
   const ai=String(a._juryInstanceId||a.juryInstanceId||a.juryLaunch?.instanceId||'').trim();
   const bi=String(b._juryInstanceId||b.juryInstanceId||b.juryLaunch?.instanceId||'').trim();
@@ -1526,29 +1647,21 @@ function receptionSameJuryV257(a,b){
   const ap=String(a._preparedId||'').trim(),bp=String(b._preparedId||'').trim();
   if(ap&&bp&&ap===bp)return true;
 
-  const alot=receptionNormV257(a.lotName||a.lotNumber||a.lotTitle||'');
-  const blot=receptionNormV257(b.lotName||b.lotNumber||b.lotTitle||'');
-  if(!alot||alot!==blot)return false;
-
-  const sig=cfg=>(Array.isArray(cfg?.products)?cfg.products:[])
-    .map(p=>{
-      const ids=(Array.isArray(p?.samples)?p.samples:[])
-        .map(s=>receptionNormV257(s?.id||'')).filter(Boolean).sort().join(',');
-      return receptionNormV257(p?.name||'')+'['+ids+']';
-    }).sort().join('|');
-  return sig(a)===sig(b);
+  /* V258 — après une réparation QR les identifiants techniques peuvent changer.
+     On reconnaît aussi le jury par n° de lot + produits/fournisseurs. */
+  return receptionBusinessMatchScoreV258(a,b)>=100;
 }
-function receptionRecordMatchesConfigV257(rec,cfg){
+function receptionRecordMatchesConfigV258(rec,cfg){
   if(!rec||!rec.validatedAt||!cfg)return false;
 
-  const suppliers=receptionSupplierNames(cfg).map(receptionNormV257).filter(Boolean);
-  const supplier=receptionNormV257(rec.supplier||'');
+  const suppliers=receptionSupplierNames(cfg).map(receptionNormV258).filter(Boolean);
+  const supplier=receptionNormV258(rec.supplier||'');
   if(suppliers.length && supplier && !suppliers.includes(supplier))return false;
 
   const currentProducts=new Set();
   for(const p of (Array.isArray(cfg.products)?cfg.products:[])){
-    const id=receptionNormV257(p?.id||'');
-    const name=receptionNormV257(p?.name||'');
+    const id=receptionNormV258(p?.id||'');
+    const name=receptionNormV258(p?.name||'');
     if(id)currentProducts.add('id:'+id);
     if(name)currentProducts.add('name:'+name);
   }
@@ -1557,13 +1670,13 @@ function receptionRecordMatchesConfigV257(rec,cfg){
   if(!lines.length)return true;
 
   const overlap=lines.some(line=>{
-    const id=receptionNormV257(line?.productId||'');
-    const name=receptionNormV257(line?.productName||'');
+    const id=receptionNormV258(line?.productId||'');
+    const name=receptionNormV258(line?.productName||'');
     return (id&&currentProducts.has('id:'+id))||(name&&currentProducts.has('name:'+name));
   });
   return overlap||!currentProducts.size;
 }
-function receptionBackupStatesV257(){
+function receptionBackupStatesV258(){
   const out=[];
   const push=st=>{if(st?.config)out.push(st)};
 
@@ -1591,7 +1704,7 @@ function receptionBackupStatesV257(){
   }catch(e){}
   return out;
 }
-function repairReceptionsForConfigV257(cfg){
+function repairReceptionsForConfigV258(cfg){
   if(!cfg||typeof cfg!=='object')return false;
 
   if(!Array.isArray(cfg.receptions))cfg.receptions=[];
@@ -1601,7 +1714,7 @@ function repairReceptionsForConfigV257(cfg){
   /* 1. Une réception validée déjà stockée dans CE lot reste valable même si
         l'identifiant technique du jury a changé pendant une réparation QR. */
   for(const rec of cfg.receptions){
-    if(!receptionRecordMatchesConfigV257(rec,cfg))continue;
+    if(!receptionRecordMatchesConfigV258(rec,cfg))continue;
     if(currentKey&&String(rec.receptionJuryKey||'')!==currentKey){
       rec.receptionJuryKey=currentKey;
       changed=true;
@@ -1610,15 +1723,22 @@ function repairReceptionsForConfigV257(cfg){
 
   /* 2. Si aucune réception exploitable n'est présente, chercher la meilleure
         copie dans les sauvegardes locales du même jury. */
-  let currentValid=cfg.receptions.filter(r=>receptionRecordMatchesConfigV257(r,cfg));
+  let currentValid=cfg.receptions.filter(r=>receptionRecordMatchesConfigV258(r,cfg));
   if(!currentValid.length){
-    let best=[];
-    for(const st of receptionBackupStatesV257()){
+    let best=[],bestScore=0;
+    for(const st of receptionBackupStatesV258()){
       const bcfg=st?.config;
-      if(!bcfg||!receptionSameJuryV257(cfg,bcfg))continue;
+      if(!bcfg)continue;
+      const score=receptionBusinessMatchScoreV258(cfg,bcfg);
+      if(score<70)continue;
+
       const vals=(Array.isArray(bcfg.receptions)?bcfg.receptions:[])
-        .filter(r=>receptionRecordMatchesConfigV257(r,cfg));
-      if(vals.length>best.length)best=vals;
+        .filter(r=>r&&r.validatedAt&&receptionRecordMatchesConfigV258(r,cfg));
+
+      if(vals.length && (score>bestScore || (score===bestScore&&vals.length>best.length))){
+        best=vals;
+        bestScore=score;
+      }
     }
     if(best.length){
       cfg.receptions=deepClone(best);
@@ -1626,7 +1746,20 @@ function repairReceptionsForConfigV257(cfg){
         if(currentKey)rec.receptionJuryKey=currentKey;
       }
       changed=true;
-      currentValid=cfg.receptions.filter(r=>receptionRecordMatchesConfigV257(r,cfg));
+      currentValid=cfg.receptions.filter(r=>receptionRecordMatchesConfigV258(r,cfg));
+    }
+  }
+
+  /* Dernier filet de sécurité : si les fiches produits contiennent encore
+     les champs explicitement repris de la réception, reconstruire la réception
+     à partir de ces données. Aucun faux enregistrement n'est créé sans preuve
+     de réception dans les fiches. */
+  if(!currentValid.length){
+    const rebuilt=rebuildReceptionsFromProductSheetsV258(cfg);
+    if(rebuilt.length){
+      cfg.receptions=rebuilt;
+      changed=true;
+      currentValid=cfg.receptions.filter(r=>receptionRecordMatchesConfigV258(r,cfg));
     }
   }
 
@@ -1644,18 +1777,18 @@ function repairReceptionsForConfigV257(cfg){
   return changed;
 }
 function receptionStatusForConfig(cfg){
-  try{repairReceptionsForConfigV257(cfg)}catch(e){}
+  try{repairReceptionsForConfigV258(cfg)}catch(e){}
 
   const suppliers=receptionSupplierNames(cfg);
   const juryKey=receptionJuryKey(cfg);
   const valid=(Array.isArray(cfg?.receptions)?cfg.receptions:[])
-    .filter(r=>r&&r.validatedAt&&receptionRecordMatchesConfigV257(r,cfg));
+    .filter(r=>r&&r.validatedAt&&receptionRecordMatchesConfigV258(r,cfg));
 
   if(!valid.length)return{key:'pending',label:'À réceptionner'};
   if(!suppliers.length)return{key:'done',label:'Réception enregistrée'};
 
-  const received=new Set(valid.map(r=>receptionNormV257(r.supplier)).filter(Boolean));
-  const done=suppliers.filter(name=>received.has(receptionNormV257(name))).length;
+  const received=new Set(valid.map(r=>receptionNormV258(r.supplier)).filter(Boolean));
+  const done=suppliers.filter(name=>received.has(receptionNormV258(name))).length;
 
   if(done>=suppliers.length)return{key:'done',label:'Réception enregistrée'};
   return{key:'partial',label:`Réception partielle ${done}/${suppliers.length}`};
@@ -2052,7 +2185,7 @@ async function saveReceptionForm(){
 function renderReceptionSavedList(){
   const box=$('#receptionSavedList'),cfg=receptionConfig();
   if(!box||!cfg)return;
-  try{repairReceptionsForConfigV257(cfg)}catch(e){}
+  try{repairReceptionsForConfigV258(cfg)}catch(e){}
   const list=receptionList(cfg);
   if(!list.length){
     box.innerHTML='<div class="empty-note">Aucune réception enregistrée pour ce lot.</div>';
