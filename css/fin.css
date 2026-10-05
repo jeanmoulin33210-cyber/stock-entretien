@@ -11,3 +11,30 @@
   /* Autorise clairement le défilement vertical sur les commandes tactiles. */
   button, a, [role="button"], [onclick] { touch-action: pan-y; }
 
+
+
+/* V242 — Fiches produits : champs manquants en rouge */
+#productSheetsView .product-sheet-sample.has-missing{
+  border-color:#dc2626!important;
+  background:#fff7f7!important;
+  box-shadow:0 0 0 1px rgba(220,38,38,.12)!important;
+}
+#productSheetsView .product-sheet-status:not(.ready){
+  background:#fee2e2!important;
+  color:#b91c1c!important;
+}
+#productSheetsView .product-sheet-sample .field.missing-field label{
+  color:#b91c1c!important;
+  font-weight:900!important;
+}
+#productSheetsView .product-sheet-sample .field.missing-field input,
+#productSheetsView .product-sheet-sample .field.missing-field select,
+#productSheetsView .product-sheet-sample .field.missing-field textarea{
+  border:2px solid #dc2626!important;
+  background:#fff5f5!important;
+  box-shadow:0 0 0 3px rgba(220,38,38,.12)!important;
+}
+#productSheetsView .product-sheet-auto.missing-auto{
+  border:2px solid #dc2626!important;
+  background:#fff5f5!important;
+}
