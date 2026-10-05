@@ -1,7 +1,112 @@
-/* v254 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
+/* v255 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
 (function(){
+  function normV255(v){
+    return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+      .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  }
+
+  function sameJuryV255(a,b){
+    if(!a||!b)return false;
+    var ac=a.config||a,bc=b.config||b;
+    var ai=String(ac._juryInstanceId||ac.juryInstanceId||(ac.juryLaunch&&ac.juryLaunch.instanceId)||'').trim();
+    var bi=String(bc._juryInstanceId||bc.juryInstanceId||(bc.juryLaunch&&bc.juryLaunch.instanceId)||'').trim();
+    if(ai&&bi&&ai===bi)return true;
+    var ap=String(ac._preparedId||'').trim(),bp=String(bc._preparedId||'').trim();
+    if(ap&&bp&&ap===bp)return true;
+    var alot=normV255(ac.lotName||ac.lotNumber||ac.lotTitle||'');
+    var blot=normV255(bc.lotName||bc.lotNumber||bc.lotTitle||'');
+    if(!alot||alot!==blot)return false;
+    function sig(cfg){
+      return (Array.isArray(cfg.products)?cfg.products:[]).map(function(p){
+        var s=(Array.isArray(p.samples)?p.samples:[]).map(function(x){return normV255(x&&x.id||'');}).filter(Boolean).sort().join(',');
+        return normV255(p&&p.name||'')+'['+s+']';
+      }).sort().join('|');
+    }
+    return sig(ac)===sig(bc);
+  }
+
+  function sheetCompleteRawV255(rec){
+    if(!rec||typeof rec!=='object')return false;
+    var req=['brand','characteristics','labeling','weight','technicalSheet','deliveryTempConformity','packagingConformity','supplierLot','deliveryTemp'];
+    for(var i=0;i<req.length;i++)if(!String(rec[req[i]]==null?'':rec[req[i]]).trim())return false;
+    if(!String(rec.observations||'').trim())rec.observations='RAS';
+    return !!(String(rec.ddm||'').trim()||String(rec.dlc||'').trim());
+  }
+
+  function sheetScoreV255(cfg){
+    var store=cfg&&cfg.productSheets;
+    if(!store||typeof store!=='object')return {filled:0,nonEmpty:0,total:0};
+    var vals=Object.values(store),filled=0,nonEmpty=0;
+    vals.forEach(function(rec){
+      if(sheetCompleteRawV255(rec))filled++;
+      if(rec&&typeof rec==='object'&&Object.keys(rec).some(function(k){
+        return !['productId','sampleId','supplier'].includes(k)&&String(rec[k]==null?'':rec[k]).trim();
+      }))nonEmpty++;
+    });
+    return {filled:filled,nonEmpty:nonEmpty,total:vals.length};
+  }
+
+  function backupStatesV255(){
+    var out=[];
+    function push(st,label){if(st&&st.config)out.push({state:st,label:label});}
+    try{
+      var qr=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
+      push(qr&&qr.state,'sauvegarde QR v251');
+    }catch(e){}
+    try{
+      var a=JSON.parse(localStorage.getItem('jm_tc_active_juries_backup_v238')||'null');
+      (Array.isArray(a&&a.rows)?a.rows:[]).forEach(function(r){push(r&&r.state,'sauvegarde jurys actifs');});
+    }catch(e){}
+    try{
+      var d=JSON.parse(localStorage.getItem('jm_tc_prepared_dedupe_backup_v238')||'null');
+      (Array.isArray(d&&d.rows)?d.rows:[]).forEach(function(r){push(r&&r.state,'sauvegarde doublons');});
+    }catch(e){}
+    try{
+      var reset=JSON.parse(localStorage.getItem('jm_tc_lots_reset_backup_v207')||'null');
+      var raw=reset&&reset.items&&reset.items['jm_test_culinaire_prepared_v97'];
+      var rows=raw?JSON.parse(raw):[];
+      (Array.isArray(rows)?rows:[]).forEach(function(r){push(r&&r.state,'sauvegarde remise à zéro');});
+    }catch(e){}
+    return out;
+  }
+
+  function repairProductSheetsFromBackupsV255(st){
+    if(!st||!st.config)return false;
+    var current=sheetScoreV255(st.config),best=null,bestScore=current;
+    backupStatesV255().forEach(function(item){
+      if(!sameJuryV255(st,item.state))return;
+      var sc=sheetScoreV255(item.state.config);
+      if(sc.filled>bestScore.filled||(sc.filled===bestScore.filled&&sc.nonEmpty>bestScore.nonEmpty)){
+        best=item;bestScore=sc;
+      }
+    });
+    if(!best||!best.state.config.productSheets)return false;
+
+    st.config.productSheets=JSON.parse(JSON.stringify(best.state.config.productSheets));
+    if((!Array.isArray(st.config.receptions)||!st.config.receptions.length)&&Array.isArray(best.state.config.receptions)&&best.state.config.receptions.length){
+      st.config.receptions=JSON.parse(JSON.stringify(best.state.config.receptions));
+    }
+
+    try{
+      if(st===state){
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+        if(typeof upsertPreparedJury==='function')upsertPreparedJury(state);
+      }
+    }catch(e){}
+    try{
+      localStorage.setItem('jm_tc_product_sheets_repair_v255',JSON.stringify({
+        repairedAt:new Date().toISOString(),
+        source:best.label,
+        lot:st.config.lotName||'',
+        before:current,
+        after:bestScore
+      }));
+    }catch(e){}
+    return true;
+  }
+
   function sheetLots(){
-    /* V254 — les compteurs Fiches produits sont calculés directement depuis
+    /* V255 — les compteurs Fiches produits sont calculés directement depuis
        l'état courant et les jurys actifs sauvegardés. Ils ne dépendent plus
        de la liste Réception chauffeur. */
     var candidates=[];
@@ -78,6 +183,7 @@
 
     return candidates.map(function(item){
       var st=item.state;
+      try{repairProductSheetsFromBackupsV255(st);}catch(e){}
       var cfg=st.config||{};
       var prog={total:0,filled:0};
       try{ if(typeof productSheetsProgress==='function') prog=productSheetsProgress(st); }catch(e){}
@@ -90,7 +196,7 @@
 
       var names=[];
       try{
-        if(typeof supplierNamesFromConfigV254==='function')names=supplierNamesFromConfigV254(cfg)||[];
+        if(typeof supplierNamesFromConfigV255==='function')names=supplierNamesFromConfigV255(cfg)||[];
         else if(typeof supplierNamesFromConfigV252==='function')names=supplierNamesFromConfigV252(cfg)||[];
         else names=(cfg.supplierNames||[]).filter(function(x){return String(x||'').trim();});
       }catch(e){ names=(cfg.supplierNames||[]).filter(function(x){return String(x||'').trim();}); }
@@ -119,6 +225,7 @@
   function doneLots(){ return sheetLots().filter(function(x){ return Number(x.sheetFilled||0)>0; }); }
 
   function renderBadges(){
+    try{repairProductSheetsFromBackupsV255(state);}catch(e){}
     var all=sheetLots(), pending=all.filter(function(x){ return x.sheetStatus!=='done'; }), done=all.filter(function(x){ return x.sheetStatus==='done'; });
     var missingCount=all.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
     var doneCount=all.reduce(function(sum,row){ return sum+Number(row.sheetFilled||0); },0);
@@ -186,6 +293,7 @@
   }
 
   window.openProductSheetsFromHomeV174=function(){
+    try{repairProductSheetsFromBackupsV255(state);}catch(e){}
     var rows=pendingLots();
     if(!rows.length){
       alert('Aucune fiche produit à compléter. Consultez « Fiches terminées » pour les fiches complètes.');
@@ -194,7 +302,7 @@
 
     var missingCount=rows.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
 
-    /* V254 — s'il ne reste qu'une seule fiche, aller directement dessus. */
+    /* V255 — s'il ne reste qu'une seule fiche, aller directement dessus. */
     if(missingCount===1){
       var row=rows.find(function(r){ return Number(r.sheetMissing||0)>0; })||rows[0];
       if(row && row.source==='qrBackup'){
