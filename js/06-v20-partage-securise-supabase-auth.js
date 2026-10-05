@@ -118,7 +118,7 @@ function makePublicCloudConfig(cfg){
 }
 function shareUrl(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','247');
+  u.searchParams.set('appBuild','248');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -287,10 +287,43 @@ function testerPresenceNumbers(){
 }
 function refreshLiveDayIfOpen(){if(document.getElementById('liveDayView')?.classList.contains('active'))renderLiveDayCards()}
 
+function restoreAdminShareMetadataV248(cfg,previousCfg=null){
+  if(!cfg||typeof cfg!=='object'||cloudRole!=='admin')return cfg;
+
+  const prev=previousCfg&&typeof previousCfg==='object'?previousCfg:{};
+  const sid=String(
+    cfg._shareSessionId||
+    cfg.juryLaunch?.sessionId||
+    prev._shareSessionId||
+    prev.juryLaunch?.sessionId||
+    cloudCfg?.sessionId||
+    ''
+  ).trim();
+
+  if(!cfg._preparedId && prev._preparedId)cfg._preparedId=prev._preparedId;
+
+  if(sid){
+    cfg._shareSessionId=sid;
+    if(cfg.juryLaunch?.openedAt){
+      cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:sid};
+    }
+    try{
+      if(typeof phoneShareSignature==='function'){
+        cfg._phoneShareSignature=phoneShareSignature(cfg);
+      }
+    }catch(e){}
+  }
+  return cfg;
+}
+
 function rebuildLocalFromCloud(config,rows=[]){
   updateTesterActivityFromRows(rows);
   const previous=state?.testers||{};
-  state=makeInitialState(config);
+  const previousCfg=deepClone(state?.config||{});
+  const incoming=(cloudRole==='admin')
+    ?restoreAdminShareMetadataV248(deepClone(config||{}),previousCfg)
+    :config;
+  state=makeInitialState(incoming);
   for(let i=1;i<=state.config.testerCount;i++){
     if(previous[i]?.name && !state.config.testerNames?.[i-1]) state.testers[i].name=previous[i].name
   }
@@ -303,13 +336,25 @@ function rebuildLocalFromCloud(config,rows=[]){
       const instanceId=String(remarks[1]||state.config?.juryInstanceId||'').trim();
       if(openedAt){
         if(instanceId){state.config.juryInstanceId=instanceId;state.config._juryInstanceId=instanceId}
-        state.config.juryLaunch={openedAt,instanceId:instanceId||juryInstanceId(state.config)};
+        state.config.juryLaunch={
+          openedAt,
+          instanceId:instanceId||juryInstanceId(state.config),
+          sessionId:String(state.config?._shareSessionId||state.config?.juryLaunch?.sessionId||cloudCfg?.sessionId||'')
+        };
       }
       return
     }
     const k=sampleKey(r.product_id,r.sample_id);
     state.testers[t].answers[k]={choices:Array.isArray(r.choices)?r.choices:Array(QUESTIONS.length).fill(null),remarks:Array.isArray(r.remarks)?r.remarks:Array(QUESTIONS.length).fill('')}
   });
+  if(cloudRole==='admin'){
+    restoreAdminShareMetadataV248(state.config,previousCfg);
+    try{
+      if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt){
+        upsertPreparedJury(state);
+      }
+    }catch(e){}
+  }
   originalSaveState();
   currentTester=cloudRole==='tester'?(cloudTesterNo||guestTester||1):(Math.min(currentTester,state.config.testerCount)||1);
   currentProduct=state.config.products[0]?.id||'';
@@ -436,7 +481,11 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
       const instanceId=String(remarks[1]||state.config?.juryInstanceId||'').trim();
       if(openedAt){
         if(instanceId){state.config.juryInstanceId=instanceId;state.config._juryInstanceId=instanceId}
-        state.config.juryLaunch={openedAt,instanceId:instanceId||juryInstanceId(state.config)};
+        state.config.juryLaunch={
+          openedAt,
+          instanceId:instanceId||juryInstanceId(state.config),
+          sessionId:String(state.config?._shareSessionId||state.config?.juryLaunch?.sessionId||cloudCfg?.sessionId||'')
+        };
       }
       return
     }
@@ -457,8 +506,13 @@ async function reloadCloudConfig(){if(testerPreviewMode)return;
     const {data,error}=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',cloudCfg.sessionId).maybeSingle();if(error||!data?.config)return;
     if(hashJson(data.config)===hashJson(state.config))return;
     const oldAnswers={},oldValidations={};for(let t=1;t<=state.config.testerCount;t++){oldAnswers[t]=deepClone(state.testers[t]?.answers||{});oldValidations[t]=state.testers[t]?.validatedAt||null}
-    const newState=makeInitialState(data.config);for(let t=1;t<=newState.config.testerCount;t++){newState.testers[t].answers=oldAnswers[t]||{};newState.testers[t].validatedAt=oldValidations[t]||null}
-    state=newState;originalSaveState();lastCloudConfigHash=hashJson(state.config)
+    const previousCfg=deepClone(state.config||{});
+    const repairedConfig=restoreAdminShareMetadataV248(deepClone(data.config||{}),previousCfg);
+    const newState=makeInitialState(repairedConfig);for(let t=1;t<=newState.config.testerCount;t++){newState.testers[t].answers=oldAnswers[t]||{};newState.testers[t].validatedAt=oldValidations[t]||null}
+    state=newState;
+    restoreAdminShareMetadataV248(state.config,previousCfg);
+    try{if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt)upsertPreparedJury(state)}catch(e){}
+    originalSaveState();lastCloudConfigHash=hashJson(state.config)
   }else{
     const {data,error}=await cloudClient.rpc('test_culinaire_get_public_session',{p_session_id:cloudCfg.sessionId});if(error)return;
     const row=Array.isArray(data)?data[0]:data;if(!row?.public_config)return;
