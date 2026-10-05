@@ -337,7 +337,7 @@ function dedupePreparedJurysV238(rows){
   return [...byKey.values(),...withoutKey]
     .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
 }
-function rawSupplierNamesV260(cfg){
+function rawSupplierNamesV261(cfg){
   const out=[],seen=new Set();
   const add=v=>{
     const raw=String(v||'').trim();
@@ -353,7 +353,7 @@ function rawSupplierNamesV260(cfg){
     (Array.isArray(p?.samples)?p.samples:[]).forEach(s=>add(s?.supplier))
   );
 
-  /* V260 — les fiches produits gardent leur fournisseur même si la liste
+  /* V261 — les fiches produits gardent leur fournisseur même si la liste
      générale ou l'échantillon a été perdu lors d'une reprise cloud. */
   const sheets=cfg?.productSheets&&typeof cfg.productSheets==='object'
     ?Object.values(cfg.productSheets):[];
@@ -366,7 +366,7 @@ function rawSupplierNamesV260(cfg){
   return out;
 }
 
-function healSampleSuppliersFromProductSheetsV260(cfg){
+function healSampleSuppliersFromProductSheetsV261(cfg){
   if(!cfg||typeof cfg!=='object'||!cfg.productSheets||typeof cfg.productSheets!=='object')return false;
   let changed=false;
   const products=Array.isArray(cfg.products)?cfg.products:[];
@@ -399,10 +399,10 @@ function supplierNamesFromConfigV252(cfg){
     seen.add(key);out.push(raw);
   };
 
-  rawSupplierNamesV260(cfg).forEach(add);
+  rawSupplierNamesV261(cfg).forEach(add);
 
-  if(!out.length && typeof recoverSupplierNamesFromBackupsV260==='function'){
-    try{recoverSupplierNamesFromBackupsV260(cfg).forEach(add)}catch(e){}
+  if(!out.length && typeof recoverSupplierNamesFromBackupsV261==='function'){
+    try{recoverSupplierNamesFromBackupsV261(cfg).forEach(add)}catch(e){}
   }
   return out;
 }
@@ -412,7 +412,7 @@ function healSupplierNamesV252(cfg){
   let changed=false;
 
   try{
-    if(healSampleSuppliersFromProductSheetsV260(cfg))changed=true;
+    if(healSampleSuppliersFromProductSheetsV261(cfg))changed=true;
   }catch(e){}
 
   const names=supplierNamesFromConfigV252(cfg);
@@ -1331,7 +1331,7 @@ function receptionSupplierNames(cfg=receptionConfig()){
   return [...new Set(names)];
 }
 
-function supplierBackupMatchV260(target,source){
+function supplierBackupMatchV261(target,source){
   if(!target||!source)return false;
 
   const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -1363,7 +1363,7 @@ function supplierBackupMatchV260(target,source){
   return overlap>0 && overlap===Math.min(tp.size,sp.size);
 }
 
-function recoverSupplierNamesFromBackupsV260(cfg){
+function recoverSupplierNamesFromBackupsV261(cfg){
   const states=[];
   const push=st=>{if(st?.config)states.push(st.config)};
 
@@ -1400,11 +1400,11 @@ function recoverSupplierNamesFromBackupsV260(cfg){
   };
 
   for(const source of states){
-    if(!supplierBackupMatchV260(cfg,source))continue;
-    rawSupplierNamesV260(source).forEach(add);
+    if(!supplierBackupMatchV261(cfg,source))continue;
+    rawSupplierNamesV261(source).forEach(add);
   }
 
-  /* V260 — source prioritaire supplémentaire : "Choix des échantillons".
+  /* V261 — source prioritaire supplémentaire : "Choix des échantillons".
      Les noms des fournisseurs sont conservés séparément dans les métadonnées
      du lot, même quand les échantillons ont perdu leur champ supplier. */
   try{
@@ -1416,7 +1416,7 @@ function recoverSupplierNamesFromBackupsV260(cfg){
       supplierNames:Array.isArray(meta?.supplierNames)?meta.supplierNames:[],
       products:loadSampleProducts()
     };
-    if(supplierBackupMatchV260(cfg,pseudo)){
+    if(supplierBackupMatchV261(cfg,pseudo)){
       (meta?.supplierNames||[]).forEach(add);
     }
   }catch(e){}
@@ -1432,7 +1432,7 @@ function recoverSupplierNamesFromBackupsV260(cfg){
         supplierNames:Array.isArray(meta.supplierNames)?meta.supplierNames:[],
         products:Array.isArray(rec?.products)?rec.products:[]
       };
-      if(!supplierBackupMatchV260(cfg,pseudo))continue;
+      if(!supplierBackupMatchV261(cfg,pseudo))continue;
       (meta.supplierNames||[]).forEach(add);
     }
   }catch(e){}
@@ -1440,7 +1440,7 @@ function recoverSupplierNamesFromBackupsV260(cfg){
   return out;
 }
 
-function addManualReceptionSupplierV260(cfg,name){
+function addManualReceptionSupplierV261(cfg,name){
   if(!cfg||typeof cfg!=='object')return '';
   const clean=String(name||'').trim();
   if(!clean)return '';
@@ -2275,37 +2275,72 @@ function renderReceptionForm(){
   $('#receptionReceiverName').value=receptionDraft.receiverName||'';
 
   const supplierInput=$('#receptionSupplier');
+  const supplierManual=$('#receptionSupplierManual');
   const suppliers=receptionConfiguredSupplierNames(cfg);
-  const selected=String(receptionDraft.supplier||'');
-  if(supplierInput){
-    supplierInput.innerHTML=
-      '<option value="">— Choisir le fournisseur —</option>'+
-      suppliers.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')+
-      '<option value="__manual_supplier_v260__">✏️ Saisir un fournisseur manuellement…</option>';
+  const selected=String(receptionDraft.supplier||'').trim();
 
-    if(selected && !suppliers.includes(selected)){
-      supplierInput.insertAdjacentHTML('beforeend',
-        `<option value="${escapeHtml(selected)}">${escapeHtml(selected)}</option>`);
+  if(supplierInput && supplierManual){
+    /* V261 — si aucun fournisseur n'est connu, ne pas afficher un menu vide :
+       on propose directement une saisie texte. */
+    if(!suppliers.length){
+      supplierInput.style.display='none';
+      supplierManual.style.display='';
+      supplierManual.value=selected;
+      supplierManual.onchange=()=>{
+        const clean=addManualReceptionSupplierV261(cfg,supplierManual.value);
+        receptionDraft.supplier=clean||String(supplierManual.value||'').trim();
+      };
+      supplierManual.onblur=()=>{
+        const clean=String(supplierManual.value||'').trim();
+        if(clean){
+          receptionDraft.supplier=addManualReceptionSupplierV261(cfg,clean)||clean;
+        }
+      };
+    }else{
+      supplierInput.style.display='';
+      supplierManual.style.display='none';
+      supplierManual.value='';
+
+      supplierInput.innerHTML=
+        '<option value="">— Choisir le fournisseur —</option>'+
+        suppliers.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')+
+        '<option value="__manual_supplier_v260__">✏️ Saisir un fournisseur manuellement…</option>';
+
+      if(selected && !suppliers.includes(selected)){
+        supplierInput.insertAdjacentHTML('beforeend',
+          `<option value="${escapeHtml(selected)}">${escapeHtml(selected)}</option>`);
+      }
+
+      if(selected){
+        supplierInput.value=selected;
+      }else if(suppliers.length===1){
+        supplierInput.value=suppliers[0];
+        receptionDraft.supplier=suppliers[0];
+      }else{
+        supplierInput.value='';
+      }
+
+      supplierInput.onchange=()=>{
+        if(supplierInput.value!=='__manual_supplier_v260__'){
+          receptionDraft.supplier=supplierInput.value||'';
+          return;
+        }
+        const name=prompt('Nom du fournisseur :','');
+        if(!String(name||'').trim()){
+          supplierInput.value=receptionDraft.supplier||'';
+          return;
+        }
+        const clean=addManualReceptionSupplierV261(cfg,name);
+        if(!clean){
+          supplierInput.value=receptionDraft.supplier||'';
+          return;
+        }
+        receptionDraft.supplier=clean;
+        renderReceptionForm();
+        const refreshed=$('#receptionSupplier');
+        if(refreshed)refreshed.value=clean;
+      };
     }
-    supplierInput.value=selected||'';
-
-    supplierInput.onchange=()=>{
-      if(supplierInput.value!=='__manual_supplier_v260__')return;
-      const name=prompt('Nom du fournisseur :','');
-      if(!String(name||'').trim()){
-        supplierInput.value='';
-        return;
-      }
-      const clean=addManualReceptionSupplierV260(cfg,name);
-      if(!clean){
-        supplierInput.value='';
-        return;
-      }
-      receptionDraft.supplier=clean;
-      renderReceptionForm();
-      const refreshed=$('#receptionSupplier');
-      if(refreshed)refreshed.value=clean;
-    };
   }
 
   const lines=$('#receptionLines');
@@ -2341,7 +2376,15 @@ function captureReceptionForm(){
   receptionDraft.establishment=$('#receptionEstablishment').value.trim();
   receptionDraft.date=$('#receptionDate').value||'';
   receptionDraft.time=$('#receptionTime').value||'';
-  receptionDraft.supplier=$('#receptionSupplier').value||'';
+  const supplierSelect=$('#receptionSupplier');
+  const supplierManual=$('#receptionSupplierManual');
+  receptionDraft.supplier=(supplierManual&&supplierManual.style.display!=='none')
+    ?String(supplierManual.value||'').trim()
+    :String(supplierSelect?.value||'').trim();
+  if(receptionDraft.supplier==='__manual_supplier_v260__')receptionDraft.supplier='';
+  if(receptionDraft.supplier){
+    try{receptionDraft.supplier=addManualReceptionSupplierV261(cfg,receptionDraft.supplier)||receptionDraft.supplier}catch(e){}
+  }
   receptionDraft.vehicleTemp=String($('#receptionVehicleTemp').value??'').trim();
   receptionDraft.driverName=$('#receptionDriverName').value.trim();
   receptionDraft.receiverName=$('#receptionReceiverName').value.trim();
@@ -2441,7 +2484,9 @@ function newReceptionForm(){
   receptionEditingIndex=-1;
   receptionDraft=newReceptionRecord(receptionConfig());
   renderReceptionForm();
-  $('#receptionSupplier')?.focus();
+  const s=$('#receptionSupplier'),m=$('#receptionSupplierManual');
+  if(m&&m.style.display!=='none')m.focus();
+  else s?.focus();
 }
 
 function receptionPaperData(){
