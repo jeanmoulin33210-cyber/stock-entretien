@@ -6128,7 +6128,7 @@ function ensureProductSheetRecord(st,p,sm){
   const d=receptionDefaultsForSample(st,p,sm);
   if(store[k]){
     const rec=syncReceptionIntoProductSheet(store[k],d);
-    /* V243 — si aucune observation n'est saisie, RAS est utilisé automatiquement. */
+    /* V244 — si aucune observation n'est saisie, RAS est utilisé automatiquement. */
     if(!String(rec.observations||'').trim())rec.observations='RAS';
     return rec;
   }
@@ -6177,7 +6177,7 @@ function productSheetMissingFields(st,p,sm){
   if(!String(r.ddm||'').trim() && !String(r.dlc||'').trim()){
     missing.push({key:'traceabilityDate',label:'Au moins une date : DDM ou DLC'});
   }
-  /* V243 — le résultat sensoriel est repris automatiquement du jury.
+  /* V244 — le résultat sensoriel est repris automatiquement du jury.
      Ce n'est pas un champ à saisir : il ne doit donc jamais compter comme
      élément manquant ni bloquer la fiche produit. */
   return missing;
@@ -6316,7 +6316,7 @@ function renderProductSheets(){
       const el=card.querySelector(`[data-ps-field="${field}"]`);if(el)el.value=r[field]||'';
     }
 
-    /* V243 — signaler clairement en rouge chaque champ obligatoire manquant. */
+    /* V244 — signaler clairement en rouge chaque champ obligatoire manquant. */
     const missing=productSheetMissingFields(state,p,sm);
     card.querySelectorAll('.field.missing-field').forEach(el=>el.classList.remove('missing-field'));
     card.querySelector('.product-sheet-auto')?.classList.remove('missing-auto');
@@ -6355,7 +6355,7 @@ function captureProductSheetForm(){
     const card=findProductSheetCard(box,sm.id);if(!card)continue;
     const r=ensureProductSheetRecord(state,p,sm);
     card.querySelectorAll('[data-ps-field]').forEach(el=>{r[el.dataset.psField]=el.value??''});
-    /* V243 — Observations : vide = RAS automatiquement avant enregistrement. */
+    /* V244 — Observations : vide = RAS automatiquement avant enregistrement. */
     if(!String(r.observations||'').trim()){
       r.observations='RAS';
       const obs=card.querySelector('[data-ps-field="observations"]');
@@ -7962,5 +7962,5 @@ testerCountInput.onchange=syncTesterCountFromField;$('#cfgLotName').oninput=()=>
 $('#closeConfigPreviewBtn').onclick=closeConfigPreview;
 $('#configPreviewModal').onclick=e=>{if(e.target.id==='configPreviewModal')closeConfigPreview()};
 $('#testerHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#bottomHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#testerSelect').onchange=e=>{currentTester=Number(e.target.value);renderSample()};$('#productSelect').onchange=e=>{const targetPid=e.target.value;const target=getProduct(targetPid)?.samples?.[0];if(!target){e.target.value=currentProduct;return}if(!goToSample(targetPid,target.id))e.target.value=currentProduct};$('#sampleSelect').onchange=e=>{const target=e.target.value;if(!goToSample(currentProduct,target))e.target.value=currentSample};$('#prevSample').onclick=()=>moveSample(-1);$('#nextSample').onclick=()=>moveSample(1);
-$('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#productSheetsBtn').onclick=()=>openProductSheets();$('#productSheetsBackBtn').onclick=()=>closeProductSheets();$('#saveProductSheetsBtn').onclick=()=>saveProductSheets();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsArchiveBtn').onclick=()=>archiveCurrentJury();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>openResultsArchiveHub();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
+$('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#productSheetsBtn').onclick=()=>openProductSheets();$('#productSheetsBackBtn').onclick=()=>closeProductSheets();$('#productSheetsHomeBtn').onclick=()=>{captureProductSheetForm();saveState();renderHome()};$('#saveProductSheetsBtn').onclick=()=>saveProductSheets();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsArchiveBtn').onclick=()=>archiveCurrentJury();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>openResultsArchiveHub();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
 renderHome();
