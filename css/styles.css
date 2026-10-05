@@ -2409,3 +2409,36 @@ body.live-fullscreen #liveDayView{max-width:none;padding:18px 24px}body.live-ful
   .owner-device-actions .btn{width:100%}
 }
 
+
+
+/* V262 — Accueil : Résultats principal + petite case Archives */
+.home-results-stack-v262{
+  display:grid;
+  grid-template-rows:minmax(0,1fr) auto;
+  gap:8px;
+  min-width:0;
+}
+.home-results-stack-v262 .home-results-main-v262{
+  min-height:88px;
+  height:100%;
+}
+.home-archive-mini-v262{
+  appearance:none;
+  border:1px solid rgba(255,255,255,.20);
+  background:rgba(255,255,255,.09);
+  color:#fff;
+  border-radius:12px;
+  min-height:38px;
+  padding:8px 12px;
+  font-size:12px;
+  font-weight:900;
+  text-align:center;
+}
+.home-archive-mini-v262:hover{
+  background:rgba(255,255,255,.15);
+}
+@media(max-width:560px){
+  .home-results-stack-v262{gap:7px}
+  .home-results-stack-v262 .home-results-main-v262{min-height:78px}
+  .home-archive-mini-v262{min-height:36px;font-size:11px}
+}
