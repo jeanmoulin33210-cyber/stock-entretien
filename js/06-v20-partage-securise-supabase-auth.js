@@ -118,7 +118,7 @@ function makePublicCloudConfig(cfg){
 }
 function shareUrl(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','249');
+  u.searchParams.set('appBuild','250');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -144,10 +144,35 @@ function renderShareLinks(){
     d.querySelector('button').onclick=()=>copyText(shareUrl(i),`Lien ${name} copié`);box.appendChild(d)
   }
 }
+const RECOVERED_AUTH_MAP_KEY_V250='jm_tc_recovered_auth_map_v250';
+function recoveredAuthStorageMapV250(){
+  try{
+    const raw=JSON.parse(localStorage.getItem(RECOVERED_AUTH_MAP_KEY_V250)||'{}');
+    return raw&&typeof raw==='object'?raw:{};
+  }catch(e){return{}}
+}
+function rememberRecoveredAuthStorageKeyV250(sessionId,storageKey){
+  sessionId=String(sessionId||'').trim();
+  storageKey=String(storageKey||'').trim();
+  if(!sessionId||!storageKey)return;
+  const map=recoveredAuthStorageMapV250();
+  map[sessionId]=storageKey;
+  try{localStorage.setItem(RECOVERED_AUTH_MAP_KEY_V250,JSON.stringify(map))}catch(e){}
+}
 function cloudAuthStorageKey(){
+  const wanted=requestedCloudIdentity();
+
+  /* V250 — lorsqu'une ancienne identité administrateur a été retrouvée,
+     réutiliser exactement sa clé Supabase lors des prochains rechargements. */
+  if(wanted?.role!=='tester'){
+    try{
+      const mapped=recoveredAuthStorageMapV250()[String(cloudCfg.sessionId||'').trim()];
+      if(mapped)return String(mapped);
+    }catch(e){}
+  }
+
   const project=String(cloudCfg.url||'').replace(/\W+/g,'-').slice(-28)||'project';
   const session=String(cloudCfg.sessionId||'local').replace(/\W+/g,'-').slice(-24)||'session';
-  const wanted=requestedCloudIdentity();
   const role=wanted?.role==='tester' ? `tester-${wanted.testerNo||1}` : wanted?.role==='admin' ? 'admin-owner' : 'neutral';
   return `jm-tc-auth-${project}-${session}-${role}`;
 }
