@@ -94,7 +94,7 @@ async function ensurePhoneShareCredentials(){
   return true;
 }
 
-async function recoverRunningShareFromCachedAuthV250(){
+async function recoverRunningShareFromCachedAuthV251(){
   const cfg=state?.config;
   if(!cfg||!cfg.juryLaunch?.openedAt)return false;
   if(!window.supabase?.createClient)return false;
@@ -146,11 +146,11 @@ async function recoverRunningShareFromCachedAuthV250(){
           .maybeSingle();
         if(remoteError||!remote?.config)continue;
 
-        if(typeof shareRecoverySameJuryV250==='function' &&
-           !shareRecoverySameJuryV250(cfg,remote.config))continue;
+        if(typeof shareRecoverySameJuryV251==='function' &&
+           !shareRecoverySameJuryV251(cfg,remote.config))continue;
 
-        if(typeof shareRecoveryMergeV250==='function'){
-          shareRecoveryMergeV250(cfg,remote.config,sid);
+        if(typeof shareRecoveryMergeV251==='function'){
+          shareRecoveryMergeV251(cfg,remote.config,sid);
         }else{
           cfg._shareSessionId=sid;
           if(cfg.juryLaunch?.openedAt)cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:sid};
@@ -168,8 +168,8 @@ async function recoverRunningShareFromCachedAuthV250(){
         cloudReady=true;
 
         try{
-          if(typeof rememberRecoveredAuthStorageKeyV250==='function'){
-            rememberRecoveredAuthStorageKeyV250(sid,storageKey);
+          if(typeof rememberRecoveredAuthStorageKeyV251==='function'){
+            rememberRecoveredAuthStorageKeyV251(sid,storageKey);
           }
         }catch(e){}
 
@@ -194,13 +194,13 @@ async function recoverRunningShareFromCachedAuthV250(){
   return false;
 }
 
-async function recoverRunningShareSessionFromCloudV250(){
+async function recoverRunningShareSessionFromCloudV251(){
   const cfg=state?.config;
   if(!cfg||!cfg.juryLaunch?.openedAt)return false;
 
   try{
-    if(typeof recoverRunningPhoneShareLocalV250==='function'){
-      const sid=recoverRunningPhoneShareLocalV250(cfg);
+    if(typeof recoverRunningPhoneShareLocalV251==='function'){
+      const sid=recoverRunningPhoneShareLocalV251(cfg);
       if(sid&&phoneSharePrepared(cfg))return true;
     }
   }catch(e){}
@@ -227,7 +227,7 @@ async function recoverRunningShareSessionFromCloudV250(){
   try{addSid(new URLSearchParams(location.search).get('session'))}catch(e){}
 
   if(!candidates.length){
-    return await recoverRunningShareFromCachedAuthV250();
+    return await recoverRunningShareFromCachedAuthV251();
   }
 
   const previousCloud={
@@ -258,13 +258,13 @@ async function recoverRunningShareSessionFromCloudV250(){
         .maybeSingle();
       if(error||!data?.config)throw (error||new Error('Session introuvable'));
 
-      if(typeof shareRecoverySameJuryV250!=='function'||
-         !shareRecoverySameJuryV250(cfg,data.config)){
+      if(typeof shareRecoverySameJuryV251!=='function'||
+         !shareRecoverySameJuryV251(cfg,data.config)){
         throw new Error('Cette session appartient à un autre jury');
       }
 
-      if(typeof shareRecoveryMergeV250==='function'){
-        shareRecoveryMergeV250(cfg,data.config,sid);
+      if(typeof shareRecoveryMergeV251==='function'){
+        shareRecoveryMergeV251(cfg,data.config,sid);
       }else{
         cfg._shareSessionId=sid;
         if(cfg.juryLaunch?.openedAt)cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:sid};
@@ -301,15 +301,137 @@ async function recoverRunningShareSessionFromCloudV250(){
   cloudCfg.accessCode=previousCloud.accessCode;
   saveCloudCfg();
   setCloudStatus('local','● Hors ligne');
-  return await recoverRunningShareFromCachedAuthV250();
+  return await recoverRunningShareFromCachedAuthV251();
+}
+
+async function createReplacementRunningQrSessionV251(){
+  if(!state?.config?.juryLaunch?.openedAt){
+    throw new Error('Ce jury n’est pas marqué comme étant en cours.');
+  }
+
+  const backupKey='jm_tc_qr_repair_backup_v251';
+  const stateBackup=deepClone(state);
+  const cloudBackup={
+    url:String(cloudCfg?.url||''),
+    key:String(cloudCfg?.key||''),
+    sessionId:String(cloudCfg?.sessionId||''),
+    accessCode:String(cloudCfg?.accessCode||'')
+  };
+
+  try{
+    localStorage.setItem(backupKey,JSON.stringify({
+      createdAt:new Date().toISOString(),
+      state:stateBackup,
+      cloud:cloudBackup
+    }));
+  }catch(e){}
+
+  const originalOpenedAt=String(state.config.juryLaunch.openedAt||'');
+  const originalInstanceId=String(
+    state.config.juryLaunch.instanceId||
+    state.config._juryInstanceId||
+    state.config.juryInstanceId||
+    ''
+  ).trim()||ensureJuryInstanceId(state.config);
+
+  try{
+    /* Préparer les preuves de sécurité administrateur et les codes testeurs. */
+    await ensurePhoneShareCredentials();
+
+    if(cloudReady && typeof disconnectCloud==='function'){
+      try{await disconnectCloud()}catch(e){}
+    }
+
+    cloudCfg.url=String(cloudCfg.url||cloudBackup.url||DEFAULT_SUPABASE_URL).trim();
+    cloudCfg.key=String(cloudCfg.key||cloudBackup.key||DEFAULT_SUPABASE_KEY).trim();
+    cloudCfg.sessionId=crypto.randomUUID();
+    cloudCfg.accessCode='';
+
+    const sid=cloudCfg.sessionId;
+
+    state.config._shareSessionId=sid;
+    state.config._juryInstanceId=originalInstanceId;
+    state.config.juryInstanceId=originalInstanceId;
+    state.config.juryLaunch={
+      ...(state.config.juryLaunch||{}),
+      openedAt:originalOpenedAt,
+      instanceId:originalInstanceId,
+      sessionId:sid,
+      mode:'shared'
+    };
+
+    ensureTesterCodes();
+    originalSaveState();
+    saveCloudCfg();
+
+    buildCloudClient();
+    setCloudStatus('syncing','● Création des nouveaux QR codes…');
+    await ensureCloudAuth();
+    await createSecureCloudSession();
+
+    cloudReady=true;
+    cloudRole='admin';
+    cloudTesterNo=null;
+
+    /* Recopier toutes les réponses et validations actuellement présentes. */
+    lastCloudAnswerHashes=new Map();
+    await pushAllAnswers();
+
+    saveCloudCfg();
+    await subscribeCloud();
+
+    state.config._phoneShareSignature=phoneShareSignature(state.config);
+    originalSaveState();
+
+    /* Republier le jury comme déjà lancé avec la date et l'identité d'origine. */
+    await publishOfficialLaunchToCloud();
+
+    try{
+      if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt){
+        upsertPreparedJury(state);
+      }
+    }catch(e){}
+
+    if(typeof syncDirtyToCloud==='function'){
+      try{
+        lastCloudConfigHash='';
+        await syncDirtyToCloud();
+      }catch(e){}
+    }
+
+    setCloudStatus('online','● Partagé sécurisé');
+    toast('Nouveaux QR codes créés — réponses conservées ✓');
+    return true;
+  }catch(e){
+    console.error('Création de la session QR de remplacement impossible',e);
+
+    /* Restaurer strictement l'état local antérieur si la réparation échoue. */
+    state=deepClone(stateBackup);
+    try{originalSaveState()}catch(err){}
+
+    cloudReady=false;
+    cloudRole=null;
+    cloudTesterNo=null;
+    cloudCfg.url=cloudBackup.url||DEFAULT_SUPABASE_URL;
+    cloudCfg.key=cloudBackup.key||DEFAULT_SUPABASE_KEY;
+    cloudCfg.sessionId=cloudBackup.sessionId;
+    cloudCfg.accessCode=cloudBackup.accessCode;
+    try{saveCloudCfg()}catch(err){}
+    setCloudStatus('local','● Hors ligne');
+
+    throw new Error(
+      'Impossible de créer les nouveaux QR codes. '+
+      (e?.message||e)
+    );
+  }
 }
 
 async function ensurePreparedShareConnected(){
-  /* V250 — un jury déjà lancé peut être repris après rechargement sans perdre
+  /* V251 — un jury déjà lancé peut être repris après rechargement sans perdre
      sa session QR. On restaure d'abord les métadonnées connues. */
   try{
-    if(typeof repairRunningPhoneShareMetadataV250==='function'){
-      repairRunningPhoneShareMetadataV250(state.config);
+    if(typeof repairRunningPhoneShareMetadataV251==='function'){
+      repairRunningPhoneShareMetadataV251(state.config);
     }
   }catch(e){}
 
