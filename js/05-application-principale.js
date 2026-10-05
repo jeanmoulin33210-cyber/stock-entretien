@@ -1513,16 +1513,150 @@ function receptionJuryKey(cfg=receptionConfig()){
   if(!cfg||typeof cfg!=='object')return '';
   return String(cfg._preparedId||cfg._juryInstanceId||cfg.juryInstanceId||cfg.lotName||'').trim();
 }
+function receptionNormV257(v){
+  return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function receptionSameJuryV257(a,b){
+  if(!a||!b)return false;
+  const ai=String(a._juryInstanceId||a.juryInstanceId||a.juryLaunch?.instanceId||'').trim();
+  const bi=String(b._juryInstanceId||b.juryInstanceId||b.juryLaunch?.instanceId||'').trim();
+  if(ai&&bi&&ai===bi)return true;
+
+  const ap=String(a._preparedId||'').trim(),bp=String(b._preparedId||'').trim();
+  if(ap&&bp&&ap===bp)return true;
+
+  const alot=receptionNormV257(a.lotName||a.lotNumber||a.lotTitle||'');
+  const blot=receptionNormV257(b.lotName||b.lotNumber||b.lotTitle||'');
+  if(!alot||alot!==blot)return false;
+
+  const sig=cfg=>(Array.isArray(cfg?.products)?cfg.products:[])
+    .map(p=>{
+      const ids=(Array.isArray(p?.samples)?p.samples:[])
+        .map(s=>receptionNormV257(s?.id||'')).filter(Boolean).sort().join(',');
+      return receptionNormV257(p?.name||'')+'['+ids+']';
+    }).sort().join('|');
+  return sig(a)===sig(b);
+}
+function receptionRecordMatchesConfigV257(rec,cfg){
+  if(!rec||!rec.validatedAt||!cfg)return false;
+
+  const suppliers=receptionSupplierNames(cfg).map(receptionNormV257).filter(Boolean);
+  const supplier=receptionNormV257(rec.supplier||'');
+  if(suppliers.length && supplier && !suppliers.includes(supplier))return false;
+
+  const currentProducts=new Set();
+  for(const p of (Array.isArray(cfg.products)?cfg.products:[])){
+    const id=receptionNormV257(p?.id||'');
+    const name=receptionNormV257(p?.name||'');
+    if(id)currentProducts.add('id:'+id);
+    if(name)currentProducts.add('name:'+name);
+  }
+
+  const lines=Array.isArray(rec.lines)?rec.lines:[];
+  if(!lines.length)return true;
+
+  const overlap=lines.some(line=>{
+    const id=receptionNormV257(line?.productId||'');
+    const name=receptionNormV257(line?.productName||'');
+    return (id&&currentProducts.has('id:'+id))||(name&&currentProducts.has('name:'+name));
+  });
+  return overlap||!currentProducts.size;
+}
+function receptionBackupStatesV257(){
+  const out=[];
+  const push=st=>{if(st?.config)out.push(st)};
+
+  try{
+    const qr=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
+    push(qr?.state);
+  }catch(e){}
+  try{
+    const a=JSON.parse(localStorage.getItem('jm_tc_active_juries_backup_v238')||'null');
+    (Array.isArray(a?.rows)?a.rows:[]).forEach(r=>push(r?.state));
+  }catch(e){}
+  try{
+    const d=JSON.parse(localStorage.getItem('jm_tc_prepared_dedupe_backup_v238')||'null');
+    (Array.isArray(d?.rows)?d.rows:[]).forEach(r=>push(r?.state));
+  }catch(e){}
+  try{
+    const reset=JSON.parse(localStorage.getItem('jm_tc_lots_reset_backup_v207')||'null');
+    const raw=reset?.items?.['jm_test_culinaire_prepared_v97'];
+    const rows=raw?JSON.parse(raw):[];
+    (Array.isArray(rows)?rows:[]).forEach(r=>push(r?.state));
+  }catch(e){}
+  try{
+    const recovery=JSON.parse(localStorage.getItem('jm_test_culinaire_recovery_v29')||'[]');
+    (Array.isArray(recovery)?recovery:[]).forEach(s=>push(s?.state));
+  }catch(e){}
+  return out;
+}
+function repairReceptionsForConfigV257(cfg){
+  if(!cfg||typeof cfg!=='object')return false;
+
+  if(!Array.isArray(cfg.receptions))cfg.receptions=[];
+  const currentKey=receptionJuryKey(cfg);
+  let changed=false;
+
+  /* 1. Une réception validée déjà stockée dans CE lot reste valable même si
+        l'identifiant technique du jury a changé pendant une réparation QR. */
+  for(const rec of cfg.receptions){
+    if(!receptionRecordMatchesConfigV257(rec,cfg))continue;
+    if(currentKey&&String(rec.receptionJuryKey||'')!==currentKey){
+      rec.receptionJuryKey=currentKey;
+      changed=true;
+    }
+  }
+
+  /* 2. Si aucune réception exploitable n'est présente, chercher la meilleure
+        copie dans les sauvegardes locales du même jury. */
+  let currentValid=cfg.receptions.filter(r=>receptionRecordMatchesConfigV257(r,cfg));
+  if(!currentValid.length){
+    let best=[];
+    for(const st of receptionBackupStatesV257()){
+      const bcfg=st?.config;
+      if(!bcfg||!receptionSameJuryV257(cfg,bcfg))continue;
+      const vals=(Array.isArray(bcfg.receptions)?bcfg.receptions:[])
+        .filter(r=>receptionRecordMatchesConfigV257(r,cfg));
+      if(vals.length>best.length)best=vals;
+    }
+    if(best.length){
+      cfg.receptions=deepClone(best);
+      for(const rec of cfg.receptions){
+        if(currentKey)rec.receptionJuryKey=currentKey;
+      }
+      changed=true;
+      currentValid=cfg.receptions.filter(r=>receptionRecordMatchesConfigV257(r,cfg));
+    }
+  }
+
+  if(changed&&cfg===state?.config){
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(state))}catch(e){}
+    try{if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt)upsertPreparedJury(state)}catch(e){}
+    try{
+      localStorage.setItem('jm_tc_reception_repair_v257',JSON.stringify({
+        repairedAt:new Date().toISOString(),
+        lot:cfg.lotName||'',
+        count:currentValid.length
+      }));
+    }catch(e){}
+  }
+  return changed;
+}
 function receptionStatusForConfig(cfg){
+  try{repairReceptionsForConfigV257(cfg)}catch(e){}
+
   const suppliers=receptionSupplierNames(cfg);
   const juryKey=receptionJuryKey(cfg);
   const valid=(Array.isArray(cfg?.receptions)?cfg.receptions:[])
-    .filter(r=>r&&r.validatedAt&&juryKey&&String(r.receptionJuryKey||'')===juryKey);
+    .filter(r=>r&&r.validatedAt&&receptionRecordMatchesConfigV257(r,cfg));
+
   if(!valid.length)return{key:'pending',label:'À réceptionner'};
   if(!suppliers.length)return{key:'done',label:'Réception enregistrée'};
-  const key=name=>String(name||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
-  const received=new Set(valid.map(r=>key(r.supplier)).filter(Boolean));
-  const done=suppliers.filter(name=>received.has(key(name))).length;
+
+  const received=new Set(valid.map(r=>receptionNormV257(r.supplier)).filter(Boolean));
+  const done=suppliers.filter(name=>received.has(receptionNormV257(name))).length;
+
   if(done>=suppliers.length)return{key:'done',label:'Réception enregistrée'};
   return{key:'partial',label:`Réception partielle ${done}/${suppliers.length}`};
 }
@@ -1918,6 +2052,7 @@ async function saveReceptionForm(){
 function renderReceptionSavedList(){
   const box=$('#receptionSavedList'),cfg=receptionConfig();
   if(!box||!cfg)return;
+  try{repairReceptionsForConfigV257(cfg)}catch(e){}
   const list=receptionList(cfg);
   if(!list.length){
     box.innerHTML='<div class="empty-note">Aucune réception enregistrée pour ce lot.</div>';
