@@ -6166,8 +6166,11 @@ function productSheetMissingFields(st,p,sm){
   for(const [key,label] of required){
     if(!String(r?.[key]??'').trim())missing.push({key,label});
   }
-  if(!String(r.manufacturingDate||'').trim() && !String(r.ddm||'').trim() && !String(r.dlc||'').trim()){
-    missing.push({key:'traceabilityDate',label:'Au moins une date de traçabilité : fabrication, DDM ou DLC'});
+  /* V241 — pour la fiche produit, au moins une des deux dates commerciales
+     est obligatoire : DDM OU DLC. Une seule suffit. La date de fabrication
+     reste facultative et ne remplace pas cette exigence. */
+  if(!String(r.ddm||'').trim() && !String(r.dlc||'').trim()){
+    missing.push({key:'traceabilityDate',label:'Au moins une date : DDM ou DLC'});
   }
   const stats=productSheetStats(st,p,sm);
   if(!stats.count)missing.push({key:'sensorResult',label:'Résultat sensoriel du jury'});
@@ -6177,7 +6180,7 @@ function productSheetFilled(rec,st=null,p=null,sm=null){
   if(st&&p&&sm)return productSheetMissingFields(st,p,sm).length===0;
   return ['brand','characteristics','labeling','weight','technicalSheet','deliveryTempConformity','packagingConformity','supplierLot','deliveryTemp','observations']
     .every(k=>String(rec?.[k]??'').trim()) &&
-    !!(String(rec?.manufacturingDate||'').trim()||String(rec?.ddm||'').trim()||String(rec?.dlc||'').trim());
+    !!(String(rec?.ddm||'').trim()||String(rec?.dlc||'').trim());
 }
 function productSheetsValidation(st=state){
   const issues=[];
@@ -6222,7 +6225,7 @@ function ensureProductSheetsComplete(actionLabel='continuer'){
     const firstMissing=first.missing[0]?.key;
     let target=null;
     if(firstMissing==='traceabilityDate'){
-      target=card.querySelector('[data-ps-field="manufacturingDate"],[data-ps-field="ddm"],[data-ps-field="dlc"]');
+      target=card.querySelector('[data-ps-field="ddm"],[data-ps-field="dlc"]');
     }else if(firstMissing!=='sensorResult'){
       target=card.querySelector(`[data-ps-field="${firstMissing}"]`);
     }
@@ -6299,7 +6302,7 @@ function renderProductSheets(){
       </div>
     </article>`;
   }).join('');
-  box.innerHTML=`<section class="panel product-sheet-card"><h3>${escapeHtml(p.name||'Produit')}</h3><div class="sub">Une annexe produit regroupera tous les fournisseurs/échantillons ci-dessous.</div><div class="product-sheet-required-note">Tous les champs sont obligatoires pour le dossier final. Pour les dates, au moins une date de traçabilité est nécessaire : fabrication, DDM ou DLC. S’il n’y a aucune observation, écrivez « RAS ».</div>${rows||'<div class="results-empty">Aucun échantillon.</div>'}</section>`;
+  box.innerHTML=`<section class="panel product-sheet-card"><h3>${escapeHtml(p.name||'Produit')}</h3><div class="sub">Une annexe produit regroupera tous les fournisseurs/échantillons ci-dessous.</div><div class="product-sheet-required-note">Tous les champs sont obligatoires pour le dossier final. Pour les dates, renseignez au moins <strong>la DDM ou la DLC</strong> : une seule des deux suffit. La date de fabrication est facultative. S’il n’y a aucune observation, écrivez « RAS ».</div>${rows||'<div class="results-empty">Aucun échantillon.</div>'}</section>`;
   for(const sm of p.samples||[]){
     const card=findProductSheetCard(box,sm.id);if(!card)continue;
     const r=ensureProductSheetRecord(state,p,sm);
@@ -6320,10 +6323,37 @@ function captureProductSheetForm(){
 async function saveProductSheets(){
   captureProductSheetForm();saveState();
   if(typeof syncDirtyToCloud==='function'){try{await syncDirtyToCloud()}catch(e){}}
+
+  const products=state?.config?.products||[];
+  const currentIndex=products.findIndex(p=>String(p.id)===String(activeProductSheetId));
+  const currentProduct=currentIndex>=0?products[currentIndex]:null;
+  const currentComplete=!!currentProduct && (currentProduct.samples||[])
+    .every(sm=>productSheetMissingFields(state,currentProduct,sm).length===0);
+
   const validation=productSheetsValidation(state);
-  renderProductSheetStatus();renderProductSheets();
-  if(validation.ok)toast('Fiches produits complètes et enregistrées ✓');
-  else alert(`Brouillon enregistré. Il reste ${validation.issues.length} fiche(s) produit incomplète(s).\n\nLe rapport final, le dossier complet, l’archivage et l’envoi par mail resteront bloqués tant que tout n’est pas complété.`);
+  renderProductSheetStatus();
+
+  /* V241 — quand le produit affiché est complet, passer automatiquement
+     au produit suivant pour éviter de rester sur "Riz" après enregistrement. */
+  if(currentComplete && currentIndex>=0 && currentIndex<products.length-1){
+    const next=products[currentIndex+1];
+    activeProductSheetId=next.id;
+    renderProductSheets();
+    requestAnimationFrame(()=>{
+      const tabs=$('#productSheetTabs');
+      const content=$('#productSheetContent');
+      (tabs||content)?.scrollIntoView?.({behavior:'smooth',block:'start'});
+    });
+    toast(`${currentProduct.name||'Produit'} enregistré ✓ → ${next.name||'Produit suivant'}`);
+    return;
+  }
+
+  renderProductSheets();
+  if(validation.ok){
+    toast('Fiches produits complètes et enregistrées ✓');
+  }else{
+    alert(`Brouillon enregistré. Il reste ${validation.issues.length} fiche(s) produit incomplète(s).\n\nLe rapport final, le dossier complet, l’archivage et l’envoi par mail resteront bloqués tant que tout n’est pas complété.`);
+  }
 }
 function closeProductSheets(){captureProductSheetForm();saveState();renderAdmin()}
 
