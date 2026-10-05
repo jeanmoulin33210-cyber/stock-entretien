@@ -337,7 +337,7 @@ function dedupePreparedJurysV238(rows){
   return [...byKey.values(),...withoutKey]
     .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
 }
-function rawSupplierNamesV261(cfg){
+function rawSupplierNamesV262(cfg){
   const out=[],seen=new Set();
   const add=v=>{
     const raw=String(v||'').trim();
@@ -353,7 +353,7 @@ function rawSupplierNamesV261(cfg){
     (Array.isArray(p?.samples)?p.samples:[]).forEach(s=>add(s?.supplier))
   );
 
-  /* V261 — les fiches produits gardent leur fournisseur même si la liste
+  /* V262 — les fiches produits gardent leur fournisseur même si la liste
      générale ou l'échantillon a été perdu lors d'une reprise cloud. */
   const sheets=cfg?.productSheets&&typeof cfg.productSheets==='object'
     ?Object.values(cfg.productSheets):[];
@@ -366,7 +366,7 @@ function rawSupplierNamesV261(cfg){
   return out;
 }
 
-function healSampleSuppliersFromProductSheetsV261(cfg){
+function healSampleSuppliersFromProductSheetsV262(cfg){
   if(!cfg||typeof cfg!=='object'||!cfg.productSheets||typeof cfg.productSheets!=='object')return false;
   let changed=false;
   const products=Array.isArray(cfg.products)?cfg.products:[];
@@ -399,10 +399,10 @@ function supplierNamesFromConfigV252(cfg){
     seen.add(key);out.push(raw);
   };
 
-  rawSupplierNamesV261(cfg).forEach(add);
+  rawSupplierNamesV262(cfg).forEach(add);
 
-  if(!out.length && typeof recoverSupplierNamesFromBackupsV261==='function'){
-    try{recoverSupplierNamesFromBackupsV261(cfg).forEach(add)}catch(e){}
+  if(!out.length && typeof recoverSupplierNamesFromBackupsV262==='function'){
+    try{recoverSupplierNamesFromBackupsV262(cfg).forEach(add)}catch(e){}
   }
   return out;
 }
@@ -412,7 +412,7 @@ function healSupplierNamesV252(cfg){
   let changed=false;
 
   try{
-    if(healSampleSuppliersFromProductSheetsV261(cfg))changed=true;
+    if(healSampleSuppliersFromProductSheetsV262(cfg))changed=true;
   }catch(e){}
 
   const names=supplierNamesFromConfigV252(cfg);
@@ -1331,7 +1331,7 @@ function receptionSupplierNames(cfg=receptionConfig()){
   return [...new Set(names)];
 }
 
-function supplierBackupMatchV261(target,source){
+function supplierBackupMatchV262(target,source){
   if(!target||!source)return false;
 
   const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -1363,7 +1363,7 @@ function supplierBackupMatchV261(target,source){
   return overlap>0 && overlap===Math.min(tp.size,sp.size);
 }
 
-function recoverSupplierNamesFromBackupsV261(cfg){
+function recoverSupplierNamesFromBackupsV262(cfg){
   const states=[];
   const push=st=>{if(st?.config)states.push(st.config)};
 
@@ -1400,11 +1400,11 @@ function recoverSupplierNamesFromBackupsV261(cfg){
   };
 
   for(const source of states){
-    if(!supplierBackupMatchV261(cfg,source))continue;
-    rawSupplierNamesV261(source).forEach(add);
+    if(!supplierBackupMatchV262(cfg,source))continue;
+    rawSupplierNamesV262(source).forEach(add);
   }
 
-  /* V261 — source prioritaire supplémentaire : "Choix des échantillons".
+  /* V262 — source prioritaire supplémentaire : "Choix des échantillons".
      Les noms des fournisseurs sont conservés séparément dans les métadonnées
      du lot, même quand les échantillons ont perdu leur champ supplier. */
   try{
@@ -1416,7 +1416,7 @@ function recoverSupplierNamesFromBackupsV261(cfg){
       supplierNames:Array.isArray(meta?.supplierNames)?meta.supplierNames:[],
       products:loadSampleProducts()
     };
-    if(supplierBackupMatchV261(cfg,pseudo)){
+    if(supplierBackupMatchV262(cfg,pseudo)){
       (meta?.supplierNames||[]).forEach(add);
     }
   }catch(e){}
@@ -1432,7 +1432,7 @@ function recoverSupplierNamesFromBackupsV261(cfg){
         supplierNames:Array.isArray(meta.supplierNames)?meta.supplierNames:[],
         products:Array.isArray(rec?.products)?rec.products:[]
       };
-      if(!supplierBackupMatchV261(cfg,pseudo))continue;
+      if(!supplierBackupMatchV262(cfg,pseudo))continue;
       (meta.supplierNames||[]).forEach(add);
     }
   }catch(e){}
@@ -1440,7 +1440,7 @@ function recoverSupplierNamesFromBackupsV261(cfg){
   return out;
 }
 
-function addManualReceptionSupplierV261(cfg,name){
+function addManualReceptionSupplierV262(cfg,name){
   if(!cfg||typeof cfg!=='object')return '';
   const clean=String(name||'').trim();
   if(!clean)return '';
@@ -2280,20 +2280,20 @@ function renderReceptionForm(){
   const selected=String(receptionDraft.supplier||'').trim();
 
   if(supplierInput && supplierManual){
-    /* V261 — si aucun fournisseur n'est connu, ne pas afficher un menu vide :
+    /* V262 — si aucun fournisseur n'est connu, ne pas afficher un menu vide :
        on propose directement une saisie texte. */
     if(!suppliers.length){
       supplierInput.style.display='none';
       supplierManual.style.display='';
       supplierManual.value=selected;
       supplierManual.onchange=()=>{
-        const clean=addManualReceptionSupplierV261(cfg,supplierManual.value);
+        const clean=addManualReceptionSupplierV262(cfg,supplierManual.value);
         receptionDraft.supplier=clean||String(supplierManual.value||'').trim();
       };
       supplierManual.onblur=()=>{
         const clean=String(supplierManual.value||'').trim();
         if(clean){
-          receptionDraft.supplier=addManualReceptionSupplierV261(cfg,clean)||clean;
+          receptionDraft.supplier=addManualReceptionSupplierV262(cfg,clean)||clean;
         }
       };
     }else{
@@ -2330,7 +2330,7 @@ function renderReceptionForm(){
           supplierInput.value=receptionDraft.supplier||'';
           return;
         }
-        const clean=addManualReceptionSupplierV261(cfg,name);
+        const clean=addManualReceptionSupplierV262(cfg,name);
         if(!clean){
           supplierInput.value=receptionDraft.supplier||'';
           return;
@@ -2383,7 +2383,7 @@ function captureReceptionForm(){
     :String(supplierSelect?.value||'').trim();
   if(receptionDraft.supplier==='__manual_supplier_v260__')receptionDraft.supplier='';
   if(receptionDraft.supplier){
-    try{receptionDraft.supplier=addManualReceptionSupplierV261(cfg,receptionDraft.supplier)||receptionDraft.supplier}catch(e){}
+    try{receptionDraft.supplier=addManualReceptionSupplierV262(cfg,receptionDraft.supplier)||receptionDraft.supplier}catch(e){}
   }
   receptionDraft.vehicleTemp=String($('#receptionVehicleTemp').value??'').trim();
   receptionDraft.driverName=$('#receptionDriverName').value.trim();
@@ -8695,7 +8695,7 @@ async function duplicateArchive(id){
 }
 function copyArchiveAsNew(id){return duplicateArchive(id)}
 
-$('#homeBtn').onclick=renderHome;$('#archivesBtn').onclick=renderArchives;$('#archivesHomeBtn').onclick=renderHome;$('#archivesBackHubBtn').onclick=()=>openResultsArchiveHub();$('#archiveMoreFiltersBtn').onclick=()=>toggleArchiveFilters();
+$('#homeBtn').onclick=renderHome;$('#archivesBtn').onclick=renderArchives;$('#archivesHomeBtn').onclick=renderHome;$('#archivesBackHubBtn').onclick=()=>renderHome();$('#archiveMoreFiltersBtn').onclick=()=>toggleArchiveFilters();
 $('#closureBackBtn').onclick=()=>{captureClosureForm();saveState();renderAdmin()};
 $('#saveClosureBtn').onclick=saveClosure;
 ['closureDate','closurePlace','closureChair','closureChairRole','closureCoSigner','closureCoSignerRole','closureNotes'].forEach(id=>{
@@ -8771,7 +8771,7 @@ $('#archiveJuryBtn').onclick=archiveCurrentJury;$('#samplesSetupBtn').onclick=op
   };
 })();$('#prepareJuryCancelBtn').onclick=closePrepareJuryChooser;$('#juryBtn').onclick=openJuryFlow;$('#statsBtn').onclick=renderStats;$('#dashboardNewJuryBtn').onclick=prepareJuryFromHomeV181;$('#dashboardAllArchivesBtn').onclick=renderArchives;$('#launchHomeBtn').onclick=renderHome;$('#launchEditBtn').onclick=openConfig;$('#officialLaunchBtn').onclick=officialLaunch;$('#launchQrBtn').onclick=()=>renderQrCodes('launchView');$('#launchCloudBtn').onclick=()=>typeof quickSharePhones==='function'?quickSharePhones():null;$('#configPrintArticlesBtn').onclick=printArticleNumbers;$('#configEmailArticlesBtn').onclick=emailArticleNumbersPdf;$('#configPreparePhonesBtn').onclick=preparePhonesFromConfig;$('#configQrBtn').onclick=openConfigQrCodes;$('#configEmailQrPdfBtn').onclick=sendQrPdfFromConfig;$('#juryChooserBackBtn').onclick=renderHome;$('#projectionBackBtn').onclick=returnFromProjection;$('#projectionPrevBtn').onclick=()=>setProjectionSlide(projectionSlideIndex-1);$('#projectionNextBtn').onclick=()=>setProjectionSlide(projectionSlideIndex+1);$('#projectionPauseBtn').onclick=toggleProjectionRotation;$('#projectionFullscreenBtn').onclick=toggleProjectionFullscreen;$('#exitTesterPreviewBtn').onclick=exitTesterPreview;
 $('#closeJuryBtn').onclick=closeJuryOfficially;$('#resultsCloseJuryBtn').onclick=closeJuryOfficially;
-$('#juryHomeBtn').onclick=renderHome;$('#juryQrBtn').onclick=openQrCodesFromJury;$('#juryProjectionBtn').onclick=openProjectionView;$('#juryTesterPreviewBtn').onclick=startTesterPreview;$('#juryResultsBtn').onclick=()=>openSimplifiedResults();$('#juryShareBtn').onclick=()=>typeof renderCloudPage==='function'?renderCloudPage():null;$('#resultsBtn').onclick=()=>openResultsArchiveHub();$('#backupBtn').onclick=backup;$('#restoreBtn').onclick=()=>$('#restoreFile').click();$('#restoreFile').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value=''};
+$('#juryHomeBtn').onclick=renderHome;$('#juryQrBtn').onclick=openQrCodesFromJury;$('#juryProjectionBtn').onclick=openProjectionView;$('#juryTesterPreviewBtn').onclick=startTesterPreview;$('#juryResultsBtn').onclick=()=>openSimplifiedResults();$('#juryShareBtn').onclick=()=>typeof renderCloudPage==='function'?renderCloudPage():null;$('#resultsBtn').onclick=()=>openSimplifiedResults();$('#homeArchivesMiniBtn').onclick=()=>renderArchives();$('#backupBtn').onclick=backup;$('#restoreBtn').onclick=()=>$('#restoreFile').click();$('#restoreFile').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value=''};
 $('#sampleAddProductBtn')?.addEventListener('click',addSetupProduct);$('#sampleAddSupplierBtn')?.addEventListener('click',addSetupSupplier);$('#sampleSetupBackBtn').onclick=renderHome;$('#homeReceptionBtn').onclick=openReceptionFromHome;$('#homeReceptionHistoryBtn').onclick=openReceptionHistoryFromHome;$('#homeProductSheetsBtnV174').onclick=openProductSheetsFromHomeV174;$('#productLotCancelV174').onclick=closeProductLotModalV174;$('#receptionLotCancelBtn').onclick=closeReceptionLotPicker;$('#receptionHistoryCancelBtn').onclick=closeReceptionHistoryPicker;$('#configReceptionBtn').onclick=()=>openReceptionView(-1);$('#receptionBackBtn').onclick=closeReceptionView;$('#receptionChangeLotBtn').onclick=changeReceptionLot;$('#receptionNewBtn').onclick=newReceptionForm;$('#receptionPrintBtn').onclick=printReceptionPaper;$('#receptionPdfBtn').onclick=downloadReceptionPaperPdf;$('#receptionSaveBtn').onclick=saveReceptionForm;$('#clearReceptionSignature').onclick=()=>clearSignature('receptionSignature');$('#sampleSetupContinueBtn').onclick=()=>commitSampleMaster({continueToJury:true});$('#cancelConfigTopBtn').onclick=cancelCreateJury;$('#addProductBtn').onclick=addProduct;$('#blankTestBtn').onclick=showBlankLotEntry;$('#blankLotConfirmBtn').onclick=createBlankDraftFromName;$('#blankLotName').addEventListener('keydown',e=>{if(e.key==='Enter')createBlankDraftFromName()});$('#marketLotSelect').onchange=updateMarketLotInfo;$('#useMarketLotBtn').onclick=()=>flashCreateButton($('#useMarketLotBtn'),'✓ CRÉATION EN COURS…',prepareMarketLot);$('#customTemplateSelect').onchange=updateCustomTemplateButtons;$('#useCustomTemplateBtn').onclick=useCustomTemplate;$('#addCustomToMarketBtn').onclick=addSelectedCustomTemplateToMarket;$('#saveCustomTemplateBtn').onclick=saveCurrentDraftAsCustomTemplate;$('#deleteCustomTemplateBtn').onclick=deleteCustomTemplate;$('#useArchiveTemplateBtn').onclick=useArchiveTemplate;const testerCountInput=$('#cfgTesterCount');
 const syncTesterCountFromField=()=>{
   if(!draftConfig)return;
@@ -8783,5 +8783,5 @@ testerCountInput.onchange=syncTesterCountFromField;$('#cfgLotName').oninput=()=>
 $('#closeConfigPreviewBtn').onclick=closeConfigPreview;
 $('#configPreviewModal').onclick=e=>{if(e.target.id==='configPreviewModal')closeConfigPreview()};
 $('#testerHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#bottomHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#testerSelect').onchange=e=>{currentTester=Number(e.target.value);renderSample()};$('#productSelect').onchange=e=>{const targetPid=e.target.value;const target=getProduct(targetPid)?.samples?.[0];if(!target){e.target.value=currentProduct;return}if(!goToSample(targetPid,target.id))e.target.value=currentProduct};$('#sampleSelect').onchange=e=>{const target=e.target.value;if(!goToSample(currentProduct,target))e.target.value=currentSample};$('#prevSample').onclick=()=>moveSample(-1);$('#nextSample').onclick=()=>moveSample(1);
-$('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#productSheetsBtn').onclick=()=>openProductSheets();$('#productSheetsBackBtn').onclick=()=>closeProductSheets();$('#productSheetsHomeBtn').onclick=()=>{captureProductSheetForm();saveState();renderHome()};$('#saveProductSheetsBtn').onclick=()=>saveProductSheets();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsArchiveBtn').onclick=()=>archiveCurrentJury();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>openResultsArchiveHub();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
+$('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#productSheetsBtn').onclick=()=>openProductSheets();$('#productSheetsBackBtn').onclick=()=>closeProductSheets();$('#productSheetsHomeBtn').onclick=()=>{captureProductSheetForm();saveState();renderHome()};$('#saveProductSheetsBtn').onclick=()=>saveProductSheets();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsArchiveBtn').onclick=()=>archiveCurrentJury();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>renderHome();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
 renderHome();
