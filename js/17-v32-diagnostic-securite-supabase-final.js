@@ -77,8 +77,6 @@ async function ensurePhoneShareCredentials(){
       }catch(e){console.warn('Déconnexion ancienne session non bloquante',e)}
       delete state.config._shareSessionId;
       delete state.config._phoneShareSignature;
-      delete state.config.juryLaunch;
-      delete state.config.juryClose;
     }
     state.config.security.adminTokenHash=currentTokenHash;
     setStoredAdminToken(token);
