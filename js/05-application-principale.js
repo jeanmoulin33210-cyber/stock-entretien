@@ -337,7 +337,7 @@ function dedupePreparedJurysV238(rows){
   return [...byKey.values(),...withoutKey]
     .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
 }
-function rawSupplierNamesV259(cfg){
+function rawSupplierNamesV260(cfg){
   const out=[],seen=new Set();
   const add=v=>{
     const raw=String(v||'').trim();
@@ -353,7 +353,7 @@ function rawSupplierNamesV259(cfg){
     (Array.isArray(p?.samples)?p.samples:[]).forEach(s=>add(s?.supplier))
   );
 
-  /* V259 — les fiches produits gardent leur fournisseur même si la liste
+  /* V260 — les fiches produits gardent leur fournisseur même si la liste
      générale ou l'échantillon a été perdu lors d'une reprise cloud. */
   const sheets=cfg?.productSheets&&typeof cfg.productSheets==='object'
     ?Object.values(cfg.productSheets):[];
@@ -366,7 +366,7 @@ function rawSupplierNamesV259(cfg){
   return out;
 }
 
-function healSampleSuppliersFromProductSheetsV259(cfg){
+function healSampleSuppliersFromProductSheetsV260(cfg){
   if(!cfg||typeof cfg!=='object'||!cfg.productSheets||typeof cfg.productSheets!=='object')return false;
   let changed=false;
   const products=Array.isArray(cfg.products)?cfg.products:[];
@@ -399,10 +399,10 @@ function supplierNamesFromConfigV252(cfg){
     seen.add(key);out.push(raw);
   };
 
-  rawSupplierNamesV259(cfg).forEach(add);
+  rawSupplierNamesV260(cfg).forEach(add);
 
-  if(!out.length && typeof recoverSupplierNamesFromBackupsV259==='function'){
-    try{recoverSupplierNamesFromBackupsV259(cfg).forEach(add)}catch(e){}
+  if(!out.length && typeof recoverSupplierNamesFromBackupsV260==='function'){
+    try{recoverSupplierNamesFromBackupsV260(cfg).forEach(add)}catch(e){}
   }
   return out;
 }
@@ -412,7 +412,7 @@ function healSupplierNamesV252(cfg){
   let changed=false;
 
   try{
-    if(healSampleSuppliersFromProductSheetsV259(cfg))changed=true;
+    if(healSampleSuppliersFromProductSheetsV260(cfg))changed=true;
   }catch(e){}
 
   const names=supplierNamesFromConfigV252(cfg);
@@ -1331,7 +1331,7 @@ function receptionSupplierNames(cfg=receptionConfig()){
   return [...new Set(names)];
 }
 
-function supplierBackupMatchV259(target,source){
+function supplierBackupMatchV260(target,source){
   if(!target||!source)return false;
 
   const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
@@ -1363,7 +1363,7 @@ function supplierBackupMatchV259(target,source){
   return overlap>0 && overlap===Math.min(tp.size,sp.size);
 }
 
-function recoverSupplierNamesFromBackupsV259(cfg){
+function recoverSupplierNamesFromBackupsV260(cfg){
   const states=[];
   const push=st=>{if(st?.config)states.push(st.config)};
 
@@ -1400,10 +1400,69 @@ function recoverSupplierNamesFromBackupsV259(cfg){
   };
 
   for(const source of states){
-    if(!supplierBackupMatchV259(cfg,source))continue;
-    rawSupplierNamesV259(source).forEach(add);
+    if(!supplierBackupMatchV260(cfg,source))continue;
+    rawSupplierNamesV260(source).forEach(add);
   }
+
+  /* V260 — source prioritaire supplémentaire : "Choix des échantillons".
+     Les noms des fournisseurs sont conservés séparément dans les métadonnées
+     du lot, même quand les échantillons ont perdu leur champ supplier. */
+  try{
+    const meta=loadSampleMasterMeta();
+    const pseudo={
+      lotNumber:meta?.lotNumber||'',
+      lotTitle:meta?.lotTitle||'',
+      lotName:lotNameFromSampleMeta(meta),
+      supplierNames:Array.isArray(meta?.supplierNames)?meta.supplierNames:[],
+      products:loadSampleProducts()
+    };
+    if(supplierBackupMatchV260(cfg,pseudo)){
+      (meta?.supplierNames||[]).forEach(add);
+    }
+  }catch(e){}
+
+  /* Historique des lots créés dans "Choix des échantillons". */
+  try{
+    for(const rec of loadSampleLotHistory()){
+      const meta=rec?.meta||{};
+      const pseudo={
+        lotNumber:meta.lotNumber||'',
+        lotTitle:meta.lotTitle||'',
+        lotName:rec?.lotName||lotNameFromSampleMeta(meta),
+        supplierNames:Array.isArray(meta.supplierNames)?meta.supplierNames:[],
+        products:Array.isArray(rec?.products)?rec.products:[]
+      };
+      if(!supplierBackupMatchV260(cfg,pseudo))continue;
+      (meta.supplierNames||[]).forEach(add);
+    }
+  }catch(e){}
+
   return out;
+}
+
+function addManualReceptionSupplierV260(cfg,name){
+  if(!cfg||typeof cfg!=='object')return '';
+  const clean=String(name||'').trim();
+  if(!clean)return '';
+
+  const list=(Array.isArray(cfg.supplierNames)?cfg.supplierNames:[])
+    .map(x=>String(x||'').trim()).filter(Boolean);
+  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  if(!list.some(x=>norm(x)===norm(clean)))list.push(clean);
+
+  cfg.supplierNames=list;
+  cfg.supplierResponseCount=list.length;
+
+  try{
+    if(cfg===state?.config){
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt){
+        upsertPreparedJury(state);
+      }
+    }
+  }catch(e){}
+
+  return clean;
 }
 
 function receptionConfiguredSupplierNames(cfg=receptionConfig()){
@@ -2219,9 +2278,34 @@ function renderReceptionForm(){
   const suppliers=receptionConfiguredSupplierNames(cfg);
   const selected=String(receptionDraft.supplier||'');
   if(supplierInput){
-    supplierInput.innerHTML='<option value="">— Choisir le fournisseur —</option>'+
-      suppliers.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('');
-    supplierInput.value=suppliers.includes(selected)?selected:'';
+    supplierInput.innerHTML=
+      '<option value="">— Choisir le fournisseur —</option>'+
+      suppliers.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')+
+      '<option value="__manual_supplier_v260__">✏️ Saisir un fournisseur manuellement…</option>';
+
+    if(selected && !suppliers.includes(selected)){
+      supplierInput.insertAdjacentHTML('beforeend',
+        `<option value="${escapeHtml(selected)}">${escapeHtml(selected)}</option>`);
+    }
+    supplierInput.value=selected||'';
+
+    supplierInput.onchange=()=>{
+      if(supplierInput.value!=='__manual_supplier_v260__')return;
+      const name=prompt('Nom du fournisseur :','');
+      if(!String(name||'').trim()){
+        supplierInput.value='';
+        return;
+      }
+      const clean=addManualReceptionSupplierV260(cfg,name);
+      if(!clean){
+        supplierInput.value='';
+        return;
+      }
+      receptionDraft.supplier=clean;
+      renderReceptionForm();
+      const refreshed=$('#receptionSupplier');
+      if(refreshed)refreshed.value=clean;
+    };
   }
 
   const lines=$('#receptionLines');
