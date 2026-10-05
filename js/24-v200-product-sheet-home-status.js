@@ -1,10 +1,10 @@
-/* v207 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
+/* v252 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
 (function(){
   function sheetLots(){
-    if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
+    if(localStorage.getItem('jm_tc_lots_clean_mode_v252'))return [];
     try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
 
-    /* v207 — même périmètre que « Réception chauffeur » :
+    /* v252 — même périmètre que « Réception chauffeur » :
        uniquement les lots encore actifs. Les anciens jurys fermés / archivés
        ne doivent plus gonfler le compteur « Fiches à compléter ». */
     var prepared=(typeof loadPreparedJurys==='function') ? loadPreparedJurys() : [];
@@ -51,6 +51,12 @@
       try{ if(typeof productSheetsProgress==='function') prog=productSheetsProgress(st); }catch(e){}
       var key=(prog.total>0 && prog.filled>=prog.total) ? 'done' : (prog.filled>0 ? 'partial' : 'pending');
       var supplierCount=Array.isArray(item.suppliers) ? item.suppliers.length : Number(item.suppliers||0);
+      var firstIssue=null;
+      try{
+        var validation=(typeof productSheetsValidation==='function') ? productSheetsValidation(st) : null;
+        firstIssue=validation&&validation.issues&&validation.issues.length ? validation.issues[0] : null;
+      }catch(e){}
+
       return {
         id:String(item.id),
         current:isCurrent,
@@ -59,6 +65,9 @@
         suppliers:supplierCount,
         sheetTotal:Number(prog.total||0),
         sheetFilled:Number(prog.filled||0),
+        sheetMissing:Math.max(0,Number(prog.total||0)-Number(prog.filled||0)),
+        firstProductId:firstIssue?String(firstIssue.productId||''):'',
+        firstSampleId:firstIssue?String(firstIssue.sampleId||''):'',
         sheetStatus:key
       };
     }).filter(Boolean);
@@ -69,15 +78,17 @@
 
   function renderBadges(){
     var pending=pendingLots(), done=doneLots();
-    var a=document.getElementById('homeProductSheetsPendingBadgeV200');
-    var b=document.getElementById('homeProductSheetsDoneBadgeV200');
+    var missingCount=pending.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
+    var doneCount=done.reduce(function(sum,row){ return sum+Number(row.sheetFilled||0); },0);
+    var a=document.getElementById('homeProductSheetsPendingBadgeV252');
+    var b=document.getElementById('homeProductSheetsDoneBadgeV252');
     if(a){
-      a.textContent=String(pending.length);
-      a.title=pending.length ? pending.length+' lot'+(pending.length>1?'s':'')+' avec des fiches à compléter' : 'Aucune fiche produit à compléter';
+      a.textContent=String(missingCount);
+      a.title=missingCount ? missingCount+' fiche'+(missingCount>1?'s':'')+' produit à compléter' : 'Aucune fiche produit à compléter';
     }
     if(b){
-      b.textContent=String(done.length);
-      b.title=done.length ? done.length+' lot'+(done.length>1?'s':'')+' avec toutes les fiches produits terminées' : 'Aucune fiche produit terminée';
+      b.textContent=String(doneCount);
+      b.title=doneCount ? doneCount+' fiche'+(doneCount>1?'s':'')+' produit terminée'+(doneCount>1?'s':'') : 'Aucune fiche produit terminée';
     }
   }
 
@@ -113,7 +124,7 @@
     }).join('');
     list.querySelectorAll('[data-product-lot-v200]').forEach(function(btn){
       btn.onclick=function(){
-        var row=rows.find(function(r){return String(r.id)===String(btn.dataset.productLotV200);});
+        var row=rows.find(function(r){return String(r.id)===String(btn.dataset.productLotV252);});
         if(row && typeof openProductLotV174==='function') openProductLotV174(row);
       };
     });
@@ -126,10 +137,22 @@
       alert('Aucune fiche produit à compléter. Consultez « Fiches terminées » pour les fiches complètes.');
       return;
     }
+
+    var missingCount=rows.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
+
+    /* V252 — s'il ne reste qu'une seule fiche, aller directement dessus. */
+    if(missingCount===1){
+      var row=rows.find(function(r){ return Number(r.sheetMissing||0)>0; })||rows[0];
+      if(row && typeof openProductLotV174==='function'){
+        openProductLotV174(row);
+        return;
+      }
+    }
+
     showPicker(rows,'pending');
   };
 
-  window.openProductSheetsDoneFromHomeV200=function(){
+  window.openProductSheetsDoneFromHomeV252=function(){
     var rows=doneLots();
     if(!rows.length){
       alert('Aucune fiche produit terminée pour le moment.');
@@ -138,13 +161,13 @@
     showPicker(rows,'done');
   };
 
-  window.renderProductSheetHomeBadgesV200=renderBadges;
+  window.renderProductSheetHomeBadgesV252=renderBadges;
 
   function bindButtons(){
     var pending=document.getElementById('homeProductSheetsBtnV174');
-    var done=document.getElementById('homeProductSheetsDoneBtnV200');
+    var done=document.getElementById('homeProductSheetsDoneBtnV252');
     if(pending)pending.onclick=function(){window.openProductSheetsFromHomeV174();};
-    if(done)done.onclick=function(){window.openProductSheetsDoneFromHomeV200();};
+    if(done)done.onclick=function(){window.openProductSheetsDoneFromHomeV252();};
   }
 
   try{
