@@ -5933,18 +5933,57 @@ function setupSignatureCanvas(id,dataUrl){
   }else ctx.clearRect(0,0,canvas.width,canvas.height);
   if(canvas.dataset.bound==='1')return;
   canvas.dataset.bound='1';
-  let drawing=false,last=null;
+  let drawing=false,last=null,signatureScrollY=0;
+  const isReceptionSignature=id==='receptionSignature';
   const point=e=>{
     const r=canvas.getBoundingClientRect(),touch=e.touches?.[0]||e.changedTouches?.[0]||e;
     return{x:(touch.clientX-r.left)*(canvas.width/r.width),y:(touch.clientY-r.top)*(canvas.height/r.height)}
   };
-  const start=e=>{e.preventDefault();drawing=true;last=point(e);canvas.dataset.hasInk='1'};
-  const move=e=>{if(!drawing)return;e.preventDefault();const p=point(e);ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p};
-  const end=e=>{if(!drawing)return;e.preventDefault();drawing=false;last=null;scheduleClosureAutosave()};
-  canvas.addEventListener('pointerdown',start);canvas.addEventListener('pointermove',move);canvas.addEventListener('pointerup',end);canvas.addEventListener('pointercancel',end);canvas.addEventListener('pointerleave',end);
+  const start=e=>{
+    e.preventDefault();
+    drawing=true;
+    signatureScrollY=window.scrollY||window.pageYOffset||0;
+    last=point(e);
+    canvas.dataset.hasInk='1';
+    try{if(e.pointerId!=null)canvas.setPointerCapture(e.pointerId)}catch(err){}
+  };
+  const move=e=>{
+    if(!drawing)return;
+    e.preventDefault();
+    const p=point(e);
+    ctx.beginPath();ctx.moveTo(last.x,last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;
+  };
+  const end=e=>{
+    if(!drawing)return;
+    e.preventDefault();
+    drawing=false;last=null;
+    try{if(e.pointerId!=null&&canvas.hasPointerCapture?.(e.pointerId))canvas.releasePointerCapture(e.pointerId)}catch(err){}
+    if(isReceptionSignature){
+      /* V240 — la signature chauffeur reste exactement à l'endroit où elle a été faite.
+         On mémorise seulement l'image ; aucune clôture ni aucun rendu ne doit faire remonter la page. */
+      try{
+        if(receptionDraft)receptionDraft.driverSignature=signatureCanvasData('receptionSignature');
+      }catch(err){}
+      const y=signatureScrollY;
+      requestAnimationFrame(()=>{
+        if(Math.abs((window.scrollY||window.pageYOffset||0)-y)>2)window.scrollTo(0,y);
+      });
+      return;
+    }
+    scheduleClosureAutosave();
+  };
+  canvas.addEventListener('pointerdown',start);
+  canvas.addEventListener('pointermove',move);
+  canvas.addEventListener('pointerup',end);
+  canvas.addEventListener('pointercancel',end);
+  if(!isReceptionSignature)canvas.addEventListener('pointerleave',end);
 }
 function clearSignature(id){
   const c=document.getElementById(id);if(!c)return;c.getContext('2d').clearRect(0,0,c.width,c.height);c.dataset.hasInk='';
+  if(id==='receptionSignature'){
+    try{if(receptionDraft)receptionDraft.driverSignature=''}catch(e){}
+    return;
+  }
   scheduleClosureAutosave();
 }
 function closureReport(){
