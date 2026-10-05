@@ -2441,3 +2441,73 @@ table td{
   width:36px;
   height:23px;
 }
+
+
+/* V236 — accueil mobile : 4 petites cartes bien contenues sur 2 colonnes */
+@media(max-width:720px){
+  #homeView .home-quick-tools-v174{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:8px!important;
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+  }
+
+  /* Les deux groupes deviennent transparents pour obtenir un vrai quadrillage 2 x 2. */
+  #homeView .home-quick-tools-v174 > .home-quick-reception{
+    display:contents!important;
+  }
+
+  #homeView #homeReceptionBtn,
+  #homeView #homeReceptionHistoryBtn,
+  #homeView #homeProductSheetsBtnV174,
+  #homeView #homeProductSheetsDoneBtnV200{
+    min-width:0!important;
+    width:100%!important;
+    max-width:100%!important;
+    box-sizing:border-box!important;
+    padding:10px 9px!important;
+    gap:7px!important;
+    justify-content:flex-start!important;
+    overflow:hidden!important;
+  }
+
+  #homeView #homeReceptionBtn > span:not(.quick-icon):not(.home-reception-badge),
+  #homeView #homeReceptionHistoryBtn > span:not(.quick-icon):not(.home-reception-badge),
+  #homeView #homeProductSheetsBtnV174 > span:not(.quick-icon):not(.home-reception-badge),
+  #homeView #homeProductSheetsDoneBtnV200 > span:not(.quick-icon):not(.home-reception-badge){
+    min-width:0!important;
+    flex:1 1 auto!important;
+    overflow-wrap:anywhere;
+  }
+
+  #homeView .home-reception-btn .quick-icon,
+  #homeView .home-product-btn-v174 .quick-icon{
+    width:32px!important;
+    height:32px!important;
+    flex:0 0 32px!important;
+  }
+
+  #homeView .home-reception-btn strong,
+  #homeView .home-product-btn-v174 strong{
+    font-size:12px!important;
+    line-height:1.15!important;
+  }
+
+  #homeView .home-reception-btn span,
+  #homeView .home-product-btn-v174 span{
+    font-size:9px!important;
+    line-height:1.25!important;
+  }
+
+  #homeView .home-reception-badge{
+    margin-left:3px!important;
+    min-width:28px!important;
+    width:28px!important;
+    height:28px!important;
+    padding:0!important;
+    box-sizing:border-box!important;
+    flex:0 0 28px!important;
+    font-size:9px!important;
+  }
+}
