@@ -1,7 +1,7 @@
 /* v252 : compteurs fiches limités aux lots actifs (hors jurys fermés / archivés) */
 (function(){
   function sheetLots(){
-    if(localStorage.getItem('jm_tc_lots_clean_mode_v252'))return [];
+    if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
     try{ if(typeof ensureCurrentPrepSaved==='function') ensureCurrentPrepSaved(); }catch(e){}
 
     /* v252 — même périmètre que « Réception chauffeur » :
@@ -80,8 +80,8 @@
     var pending=pendingLots(), done=doneLots();
     var missingCount=pending.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
     var doneCount=done.reduce(function(sum,row){ return sum+Number(row.sheetFilled||0); },0);
-    var a=document.getElementById('homeProductSheetsPendingBadgeV252');
-    var b=document.getElementById('homeProductSheetsDoneBadgeV252');
+    var a=document.getElementById('homeProductSheetsPendingBadgeV200');
+    var b=document.getElementById('homeProductSheetsDoneBadgeV200');
     if(a){
       a.textContent=String(missingCount);
       a.title=missingCount ? missingCount+' fiche'+(missingCount>1?'s':'')+' produit à compléter' : 'Aucune fiche produit à compléter';
@@ -152,7 +152,7 @@
     showPicker(rows,'pending');
   };
 
-  window.openProductSheetsDoneFromHomeV252=function(){
+  window.openProductSheetsDoneFromHomeV200=function(){
     var rows=doneLots();
     if(!rows.length){
       alert('Aucune fiche produit terminée pour le moment.');
@@ -161,13 +161,13 @@
     showPicker(rows,'done');
   };
 
-  window.renderProductSheetHomeBadgesV252=renderBadges;
+  window.renderProductSheetHomeBadgesV200=renderBadges;
 
   function bindButtons(){
     var pending=document.getElementById('homeProductSheetsBtnV174');
-    var done=document.getElementById('homeProductSheetsDoneBtnV252');
+    var done=document.getElementById('homeProductSheetsDoneBtnV200');
     if(pending)pending.onclick=function(){window.openProductSheetsFromHomeV174();};
-    if(done)done.onclick=function(){window.openProductSheetsDoneFromHomeV252();};
+    if(done)done.onclick=function(){window.openProductSheetsDoneFromHomeV200();};
   }
 
   try{
