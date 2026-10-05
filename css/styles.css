@@ -2575,3 +2575,56 @@ body.live-fullscreen #liveDayView{max-width:none;padding:18px 24px}body.live-ful
     font-size:13px!important;
   }
 }
+
+
+/* V267 — Archives placé après les 4 boutons, même gabarit */
+.home-archive-after-tools{
+  max-width:760px;
+  margin:10px auto 2px;
+  display:flex;
+  justify-content:center;
+}
+.home-archive-after-tools .home-archive-final{
+  width:calc((100% - 10px)/2)!important;
+  min-height:132px!important;
+  padding:11px 16px!important;
+  border-radius:15px!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+}
+.home-archive-after-tools .home-archive-final .quick-icon{
+  width:35px!important;
+  height:35px!important;
+  border-radius:11px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:rgba(255,255,255,.18)!important;
+  font-size:19px!important;
+  flex:0 0 auto!important;
+}
+.home-archive-after-tools .home-archive-final strong{
+  display:block!important;
+  font-size:14px!important;
+  line-height:1.2!important;
+  color:#fff!important;
+}
+.home-archive-after-tools .home-archive-final > span:last-child > span{
+  display:block!important;
+  font-size:10px!important;
+  color:rgba(255,255,255,.76)!important;
+  margin-top:3px!important;
+  line-height:1.3!important;
+}
+@media(max-width:720px){
+  .home-archive-after-tools{
+    max-width:760px;
+  }
+  .home-archive-after-tools .home-archive-final{
+    width:calc((100% - 10px)/2)!important;
+    min-height:132px!important;
+    padding:11px 13px!important;
+  }
+  .home-archive-after-tools .home-archive-final strong{
+    font-size:13px!important;
+  }
+}
