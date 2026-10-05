@@ -59,8 +59,29 @@ async function ensurePhoneShareCredentials(){
     setStoredAdminToken(token);
   }
 
-  if(!state.config.security.adminTokenHash){
-    state.config.security.adminTokenHash=await secureHash('admin:'+token);
+  const currentTokenHash=await secureHash('admin:'+token);
+  const storedHash=String(state.config.security.adminTokenHash||'');
+  const previousSessionId=String(currentJuryShareSessionId?.()||state.config?._shareSessionId||'');
+
+  /* V239 — admin_token_mismatch :
+     une ancienne fiche de jury peut conserver le hash d'un autre navigateur.
+     Sans session cloud existante, le bon hash est celui du jeton admin local.
+     Si une ancienne session existe mais que le jeton ne correspond plus,
+     on détache uniquement cette ancienne session et on en recréera une neuve. */
+  if(!storedHash || storedHash!==currentTokenHash){
+    if(previousSessionId){
+      try{
+        if(cloudReady && cloudCfg?.sessionId===previousSessionId && typeof disconnectCloud==='function'){
+          await disconnectCloud();
+        }
+      }catch(e){console.warn('Déconnexion ancienne session non bloquante',e)}
+      delete state.config._shareSessionId;
+      delete state.config._phoneShareSignature;
+      delete state.config.juryLaunch;
+      delete state.config.juryClose;
+    }
+    state.config.security.adminTokenHash=currentTokenHash;
+    setStoredAdminToken(token);
   }
 
   ensureTesterCodes();
@@ -261,7 +282,13 @@ async function quickSharePhones(origin='launch'){
     }else{
       renderLaunchView();
     }
-    alert(`Le partage n’a pas pu être préparé. ${e?.message||e}`);
+    {
+      const raw=String(e?.message||e||'');
+      const friendly=/admin_token_mismatch/i.test(raw)
+        ?'L’ancienne autorisation administrateur de ce jury ne correspondait plus à cet appareil. Rechargez la page puis relancez « Préparer les téléphones » : une nouvelle session sécurisée sera créée automatiquement.'
+        :raw;
+      alert(`Le partage n’a pas pu être préparé. ${friendly}`);
+    }
   }
 }
 
