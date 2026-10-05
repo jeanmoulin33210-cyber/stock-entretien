@@ -2568,3 +2568,49 @@ table td{
     margin-left:0!important;
   }
 }
+
+
+/* V238 — nettoyage sûr des jurys actifs */
+.jury-choice-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+}
+.jury-choice-actions .jury-delete-active-v238{
+  border-color:#e5c4c4!important;
+  color:#8b3e3e!important;
+  background:#fff7f7!important;
+}
+.jury-chooser-bottom-v238{
+  display:flex;
+  flex-wrap:wrap;
+  justify-content:center;
+  align-items:center;
+  gap:9px;
+}
+.jury-chooser-bottom-v238 small{
+  flex-basis:100%;
+  text-align:center;
+  color:var(--muted);
+}
+.jury-clear-active-v238{
+  border-color:#e3b978!important;
+  background:#fff3df!important;
+  color:#8a5900!important;
+}
+@media(max-width:720px){
+  .jury-choice-actions{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+  .jury-choice-actions .btn{
+    width:100%!important;
+  }
+  .jury-chooser-bottom-v238{
+    display:grid!important;
+    grid-template-columns:1fr!important;
+  }
+  .jury-chooser-bottom-v238 .btn{
+    width:100%!important;
+  }
+}
