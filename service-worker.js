@@ -1,4 +1,4 @@
-const CACHE_NAME='tc-offline-v241-20261005';
+const CACHE_NAME='tc-offline-v242-20261005';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
@@ -32,7 +32,8 @@ const APP_SHELL=[
   './js/22-v162-verrou-global-de-la.js',
   './js/23-v197-home-tools-guard.js',
   './js/24-v200-product-sheet-home-status.js',
-  './js/25-protection-tactile.js'
+  './js/25-protection-tactile.js',
+  './js/26-v207-reinitialiser-les-lots.js'
 ];
 
 self.addEventListener('install',event=>{
