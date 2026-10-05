@@ -6126,14 +6126,19 @@ function syncReceptionIntoProductSheet(rec,d={}){
 function ensureProductSheetRecord(st,p,sm){
   const store=productSheetStore(st),k=productSheetKey(p.id,sm.id);
   const d=receptionDefaultsForSample(st,p,sm);
-  if(store[k])return syncReceptionIntoProductSheet(store[k],d);
+  if(store[k]){
+    const rec=syncReceptionIntoProductSheet(store[k],d);
+    /* V242 — si aucune observation n'est saisie, RAS est utilisé automatiquement. */
+    if(!String(rec.observations||'').trim())rec.observations='RAS';
+    return rec;
+  }
   store[k]={
     productId:p.id,sampleId:sm.id,supplier:sm.supplier||'',
     brand:'',characteristics:'',labeling:'',weight:'',
     technicalSheet:'',deliveryTempConformity:'',
     packagingConformity:d.packagingConformity||'',
     manufacturingDate:'',ddm:'',dlc:d.dlc||'',supplierLot:'',
-    deliveryTemp:d.deliveryTemp??'',observations:d.receptionObservations||''
+    deliveryTemp:d.deliveryTemp??'',observations:d.receptionObservations||'RAS'
   };
   return syncReceptionIntoProductSheet(store[k],d);
 }
@@ -6302,13 +6307,46 @@ function renderProductSheets(){
       </div>
     </article>`;
   }).join('');
-  box.innerHTML=`<section class="panel product-sheet-card"><h3>${escapeHtml(p.name||'Produit')}</h3><div class="sub">Une annexe produit regroupera tous les fournisseurs/échantillons ci-dessous.</div><div class="product-sheet-required-note">Tous les champs sont obligatoires pour le dossier final. Pour les dates, renseignez au moins <strong>la DDM ou la DLC</strong> : une seule des deux suffit. La date de fabrication est facultative. S’il n’y a aucune observation, écrivez « RAS ».</div>${rows||'<div class="results-empty">Aucun échantillon.</div>'}</section>`;
+  box.innerHTML=`<section class="panel product-sheet-card"><h3>${escapeHtml(p.name||'Produit')}</h3><div class="sub">Une annexe produit regroupera tous les fournisseurs/échantillons ci-dessous.</div><div class="product-sheet-required-note">Tous les champs sont obligatoires pour le dossier final. Pour les dates, renseignez au moins <strong>la DDM ou la DLC</strong> : une seule des deux suffit. La date de fabrication est facultative. S’il n’y a aucune observation, « RAS » est ajouté automatiquement.</div>${rows||'<div class="results-empty">Aucun échantillon.</div>'}</section>`;
   for(const sm of p.samples||[]){
     const card=findProductSheetCard(box,sm.id);if(!card)continue;
     const r=ensureProductSheetRecord(state,p,sm);
     for(const field of ['labeling','technicalSheet','deliveryTempConformity','packagingConformity']){
       const el=card.querySelector(`[data-ps-field="${field}"]`);if(el)el.value=r[field]||'';
     }
+
+    /* V242 — signaler clairement en rouge chaque champ obligatoire manquant. */
+    const missing=productSheetMissingFields(state,p,sm);
+    card.querySelectorAll('.field.missing-field').forEach(el=>el.classList.remove('missing-field'));
+    card.querySelector('.product-sheet-auto')?.classList.remove('missing-auto');
+
+    for(const item of missing){
+      if(item.key==='traceabilityDate'){
+        for(const key of ['ddm','dlc']){
+          card.querySelector(`[data-ps-field="${key}"]`)?.closest('.field')?.classList.add('missing-field');
+        }
+      }else if(item.key==='sensorResult'){
+        card.querySelector('.product-sheet-auto')?.classList.add('missing-auto');
+      }else{
+        card.querySelector(`[data-ps-field="${item.key}"]`)?.closest('.field')?.classList.add('missing-field');
+      }
+    }
+
+    /* Dès qu'une valeur est renseignée, le rouge disparaît sur le champ. */
+    card.querySelectorAll('[data-ps-field]').forEach(el=>{
+      const clearMissing=()=>{
+        const key=el.dataset.psField;
+        if((key==='ddm'||key==='dlc') && String(el.value||'').trim()){
+          for(const dateKey of ['ddm','dlc']){
+            card.querySelector(`[data-ps-field="${dateKey}"]`)?.closest('.field')?.classList.remove('missing-field');
+          }
+        }else if(String(el.value||'').trim()){
+          el.closest('.field')?.classList.remove('missing-field');
+        }
+      };
+      el.addEventListener('input',clearMissing);
+      el.addEventListener('change',clearMissing);
+    });
   }
 }
 function captureProductSheetForm(){
@@ -6318,6 +6356,12 @@ function captureProductSheetForm(){
     const card=findProductSheetCard(box,sm.id);if(!card)continue;
     const r=ensureProductSheetRecord(state,p,sm);
     card.querySelectorAll('[data-ps-field]').forEach(el=>{r[el.dataset.psField]=el.value??''});
+    /* V242 — Observations : vide = RAS automatiquement avant enregistrement. */
+    if(!String(r.observations||'').trim()){
+      r.observations='RAS';
+      const obs=card.querySelector('[data-ps-field="observations"]');
+      if(obs)obs.value='RAS';
+    }
   }
 }
 async function saveProductSheets(){
