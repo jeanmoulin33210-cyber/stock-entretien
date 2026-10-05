@@ -337,7 +337,7 @@ function dedupePreparedJurysV238(rows){
   return [...byKey.values(),...withoutKey]
     .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
 }
-function supplierNamesFromConfigV251(cfg){
+function supplierNamesFromConfigV252(cfg){
   const out=[],seen=new Set();
   const add=v=>{
     const raw=String(v||'').trim();
@@ -353,9 +353,9 @@ function supplierNamesFromConfigV251(cfg){
   (Array.isArray(cfg?.receptions)?cfg.receptions:[]).forEach(r=>add(r?.supplier));
   return out;
 }
-function healSupplierNamesV251(cfg){
+function healSupplierNamesV252(cfg){
   if(!cfg||typeof cfg!=='object')return false;
-  const names=supplierNamesFromConfigV251(cfg);
+  const names=supplierNamesFromConfigV252(cfg);
   if(!names.length)return false;
   const old=(Array.isArray(cfg.supplierNames)?cfg.supplierNames:[])
     .map(x=>String(x||'').trim()).filter(Boolean);
@@ -372,7 +372,7 @@ function loadPreparedJurys(){
     const clean=dedupePreparedJurysV238(rows);
     let supplierRepair=false;
     for(const rec of clean){
-      try{if(healSupplierNamesV251(rec?.state?.config))supplierRepair=true}catch(e){}
+      try{if(healSupplierNamesV252(rec?.state?.config))supplierRepair=true}catch(e){}
     }
     if(clean.length!==rows.length || supplierRepair){
       try{
@@ -1162,7 +1162,7 @@ function commitSampleMaster({continueToJury=false}={}){
       document.querySelector(`[data-setup-product-name="${pi}"]`)?.focus();return false;
     }
   }
-  /* V251 — un nouveau lot valide met fin au mode "lots remis à zéro". */
+  /* V252 — un nouveau lot valide met fin au mode "lots remis à zéro". */
   try{localStorage.removeItem('jm_tc_lots_clean_mode_v207')}catch(e){}
   const products=saveSampleProducts(sampleProductsSetupDraft);
   const firstName=products[0]?.name||'';
@@ -1384,10 +1384,10 @@ function productLotsV174(){
   if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
   const rows=[],seen=new Set();
   const cfg=state?.config||{};
-  try{healSupplierNamesV251(cfg)}catch(e){}
+  try{healSupplierNamesV252(cfg)}catch(e){}
   const curId=String(cfg._preparedId||'__current__');
 
-  if(cfg.products?.length && supplierNamesFromConfigV251(cfg).length){
+  if(cfg.products?.length && supplierNamesFromConfigV252(cfg).length){
     rows.push({
       id:curId,
       current:true,
@@ -1400,8 +1400,8 @@ function productLotsV174(){
 
   for(const rec of loadPreparedJurys()){
     const rcfg=rec?.state?.config||{};
-    try{healSupplierNamesV251(rcfg)}catch(e){}
-    if(!rcfg.products?.length || !supplierNamesFromConfigV251(rcfg).length)continue;
+    try{healSupplierNamesV252(rcfg)}catch(e){}
+    if(!rcfg.products?.length || !supplierNamesFromConfigV252(rcfg).length)continue;
     const id=String(rec.id||rcfg._preparedId||'');
     if(!id||seen.has(id))continue;
     rows.push({
@@ -1430,10 +1430,17 @@ function openProductLotV174(row){
   closeProductLotModalV174();
 
   if(row.current){
-    /* V251 — ouvrir directement le premier produit qui possède encore
-       au moins une fiche fournisseur incomplète. */
-    activeProductSheetId=firstIncompleteProductSheetId(state);
+    /* V252 — ouvrir directement la fiche réellement manquante indiquée
+       par l'accueil, sinon la première fiche incomplète. */
+    activeProductSheetId=row.firstProductId||firstIncompleteProductSheetId(state);
     openProductSheets();
+    if(row.firstSampleId){
+      setTimeout(()=>{
+        const box=$('#productSheetContent');
+        const card=box?findProductSheetCard(box,row.firstSampleId):null;
+        if(card)card.scrollIntoView({behavior:'smooth',block:'center'});
+      },120);
+    }
     return;
   }
 
@@ -1457,9 +1464,16 @@ function openProductLotV174(row){
   currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';
   adminProduct=currentProduct;
   selectedAdminSample='';
-  /* V251 — même logique pour un lot préparé rechargé depuis l’accueil. */
-  activeProductSheetId=firstIncompleteProductSheetId(state);
+  /* V252 — même logique pour un lot préparé rechargé depuis l’accueil. */
+  activeProductSheetId=row.firstProductId||firstIncompleteProductSheetId(state);
   openProductSheets();
+  if(row.firstSampleId){
+    setTimeout(()=>{
+      const box=$('#productSheetContent');
+      const card=box?findProductSheetCard(box,row.firstSampleId):null;
+      if(card)card.scrollIntoView({behavior:'smooth',block:'center'});
+    },120);
+  }
 }
 function openProductSheetsFromHomeV174(){
   const rows=productLotsV174();
@@ -2353,10 +2367,10 @@ function prepareJuryChoices(){
     try{
       const cfg=rec.state.config||{};
       if(cfg?.juryClose?.closedAt)continue;
-      try{healSupplierNamesV251(cfg)}catch(e){}
+      try{healSupplierNamesV252(cfg)}catch(e){}
       const products=Array.isArray(cfg.products)?cfg.products:[];
       if(!products.length)continue;
-      if(!supplierNamesFromConfigV251(cfg).length)continue;
+      if(!supplierNamesFromConfigV252(cfg).length)continue;
       const id=String(rec.id||cfg._preparedId||'').trim();
       if(!id)continue;
       const signature=prepareJurySignatureFromConfig(cfg);
@@ -2951,22 +2965,22 @@ function phoneShareSignature(cfg){
   };
   return hashJson(payload)
 }
-function shareRecoveryNormV251(v){
+function shareRecoveryNormV252(v){
   return String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'')
     .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 }
-function shareRecoveryConfigKeyV251(cfg){
+function shareRecoveryConfigKeyV252(cfg){
   if(!cfg||typeof cfg!=='object')return '';
-  const lot=shareRecoveryNormV251(cfg.lotName||cfg.lotNumber||cfg.lotTitle||'');
+  const lot=shareRecoveryNormV252(cfg.lotName||cfg.lotNumber||cfg.lotTitle||'');
   const products=(Array.isArray(cfg.products)?cfg.products:[]).map(p=>{
-    const name=shareRecoveryNormV251(p?.name||'');
+    const name=shareRecoveryNormV252(p?.name||'');
     const samples=(Array.isArray(p?.samples)?p.samples:[])
-      .map(s=>shareRecoveryNormV251(s?.id||'')).filter(Boolean).sort().join(',');
+      .map(s=>shareRecoveryNormV252(s?.id||'')).filter(Boolean).sort().join(',');
     return name+'['+samples+']';
   }).filter(Boolean).sort().join('|');
   return [lot,products,Number(cfg.testerCount||0)].join('::');
 }
-function shareRecoverySameJuryV251(a,b){
+function shareRecoverySameJuryV252(a,b){
   if(!a||!b)return false;
   const ai=String(a?._juryInstanceId||a?.juryInstanceId||a?.juryLaunch?.instanceId||'').trim();
   const bi=String(b?._juryInstanceId||b?.juryInstanceId||b?.juryLaunch?.instanceId||'').trim();
@@ -2975,13 +2989,13 @@ function shareRecoverySameJuryV251(a,b){
   const ap=String(a?._preparedId||'').trim(),bp=String(b?._preparedId||'').trim();
   if(ap&&bp&&ap===bp)return true;
 
-  const ak=shareRecoveryConfigKeyV251(a),bk=shareRecoveryConfigKeyV251(b);
+  const ak=shareRecoveryConfigKeyV252(a),bk=shareRecoveryConfigKeyV252(b);
   return !!ak&&ak===bk;
 }
-function shareRecoverySessionIdV251(cfg){
+function shareRecoverySessionIdV252(cfg){
   return String(cfg?._shareSessionId||cfg?.juryLaunch?.sessionId||cfg?.shareSessionId||'').trim();
 }
-function shareRecoveryMergeV251(target,source,sid){
+function shareRecoveryMergeV252(target,source,sid){
   if(!target||!sid)return false;
   let changed=false;
 
@@ -3007,10 +3021,10 @@ function shareRecoveryMergeV251(target,source,sid){
   }
   return changed;
 }
-function recoverRunningPhoneShareLocalV251(cfg=state.config){
+function recoverRunningPhoneShareLocalV252(cfg=state.config){
   if(!cfg||!cfg.juryLaunch?.openedAt)return '';
 
-  const direct=shareRecoverySessionIdV251(cfg);
+  const direct=shareRecoverySessionIdV252(cfg);
   if(direct)return direct;
 
   const candidateConfigs=[];
@@ -3040,11 +3054,11 @@ function recoverRunningPhoneShareLocalV251(cfg=state.config){
   }catch(e){}
 
   for(const source of candidateConfigs){
-    if(!shareRecoverySameJuryV251(cfg,source))continue;
-    const sid=shareRecoverySessionIdV251(source);
+    if(!shareRecoverySameJuryV252(cfg,source))continue;
+    const sid=shareRecoverySessionIdV252(source);
     if(!sid)continue;
 
-    shareRecoveryMergeV251(cfg,source,sid);
+    shareRecoveryMergeV252(cfg,source,sid);
     if(cfg===state.config){
       try{
         if(typeof originalSaveState==='function')originalSaveState();
@@ -3061,13 +3075,13 @@ function recoverRunningPhoneShareLocalV251(cfg=state.config){
   return '';
 }
 
-function repairRunningPhoneShareMetadataV251(cfg=state.config){
+function repairRunningPhoneShareMetadataV252(cfg=state.config){
   if(!cfg||!cfg.juryLaunch?.openedAt)return false;
 
   let sid=String(cfg._shareSessionId||cfg.juryLaunch?.sessionId||'').trim();
 
   if(!sid){
-    try{sid=recoverRunningPhoneShareLocalV251(cfg)||''}catch(e){}
+    try{sid=recoverRunningPhoneShareLocalV252(cfg)||''}catch(e){}
   }
 
   /* Si le jury est déjà reconnecté en administrateur, la session cloud courante
@@ -3125,7 +3139,7 @@ function repairRunningPhoneShareMetadataV251(cfg=state.config){
 }
 
 function phoneSharePrepared(cfg=state.config){
-  try{repairRunningPhoneShareMetadataV251(cfg)}catch(e){}
+  try{repairRunningPhoneShareMetadataV252(cfg)}catch(e){}
   return !!(
     cfg &&
     cfg._shareSessionId &&
@@ -3141,7 +3155,7 @@ function phoneShareNeedsRefresh(cfg=state.config){
   )
 }
 function currentJuryShareSessionId(){
-  try{recoverRunningPhoneShareLocalV251(state.config)}catch(e){}
+  try{recoverRunningPhoneShareLocalV252(state.config)}catch(e){}
   return String(state.config?._shareSessionId||state.config?.juryLaunch?.sessionId||'');
 }
 function launchShareReady(){
@@ -3720,17 +3734,17 @@ async function openQrCodesFromJury(){
       btn.textContent='⏳ QR codes…';
     }
 
-    /* V251 — rechercher d'abord l'ancienne session dans toutes les sauvegardes
+    /* V252 — rechercher d'abord l'ancienne session dans toutes les sauvegardes
        locales du même jury. Aucun nouveau QR n'est créé ici. */
-    try{recoverRunningPhoneShareLocalV251(state.config)}catch(e){}
-    try{repairRunningPhoneShareMetadataV251(state.config)}catch(e){}
+    try{recoverRunningPhoneShareLocalV252(state.config)}catch(e){}
+    try{repairRunningPhoneShareMetadataV252(state.config)}catch(e){}
 
-    if(!phoneSharePrepared(state.config) && typeof recoverRunningShareSessionFromCloudV251==='function'){
-      await recoverRunningShareSessionFromCloudV251();
+    if(!phoneSharePrepared(state.config) && typeof recoverRunningShareSessionFromCloudV252==='function'){
+      await recoverRunningShareSessionFromCloudV252();
     }
 
     if(!phoneSharePrepared(state.config)){
-      if(typeof createReplacementRunningQrSessionV251!=='function'){
+      if(typeof createReplacementRunningQrSessionV252!=='function'){
         throw new Error('L’ancienne session QR de ce jury n’a pas pu être retrouvée.');
       }
 
@@ -3742,7 +3756,7 @@ async function openQrCodesFromJury(){
       );
       if(!ok)return;
 
-      await createReplacementRunningQrSessionV251();
+      await createReplacementRunningQrSessionV252();
       renderQrCodes('juryView');
       return;
     }
@@ -3943,7 +3957,7 @@ function renderJuryView(){
     closeBtn.disabled=!ready||isJuryClosed();
   }
 }
-function openConfig(){if(isJuryClosed()){dashboardNewJury();return}try{if(healSupplierNamesV251(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV251(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig()}
+function openConfig(){if(isJuryClosed()){dashboardNewJury();return}try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig()}
 function renderConfig(){
   const c=draftConfig;
   c.criteria=normalizeCriteria(c.criteria);
@@ -6388,7 +6402,7 @@ function ensureProductSheetRecord(st,p,sm){
   const d=receptionDefaultsForSample(st,p,sm);
   if(store[k]){
     const rec=syncReceptionIntoProductSheet(store[k],d);
-    /* V251 — si aucune observation n'est saisie, RAS est utilisé automatiquement. */
+    /* V252 — si aucune observation n'est saisie, RAS est utilisé automatiquement. */
     if(!String(rec.observations||'').trim())rec.observations='RAS';
     return rec;
   }
@@ -6437,7 +6451,7 @@ function productSheetMissingFields(st,p,sm){
   if(!String(r.ddm||'').trim() && !String(r.dlc||'').trim()){
     missing.push({key:'traceabilityDate',label:'Au moins une date : DDM ou DLC'});
   }
-  /* V251 — le résultat sensoriel est repris automatiquement du jury.
+  /* V252 — le résultat sensoriel est repris automatiquement du jury.
      Ce n'est pas un champ à saisir : il ne doit donc jamais compter comme
      élément manquant ni bloquer la fiche produit. */
   return missing;
@@ -6576,7 +6590,7 @@ function renderProductSheets(){
       const el=card.querySelector(`[data-ps-field="${field}"]`);if(el)el.value=r[field]||'';
     }
 
-    /* V251 — signaler clairement en rouge chaque champ obligatoire manquant. */
+    /* V252 — signaler clairement en rouge chaque champ obligatoire manquant. */
     const missing=productSheetMissingFields(state,p,sm);
     card.querySelectorAll('.field.missing-field').forEach(el=>el.classList.remove('missing-field'));
     card.querySelector('.product-sheet-auto')?.classList.remove('missing-auto');
@@ -6615,7 +6629,7 @@ function captureProductSheetForm(){
     const card=findProductSheetCard(box,sm.id);if(!card)continue;
     const r=ensureProductSheetRecord(state,p,sm);
     card.querySelectorAll('[data-ps-field]').forEach(el=>{r[el.dataset.psField]=el.value??''});
-    /* V251 — Observations : vide = RAS automatiquement avant enregistrement. */
+    /* V252 — Observations : vide = RAS automatiquement avant enregistrement. */
     if(!String(r.observations||'').trim()){
       r.observations='RAS';
       const obs=card.querySelector('[data-ps-field="observations"]');
@@ -6651,7 +6665,7 @@ async function saveProductSheets(){
     return;
   }
 
-  /* V251 — sur la dernière fiche seulement, si tout le dossier produit est
+  /* V252 — sur la dernière fiche seulement, si tout le dossier produit est
      complet, Enregistrer ramène directement à l’accueil. */
   if(currentComplete && currentIndex===products.length-1 && validation.ok){
     renderHome();
