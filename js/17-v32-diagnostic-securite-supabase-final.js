@@ -94,7 +94,7 @@ async function ensurePhoneShareCredentials(){
   return true;
 }
 
-async function recoverRunningShareFromCachedAuthV254(){
+async function recoverRunningShareFromCachedAuthV255(){
   const cfg=state?.config;
   if(!cfg||!cfg.juryLaunch?.openedAt)return false;
   if(!window.supabase?.createClient)return false;
@@ -146,11 +146,11 @@ async function recoverRunningShareFromCachedAuthV254(){
           .maybeSingle();
         if(remoteError||!remote?.config)continue;
 
-        if(typeof shareRecoverySameJuryV254==='function' &&
-           !shareRecoverySameJuryV254(cfg,remote.config))continue;
+        if(typeof shareRecoverySameJuryV255==='function' &&
+           !shareRecoverySameJuryV255(cfg,remote.config))continue;
 
-        if(typeof shareRecoveryMergeV254==='function'){
-          shareRecoveryMergeV254(cfg,remote.config,sid);
+        if(typeof shareRecoveryMergeV255==='function'){
+          shareRecoveryMergeV255(cfg,remote.config,sid);
         }else{
           cfg._shareSessionId=sid;
           if(cfg.juryLaunch?.openedAt)cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:sid};
@@ -168,8 +168,8 @@ async function recoverRunningShareFromCachedAuthV254(){
         cloudReady=true;
 
         try{
-          if(typeof rememberRecoveredAuthStorageKeyV254==='function'){
-            rememberRecoveredAuthStorageKeyV254(sid,storageKey);
+          if(typeof rememberRecoveredAuthStorageKeyV255==='function'){
+            rememberRecoveredAuthStorageKeyV255(sid,storageKey);
           }
         }catch(e){}
 
@@ -194,13 +194,13 @@ async function recoverRunningShareFromCachedAuthV254(){
   return false;
 }
 
-async function recoverRunningShareSessionFromCloudV254(){
+async function recoverRunningShareSessionFromCloudV255(){
   const cfg=state?.config;
   if(!cfg||!cfg.juryLaunch?.openedAt)return false;
 
   try{
-    if(typeof recoverRunningPhoneShareLocalV254==='function'){
-      const sid=recoverRunningPhoneShareLocalV254(cfg);
+    if(typeof recoverRunningPhoneShareLocalV255==='function'){
+      const sid=recoverRunningPhoneShareLocalV255(cfg);
       if(sid&&phoneSharePrepared(cfg))return true;
     }
   }catch(e){}
@@ -227,7 +227,7 @@ async function recoverRunningShareSessionFromCloudV254(){
   try{addSid(new URLSearchParams(location.search).get('session'))}catch(e){}
 
   if(!candidates.length){
-    return await recoverRunningShareFromCachedAuthV254();
+    return await recoverRunningShareFromCachedAuthV255();
   }
 
   const previousCloud={
@@ -258,13 +258,13 @@ async function recoverRunningShareSessionFromCloudV254(){
         .maybeSingle();
       if(error||!data?.config)throw (error||new Error('Session introuvable'));
 
-      if(typeof shareRecoverySameJuryV254!=='function'||
-         !shareRecoverySameJuryV254(cfg,data.config)){
+      if(typeof shareRecoverySameJuryV255!=='function'||
+         !shareRecoverySameJuryV255(cfg,data.config)){
         throw new Error('Cette session appartient à un autre jury');
       }
 
-      if(typeof shareRecoveryMergeV254==='function'){
-        shareRecoveryMergeV254(cfg,data.config,sid);
+      if(typeof shareRecoveryMergeV255==='function'){
+        shareRecoveryMergeV255(cfg,data.config,sid);
       }else{
         cfg._shareSessionId=sid;
         if(cfg.juryLaunch?.openedAt)cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:sid};
@@ -301,10 +301,10 @@ async function recoverRunningShareSessionFromCloudV254(){
   cloudCfg.accessCode=previousCloud.accessCode;
   saveCloudCfg();
   setCloudStatus('local','● Hors ligne');
-  return await recoverRunningShareFromCachedAuthV254();
+  return await recoverRunningShareFromCachedAuthV255();
 }
 
-async function createReplacementRunningQrSessionV254(){
+async function createReplacementRunningQrSessionV255(){
   if(!state?.config?.juryLaunch?.openedAt){
     throw new Error('Ce jury n’est pas marqué comme étant en cours.');
   }
@@ -427,11 +427,11 @@ async function createReplacementRunningQrSessionV254(){
 }
 
 async function ensurePreparedShareConnected(){
-  /* V254 — un jury déjà lancé peut être repris après rechargement sans perdre
+  /* V255 — un jury déjà lancé peut être repris après rechargement sans perdre
      sa session QR. On restaure d'abord les métadonnées connues. */
   try{
-    if(typeof repairRunningPhoneShareMetadataV254==='function'){
-      repairRunningPhoneShareMetadataV254(state.config);
+    if(typeof repairRunningPhoneShareMetadataV255==='function'){
+      repairRunningPhoneShareMetadataV255(state.config);
     }
   }catch(e){}
 
