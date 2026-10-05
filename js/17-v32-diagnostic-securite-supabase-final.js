@@ -94,13 +94,113 @@ async function ensurePhoneShareCredentials(){
   return true;
 }
 
-async function recoverRunningShareSessionFromCloudV249(){
+async function recoverRunningShareFromCachedAuthV250(){
+  const cfg=state?.config;
+  if(!cfg||!cfg.juryLaunch?.openedAt)return false;
+  if(!window.supabase?.createClient)return false;
+
+  const authKeys=[];
+  try{
+    for(let i=0;i<localStorage.length;i++){
+      const k=localStorage.key(i);
+      if(k&&k.startsWith('jm-tc-auth-'))authKeys.push(k);
+    }
+  }catch(e){}
+
+  if(!authKeys.length)return false;
+
+  const url=String(cloudCfg?.url||DEFAULT_SUPABASE_URL||'').trim();
+  const key=String(cloudCfg?.key||DEFAULT_SUPABASE_KEY||'').trim();
+  if(!url||!key)return false;
+
+  for(const storageKey of authKeys){
+    let tmp=null;
+    try{
+      tmp=window.supabase.createClient(url,key,{
+        auth:{
+          persistSession:true,
+          autoRefreshToken:true,
+          detectSessionInUrl:false,
+          storageKey
+        }
+      });
+
+      const {data:{session},error:sessionError}=await tmp.auth.getSession();
+      if(sessionError||!session?.user)continue;
+
+      /* Les règles RLS ne renvoient que les appartenances de cette identité. */
+      const {data:memberships,error:membershipError}=await tmp
+        .from('test_culinaire_memberships')
+        .select('session_id,role,tester_no')
+        .eq('role','admin');
+      if(membershipError||!Array.isArray(memberships)||!memberships.length)continue;
+
+      for(const membership of memberships){
+        const sid=String(membership?.session_id||'').trim();
+        if(!sid)continue;
+
+        const {data:remote,error:remoteError}=await tmp
+          .from('test_culinaire_sessions')
+          .select('session_id,config')
+          .eq('session_id',sid)
+          .maybeSingle();
+        if(remoteError||!remote?.config)continue;
+
+        if(typeof shareRecoverySameJuryV250==='function' &&
+           !shareRecoverySameJuryV250(cfg,remote.config))continue;
+
+        if(typeof shareRecoveryMergeV250==='function'){
+          shareRecoveryMergeV250(cfg,remote.config,sid);
+        }else{
+          cfg._shareSessionId=sid;
+          if(cfg.juryLaunch?.openedAt)cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:sid};
+          cfg._phoneShareSignature=phoneShareSignature(cfg);
+        }
+
+        cloudCfg.url=url;
+        cloudCfg.key=key;
+        cloudCfg.sessionId=sid;
+        cloudCfg.accessCode='';
+        cloudClient=tmp;
+        cloudUserId=session.user.id;
+        cloudRole='admin';
+        cloudTesterNo=null;
+        cloudReady=true;
+
+        try{
+          if(typeof rememberRecoveredAuthStorageKeyV250==='function'){
+            rememberRecoveredAuthStorageKeyV250(sid,storageKey);
+          }
+        }catch(e){}
+
+        saveCloudCfg();
+        await subscribeCloud();
+        originalSaveState();
+
+        try{
+          if(typeof upsertPreparedJury==='function'&&!cfg?.juryClose?.closedAt){
+            upsertPreparedJury(state);
+          }
+        }catch(e){}
+
+        setCloudStatus('online','● Partagé sécurisé');
+        toast('Session QR du jury retrouvée ✓');
+        return true;
+      }
+    }catch(e){
+      console.warn('Ancienne identité Supabase ignorée',storageKey,e);
+    }
+  }
+  return false;
+}
+
+async function recoverRunningShareSessionFromCloudV250(){
   const cfg=state?.config;
   if(!cfg||!cfg.juryLaunch?.openedAt)return false;
 
   try{
-    if(typeof recoverRunningPhoneShareLocalV249==='function'){
-      const sid=recoverRunningPhoneShareLocalV249(cfg);
+    if(typeof recoverRunningPhoneShareLocalV250==='function'){
+      const sid=recoverRunningPhoneShareLocalV250(cfg);
       if(sid&&phoneSharePrepared(cfg))return true;
     }
   }catch(e){}
@@ -126,7 +226,9 @@ async function recoverRunningShareSessionFromCloudV249(){
   }catch(e){}
   try{addSid(new URLSearchParams(location.search).get('session'))}catch(e){}
 
-  if(!candidates.length)return false;
+  if(!candidates.length){
+    return await recoverRunningShareFromCachedAuthV250();
+  }
 
   const previousCloud={
     url:String(cloudCfg?.url||''),
@@ -156,13 +258,13 @@ async function recoverRunningShareSessionFromCloudV249(){
         .maybeSingle();
       if(error||!data?.config)throw (error||new Error('Session introuvable'));
 
-      if(typeof shareRecoverySameJuryV249!=='function'||
-         !shareRecoverySameJuryV249(cfg,data.config)){
+      if(typeof shareRecoverySameJuryV250!=='function'||
+         !shareRecoverySameJuryV250(cfg,data.config)){
         throw new Error('Cette session appartient à un autre jury');
       }
 
-      if(typeof shareRecoveryMergeV249==='function'){
-        shareRecoveryMergeV249(cfg,data.config,sid);
+      if(typeof shareRecoveryMergeV250==='function'){
+        shareRecoveryMergeV250(cfg,data.config,sid);
       }else{
         cfg._shareSessionId=sid;
         if(cfg.juryLaunch?.openedAt)cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:sid};
@@ -199,15 +301,15 @@ async function recoverRunningShareSessionFromCloudV249(){
   cloudCfg.accessCode=previousCloud.accessCode;
   saveCloudCfg();
   setCloudStatus('local','● Hors ligne');
-  return false;
+  return await recoverRunningShareFromCachedAuthV250();
 }
 
 async function ensurePreparedShareConnected(){
-  /* V249 — un jury déjà lancé peut être repris après rechargement sans perdre
+  /* V250 — un jury déjà lancé peut être repris après rechargement sans perdre
      sa session QR. On restaure d'abord les métadonnées connues. */
   try{
-    if(typeof repairRunningPhoneShareMetadataV249==='function'){
-      repairRunningPhoneShareMetadataV249(state.config);
+    if(typeof repairRunningPhoneShareMetadataV250==='function'){
+      repairRunningPhoneShareMetadataV250(state.config);
     }
   }catch(e){}
 
