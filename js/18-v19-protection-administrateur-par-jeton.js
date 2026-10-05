@@ -63,7 +63,7 @@ function ownerDeviceShareUrl(){
   u.searchParams.delete('ownerToken');
   u.searchParams.delete('appBuild');
 
-  u.searchParams.set('appBuild','265');
+  u.searchParams.set('appBuild','266');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
@@ -368,7 +368,7 @@ currentBaseUrl=function(){
 }
 shareUrl=function(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','265');
+  u.searchParams.set('appBuild','266');
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
