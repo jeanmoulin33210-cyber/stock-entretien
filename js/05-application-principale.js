@@ -6513,20 +6513,65 @@ function occenaSupplierInlineHtmlV311(name){
   const value=occenaSupplierScoreV311(name);
   return `<div class="supplier-occena-v311"><span>OCCENA</span><div class="supplier-occena-entry-v312"><button type="button" data-occena-sign-v312="-" data-occena-sign-supplier-v312="${escapeHtml(name)}" aria-label="Mettre le score OCCENA en négatif">−</button><input type="text" inputmode="decimal" autocomplete="off" data-occena-supplier-score="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="—" aria-label="Score OCCENA ${escapeHtml(name)}"><button type="button" data-occena-sign-v312="+" data-occena-sign-supplier-v312="${escapeHtml(name)}" aria-label="Mettre le score OCCENA en positif">+</button></div></div>`;
 }
+function setOccenaSupplierScoreDraftV313(name,value){
+  const scores=occenaSupplierScoresV311();
+  const key=occenaSupplierKeyV311(name);
+  const clean=limitOccenaSupplierScoreV311(value);
+  if(clean)scores[key]=clean;
+  else delete scores[key];
+  state.config.occenaControl.updatedAt=new Date().toISOString();
+
+  /* V313 — pendant la frappe, écrire seulement l'état actif en local.
+     Pas de saveState(), pas de reprise du jury, pas de rendu : le clavier garde
+     le focus et Android ne remonte plus la page à chaque chiffre. */
+  try{
+    state.updatedAt=new Date().toISOString();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  }catch(e){}
+  return clean;
+}
+function rememberOccenaSupplierPositionV313(input){
+  const row=input?.closest('.supplier-card,.rank-card');
+  input.__occenaV313Y=window.scrollY||window.pageYOffset||0;
+  input.__occenaV313Top=row?row.getBoundingClientRect().top:null;
+}
+function restoreOccenaSupplierPositionV313(input){
+  if(!input)return;
+  const y=Number(input.__occenaV313Y||0);
+  const wanted=input.__occenaV313Top;
+  const restore=()=>{
+    const row=input.closest?.('.supplier-card,.rank-card');
+    if(row&&wanted!==null&&wanted!==undefined){
+      const now=row.getBoundingClientRect().top;
+      const delta=now-wanted;
+      if(Math.abs(delta)>2){window.scrollBy(0,delta);return;}
+    }
+    const cur=window.scrollY||window.pageYOffset||0;
+    if(Math.abs(cur-y)>2)window.scrollTo(0,y);
+  };
+  requestAnimationFrame(restore);
+  setTimeout(restore,30);
+  setTimeout(restore,90);
+  setTimeout(restore,180);
+}
 function bindOccenaSupplierScoresV311(root){
   (root||document).querySelectorAll('[data-occena-supplier-score]').forEach(input=>{
     if(input.__occenaV311Bound)return;
     input.__occenaV311Bound=true;
+    input.onfocus=()=>{
+      rememberOccenaSupplierPositionV313(input);
+    };
     input.oninput=()=>{
       const supplier=input.getAttribute('data-occena-supplier-score')||'';
-      const clean=limitOccenaSupplierScoreV311(input.value);
+      const clean=setOccenaSupplierScoreDraftV313(supplier,input.value);
       if(input.value!==clean)input.value=clean;
-      saveOccenaSupplierScoreV311(supplier,clean,false);
+      restoreOccenaSupplierPositionV313(input);
     };
     input.onchange=()=>{
       const supplier=input.getAttribute('data-occena-supplier-score')||'';
       const clean=saveOccenaSupplierScoreV311(supplier,input.value,true);
       input.value=clean;
+      restoreOccenaSupplierPositionV313(input);
       toast('Score OCCENA enregistré ✓');
     };
   });
@@ -6539,16 +6584,19 @@ function bindOccenaSupplierScoresV311(root){
       const wrap=btn.closest('.supplier-occena-v311');
       const input=wrap?.querySelector('[data-occena-supplier-score]');
       if(!input)return;
+      rememberOccenaSupplierPositionV313(input);
       let body=String(input.value||'').replace(/^[+\-]/,'');
       if(!body){
         input.focus();
         input.value=sign;
+        restoreOccenaSupplierPositionV313(input);
         return;
       }
       const clean=saveOccenaSupplierScoreV311(supplier,sign+body,true);
       document.querySelectorAll('[data-occena-supplier-score]').forEach(el=>{
         if((el.getAttribute('data-occena-supplier-score')||'')===supplier)el.value=clean;
       });
+      restoreOccenaSupplierPositionV313(input);
       if(typeof toast==='function')toast('Signe OCCENA '+(sign==='-'?'négatif':'positif')+' ✓');
     };
   });
