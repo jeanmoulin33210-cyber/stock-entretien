@@ -56,6 +56,19 @@
 
 
 
+<style id="occenaFinalScoreStyleV310">
+.occena-final-score-v310{margin-top:14px;display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 14px}
+.occena-final-score-copy-v310{display:flex;flex-direction:column;gap:3px}
+.occena-final-score-copy-v310 strong{font-size:14px;color:#173f5c}
+.occena-final-score-copy-v310 span{font-size:10px;color:#667b89}
+.occena-final-score-entry-v310{display:flex;align-items:center;gap:8px}
+.occena-final-score-entry-v310 input{width:92px;min-height:38px;text-align:center;font-size:18px;font-weight:900;border:1px solid #b9cbd6;border-radius:10px;background:#fff;color:#173f5c}
+.occena-final-score-entry-v310 input:disabled{background:#eef2f4;color:#8a979f}
+.occena-final-score-entry-v310 span{min-width:58px;font-size:10px;font-weight:850;color:#607786}
+.occena-final-score-v310.ready{border:2px solid #58a982;background:#f1fbf6}
+.occena-final-score-v310.ready .occena-final-score-entry-v310 span{color:#176b4d}
+@media(max-width:700px){.occena-final-score-v310{align-items:flex-start;flex-direction:column}.occena-final-score-entry-v310{width:100%}.occena-final-score-entry-v310 input{width:110px}}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v309</div>
@@ -1600,14 +1613,6 @@
 
     <div id="occenaControlContent"></div>
 
-    <div class="occena-global-box">
-      <div>
-        <strong>Score OCCENA global</strong>
-        <span>Saisie manuelle lorsque 5 fiches ont été contrôlées pour chaque fournisseur. Ce score apparaîtra à la fin du dossier, sans être utilisé dans les calculs.</span>
-      </div>
-      <input id="occenaGlobalScore" type="text" inputmode="decimal" placeholder="Ex. : -12,5" disabled>
-    </div>
-
     <div class="occena-actions">
       <span id="occenaSaveState">Enregistré</span>
       <button type="button" class="btn btn-secondary" id="saveOccenaControlBtn">💾 Enregistrer le contrôle OCCENA</button>
@@ -1679,6 +1684,17 @@
       <div id="sampleDetail"></div>
     </div>
   </section>
+  <section class="panel occena-final-score-v310" id="occenaFinalScoreCardV310">
+    <div class="occena-final-score-copy-v310">
+      <strong>Score OCCENA</strong>
+      <span>Saisie manuelle · 4 chiffres maximum · informatif uniquement</span>
+    </div>
+    <div class="occena-final-score-entry-v310">
+      <input id="occenaGlobalScore" type="text" inputmode="decimal" autocomplete="off" placeholder="Ex. -12,5" aria-label="Score OCCENA">
+      <span id="occenaFinalScoreStateV310">À saisir</span>
+    </div>
+  </section>
+
   <section class="results-lower-grid">
     <div class="panel results-card">
       <div class="results-card-head"><div><h3>Avancement des testeurs</h3><p>Fiches complètes sur l’ensemble du jury.</p></div></div>
