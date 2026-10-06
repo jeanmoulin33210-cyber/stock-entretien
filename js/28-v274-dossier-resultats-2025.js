@@ -333,7 +333,7 @@
 
   // New dossier output.
   openJuryDossier=function(st,sourceLabel){
-    if(!st||!st.config||(st.config.products||[]).length===0){
+    if(!st||!st.config||((st.config.products||[]).length===0)){
       alert("Aucun jury à présenter dans le dossier.");
       return;
     }

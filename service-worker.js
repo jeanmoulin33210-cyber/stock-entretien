@@ -34,7 +34,7 @@ const APP_SHELL=[
   './js/24-v200-product-sheet-home-status.js',
   './js/25-protection-tactile.js',
   './js/26-v207-reinitialiser-les-lots.js',
-  './js/27-v272-outils-avances-pin.js',
+  './js/27-v274-outils-avances-pin.js',
   './js/28-v274-dossier-resultats-2025.js'
 ];
 
