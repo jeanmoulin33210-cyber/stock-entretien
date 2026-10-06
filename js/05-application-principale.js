@@ -6421,7 +6421,9 @@ function renderRanking(){
     $('#rankingTitle').textContent='Classement global fournisseurs';
     const rows=overallRanking();
     if(!rows.length){box.innerHTML='<div class="results-empty">Aucun résultat disponible.</div>';renderSampleDetail(null,null);return}
-    rows.forEach((r,i)=>box.insertAdjacentHTML('beforeend',`<div class="rank-card"><div class="rank-badge">${i+1}</div><div class="rank-main"><strong>${escapeHtml(r.supplier)}</strong><span>${r.samples} échantillon(s) · ${r.count} évaluation(s) complète(s)</span><div class="rank-progress"><i style="width:${Math.max(0,Math.min(100,r.avg/65*100))}%"></i></div></div><div class="rank-score"><strong>${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</strong><span>moy. /5</span></div></div>`));
+    ensureOccenaSupplierScoreStyleV311();
+    rows.forEach((r,i)=>box.insertAdjacentHTML('beforeend',`<div class="rank-card"><div class="rank-badge">${i+1}</div><div class="rank-main"><strong>${escapeHtml(r.supplier)}</strong><span>${r.samples} échantillon(s) · ${r.count} évaluation(s) complète(s)</span><div class="rank-progress"><i style="width:${Math.max(0,Math.min(100,r.avg/65*100))}%"></i></div></div><div class="rank-score"><strong>${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</strong><span>moy. /5</span></div>${occenaSupplierInlineHtmlV311(r.supplier)}</div>`));
+    bindOccenaSupplierScoresV311(box);
     renderSampleDetail(null,null);return;
   }
   const p=getProduct(adminProduct)||state.config.products[0];if(!p)return;
@@ -6453,10 +6455,90 @@ function overallRanking(){
 function supplierGlobalNote5(avg65){
   return Number(avg65||0)/13;
 }
+function occenaSupplierKeyV311(name){
+  return String(name||'')
+    .normalize('NFD').replace(/[\u0300-\u036f]/g,'')
+    .toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+}
+function occenaSupplierScoresV311(){
+  if(!state.config)state.config={};
+  if(!state.config.occenaControl||typeof state.config.occenaControl!=='object'){
+    state.config.occenaControl={items:{},globalScore:'',updatedAt:''};
+  }
+  if(!state.config.occenaControl.supplierScores||typeof state.config.occenaControl.supplierScores!=='object'){
+    state.config.occenaControl.supplierScores={};
+  }
+  return state.config.occenaControl.supplierScores;
+}
+function limitOccenaSupplierScoreV311(value){
+  let raw=String(value??'').replace(/\s+/g,'').replace(/[^0-9,.-]/g,'');
+  const neg=raw.startsWith('-');
+  raw=raw.replace(/-/g,'');
+  const m=raw.match(/^([^,.]*)([,.]?)(.*)$/);
+  let left=String(m?.[1]||'').replace(/\D/g,'');
+  const sep=String(m?.[2]||'');
+  let right=String(m?.[3]||'').replace(/\D/g,'');
+  const digits=(left+right).slice(0,5);
+  const leftCount=Math.min(left.length,digits.length);
+  left=digits.slice(0,leftCount);
+  right=digits.slice(leftCount);
+  let out=left;
+  if(sep&&right)out+=sep+right;
+  else if(sep&&left&&raw.endsWith(sep))out+=sep;
+  if(neg&&out)out='-'+out;
+  return out;
+}
+function occenaSupplierScoreV311(name){
+  return String(occenaSupplierScoresV311()[occenaSupplierKeyV311(name)]||'');
+}
+function saveOccenaSupplierScoreV311(name,value,sync=false){
+  const scores=occenaSupplierScoresV311();
+  const key=occenaSupplierKeyV311(name);
+  const clean=limitOccenaSupplierScoreV311(value);
+  if(clean)scores[key]=clean;
+  else delete scores[key];
+  state.config.occenaControl.updatedAt=new Date().toISOString();
+  saveState();
+  if(sync&&typeof syncDirtyToCloud==='function'){
+    Promise.resolve(syncDirtyToCloud()).catch(()=>{});
+  }
+  return clean;
+}
+function occenaSupplierInlineHtmlV311(name){
+  const value=occenaSupplierScoreV311(name);
+  return `<label class="supplier-occena-v311"><span>OCCENA</span><input type="text" inputmode="decimal" autocomplete="off" data-occena-supplier-score="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="—" aria-label="Score OCCENA ${escapeHtml(name)}"></label>`;
+}
+function bindOccenaSupplierScoresV311(root){
+  (root||document).querySelectorAll('[data-occena-supplier-score]').forEach(input=>{
+    if(input.__occenaV311Bound)return;
+    input.__occenaV311Bound=true;
+    input.oninput=()=>{
+      const supplier=input.getAttribute('data-occena-supplier-score')||'';
+      const clean=limitOccenaSupplierScoreV311(input.value);
+      if(input.value!==clean)input.value=clean;
+      saveOccenaSupplierScoreV311(supplier,clean,false);
+    };
+    input.onchange=()=>{
+      const supplier=input.getAttribute('data-occena-supplier-score')||'';
+      const clean=saveOccenaSupplierScoreV311(supplier,input.value,true);
+      input.value=clean;
+      toast('Score OCCENA enregistré ✓');
+    };
+  });
+}
+function ensureOccenaSupplierScoreStyleV311(){
+  if(document.getElementById('occenaSupplierScoreStyleV311'))return;
+  const s=document.createElement('style');
+  s.id='occenaSupplierScoreStyleV311';
+  s.textContent='.supplier-card{align-items:center}.supplier-occena-v311{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:76px}.supplier-occena-v311 span{font-size:9px;font-weight:850;letter-spacing:.04em;color:#6a7d89}.supplier-occena-v311 input{width:72px;padding:3px 2px;border:0;border-bottom:1px solid #b8c8d2;border-radius:0;background:transparent;text-align:center;font-size:15px;font-weight:900;color:#173f5c;outline:none}.supplier-occena-v311 input:focus{border-bottom-color:#173f5c}.rank-card .supplier-occena-v311{margin-left:8px}@media(max-width:700px){.supplier-occena-v311{min-width:62px}.supplier-occena-v311 input{width:58px;font-size:14px}}';
+  document.head.appendChild(s);
+}
 function renderOverall(){
   const b=$('#overallCards');if(!b)return;b.innerHTML='';const rows=overallRanking();
+  ensureOccenaSupplierScoreStyleV311();
   if(!rows.length){b.innerHTML='<div class="results-empty">Aucun résultat disponible.</div>';return}
-  rows.forEach((r,i)=>b.insertAdjacentHTML('beforeend',`<div class="supplier-card"><div class="supplier-rank">${i+1}</div><div class="supplier-main"><strong>${escapeHtml(r.supplier)}</strong><span>${r.samples} échantillon(s) · ${r.count} évaluation(s)</span></div><div class="supplier-score"><strong>${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</strong><span>moy. /5</span></div></div>`));
+  rows.forEach((r,i)=>b.insertAdjacentHTML('beforeend',`<div class="supplier-card"><div class="supplier-rank">${i+1}</div><div class="supplier-main"><strong>${escapeHtml(r.supplier)}</strong><span>${r.samples} échantillon(s) · ${r.count} évaluation(s)</span></div><div class="supplier-score"><strong>${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</strong><span>moy. /5</span></div>${occenaSupplierInlineHtmlV311(r.supplier)}</div>`));
+  bindOccenaSupplierScoresV311(b);
 }
 
 function collectRemarks(){
