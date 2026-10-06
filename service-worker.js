@@ -1,5 +1,5 @@
-/* v290 forced refresh */
-const CACHE_NAME='tc-offline-v290-20261006';
+/* v291 forced refresh */
+const CACHE_NAME='tc-offline-v291-20261006';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
@@ -38,7 +38,8 @@ const APP_SHELL=[
   './js/27-v274-outils-avances-pin.js',
   './js/28-v274-dossier-resultats-2025.js',
   './js/29-v275-correctif-impression-qr.js',
-  './js/30-v290-controle-occena.js'
+  './js/30-v290-controle-occena.js',
+  './js/31-v291-occena-a-faire.js'
 ];
 
 self.addEventListener('install',event=>{
