@@ -97,6 +97,67 @@
     s.textContent=".occena-control-card.occena-focus-v291{outline:3px solid rgba(13,99,143,.26);outline-offset:4px;transition:outline-color .35s ease}.occena-control-card.occena-complete-v304{border:2px solid #48a77a!important;background:#f1fbf6!important;box-shadow:0 0 0 3px rgba(72,167,122,.10)}.occena-control-card.occena-complete-v304 .occena-control-head strong{color:#176b4d}.occena-control-card.occena-complete-v304 .occena-progress-bar span{background:#48a77a!important}.simple-results-action-buttons .occena-step-complete-v304{display:inline-flex!important;background:#e8f6ef!important;border-color:#58a982!important;color:#176b4d!important;font-weight:850!important;box-shadow:0 0 0 2px rgba(72,167,122,.08)!important}";
     document.head.appendChild(s);
   }
+  function ensureJuryButtonV309(){
+    var box=document.querySelector(".simple-results-action-buttons");
+    if(!box)return null;
+    var btn=document.getElementById("simpleResultsJuryBtn");
+    if(!btn){
+      btn=document.createElement("button");
+      btn.type="button";
+      btn.className="btn btn-secondary";
+      btn.id="simpleResultsJuryBtn";
+      var closure=document.getElementById("simpleResultsClosureBtn");
+      if(closure)box.insertBefore(btn,closure);
+      else box.insertBefore(btn,box.firstChild);
+    }
+    if(!btn.__v309Bound){
+      btn.__v309Bound=true;
+      btn.onclick=function(){
+        try{
+          var total=typeof totalSamples==="function"?Number(totalSamples()||0):0;
+          var testers=Number(state?.config?.testerCount||0);
+          var max=total*testers;
+          var done=typeof totalCompleted==="function"?Number(totalCompleted()||0):0;
+          var validated=typeof validatedCount==="function"?Number(validatedCount()||0):0;
+          var ok=max>0&&done===max&&testers>0&&validated===testers;
+          if(typeof toast==="function"){
+            toast(ok
+              ?"Jury terminé : toutes les fiches et validations sont OK ✓"
+              :("Jury en cours : "+done+"/"+max+" fiches · "+validated+"/"+testers+" validations"));
+          }
+        }catch(e){}
+      };
+    }
+    return btn;
+  }
+
+  function updateJuryStateV309(){
+    if(typeof state==="undefined"||!state||!state.config)return;
+    var btn=ensureJuryButtonV309();
+    if(!btn)return;
+
+    var total=0,testers=Number(state.config.testerCount||0),done=0,validated=0;
+    try{if(typeof totalSamples==="function")total=Number(totalSamples()||0);}catch(e){}
+    try{if(typeof totalCompleted==="function")done=Number(totalCompleted()||0);}catch(e){}
+    try{if(typeof validatedCount==="function")validated=Number(validatedCount()||0);}catch(e){}
+    var max=total*testers;
+    var finished=max>0&&done===max&&testers>0&&validated===testers;
+
+    btn.style.display="";
+    btn.disabled=false;
+    btn.classList.remove("btn-primary","simple-results-next-btn");
+    btn.classList.add("btn-secondary");
+    btn.classList.toggle("occena-step-complete-v304",finished);
+
+    if(finished){
+      btn.textContent="✓ Jury terminé — OK";
+    }else if(max>0&&done===max){
+      btn.textContent="👥 Validations jury ("+validated+"/"+testers+")";
+    }else{
+      btn.textContent="👥 Jury en cours"+(max>0?" ("+done+"/"+max+")":"");
+    }
+  }
+
   function ensureReceptionButtonV306(){
     var box=document.querySelector(".simple-results-action-buttons");
     if(!box)return null;
@@ -222,6 +283,7 @@
     var hint=document.getElementById("simpleResultsHint");
     var m=metrics(state);
     var wf=workflowReady();
+    updateJuryStateV309();
     updateReceptionAndProductStatesV306();
     updateConclusionStateV307();
 
@@ -274,6 +336,7 @@
   function bind(){
     ensureStyle();
     ensureButton();
+    ensureJuryButtonV309();
     ensureReceptionButtonV306();
     ensureConclusionButtonV307();
     apply();
