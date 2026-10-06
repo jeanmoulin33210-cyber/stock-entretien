@@ -145,20 +145,39 @@
   function restoreOccenaPosition(){
     var token=occenaScrollLock.token;
     var y=occenaScrollLock.y;
+    var key=occenaScrollLock.key;
+    var wantedTop=occenaScrollLock.top;
 
-    /* V297 — filet de sécurité de position. Les statuts OCCENA utilisent
-       désormais des boutons fixes (plus de menu <select> natif Android). */
+    /* V298 — restauration par ancre de ligne.
+       Même si Android replace la page à 0 avant le clic, on retrouve la ligne
+       OCCENA et on la remet exactement à la hauteur où elle était sous le doigt. */
     function restore(){
       if(token!==occenaScrollLock.token)return;
+
+      var row=null;
+      if(key){
+        try{row=document.querySelector('[data-occena-row="'+CSS.escape(String(key))+'"]');}catch(e){}
+      }
+
+      if(row&&wantedTop!==null){
+        var currentTop=row.getBoundingClientRect().top;
+        var delta=currentTop-wantedTop;
+        if(Math.abs(delta)>2){
+          window.scrollBy(0,delta);
+          return;
+        }
+      }
+
       var current=window.scrollY||window.pageYOffset||0;
       if(Math.abs(current-y)>2)window.scrollTo(0,y);
     }
 
     requestAnimationFrame(restore);
-    setTimeout(restore,35);
-    setTimeout(restore,110);
-    setTimeout(restore,260);
-    setTimeout(restore,500);
+    setTimeout(restore,20);
+    setTimeout(restore,60);
+    setTimeout(restore,140);
+    setTimeout(restore,300);
+    setTimeout(restore,650);
   }
 
   function refreshWithoutRender(){
@@ -298,10 +317,12 @@
 
     box.querySelectorAll("[data-occena-status-value]").forEach(function(btn){
       btn.onpointerdown=function(){rememberOccenaPosition(btn);};
+      btn.setAttribute("tabindex","-1");
       btn.onclick=function(e){
         if(e&&typeof e.preventDefault==="function")e.preventDefault();
-        rememberOccenaPosition(btn);
 
+        /* La position a été mémorisée au pointerdown, avant tout déplacement
+           éventuel du navigateur. Ne jamais la réécrire ici. */
         var group=btn.closest("[data-occena-status]");
         var row=btn.closest("[data-occena-row]");
         var value=String(btn.getAttribute("data-occena-status-value")||"pending");
