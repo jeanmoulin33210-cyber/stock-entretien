@@ -7248,23 +7248,33 @@ function closeProductSheets(){captureProductSheetForm();saveState();renderAdmin(
 function productSheetAnnexHtml(st){
   const products=st?.config?.products||[];
   if(!products.length)return '';
-  const sections=[];
+  const out=[];
+
   products.forEach((p,pi)=>{
     const samples=p.samples||[];
     for(let offset=0;offset<samples.length;offset+=3){
       const group=samples.slice(offset,offset+3);
       const pageNo=Math.floor(offset/3)+1;
       const pageTotal=Math.max(1,Math.ceil(samples.length/3));
+
       const blocks=group.map(sm=>{
         const r=ensureProductSheetRecord(st,p,sm),ss=productSheetStats(st,p,sm);
         const yn=v=>v==='oui'?'OUI':v==='non'?'NON':'—';
         const labeling=r.labeling==='conforme'?'Conforme':r.labeling==='non-conforme'?'Non conforme':'—';
-        return `<article class="product-eval-card">
-          <div class="product-eval-card-head">
-            <div><strong>${reportEsc(sm.supplier||'Fournisseur')}</strong><span>Échantillon ${reportEsc(sm.id)}</span></div>
-            <div class="product-eval-note"><small>Note /5</small><b>${ss.count?fmt(ss.note5):'—'}</b></div>
+
+        return `<article class="product-annex-supplier product-annex-card">
+          <div class="product-annex-head">
+            <div>
+              <h3>${reportEsc(sm.supplier||'Fournisseur')}</h3>
+              <span>Échantillon ${reportEsc(sm.id)}</span>
+            </div>
+            <div class="product-annex-note5">
+              <small>Note /5</small>
+              <strong>${ss.count?fmt(ss.note5):'—'}</strong>
+            </div>
           </div>
-          <table class="product-eval-table"><tbody>
+
+          <table><tbody>
             <tr><th>Marque</th><td>${reportEsc(r.brand||'—')}</td><th>Poids / grammage</th><td>${reportEsc(r.weight||'—')}</td></tr>
             <tr><th>Caractéristiques</th><td colspan="3">${reportEsc(r.characteristics||'—')}</td></tr>
             <tr><th>Étiquetage</th><td>${reportEsc(labeling)}</td><th>N° lot fournisseur</th><td>${reportEsc(r.supplierLot||'—')}</td></tr>
@@ -7272,96 +7282,144 @@ function productSheetAnnexHtml(st){
             <tr><th>Emballage / conditionnement</th><td>${yn(r.packagingConformity)}</td><th>Date fabrication</th><td>${reportEsc(r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—')}</td></tr>
             <tr><th>DDM / utilisation optimale</th><td>${reportEsc(r.ddm?formatClosureDate(r.ddm):'—')}</td><th>DLC</th><td>${reportEsc(r.dlc?formatClosureDate(r.dlc):'—')}</td></tr>
             <tr><th>Observations</th><td colspan="3">${reportEsc(r.observations||'—')}</td></tr>
+            ${r.receptionFound?`<tr><th>Réception</th><td colspan="3">${reportEsc(formatClosureDate(r.receptionDate))} ${reportEsc(r.receptionTime||'')} · T° véhicule ${reportEsc(String(r.receptionVehicleTemp??'')||'—')} °C · T° produit ${reportEsc(String(r.deliveryTemp??'')||'—')} °C · T° intérieur ${reportEsc(String(r.receptionInteriorTemp??'')||'—')} °C · ${reportEsc(r.receptionDecision==='refus'?'Refus':'Acceptation')}</td></tr>`:''}
           </tbody></table>
-          <div class="product-eval-scoreline">
-            <span>Résultat sensoriel : <strong>${ss.count?`${fmt(ss.avg65)} /65`:'—'}</strong></span>
-            <span>${ss.criteria.map(c=>`${reportEsc(c.name)} : ${ss.count?`${fmt(c.avg)}/${fmt(c.max)}`:'—'}`).join(' · ')}</span>
+
+          <div class="product-annex-score">
+            <strong>Résultat sensoriel du jury : ${ss.count?`${fmt(ss.avg65)} /65`:'—'}</strong>
+            <div>${ss.criteria.map(c=>`${reportEsc(c.name)} : ${ss.count?`${fmt(c.avg)}/${fmt(c.max)}`:'—'}`).join(' · ')}</div>
           </div>
         </article>`;
       }).join('');
-      sections.push(`<section class="section page-break product-eval-page">
-        <div class="section-kicker">Fiches d’évaluation des échantillons · ${pi+1}/${products.length}</div>
+
+      out.push(`<section class="section page-break product-eval-annex product-eval-page">
+        <div class="section-kicker">Fiches d’évaluation des échantillons</div>
         <h2>${reportEsc(p.name||`Produit ${pi+1}`)}</h2>
-        <div class="small-note">Trois fiches maximum par page · résultats sensoriels repris automatiquement des tests.</div>
-        <div class="product-eval-grid">${blocks||'<div class="empty-note">Aucun fournisseur / échantillon.</div>'}</div>
+        <div class="small-note">Trois fiches maximum par page. Toutes les informations enregistrées sont conservées.</div>
+        <div class="product-eval-stack">${blocks||'<div class="empty-note">Aucun fournisseur / échantillon.</div>'}</div>
         ${pageTotal>1?`<div class="product-eval-page-no">Page ${pageNo}/${pageTotal} pour cet article</div>`:''}
       </section>`);
     }
   });
-  return sections.join('');
+
+  return out.join('');
 }
-function reportPdfProductEvalCardV283(doc,st,p,sm,x,y,w,h){
+function reportPdfProductSheetCardV284(doc,st,p,sm,x,y,w,h){
   const r=ensureProductSheetRecord(st,p,sm),ss=productSheetStats(st,p,sm);
   const yn=v=>v==='oui'?'OUI':v==='non'?'NON':'—';
-  const label=v=>v==='conforme'?'Conforme':v==='non-conforme'?'Non conforme':'—';
-  doc.setDrawColor(185,207,224);doc.setFillColor(251,253,254);doc.roundedRect(x,y,w,h,2,2,'FD');
-  doc.setFillColor(232,242,248);doc.rect(x,y,w,10,'F');
-  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(23,79,120);
-  doc.text(String(sm.supplier||'Fournisseur'),x+3,y+6.3,{maxWidth:w-45});
-  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(82,111,132);
-  doc.text('Échantillon '+String(sm.id||''),x+3,y+9);
-  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(18,51,90);
-  doc.text(ss.count?fmt(ss.note5):'—',x+w-4,y+6.8,{align:'right'});
-  doc.setFontSize(5.8);doc.setTextColor(82,111,132);doc.text('NOTE /5',x+w-4,y+9.1,{align:'right'});
+  const labeling=r.labeling==='conforme'?'Conforme':r.labeling==='non-conforme'?'Non conforme':'—';
+
+  doc.setDrawColor(185,207,224);
+  doc.setFillColor(251,253,254);
+  doc.roundedRect(x,y,w,h,2,2,'FD');
+
+  doc.setFillColor(232,242,248);
+  doc.rect(x,y,w,10,'F');
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(8.5);
+  doc.setTextColor(23,79,120);
+  doc.text(String(sm.supplier||'Fournisseur'),x+3,y+5.7,{maxWidth:w-42});
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(6.7);
+  doc.setTextColor(82,111,132);
+  doc.text('Échantillon '+String(sm.id||''),x+3,y+8.7);
+
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(13);
+  doc.setTextColor(18,51,90);
+  doc.text(ss.count?fmt(ss.note5):'—',x+w-4,y+6.5,{align:'right'});
+  doc.setFontSize(5.6);
+  doc.setTextColor(92,113,128);
+  doc.text('NOTE /5',x+w-4,y+9,{align:'right'});
 
   const rows=[
     ['Marque',r.brand||'—','Poids / grammage',r.weight||'—'],
     ['Caractéristiques',r.characteristics||'—','',''],
-    ['Étiquetage',label(r.labeling),'N° lot',r.supplierLot||'—'],
-    ['Fiche technique',yn(r.technicalSheet),'T° livraison',yn(r.deliveryTempConformity)+(String(r.deliveryTemp||'').trim()?(' · '+r.deliveryTemp+' °C'):'')],
-    ['Emballage',yn(r.packagingConformity),'Date fabrication',r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—'],
-    ['DDM',r.ddm?formatClosureDate(r.ddm):'—','DLC',r.dlc?formatClosureDate(r.dlc):'—'],
+    ['Étiquetage',labeling,'N° lot fournisseur',r.supplierLot||'—'],
+    ['Fiche technique',yn(r.technicalSheet),'T° livraison conforme',yn(r.deliveryTempConformity)+(String(r.deliveryTemp||'').trim()?(' · '+r.deliveryTemp+' °C'):'')],
+    ['Emballage / conditionnement',yn(r.packagingConformity),'Date fabrication',r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—'],
+    ['DDM / utilisation optimale',r.ddm?formatClosureDate(r.ddm):'—','DLC',r.dlc?formatClosureDate(r.dlc):'—'],
     ['Observations',r.observations||'—','','']
   ];
-  const top=y+12,rowH=6.2,c1=30,c2=58,c3=31,c4=w-c1-c2-c3;
-  let yy=top;
-  doc.setFontSize(6.4);
-  rows.forEach((row,idx)=>{
+
+  const widths=[35,55,37,w-127];
+  let yy=y+12;
+  const rowH=5.8;
+  doc.setFontSize(5.7);
+
+  rows.forEach(row=>{
     let xx=x;
-    const vals=[row[0],row[1],row[2],row[3]],ws=[c1,c2,c3,c4];
-    vals.forEach((val,i)=>{
-      doc.setDrawColor(213,226,234);
-      doc.rect(xx,yy,ws[i],rowH);
+    row.forEach((val,i)=>{
+      const ww=widths[i];
+      doc.setDrawColor(214,226,233);
       if(i===0||i===2){
-        doc.setFillColor(241,247,250);doc.rect(xx,yy,ws[i],rowH,'F');
-        doc.setFont('helvetica','bold');doc.setTextColor(70,94,111);
+        doc.setFillColor(241,247,250);
+        doc.rect(xx,yy,ww,rowH,'FD');
+        doc.setFont('helvetica','bold');
+        doc.setTextColor(82,111,132);
       }else{
-        doc.setFont('helvetica','normal');doc.setTextColor(49,73,91);
+        doc.rect(xx,yy,ww,rowH);
+        doc.setFont('helvetica','normal');
+        doc.setTextColor(49,73,91);
       }
-      if(val)doc.text(doc.splitTextToSize(String(val),ws[i]-2).slice(0,2),xx+1,yy+2.5,{maxWidth:ws[i]-2});
-      xx+=ws[i];
+      if(val)doc.text(doc.splitTextToSize(String(val),ww-2).slice(0,2),xx+1,yy+2.6,{maxWidth:ww-2});
+      xx+=ww;
     });
     yy+=rowH;
   });
-  const sy=y+h-11;
+
+  if(r.receptionFound){
+    doc.setFont('helvetica','bold');doc.setFontSize(5.8);doc.setTextColor(82,111,132);
+    doc.text('Réception',x+2,yy+3);
+    doc.setFont('helvetica','normal');doc.setTextColor(49,73,91);
+    const reception=`${formatClosureDate(r.receptionDate)} ${r.receptionTime||''} · T° véhicule ${String(r.receptionVehicleTemp??'')||'—'} °C · T° produit ${String(r.deliveryTemp??'')||'—'} °C · T° intérieur ${String(r.receptionInteriorTemp??'')||'—'} °C · ${r.receptionDecision==='refus'?'Refus':'Acceptation'}`;
+    doc.text(doc.splitTextToSize(reception,w-42).slice(0,2),x+37,yy+3,{maxWidth:w-39});
+    yy+=8;
+  }
+
+  const sy=y+h-10;
   doc.setDrawColor(207,222,231);doc.line(x+3,sy-2,x+w-3,sy-2);
-  doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(23,58,97);
+  doc.setFont('helvetica','bold');doc.setFontSize(6.7);doc.setTextColor(23,58,97);
   doc.text('Résultat sensoriel : '+(ss.count?fmt(ss.avg65)+' /65':'—'),x+3,sy+1);
-  doc.setFont('helvetica','normal');doc.setFontSize(5.8);doc.setTextColor(92,113,128);
+  doc.setFont('helvetica','normal');doc.setFontSize(5.5);doc.setTextColor(92,113,128);
   const crit=ss.criteria.map(c=>c.name+' '+(ss.count?fmt(c.avg)+'/'+fmt(c.max):'—')).join(' · ');
   doc.text(doc.splitTextToSize(crit,w-6).slice(0,2),x+3,sy+5,{maxWidth:w-6});
 }
 function appendProductSheetsPdf(doc,st){
   const products=st?.config?.products||[];
+
   products.forEach((p,pi)=>{
     const samples=p.samples||[];
+
     for(let offset=0;offset<samples.length;offset+=3){
       doc.addPage();
       let y=24;
-      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(49,90,120);
+
+      doc.setFont('helvetica','bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(49,90,120);
       doc.text('Fiches d’évaluation des échantillons',14,y);
-      doc.setDrawColor(154,177,195);doc.line(67,y-1,196,y-1);
+      doc.setDrawColor(154,177,195);
+      doc.line(68,y-1,196,y-1);
+
       y+=9;
-      doc.setFontSize(19);doc.setTextColor(18,51,90);
+      doc.setFontSize(19);
+      doc.setTextColor(18,51,90);
       doc.text(String(p.name||`Produit ${pi+1}`),14,y);
+
       y+=8;
-      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(92,113,128);
-      doc.text('Trois fiches maximum par page · note sur 5 mise en évidence.',14,y);
+      doc.setFont('helvetica','normal');
+      doc.setFontSize(6.7);
+      doc.setTextColor(92,113,128);
+      doc.text('Trois fiches maximum par page · toutes les informations enregistrées sont conservées.',14,y);
       y+=6;
+
       const group=samples.slice(offset,offset+3);
-      const gap=5,cardH=72;
+      const gap=4,cardH=73;
       group.forEach((sm,idx)=>{
-        reportPdfProductEvalCardV283(doc,st,p,sm,14,y+idx*(cardH+gap),182,cardH);
+        reportPdfProductSheetCardV284(doc,st,p,sm,14,y+idx*(cardH+gap),182,cardH);
       });
     }
   });
@@ -7370,11 +7428,13 @@ function appendProductSheetsPdf(doc,st){
 function reportReceptionAnnex(st){
   const receptions=Array.isArray(st?.config?.receptions)?st.config.receptions.filter(Boolean):[];
   if(!receptions.length)return '';
-  const pages=[];
+
+  const out=[];
   for(let offset=0;offset<receptions.length;offset+=3){
     const group=receptions.slice(offset,offset+3);
     const pageNo=Math.floor(offset/3)+1;
     const pageTotal=Math.ceil(receptions.length/3);
+
     const cards=group.map((r,idx)=>{
       const lines=(r.lines||[]).filter(x=>x.received!==false);
       const rows=lines.map(line=>`<tr>
@@ -7384,100 +7444,141 @@ function reportReceptionAnnex(st){
         <td>${reportEsc(line.interiorTemp||'—')}</td>
         <td>${reportEsc(line.dlc?formatClosureDate(line.dlc):'')}</td>
         <td>${reportEsc(line.packaging==='non-conforme'?'NON CONFORME':'Conforme')}</td>
-        <td>${line.decision==='refus'?'Refus':'Accepté'}</td>
+        <td>${line.decision==='refus'?'':'X'}</td>
+        <td>${line.decision==='refus'?'X':''}</td>
         <td>${reportEsc(line.observations||'')}</td>
       </tr>`).join('');
-      return `<article class="reception-report-card">
-        <div class="reception-report-card-head">
+
+      return `<article class="reception-annex-card">
+        <div class="reception-annex-head">
           <div><strong>${reportEsc(r.supplier||'Fournisseur')}</strong><span>Réception ${offset+idx+1}/${receptions.length}</span></div>
-          <div class="reception-report-date">${reportEsc(formatClosureDate(r.date))} · ${reportEsc(r.time||'—')}</div>
+          <div>${reportEsc(formatClosureDate(r.date))} · ${reportEsc(r.time||'—')}</div>
         </div>
-        <div class="reception-meta-grid">
-          <div><small>Établissement</small><b>${reportEsc(r.establishment||'—')}</b></div>
-          <div><small>Lot</small><b>${reportEsc(st.config?.lotName||'—')}</b></div>
-          <div><small>Livreur</small><b>${reportEsc(r.driverName||'—')}</b></div>
-          <div><small>Agent réceptionnaire</small><b>${reportEsc(r.receiverName||'—')}</b></div>
-        </div>
+
+        <table class="reception-meta-table"><tbody>
+          <tr><th>Établissement</th><td colspan="3">${reportEsc(r.establishment||'—')}</td></tr>
+          <tr><th>Lot</th><td>${reportEsc(st.config?.lotName||'—')}</td><th>Fournisseur</th><td>${reportEsc(r.supplier||'—')}</td></tr>
+          <tr><th>Date</th><td>${reportEsc(formatClosureDate(r.date))}</td><th>Heure</th><td>${reportEsc(r.time||'—')}</td></tr>
+          <tr><th>Livreur</th><td>${reportEsc(r.driverName||'—')}</td><th>Agent réceptionnaire</th><td>${reportEsc(r.receiverName||'—')}</td></tr>
+        </tbody></table>
+
         <table class="reception-report-table">
-          <thead><tr><th>Produit</th><th>T° véhicule</th><th>T° produit</th><th>T° intérieur</th><th>DLC / DDM</th><th>Emballage</th><th>Décision</th><th>Observations</th></tr></thead>
-          <tbody>${rows||'<tr><td colspan="8">Aucun produit renseigné.</td></tr>'}</tbody>
+          <thead><tr><th>Produit</th><th>T° véhicule</th><th>T° produit</th><th>T° intérieur</th><th>DLC / DDM</th><th>Emballage</th><th>Accept.</th><th>Refus</th><th>Observations</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="9">Aucun produit renseigné.</td></tr>'}</tbody>
         </table>
-        <div class="reception-signature-inline">
+
+        <div class="reception-signature-report compact">
           <strong>Signature du livreur</strong>
           ${r.driverSignature?`<img src="${r.driverSignature}" alt="Signature du livreur">`:'<span>Signature non disponible</span>'}
         </div>
       </article>`;
     }).join('');
-    pages.push(`<section class="section page-break reception-report-page reception-count-${group.length}">
+
+    out.push(`<section class="section page-break reception-annex reception-annex-page reception-count-${group.length}">
       <div class="section-kicker">Annexe — contrôle de réception</div>
       <h2>Relevé de réception des échantillons</h2>
-      <div class="small-note">Les relevés sont regroupés jusqu’à trois par page pour conserver une lecture claire.</div>
-      <div class="reception-report-grid">${cards}</div>
-      ${pageTotal>1?`<div class="reception-page-no">Page ${pageNo}/${pageTotal} des relevés de réception</div>`:''}
+      <div class="small-note">Les relevés sont regroupés sur une ou deux pages quand le volume le permet, sans supprimer aucune donnée.</div>
+      <div class="reception-annex-stack">${cards}</div>
+      ${pageTotal>1?`<div class="reception-page-no">Page ${pageNo}/${pageTotal} des relevés</div>`:''}
     </section>`);
   }
-  return pages.join('');
+
+  return out.join('');
 }
-function reportPdfReceptionCardV283(doc,st,r,index,total,x,y,w,h){
-  doc.setDrawColor(185,207,224);doc.setFillColor(251,253,254);doc.roundedRect(x,y,w,h,2,2,'FD');
-  doc.setFillColor(232,242,248);doc.rect(x,y,w,9,'F');
+function reportPdfReceptionCardV284(doc,st,r,index,total,x,y,w,h){
+  doc.setDrawColor(185,207,224);
+  doc.setFillColor(251,253,254);
+  doc.roundedRect(x,y,w,h,2,2,'FD');
+
+  doc.setFillColor(232,242,248);
+  doc.rect(x,y,w,9,'F');
+
   doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(23,79,120);
   doc.text(String(r.supplier||'Fournisseur'),x+3,y+5.8,{maxWidth:w-45});
-  doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(82,111,132);
+  doc.setFont('helvetica','normal');doc.setFontSize(6.3);doc.setTextColor(82,111,132);
   doc.text('Réception '+index+'/'+total,x+w-3,y+5.8,{align:'right'});
+
   let yy=y+13;
-  doc.setFontSize(6.6);doc.setTextColor(49,73,91);
+  doc.setFontSize(6.2);doc.setTextColor(49,73,91);
   doc.text('Établissement : '+String(r.establishment||'—'),x+3,yy);
-  doc.text('Lot : '+String(st.config?.lotName||'—'),x+w/2,yy);yy+=4;
+  doc.text('Lot : '+String(st.config?.lotName||'—'),x+w/2,yy);
+  yy+=4;
   doc.text('Date : '+String(formatClosureDate(r.date))+' '+String(r.time||''),x+3,yy);
-  doc.text('Livreur : '+String(r.driverName||'—')+' · Agent : '+String(r.receiverName||'—'),x+w/2,yy);yy+=5;
+  doc.text('Livreur : '+String(r.driverName||'—')+' · Agent : '+String(r.receiverName||'—'),x+w/2,yy);
+  yy+=5;
 
   const lines=(r.lines||[]).filter(v=>v.received!==false);
-  const headers=['Produit','T° véh.','T° prod.','T° int.','DLC/DDM','Emballage','Décision'];
-  const widths=[42,17,17,17,28,31,30];
-  const rowH=5.8;
+  const headers=['Produit','T° véh.','T° prod.','T° int.','DLC/DDM','Emballage','A','R','Observations'];
+  const widths=[31,14,14,14,24,24,8,8,45];
+  const rowH=5.6;
+
   let xx=x;
-  doc.setFillColor(241,247,250);doc.setFont('helvetica','bold');doc.setFontSize(5.6);doc.setTextColor(70,94,111);
-  headers.forEach((hdr,i)=>{doc.rect(xx,yy,widths[i],rowH,'FD');doc.text(hdr,xx+1,yy+3.7,{maxWidth:widths[i]-2});xx+=widths[i];});
+  doc.setFillColor(241,247,250);doc.setFont('helvetica','bold');doc.setFontSize(5.1);doc.setTextColor(70,94,111);
+  headers.forEach((hdr,i)=>{
+    doc.rect(xx,yy,widths[i],rowH,'FD');
+    doc.text(hdr,xx+1,yy+3.5,{maxWidth:widths[i]-2});
+    xx+=widths[i];
+  });
   yy+=rowH;
-  doc.setFont('helvetica','normal');doc.setFontSize(5.6);doc.setTextColor(49,73,91);
-  lines.slice(0,5).forEach(line=>{
+
+  doc.setFont('helvetica','normal');doc.setFontSize(5.2);doc.setTextColor(49,73,91);
+  lines.forEach(line=>{
     const vals=[
-      line.productName||'—',r.vehicleTemp||'—',line.productTemp||'—',line.interiorTemp||'—',
+      line.productName||'—',
+      r.vehicleTemp||'—',
+      line.productTemp||'—',
+      line.interiorTemp||'—',
       line.dlc?formatClosureDate(line.dlc):'',
       line.packaging==='non-conforme'?'Non conf.':'Conforme',
-      line.decision==='refus'?'Refus':'Accepté'
+      line.decision==='refus'?'':'X',
+      line.decision==='refus'?'X':'',
+      line.observations||''
     ];
     xx=x;
-    vals.forEach((val,i)=>{doc.rect(xx,yy,widths[i],rowH);doc.text(String(val),xx+1,yy+3.7,{maxWidth:widths[i]-2});xx+=widths[i];});
+    vals.forEach((val,i)=>{
+      doc.rect(xx,yy,widths[i],rowH);
+      doc.text(doc.splitTextToSize(String(val),widths[i]-2).slice(0,2),xx+1,yy+3.5,{maxWidth:widths[i]-2});
+      xx+=widths[i];
+    });
     yy+=rowH;
   });
-  yy+=3;
-  doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor(70,94,111);doc.text('Signature du livreur',x+3,yy);
+
+  const sigY=y+h-13;
+  doc.setFont('helvetica','bold');doc.setFontSize(5.8);doc.setTextColor(82,111,132);
+  doc.text('Signature du livreur',x+3,sigY+5);
   if(r.driverSignature){
-    try{doc.addImage(r.driverSignature,'PNG',x+38,yy-5,38,12);}catch(e){}
+    try{doc.addImage(r.driverSignature,'PNG',x+40,sigY,40,11);}catch(e){}
   }else{
-    doc.setFont('helvetica','normal');doc.setTextColor(120,132,140);doc.text('Non disponible',x+38,yy);
+    doc.setFont('helvetica','normal');doc.setTextColor(120,132,140);
+    doc.text('Signature non disponible',x+40,sigY+5);
   }
 }
 function appendReceptionAnnexPdf(doc,st){
   const receptions=Array.isArray(st?.config?.receptions)?st.config.receptions.filter(Boolean):[];
   if(!receptions.length)return;
+
   for(let offset=0;offset<receptions.length;offset+=3){
     doc.addPage();
     let y=24;
-    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(49,90,120);
+
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(49,90,120);
     doc.text('Annexe — contrôle de réception',14,y);
-    doc.setDrawColor(154,177,195);doc.line(62,y-1,196,y-1);
+    doc.setDrawColor(154,177,195);doc.line(61,y-1,196,y-1);
+
     y+=9;
     doc.setFontSize(19);doc.setTextColor(18,51,90);
     doc.text('Relevé de réception des échantillons',14,y);
+
     y+=8;
-    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(92,113,128);
-    doc.text('Jusqu’à trois relevés regroupés sur une même page.',14,y);
+    doc.setFont('helvetica','normal');doc.setFontSize(6.7);doc.setTextColor(92,113,128);
+    doc.text('Relevés regroupés sans suppression des informations de réception.',14,y);
     y+=6;
-    const group=receptions.slice(offset,offset+3),gap=5,cardH=72;
-    group.forEach((rec,idx)=>reportPdfReceptionCardV283(doc,st,rec,offset+idx+1,receptions.length,14,y+idx*(cardH+gap),182,cardH));
+
+    const group=receptions.slice(offset,offset+3);
+    const gap=4,cardH=73;
+    group.forEach((rec,idx)=>{
+      reportPdfReceptionCardV284(doc,st,rec,offset+idx+1,receptions.length,14,y+idx*(cardH+gap),182,cardH);
+    });
   }
 }
 
@@ -8046,24 +8147,17 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
   const closureSection=closureHasUsefulData(st)?`<section class="section page-break closure-report-page">
     <div class="section-kicker">Clôture administrative</div>
     <h2>Fiche de clôture du jury</h2>
-    <div class="closure-report-intro">Validation administrative et traçabilité du jury.</div>
-    <div class="closure-report-grid">
-      <div><small>Date de dégustation</small><strong>${reportEsc(formatClosureDate(closure.date))}</strong></div>
-      <div><small>Lieu</small><strong>${reportEsc(closure.place||'—')}</strong></div>
-      <div><small>Responsable du jury</small><strong>${reportEsc(closure.chair||'—')}</strong><span>${reportEsc(closure.chairRole||'—')}</span></div>
-      <div><small>Second signataire</small><strong>${reportEsc(closure.coSigner||'—')}</strong><span>${reportEsc(closure.coSignerRole||'—')}</span></div>
-    </div>
-    <div class="closure-report-box">
-      <h3>Membres présents</h3>
-      <div class="closure-members">${closureMembers.length?closureMembers.map(x=>`<span>${reportEsc(x.name)}${x.role?` · ${reportEsc(x.role)}`:''}</span>`).join(''):'<span>—</span>'}</div>
-    </div>
-    <div class="closure-report-box">
-      <h3>Observations générales</h3>
-      <div>${closure.notes?reportEsc(closure.notes).replace(/\n/g,'<br>'):'Aucune observation générale.'}</div>
-    </div>
-    ${closure.chairSignature||closure.coSignature?`<div class="closure-signatures">
-      <div><strong>Responsable du jury</strong>${closure.chairSignature?`<img src="${closure.chairSignature}" alt="Signature du responsable">`:'<span>Signature non renseignée</span>'}</div>
-      <div><strong>Second signataire</strong>${closure.coSignature?`<img src="${closure.coSignature}" alt="Signature du second signataire">`:'<span>Signature non renseignée</span>'}</div>
+    <div class="closure-report-subtitle">Validation administrative et traçabilité du jury.</div>
+    <table class="closure-report-table"><tbody>
+      <tr><th>Date de dégustation</th><td>${reportEsc(formatClosureDate(closure.date))}</td><th>Lieu</th><td>${reportEsc(closure.place||'—')}</td></tr>
+      <tr><th>Responsable du jury</th><td>${reportEsc(closure.chair||'—')}</td><th>Fonction</th><td>${reportEsc(closure.chairRole||'—')}</td></tr>
+      <tr><th>Second signataire</th><td>${reportEsc(closure.coSigner||'—')}</td><th>Fonction</th><td>${reportEsc(closure.coSignerRole||'—')}</td></tr>
+      <tr><th>Membres présents</th><td colspan="3">${closureMembers.length?closureMembers.map(x=>`${reportEsc(x.name)}${x.role?` — ${reportEsc(x.role)}`:''}`).join('<br>'):'—'}</td></tr>
+      <tr><th>Observations générales</th><td colspan="3">${closure.notes?reportEsc(closure.notes).replace(/\n/g,'<br>'):'Aucune observation générale.'}</td></tr>
+    </tbody></table>
+    ${closure.chairSignature||closure.coSignature?`<div class="closure-report-signatures">
+      <div><strong>Responsable du jury</strong>${closure.chairSignature?`<img src="${closure.chairSignature}" alt="Signature responsable">`:'<span>Signature non renseignée</span>'}</div>
+      <div><strong>Second signataire</strong>${closure.coSignature?`<img src="${closure.coSignature}" alt="Signature second signataire">`:'<span>Signature non renseignée</span>'}</div>
     </div>`:''}
   </section>`:'';
   const receptionSection=reportReceptionAnnex(st);
@@ -8139,32 +8233,42 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
     .footer{margin-top:30px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:9px}
     .small-note{font-size:9px;color:var(--muted);line-height:1.45;margin-top:8px}
     .closure-report-page{padding-top:58px;min-height:880px}
-    .closure-report-page h2{font-size:29px;color:#12335a;margin:8px 0 6px}
-    .closure-report-intro{font-size:11px;color:#647a89;margin-bottom:24px}
-    .closure-report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
-    .closure-report-grid>div{border:1px solid #c7dbe7;border-radius:9px;background:#f8fbfd;padding:12px}
-    .closure-report-grid small{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:#718695;margin-bottom:4px}
-    .closure-report-grid strong{display:block;font-size:13px;color:#173a61}.closure-report-grid span{display:block;font-size:9px;color:#667c8b;margin-top:3px}
-    .closure-report-box{border:1px solid #c7dbe7;border-radius:9px;background:#fbfdfe;padding:13px 15px;margin-top:12px}
-    .closure-report-box h3{margin:0 0 9px;color:#173a61;font-size:12px}.closure-members{display:flex;flex-wrap:wrap;gap:6px}.closure-members span{padding:5px 8px;border-radius:999px;background:#eaf3f8;color:#315a78;font-size:9px}
-    .closure-signatures{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.closure-signatures>div{border:1px solid #c7dbe7;border-radius:9px;padding:10px;min-height:85px}.closure-signatures strong{display:block;font-size:9px;color:#173a61}.closure-signatures img{display:block;max-width:100%;height:58px;object-fit:contain;margin-top:4px}.closure-signatures span{font-size:8px;color:#7a8c98}
-    .summary-technical-note{margin-top:14px!important}
-    .reception-report-page{padding-top:50px;min-height:900px}.reception-report-page h2{font-size:28px;color:#12335a;margin:8px 0 6px}
-    .reception-report-grid{display:grid;grid-template-columns:1fr;gap:11px;margin-top:18px}
-    .reception-report-card{border:1px solid #b9cfe0;border-radius:9px;overflow:hidden;background:#fbfdfe;break-inside:avoid;page-break-inside:avoid}
-    .reception-report-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 10px;background:#e8f2f8;color:#174f78}.reception-report-card-head strong{font-size:12px}.reception-report-card-head span{display:block;font-size:8px;color:#6b8190}.reception-report-date{font-size:9px;color:#526f84;white-space:nowrap}
-    .reception-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-bottom:1px solid #d9e5ec}.reception-meta-grid>div{padding:6px 8px;border-right:1px solid #e1e9ee}.reception-meta-grid>div:last-child{border-right:0}.reception-meta-grid small{display:block;font-size:7px;text-transform:uppercase;color:#7a8c98}.reception-meta-grid b{display:block;font-size:8.5px;color:#31495b;margin-top:2px}
-    .reception-report-table{font-size:7.5px;margin:0}.reception-report-table th,.reception-report-table td{padding:4px 3px}
-    .reception-signature-inline{display:flex;align-items:center;gap:12px;min-height:38px;padding:5px 9px;border-top:1px solid #d9e5ec}.reception-signature-inline strong{font-size:8px;color:#526f84}.reception-signature-inline img{display:block;max-width:130px;max-height:30px;object-fit:contain}.reception-signature-inline span{font-size:8px;color:#84939d}
-    .reception-page-no,.product-eval-page-no{text-align:right;font-size:8px;color:#7a8c98;margin-top:8px}
-    .reception-count-3 .reception-report-card-head{padding:6px 9px}.reception-count-3 .reception-meta-grid>div{padding:4px 6px}.reception-count-3 .reception-report-table{font-size:6.8px}.reception-count-3 .reception-report-table th,.reception-count-3 .reception-report-table td{padding:3px 2px}.reception-count-3 .reception-signature-inline{min-height:30px}
-    .product-eval-page{padding-top:44px;min-height:900px}.product-eval-page h2{font-size:27px;color:#12335a;margin:8px 0 4px}
-    .product-eval-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
-    .product-eval-card{border:1px solid #b9cfe0;border-radius:9px;overflow:hidden;background:#fbfdfe;break-inside:avoid;page-break-inside:avoid}
-    .product-eval-card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 9px;background:#e8f2f8}.product-eval-card-head>div:first-child strong{display:block;font-size:11px;color:#174f78}.product-eval-card-head>div:first-child span{display:block;font-size:8px;color:#6b8190;margin-top:1px}
-    .product-eval-note{min-width:66px;text-align:center;border-left:1px solid #c7dbe7;padding-left:9px}.product-eval-note small{display:block;font-size:7px;text-transform:uppercase;color:#718695}.product-eval-note b{display:block;font-size:20px;line-height:1;color:#12335a;margin-top:2px}
-    .product-eval-table{font-size:7.4px;margin:0}.product-eval-table th,.product-eval-table td{padding:4px 5px;text-align:left}.product-eval-table th{width:19%;color:#526f84;background:#f1f6f9}
-    .product-eval-scoreline{padding:6px 9px;border-top:1px solid #d9e5ec;color:#526f84;font-size:7.4px;line-height:1.4}.product-eval-scoreline span{display:block}.product-eval-scoreline strong{color:#173a61}
+    .closure-report-page h2{font-size:29px;color:#12335a;margin:8px 0 5px}
+    .closure-report-subtitle{font-size:10px;color:#6a7f8d;margin-bottom:20px}
+    .closure-report-table{font-size:10.5px;margin-top:0}
+    .closure-report-table th{background:#eef5f9;color:#315a78;text-align:left}
+    .closure-report-table td{text-align:left;padding:10px}
+    .closure-report-signatures{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}
+    .closure-report-signatures>div{border:1px solid #c7dbe7;border-radius:9px;padding:9px;min-height:82px}
+    .closure-report-signatures strong{display:block;font-size:9px;color:#315a78}
+    .closure-report-signatures img{display:block;max-width:100%;height:55px;object-fit:contain;margin-top:4px}
+    .closure-report-signatures span{font-size:8px;color:#7a8c98}
+
+    .reception-annex-page{padding-top:48px;min-height:900px}
+    .reception-annex-page h2{font-size:28px;color:#12335a;margin:8px 0 5px}
+    .reception-annex-stack{display:grid;grid-template-columns:1fr;gap:10px;margin-top:15px}
+    .reception-annex-card{border:1px solid #b9cfe0;border-radius:9px;overflow:hidden;background:#fbfdfe;break-inside:avoid;page-break-inside:avoid}
+    .reception-annex-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;background:#e8f2f8;padding:7px 9px;color:#174f78}
+    .reception-annex-head strong{display:block;font-size:11px}.reception-annex-head span{display:block;font-size:7.5px;color:#728897}.reception-annex-head>div:last-child{font-size:8px;color:#526f84}
+    .reception-meta-table{font-size:7.2px;margin:0}.reception-meta-table th,.reception-meta-table td{padding:3px 4px;text-align:left}
+    .reception-report-table{font-size:6.7px;margin:0}.reception-report-table th,.reception-report-table td{padding:3px 2px}
+    .reception-signature-report.compact{margin:0;border:0;border-top:1px solid #d8e4eb;border-radius:0;padding:4px 8px;min-height:28px;display:flex;align-items:center;gap:10px}
+    .reception-signature-report.compact strong{font-size:7.5px}.reception-signature-report.compact img{max-width:120px;max-height:26px;margin:0}.reception-signature-report.compact span{font-size:7px;margin:0}
+    .reception-page-no,.product-eval-page-no{text-align:right;font-size:8px;color:#7a8c98;margin-top:7px}
+    .reception-count-3 .reception-annex-stack{gap:7px}.reception-count-3 .reception-annex-head{padding:5px 8px}.reception-count-3 .reception-meta-table{font-size:6.6px}.reception-count-3 .reception-report-table{font-size:6.1px}
+
+    .product-eval-page{padding-top:42px;min-height:900px}
+    .product-eval-page h2{font-size:27px;color:#12335a;margin:8px 0 4px}
+    .product-eval-stack{display:grid;grid-template-columns:1fr;gap:9px;margin-top:14px}
+    .product-annex-card{margin:0!important;border:1px solid #b9cfe0;border-radius:9px;overflow:hidden;background:#fbfdfe;break-inside:avoid;page-break-inside:avoid}
+    .product-annex-head{display:flex;align-items:center;justify-content:space-between;gap:12px;background:#e8f2f8;padding:6px 9px}
+    .product-annex-head h3{margin:0!important;font-size:10.5px!important;color:#174f78!important}.product-annex-head span{font-size:7.5px!important;color:#6b8190!important}
+    .product-annex-note5{min-width:68px;border-left:1px solid #c7dbe7;text-align:center;padding-left:10px}
+    .product-annex-note5 small{display:block;font-size:7px;text-transform:uppercase;color:#718695}
+    .product-annex-note5 strong{display:block!important;font-size:20px!important;line-height:1;color:#12335a!important;margin-top:2px}
+    .product-annex-card table{font-size:6.9px!important;margin:0}.product-annex-card th,.product-annex-card td{padding:3px 4px!important;text-align:left!important}.product-annex-card th{width:19%;background:#f1f6f9;color:#526f84}
+    .product-annex-score{margin:0!important;border-left:0!important;border-top:1px solid #d8e4eb;background:#f7fbfd!important;padding:5px 8px!important;font-size:6.8px!important;line-height:1.35!important}
+    .product-annex-score strong{display:block;color:#214d68;font-size:7.2px}
 
     @media print{
       @page{size:A4 portrait;margin:12mm}
@@ -8177,9 +8281,9 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
       .supplier-comment-card{break-inside:avoid;page-break-inside:avoid}
       .lot-summary{padding-top:16mm;min-height:250mm}
       .closure-report-page{padding-top:16mm;min-height:250mm}
-      .reception-report-page{padding-top:14mm;min-height:250mm}
+      .reception-annex-page{padding-top:13mm;min-height:250mm}
       .product-eval-page{padding-top:12mm;min-height:250mm}
-      .reception-report-card,.product-eval-card{break-inside:avoid;page-break-inside:avoid}
+      .reception-annex-card,.product-annex-card{break-inside:avoid;page-break-inside:avoid}
       table{break-inside:auto}
       tr{break-inside:avoid;page-break-inside:avoid}
     }
@@ -8233,10 +8337,16 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
           <div class="jury-conclusion-title">Conclusion / rapport du jury</div>
           <div class="jury-conclusion-text">${reportEsc(juryConclusion).replace(/\n/g,'<br>')}</div>
         </div>`:''}
-        ${reportNote?`<div class="report-note summary-technical-note"><strong>Note explicative / conformité</strong><br>${reportEsc(reportNote).replace(/\n/g,'<br>')}</div>`:''}
       </section>
 
       ${closureSection}
+
+      ${reportNote?`<section class="section page-break">
+        <div class="section-kicker">Note explicative / conformité</div>
+        <h2>Observation complémentaire</h2>
+        <div class="report-note">${reportEsc(reportNote).replace(/\n/g,'<br>')}</div>
+      </section>`:''}
+
       ${receptionSection}
       ${productSheetsSection}
 
@@ -8462,43 +8572,69 @@ function reportPdfConclusionBoxV282(doc,text,y){
   return y+h+4;
 }
 
-function appendClosurePdfV283(doc,st){
-  const c=st?.config?.closure||{};
+function appendClosurePdfV284(doc,st){
   if(!closureHasUsefulData(st))return;
+  const c=st?.config?.closure||{};
   doc.addPage();
+
   let y=28;
-  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(49,90,120);
-  doc.text('Clôture administrative',14,y);doc.setDrawColor(154,177,195);doc.line(51,y-1,196,y-1);
-  y+=10;doc.setFontSize(20);doc.setTextColor(18,51,90);doc.text('Fiche de clôture du jury',14,y);y+=12;
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(49,90,120);
+  doc.text('Clôture administrative',14,y);
+  doc.setDrawColor(154,177,195);doc.line(50,y-1,196,y-1);
+
+  y+=10;
+  doc.setFontSize(20);doc.setTextColor(18,51,90);
+  doc.text('Fiche de clôture du jury',14,y);
+
+  y+=8;
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(92,113,128);
+  doc.text('Validation administrative et traçabilité du jury.',14,y);
+  y+=9;
+
   const rows=[
     ['Date de dégustation',formatClosureDate(c.date),'Lieu',c.place||'—'],
     ['Responsable du jury',c.chair||'—','Fonction',c.chairRole||'—'],
     ['Second signataire',c.coSigner||'—','Fonction',c.coSignerRole||'—']
   ];
-  const widths=[39,52,39,52],rowH=11;
+  const widths=[40,51,40,51],rowH=11;
+
   rows.forEach(row=>{
     let x=14;
-    row.forEach((val,idx)=>{
+    row.forEach((val,i)=>{
       doc.setDrawColor(199,219,231);
-      if(idx===0||idx===2){doc.setFillColor(241,247,250);doc.rect(x,y,widths[idx],rowH,'FD');doc.setFont('helvetica','bold');doc.setTextColor(82,111,132);}
-      else{doc.rect(x,y,widths[idx],rowH);doc.setFont('helvetica','normal');doc.setTextColor(49,73,91);}
-      doc.setFontSize(7.2);doc.text(doc.splitTextToSize(String(val||'—'),widths[idx]-4).slice(0,2),x+2,y+5,{maxWidth:widths[idx]-4});
-      x+=widths[idx];
+      if(i===0||i===2){
+        doc.setFillColor(241,247,250);doc.rect(x,y,widths[i],rowH,'FD');
+        doc.setFont('helvetica','bold');doc.setTextColor(82,111,132);
+      }else{
+        doc.rect(x,y,widths[i],rowH);
+        doc.setFont('helvetica','normal');doc.setTextColor(49,73,91);
+      }
+      doc.setFontSize(7);
+      doc.text(doc.splitTextToSize(String(val||'—'),widths[i]-4).slice(0,2),x+2,y+5,{maxWidth:widths[i]-4});
+      x+=widths[i];
     });
     y+=rowH;
   });
+
   y+=10;
-  const members=(c.members||[]).filter(x=>x.present!==false).map(x=>x.name+(x.role?' · '+x.role:''));
-  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(23,58,97);doc.text('Membres présents',14,y);y+=6;
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(23,58,97);
+  doc.text('Membres présents',14,y);y+=6;
+
+  const members=(c.members||[]).filter(x=>x.present!==false).map(x=>x.name+(x.role?' — '+x.role:''));
   doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(49,73,91);
   const memberLines=doc.splitTextToSize(members.length?members.join(' · '):'—',182);
-  doc.text(memberLines,14,y);y+=memberLines.length*4+8;
-  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(23,58,97);doc.text('Observations générales',14,y);y+=6;
+  doc.text(memberLines,14,y);y+=memberLines.length*4+9;
+
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(23,58,97);
+  doc.text('Observations générales',14,y);y+=6;
   doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(49,73,91);
-  const obs=doc.splitTextToSize(c.notes||'Aucune observation générale.',182);doc.text(obs,14,y);y+=obs.length*4+10;
+  const obs=doc.splitTextToSize(c.notes||'Aucune observation générale.',182);
+  doc.text(obs,14,y);y+=obs.length*4+10;
+
   if(c.chairSignature||c.coSignature){
-    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(82,111,132);
-    doc.text('Responsable du jury',14,y);doc.text('Second signataire',108,y);
+    doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(82,111,132);
+    doc.text('Responsable du jury',14,y);
+    doc.text('Second signataire',108,y);
     try{if(c.chairSignature)doc.addImage(c.chairSignature,'PNG',14,y+3,70,24);}catch(e){}
     try{if(c.coSignature)doc.addImage(c.coSignature,'PNG',108,y+3,70,24);}catch(e){}
   }
@@ -8637,12 +8773,14 @@ async function buildReportPdfBlob(st=state){
   y+=10;
   if(juryConclusion)y=reportPdfConclusionBoxV282(doc,juryConclusion,y);
 
-  if(reportNote){
-    y=reportPdfParagraph(doc,'Note explicative / conformité : '+reportNote,y+2,{size:8});
-  }
+  // Fiche de clôture directement après la synthèse et la conclusion.
+  appendClosurePdfV284(doc,st);
 
-  // Fiche de clôture après la synthèse et la conclusion
-  appendClosurePdfV283(doc,st);
+  if(reportNote){
+    doc.addPage(); y=24;
+    y=reportPdfTitle(doc,'Note explicative / conformité',y);
+    y=reportPdfParagraph(doc,reportNote,y,{size:10});
+  }
 
   // Annexes de réception signées
   appendReceptionAnnexPdf(doc,st);
