@@ -339,6 +339,39 @@
     "</section>";
   }
 
+  function occenaReportV290(st){
+    var cfg=st&&st.config||{};
+    var data=cfg.occenaControl&&typeof cfg.occenaControl==="object"?cfg.occenaControl:{items:{},globalScore:""};
+    var items=data.items&&typeof data.items==="object"?data.items:{};
+    var rows=[];
+    (cfg.products||[]).forEach(function(p){
+      (p.samples||[]).forEach(function(sm){
+        var key=String(p.id||p.name||"produit")+"__"+String(sm.id||sm.supplier||"echantillon");
+        var rec=items[key]||{},status=String(rec.status||"pending");
+        var initial=String(rec.initialScore==null?"":rec.initialScore).trim();
+        var corrected=String(rec.correctedScore==null?"":rec.correctedScore).trim();
+        var complete=(status==="conforme"&&!!initial)||(status==="corrige"&&!!initial&&!!corrected);
+        rows.push({product:String(p.name||"Article"),supplier:String(sm.supplier||"Fournisseur"),sample:String(sm.id||"—"),status:status,initial:initial,corrected:corrected,observation:String(rec.observation||""),complete:complete});
+      });
+    });
+    var checked=rows.filter(function(x){return x.complete;}).length,total=rows.length,required=total?Math.ceil(total*.30):0;
+    var pct=total?Math.round(checked/total*1000)/10:0,reached=total>0&&checked>=required;
+    var globalScore=String(data.globalScore==null?"":data.globalScore).trim();
+    var body=rows.map(function(r){
+      var statusLabel=r.status==="conforme"?"Conforme":r.status==="corrige"?"Corrigé":"Non contrôlé";
+      var retained=r.status==="corrige"?(r.corrected||"—"):(r.initial||"—");
+      return "<tr class='"+(r.complete?"occena-checked":"")+"'><td>"+esc(r.product)+"</td><td><strong>"+esc(r.supplier)+"</strong><br><span>Éch. "+esc(r.sample)+"</span></td><td>"+esc(r.initial||"—")+"</td><td>"+esc(statusLabel)+"</td><td><strong>"+esc(retained)+"</strong></td><td>"+esc(r.observation||"—")+"</td></tr>";
+    }).join("");
+    return "<section class='report-page page-break occena-report-page'>"+
+      "<div class='page-kicker'>Contrôle OCCENA</div><h2>Contrôle des scores OCCENA</h2>"+
+      "<p class='page-lead'>Vérification d’au moins 30 % des articles / fournisseurs à partir des fiches techniques. Le score OCCENA est présenté à titre informatif et n’intervient dans aucun calcul de classement ou de note dans cette application.</p>"+
+      "<div class='occena-report-summary'><div><small>Articles contrôlés</small><strong>"+checked+" / "+total+"</strong></div><div><small>Pourcentage contrôlé</small><strong>"+pct+" %</strong></div><div><small>Minimum requis</small><strong>"+required+" article"+(required>1?"s":"")+"</strong></div><div class='"+(reached?"ok":"wait")+"'><small>Seuil de 30 %</small><strong>"+(reached?"Atteint ✓":"Non atteint")+"</strong></div></div>"+
+      "<table class='occena-report-table'><thead><tr><th>Article</th><th>Fournisseur / échantillon</th><th>Score initial</th><th>Contrôle</th><th>Score retenu</th><th>Correction / observation</th></tr></thead><tbody>"+(body||"<tr><td colspan='6'>Aucun article enregistré.</td></tr>")+"</tbody></table>"+
+      "<div class='occena-global-report "+(reached?"enabled":"disabled")+"'><div><small>Score OCCENA global</small><strong>"+(reached&&globalScore?esc(globalScore):"—")+"</strong></div><p>"+(reached?(globalScore?"Score saisi manuellement après contrôle du seuil minimum.":"Seuil atteint — score global restant à saisir manuellement."):"Le score global n’est pas renseigné tant que le seuil de 30 % n’est pas atteint.")+"</p></div>"+
+      "<div class='occena-report-warning'><strong>Important :</strong> ce score est conservé dans le dossier mais n’est actuellement appliqué à aucun calcul de résultat.</div>"+
+    "</section>";
+  }
+
   function dossierHtml(st,sourceLabel){
     var cfg=st.config||{},cl=cfg.closure||{};
     var generated=new Date();
@@ -386,12 +419,12 @@
       ".closure-page{padding-top:20mm}.closure-table{font-size:9px;margin-top:18px}.closure-table th{width:19%;text-align:left;padding:8px}.closure-table td{text-align:left;padding:8px}.closure-signs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.closure-signs>div{border:1.5px solid #9fb8c8;border-radius:9px;padding:10px;min-height:38mm}.closure-signs strong,.closure-signs span{display:block}.closure-signs strong{color:#173f5c}.closure-signs span{color:#6d7e89;margin-top:3px}.closure-signs img{display:block;max-width:75mm;max-height:23mm;margin-top:6px}.closure-signs em{display:block;color:#8a989f;margin-top:8px}"+
       ".reception-page{padding-top:16mm}.reception-stack{display:grid;gap:9px}.reception-card{border:1.4px solid #9fb8c8;border-radius:8px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}.reception-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:6px 8px;background:#dfeaf0;border-bottom:1px solid #b7cbd8;color:#174f78}.reception-head strong{display:block;font-size:9.5px}.reception-head span{display:block;font-size:6.5px;color:#6c8190}.reception-head b{font-size:7px}.reception-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #c6d5de}.reception-meta div{padding:4px 6px;border-right:1px solid #d2dfe6}.reception-meta div:last-child{border-right:0}.reception-meta small{display:block;font-size:5.8px;text-transform:uppercase;color:#748894}.reception-meta strong{display:block;font-size:6.8px;color:#334f61;margin-top:1px}.reception-table{font-size:5.9px}.reception-table th,.reception-table td{padding:3px 2px}.reception-table .decision{font-weight:800}.reception-sign{display:flex;align-items:center;gap:10px;min-height:22px;padding:3px 7px;border-top:1px solid #c6d5de}.reception-sign strong{font-size:6.5px;color:#526f84}.sig-img.compact{max-width:35mm;max-height:10mm}.sig-missing{font-size:6px;color:#89969e}.reception-count-3 .reception-stack{gap:6px}.reception-count-3 .reception-head{padding:4px 7px}.reception-count-3 .reception-meta div{padding:3px 5px}.reception-count-3 .reception-table{font-size:5.3px}"+
       ".sample-page{padding-top:13mm}.sample-stack{display:grid;gap:7px}.sample-card{border:1.4px solid #9fb8c8;border-radius:8px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;background:#fff}.sample-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#dfeaf0;border-bottom:1px solid #b7cbd8;padding:5px 8px}.sample-card-head>div:first-child strong{display:block;color:#174f78;font-size:9px}.sample-card-head>div:first-child span{display:block;color:#637b8a;font-size:6.5px}.sample-note{min-width:26mm;text-align:center;border-left:1px solid #aac0cf}.sample-note small{display:block;font-size:6px;text-transform:uppercase;color:#617789}.sample-note b{display:block;font-size:17px;line-height:1.05;color:#0d638f}.sample-meta{font-size:5.9px}.sample-meta th,.sample-meta td{padding:2.7px 3px;text-align:left}.sample-meta th{width:19%;background:#edf3f6}.sample-sensory-line{padding:4px 7px;border-top:1px solid #c6d5de;background:#f5f8fa}.sample-sensory-line strong{display:block;font-size:6.8px;color:#173f5c}.sample-sensory-line span{display:block;font-size:5.8px;color:#607786;margin-top:1px}.sample-comments{padding:3px 7px;border-top:1px solid #d5e0e6;font-size:5.8px}.sample-comments strong{color:#526f84;margin-right:5px}.sample-comments span{color:#4d626f}"+
-      ".attendance-page{padding-top:18mm}.attendance-table{margin-top:16px;font-size:8px}.attendance-table th{padding:7px}.attendance-table td{padding:7px}.member-sign-cell{height:17mm;min-width:35mm}.member-sign-img{display:block;max-width:32mm;max-height:14mm;margin:auto}.member-sign-blank{height:13mm}.jury-signs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.jury-signs>div{border:1.5px solid #9fb8c8;border-radius:8px;min-height:28mm;padding:8px}.jury-signs strong,.jury-signs span{display:block}.jury-signs img{display:block;max-width:65mm;max-height:20mm;margin-top:5px}.empty-box{border:1.5px solid #9fb8c8;border-radius:8px;padding:15px;color:#6c7f8a;margin-top:18px}"+
+      ".attendance-page{padding-top:18mm}.attendance-table{margin-top:16px;font-size:8px}.attendance-table th{padding:7px}.attendance-table td{padding:7px}.member-sign-cell{height:17mm;min-width:35mm}.member-sign-img{display:block;max-width:32mm;max-height:14mm;margin:auto}.member-sign-blank{height:13mm}.jury-signs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.jury-signs>div{border:1.5px solid #9fb8c8;border-radius:8px;min-height:28mm;padding:8px}.jury-signs strong,.jury-signs span{display:block}.jury-signs img{display:block;max-width:65mm;max-height:20mm;margin-top:5px}.empty-box{border:1.5px solid #9fb8c8;border-radius:8px;padding:15px;color:#6c7f8a;margin-top:18px}"+      ".occena-report-page{padding-top:17mm}.occena-report-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:7px;margin:14px 0}.occena-report-summary>div{border:1.4px solid #9fb8c8;border-radius:8px;padding:8px;background:#f4f8fa}.occena-report-summary small{display:block;font-size:6.5px;text-transform:uppercase;color:#6b7f8b}.occena-report-summary strong{display:block;font-size:13px;color:#173f5c;margin-top:3px}.occena-report-summary .ok{border-color:#8dc3a5;background:#edf8f1}.occena-report-summary .ok strong{color:#137653}.occena-report-summary .wait{border-color:#d6b87e;background:#fff7e8}.occena-report-summary .wait strong{color:#8a5900}.occena-report-table{font-size:6.8px}.occena-report-table th{padding:5px 3px}.occena-report-table td{padding:5px 4px}.occena-report-table td span{font-size:5.8px;color:#6e818d}.occena-global-report{margin-top:16px;border:2px solid #9fb8c8;border-left:6px solid #2c7ea8;border-radius:9px;padding:11px 13px;display:flex;justify-content:space-between;align-items:center;gap:15px}.occena-global-report small{display:block;font-size:7px;text-transform:uppercase;color:#6c7f8a}.occena-global-report strong{display:block;font-size:24px;color:#0d638f;margin-top:2px}.occena-global-report p{margin:0;max-width:115mm;color:#526b7a;font-size:8px}.occena-global-report.disabled{border-left-color:#a9b4ba}.occena-global-report.disabled strong{color:#7e8c94}.occena-report-warning{margin-top:10px;padding:8px 10px;border:1px solid #d4dde2;border-radius:7px;background:#f7f9fa;color:#5b6c77;font-size:7px}"+
       "@media print{body{background:#fff}.toolbar{display:none!important}.report-page{max-width:none;min-height:277mm;margin:0;padding-left:10mm;padding-right:10mm;box-shadow:none;break-after:auto}.page-break{break-before:page;page-break-before:always}.cover{padding-top:12mm}.cover-center{padding-top:20mm}th,.supplier-card-head,.reception-head,.sample-card-head,.jury-conclusion,.technical-note,.sample-sensory-line{ -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}"+
       "}";
 
     return "<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Dossier résultats — "+esc(cfg.lotName||"Jury")+"</title><style>"+css+"</style></head><body>"+
-      "<div class='toolbar'><strong>Dossier résultats · NOUVELLE PRÉSENTATION v288 · "+esc(cfg.lotName||"Jury")+"</strong><div class='toolbar-actions'><button class='back-home' onclick='if(window.opener&&!window.opener.closed){window.opener.focus();window.close();}else{history.back();}'>← Retour à l’accueil</button><button class='print-dossier' onclick='window.print()'>Imprimer / Enregistrer tout le dossier en PDF</button></div></div>"+
+      "<div class='toolbar'><strong>Dossier résultats · NOUVELLE PRÉSENTATION v290 · "+esc(cfg.lotName||"Jury")+"</strong><div class='toolbar-actions'><button class='back-home' onclick='if(window.opener&&!window.opener.closed){window.opener.focus();window.close();}else{history.back();}'>← Retour à l’accueil</button><button class='print-dossier' onclick='window.print()'>Imprimer / Enregistrer tout le dossier en PDF</button></div></div>"+
       cover+
       productReports(st)+
       lotReport(st)+
@@ -399,6 +432,7 @@
       receptionSheets(st)+
       sampleSheets(st)+
       attendance(st)+
+      occenaReportV290(st)+
       "</body></html>";
   }
 
