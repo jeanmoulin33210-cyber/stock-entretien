@@ -1,4 +1,4 @@
-const CACHE_NAME='tc-offline-v289-20261006';
+const CACHE_NAME='tc-offline-v290-20261006';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
@@ -36,7 +36,8 @@ const APP_SHELL=[
   './js/26-v207-reinitialiser-les-lots.js',
   './js/27-v274-outils-avances-pin.js',
   './js/28-v274-dossier-resultats-2025.js',
-  './js/29-v275-correctif-impression-qr.js'
+  './js/29-v275-correctif-impression-qr.js',
+  './js/30-v290-controle-occena.js'
 ];
 
 self.addEventListener('install',event=>{
