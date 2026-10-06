@@ -442,7 +442,7 @@
       "}";
 
     return "<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Dossier résultats — "+esc(cfg.lotName||"Jury")+"</title><style>"+css+"</style></head><body>"+
-      "<div class='toolbar'><strong>Dossier résultats · NOUVELLE PRÉSENTATION v293 · "+esc(cfg.lotName||"Jury")+"</strong><div class='toolbar-actions'><button class='back-home' onclick='if(window.opener&&!window.opener.closed){window.opener.focus();window.close();}else{history.back();}'>← Retour à l’accueil</button><button class='print-dossier' onclick='window.print()'>Imprimer / Enregistrer tout le dossier en PDF</button></div></div>"+
+      "<div class='toolbar'><strong>Dossier résultats · NOUVELLE PRÉSENTATION v294 · "+esc(cfg.lotName||"Jury")+"</strong><div class='toolbar-actions'><button class='back-home' onclick='if(window.opener&&!window.opener.closed){window.opener.focus();window.close();}else{history.back();}'>← Retour à l’accueil</button><button class='print-dossier' onclick='window.print()'>Imprimer / Enregistrer tout le dossier en PDF</button></div></div>"+
       cover+
       productReports(st)+
       lotReport(st)+
