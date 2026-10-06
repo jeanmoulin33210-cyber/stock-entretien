@@ -2720,3 +2720,35 @@ table td{
   font-size:10px;
   font-weight:800;
 }
+
+
+/* ===== V276 — progression individuelle des testeurs en projection ===== */
+#projectionView .projection-tester-progress{
+  width:82%;
+  height:9px;
+  margin-top:12px;
+  overflow:hidden;
+  border-radius:999px;
+  background:rgba(255,255,255,.14);
+  box-shadow:inset 0 1px 2px rgba(0,0,0,.18);
+}
+#projectionView .projection-tester-progress-fill{
+  height:100%;
+  width:0;
+  border-radius:inherit;
+  background:rgba(143,213,250,.96);
+  transition:width .45s ease;
+}
+#projectionView .projection-tester-card.done .projection-tester-progress-fill{
+  background:rgba(140,228,189,.98);
+}
+#projectionView .projection-tester-card.waiting .projection-tester-progress-fill{
+  background:rgba(255,255,255,.35);
+}
+@media(max-width:620px){
+  #projectionView .projection-tester-progress{
+    width:88%;
+    height:8px;
+    margin-top:9px;
+  }
+}

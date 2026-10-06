@@ -4117,7 +4117,10 @@ function renderProjectionData(){
       grid.insertAdjacentHTML('beforeend',`
         <div class="projection-tester-card ${st.cls}">
           <strong>${escapeHtml(state.testers?.[t]?.name||`Testeur ${t}`)}</strong>
-          <span>${st.label}${st.cls==='running'?` · ${pct} %`:''}</span>
+          <span>${st.label} · ${pct} %</span>
+          <div class="projection-tester-progress" aria-label="Progression ${pct} %">
+            <div class="projection-tester-progress-fill" style="width:${Math.max(0,Math.min(100,pct))}%"></div>
+          </div>
         </div>`);
     }
   }
