@@ -1,4 +1,4 @@
-const CACHE_NAME='tc-offline-v270-20261005';
+const CACHE_NAME='tc-offline-v271-20261006';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
