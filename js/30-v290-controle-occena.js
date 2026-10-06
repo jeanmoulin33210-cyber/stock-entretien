@@ -121,8 +121,26 @@
       try{await syncDirtyToCloud();}catch(e){}
     }
     if(showToast!==false&&typeof toast==="function")toast("Contrôle OCCENA enregistré ✓");
+    var y=window.scrollY||window.pageYOffset||0;
     render();
+    requestAnimationFrame(function(){window.scrollTo(0,y);});
   }
+  function renderKeepPosition(rowKey){
+    var savedY=window.scrollY||window.pageYOffset||0;
+    var oldRow=rowKey?document.querySelector('[data-occena-row="'+CSS.escape(String(rowKey))+'"]'):null;
+    var oldTop=oldRow?oldRow.getBoundingClientRect().top:null;
+    render();
+    requestAnimationFrame(function(){
+      var nextRow=rowKey?document.querySelector('[data-occena-row="'+CSS.escape(String(rowKey))+'"]'):null;
+      if(nextRow&&oldTop!==null){
+        var delta=nextRow.getBoundingClientRect().top-oldTop;
+        if(Math.abs(delta)>1)window.scrollBy(0,delta);
+      }else{
+        window.scrollTo(0,savedY);
+      }
+    });
+  }
+
   function render(){
     var box=document.getElementById("occenaControlContent");
     if(!box||typeof state==="undefined"||!state||!state.config)return;
@@ -190,11 +208,23 @@
     });
 
     box.querySelectorAll("[data-occena-status]").forEach(function(sel){
-      sel.onchange=function(){capture();if(typeof saveState==="function")saveState();render();};
+      sel.onchange=function(){
+        var row=sel.closest("[data-occena-row]");
+        var key=row?row.getAttribute("data-occena-row"):"";
+        capture();
+        if(typeof saveState==="function")saveState();
+        renderKeepPosition(key);
+      };
     });
     box.querySelectorAll("input").forEach(function(inp){
       inp.oninput=function(){var s=document.getElementById("occenaSaveState");if(s)s.textContent="À enregistrer";};
-      inp.onchange=function(){capture();if(typeof saveState==="function")saveState();render();};
+      inp.onchange=function(){
+        var row=inp.closest("[data-occena-row]");
+        var key=row?row.getAttribute("data-occena-row"):"";
+        capture();
+        if(typeof saveState==="function")saveState();
+        renderKeepPosition(key);
+      };
     });
     if(globalInput){
       globalInput.oninput=function(){var s=document.getElementById("occenaSaveState");if(s)s.textContent="À enregistrer";};
