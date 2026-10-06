@@ -372,8 +372,15 @@
         complete:complete
       });
     });
-    var checked=rows.filter(function(x){return x.complete;}).length,total=rows.length,required=total?Math.ceil(total*.30):0;
-    var pct=total?Math.round(checked/total*1000)/10:0,reached=total>0&&checked>=required;
+    var checked=rows.filter(function(x){return x.complete;}).length,total=rows.length,bySupplier={};
+    rows.forEach(function(r){
+      if(!bySupplier[r.supplier])bySupplier[r.supplier]={supplier:r.supplier,checked:0};
+      if(r.complete)bySupplier[r.supplier].checked++;
+    });
+    var supplierRows=Object.keys(bySupplier).sort(function(a,b){return a.localeCompare(b,"fr");}).map(function(k){return bySupplier[k];});
+    var required=supplierRows.length*5;
+    var credited=supplierRows.reduce(function(n,x){return n+Math.min(x.checked,5);},0);
+    var pct=required?Math.round(credited/required*1000)/10:0,reached=supplierRows.length>0&&supplierRows.every(function(x){return x.checked>=5;});
     var globalScore=String(data.globalScore==null?"":data.globalScore).trim();
     var body=rows.map(function(r){
       var statusLabel=r.status==="conforme"?"Conforme":r.status==="corrige"?"Corrigé":"Non contrôlé";
@@ -382,10 +389,10 @@
     }).join("");
     return "<section class='report-page page-break occena-report-page'>"+
       "<div class='page-kicker'>Contrôle OCCENA</div><h2>Contrôle des scores OCCENA</h2>"+
-      "<p class='page-lead'>Vérification d’au moins 30 % des articles / fournisseurs à partir des fiches techniques. Le score OCCENA est présenté à titre informatif et n’intervient dans aucun calcul de classement ou de note dans cette application.</p>"+
-      "<div class='occena-report-summary'><div><small>Articles contrôlés</small><strong>"+checked+" / "+total+"</strong></div><div><small>Pourcentage contrôlé</small><strong>"+pct+" %</strong></div><div><small>Minimum requis</small><strong>"+required+" article"+(required>1?"s":"")+"</strong></div><div class='"+(reached?"ok":"wait")+"'><small>Seuil de 30 %</small><strong>"+(reached?"Atteint ✓":"Non atteint")+"</strong></div></div>"+
+      "<p class='page-lead'>Vérification de 5 fiches par fournisseur. Le score OCCENA est présenté à titre informatif et n’intervient dans aucun calcul de classement ou de note dans cette application.</p>"+
+      "<div class='occena-report-summary'><div><small>Fiches contrôlées</small><strong>"+checked+"</strong></div><div><small>Fournisseurs</small><strong>"+supplierRows.length+"</strong></div><div><small>Règle</small><strong>5 fiches / fournisseur</strong></div><div class='"+(reached?"ok":"wait")+"'><small>Contrôle</small><strong>"+(reached?"Complet ✓":"À compléter")+"</strong></div></div>"+
       "<table class='occena-report-table'><thead><tr><th>Article</th><th>Fournisseur / échantillon</th><th>Score initial</th><th>Contrôle</th><th>Score retenu</th><th>Correction / observation</th></tr></thead><tbody>"+(body||"<tr><td colspan='6'>Aucun article enregistré.</td></tr>")+"</tbody></table>"+
-      "<div class='occena-global-report "+(reached?"enabled":"disabled")+"'><div><small>Score OCCENA global</small><strong>"+(reached&&globalScore?esc(globalScore):"—")+"</strong></div><p>"+(reached?(globalScore?"Score saisi manuellement après contrôle du seuil minimum.":"Seuil atteint — score global restant à saisir manuellement."):"Le score global n’est pas renseigné tant que le seuil de 30 % n’est pas atteint.")+"</p></div>"+
+      "<div class='occena-global-report "+(reached?"enabled":"disabled")+"'><div><small>Score OCCENA global</small><strong>"+(reached&&globalScore?esc(globalScore):"—")+"</strong></div><p>"+(reached?(globalScore?"Score saisi manuellement après contrôle du seuil minimum.":"Seuil atteint — score global restant à saisir manuellement."):"Le score global n’est pas renseigné tant que chaque fournisseur n’a pas 5 fiches contrôlées.")+"</p></div>"+
       "<div class='occena-report-warning'><strong>Important :</strong> ce score est conservé dans le dossier mais n’est actuellement appliqué à aucun calcul de résultat.</div>"+
     "</section>";
   }
