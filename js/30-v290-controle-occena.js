@@ -362,14 +362,41 @@
   }
 
 
-  /* V300 — mode téléphone OCCENA plein écran.
+  /* V301 — mode téléphone OCCENA plein écran.
      La page Résultats est figée pendant la saisie : aucune remontée de page
      ne peut obliger l'utilisateur à redescendre dans une longue liste. */
   var occenaPhoneIndex=0;
   var occenaPhoneScrollY=0;
 
   function occenaPhoneRows(){
-    return rowsFor(state);
+    var rows=rowsFor(state).slice();
+
+    function norm(v){
+      return String(v||"")
+        .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+        .toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+    }
+    function supplierPriority(name){
+      var n=norm(name);
+      /* Ordre demandé pour le contrôle téléphone :
+         1. PASSIONFROID
+         2. BERTRAND (quel que soit le préfixe exact saisi)
+         3. autres fournisseurs */
+      if(n.indexOf("passionfroid")>=0 || (n.indexOf("passion")>=0&&n.indexOf("froid")>=0))return 0;
+      if(n.indexOf("bertrand")>=0)return 1;
+      return 10;
+    }
+
+    rows.forEach(function(r,i){r.__phoneOrder=i;});
+    rows.sort(function(a,b){
+      var pa=supplierPriority(a.supplier),pb=supplierPriority(b.supplier);
+      if(pa!==pb)return pa-pb;
+      var sa=norm(a.supplier),sb=norm(b.supplier);
+      if(sa!==sb)return sa.localeCompare(sb,"fr");
+      return a.__phoneOrder-b.__phoneOrder;
+    });
+    rows.forEach(function(r){delete r.__phoneOrder;});
+    return rows;
   }
 
   function ensureOccenaPhoneOverlay(){
@@ -386,6 +413,7 @@
           "<button type='button' id='occenaPhoneCloseV300'>✕</button>"+
         "</div>"+
         "<div class='occena-phone-summary-v300' id='occenaPhoneSummaryV300'></div>"+
+        "<div class='occena-phone-tools-v301'><button type='button' id='occenaPhoneAddSheetV301'>＋ Ajouter une fiche</button></div>"+
         "<div class='occena-phone-card-v300' id='occenaPhoneCardV300'></div>"+
         "<div class='occena-phone-nav-v300'>"+
           "<button type='button' id='occenaPhonePrevV300'>← Précédent</button>"+
@@ -395,6 +423,7 @@
     document.body.appendChild(modal);
 
     document.getElementById("occenaPhoneCloseV300").onclick=closeOccenaPhoneMode;
+    document.getElementById("occenaPhoneAddSheetV301").onclick=addOccenaPhoneSheetV301;
     document.getElementById("occenaPhonePrevV300").onclick=function(){
       saveOccenaPhoneCard();
       if(occenaPhoneIndex>0)occenaPhoneIndex--;
@@ -474,6 +503,42 @@
     d.items[key]=rec;
     d.updatedAt=new Date().toISOString();
     if(typeof saveState==="function")saveState();
+  }
+
+  function addOccenaPhoneSheetV301(){
+    saveOccenaPhoneCard();
+
+    var rows=occenaPhoneRows();
+    var current=rows[occenaPhoneIndex]||{};
+    var supplier=prompt("Fournisseur de la nouvelle fiche :",String(current.supplier||""));
+    supplier=String(supplier||"").trim();
+    if(!supplier)return;
+
+    var productName=prompt("Article / produit :",String(current.productName||""));
+    productName=String(productName||"").trim();
+    if(!productName)return;
+
+    var sampleId=prompt("N° échantillon (facultatif) :","");
+    sampleId=String(sampleId||"").trim();
+
+    var d=dataFor(state);
+    var id=(typeof uid==="function"?uid("occena"):"occena_"+Date.now()+"_"+Math.random().toString(36).slice(2,8));
+    d.customRows.push({
+      id:id,
+      productName:productName,
+      supplier:supplier,
+      sampleId:sampleId
+    });
+    d.updatedAt=new Date().toISOString();
+    if(typeof saveState==="function")saveState();
+
+    var nextRows=occenaPhoneRows();
+    var key="custom__"+String(id);
+    var index=nextRows.findIndex(function(r){return String(r.key)===key;});
+    if(index>=0)occenaPhoneIndex=index;
+    renderOccenaPhoneCard();
+
+    if(typeof toast==="function")toast("Fiche OCCENA ajoutée ✓");
   }
 
   function renderOccenaPhoneCard(){
@@ -579,7 +644,7 @@
     if(document.getElementById("occenaCustomStyleV290"))return;
     var s=document.createElement("style");
     s.id="occenaCustomStyleV290";
-    s.textContent=".occena-control-card,.occena-control-card *{overflow-anchor:none}.occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}.occena-status-field{display:flex;flex-direction:column;gap:6px}.occena-status-field>span{font-size:9px;font-weight:800;color:#526777}.occena-status-buttons{display:flex;gap:5px;flex-wrap:wrap}.occena-status-buttons button{border:1px solid #b8c8d2;background:#fff;color:#355366;border-radius:8px;padding:8px 9px;font:800 9px Arial,sans-serif;cursor:pointer;touch-action:manipulation}.occena-status-buttons button.active{background:#173f5c;color:#fff;border-color:#173f5c}.occena-status-buttons button:focus{outline:2px solid rgba(23,63,92,.22);outline-offset:1px}.occena-phone-modal-v300{display:none;position:fixed;inset:0;z-index:2147483000;background:#eef3f6}.occena-phone-modal-v300.open{display:block}.occena-phone-shell-v300{height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:#eef3f6}.occena-phone-head-v300{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#173f5c;color:#fff}.occena-phone-head-v300>div{display:flex;flex-direction:column;gap:2px}.occena-phone-head-v300 strong{font-size:16px}.occena-phone-head-v300 span{font-size:11px;opacity:.8}.occena-phone-head-v300 button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:10px;width:38px;height:38px;font-size:18px}.occena-phone-summary-v300{flex:0 0 auto;display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:#fff;border-bottom:1px solid #dce5ea}.occena-phone-summary-v300 span{white-space:nowrap;border:1px solid #d8e2e8;border-radius:999px;padding:5px 8px;font-size:10px;color:#516b7b}.occena-phone-summary-v300 span.done{background:#e8f6ef;color:#176c50;border-color:#bfe4d2}.occena-phone-card-v300{flex:1 1 auto;overflow:auto;padding:16px 14px 18px;-webkit-overflow-scrolling:touch}.occena-phone-product-v300{font-size:11px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#6b7d89}.occena-phone-card-v300 h3{font-size:22px;color:#173f5c;margin:6px 0 2px}.occena-phone-sample-v300{font-size:12px;color:#71818b;margin-bottom:16px}.occena-phone-card-v300 label{display:block;margin:0 0 14px}.occena-phone-card-v300 label>span,.occena-phone-control-v300>span{display:block;font-size:11px;font-weight:800;color:#526777;margin-bottom:6px}.occena-phone-card-v300 input,.occena-phone-card-v300 textarea{width:100%;font-size:16px;border:1px solid #b9c9d3;border-radius:10px;padding:12px;background:#fff;color:#213d50}.occena-phone-control-v300{margin-bottom:14px}.occena-phone-control-v300>div{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}.occena-phone-control-v300 button{min-height:46px;border:1px solid #b7c7d1;border-radius:10px;background:#fff;color:#355366;font-weight:850;font-size:12px;touch-action:manipulation}.occena-phone-control-v300 button.active{background:#173f5c;color:#fff;border-color:#173f5c}.occena-phone-nav-v300{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #dce5ea}.occena-phone-nav-v300 button{min-height:48px;border:0;border-radius:10px;background:#173f5c;color:#fff;font-size:14px;font-weight:850}.occena-phone-nav-v300 button:disabled{opacity:.38}.occena-phone-open-v300{overscroll-behavior:none}";
+    s.textContent=".occena-control-card,.occena-control-card *{overflow-anchor:none}.occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}.occena-status-field{display:flex;flex-direction:column;gap:6px}.occena-status-field>span{font-size:9px;font-weight:800;color:#526777}.occena-status-buttons{display:flex;gap:5px;flex-wrap:wrap}.occena-status-buttons button{border:1px solid #b8c8d2;background:#fff;color:#355366;border-radius:8px;padding:8px 9px;font:800 9px Arial,sans-serif;cursor:pointer;touch-action:manipulation}.occena-status-buttons button.active{background:#173f5c;color:#fff;border-color:#173f5c}.occena-status-buttons button:focus{outline:2px solid rgba(23,63,92,.22);outline-offset:1px}.occena-phone-modal-v300{display:none;position:fixed;inset:0;z-index:2147483000;background:#eef3f6}.occena-phone-modal-v300.open{display:block}.occena-phone-shell-v300{height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:#eef3f6}.occena-phone-head-v300{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#173f5c;color:#fff}.occena-phone-head-v300>div{display:flex;flex-direction:column;gap:2px}.occena-phone-head-v300 strong{font-size:16px}.occena-phone-head-v300 span{font-size:11px;opacity:.8}.occena-phone-head-v300 button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:10px;width:38px;height:38px;font-size:18px}.occena-phone-summary-v300{flex:0 0 auto;display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:#fff;border-bottom:1px solid #dce5ea}.occena-phone-summary-v300 span{white-space:nowrap;border:1px solid #d8e2e8;border-radius:999px;padding:5px 8px;font-size:10px;color:#516b7b}.occena-phone-summary-v300 span.done{background:#e8f6ef;color:#176c50;border-color:#bfe4d2}.occena-phone-tools-v301{flex:0 0 auto;padding:8px 10px;background:#eef3f6;border-bottom:1px solid #dce5ea}.occena-phone-tools-v301 button{width:100%;min-height:40px;border:1px dashed #8faebe;border-radius:10px;background:#fff;color:#173f5c;font-size:12px;font-weight:850;touch-action:manipulation}.occena-phone-card-v300{flex:1 1 auto;overflow:auto;padding:16px 14px 18px;-webkit-overflow-scrolling:touch}.occena-phone-product-v300{font-size:11px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#6b7d89}.occena-phone-card-v300 h3{font-size:22px;color:#173f5c;margin:6px 0 2px}.occena-phone-sample-v300{font-size:12px;color:#71818b;margin-bottom:16px}.occena-phone-card-v300 label{display:block;margin:0 0 14px}.occena-phone-card-v300 label>span,.occena-phone-control-v300>span{display:block;font-size:11px;font-weight:800;color:#526777;margin-bottom:6px}.occena-phone-card-v300 input,.occena-phone-card-v300 textarea{width:100%;font-size:16px;border:1px solid #b9c9d3;border-radius:10px;padding:12px;background:#fff;color:#213d50}.occena-phone-control-v300{margin-bottom:14px}.occena-phone-control-v300>div{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}.occena-phone-control-v300 button{min-height:46px;border:1px solid #b7c7d1;border-radius:10px;background:#fff;color:#355366;font-weight:850;font-size:12px;touch-action:manipulation}.occena-phone-control-v300 button.active{background:#173f5c;color:#fff;border-color:#173f5c}.occena-phone-nav-v300{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #dce5ea}.occena-phone-nav-v300 button{min-height:48px;border:0;border-radius:10px;background:#173f5c;color:#fff;font-size:14px;font-weight:850}.occena-phone-nav-v300 button:disabled{opacity:.38}.occena-phone-open-v300{overscroll-behavior:none}";
     document.head.appendChild(s);
   }
 
