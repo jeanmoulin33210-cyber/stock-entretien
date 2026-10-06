@@ -10,11 +10,19 @@
   function storageKeysToReset(){
     return [
       (typeof PREPARED_JURY_STORAGE_KEY!=='undefined'?PREPARED_JURY_STORAGE_KEY:'jm_test_culinaire_prepared_v97'),
+      (typeof ARCHIVE_STORAGE_KEY!=='undefined'?ARCHIVE_STORAGE_KEY:'jm_test_culinaire_archives_v1'),
       (typeof SAMPLE_LOT_HISTORY_STORAGE_KEY!=='undefined'?SAMPLE_LOT_HISTORY_STORAGE_KEY:'jm_test_culinaire_sample_lot_history_v178'),
       (typeof SAMPLE_MASTER_STORAGE_KEY!=='undefined'?SAMPLE_MASTER_STORAGE_KEY:'jm_test_culinaire_sample_master_v1'),
       (typeof SAMPLE_MASTER_META_STORAGE_KEY!=='undefined'?SAMPLE_MASTER_META_STORAGE_KEY:'jm_test_culinaire_sample_master_meta_v1'),
       (typeof SAMPLE_PRODUCTS_STORAGE_KEY!=='undefined'?SAMPLE_PRODUCTS_STORAGE_KEY:'jm_test_culinaire_sample_products_v1'),
-      (typeof RECOVERY_STORAGE_KEY!=='undefined'?RECOVERY_STORAGE_KEY:'jm_test_culinaire_recovery_v29')
+      (typeof RECOVERY_STORAGE_KEY!=='undefined'?RECOVERY_STORAGE_KEY:'jm_test_culinaire_recovery_v29'),
+      (typeof CLOUD_STORAGE_KEY!=='undefined'?CLOUD_STORAGE_KEY:'jm_test_culinaire_cloud_v1'),
+      (typeof CLOUD_ACCESS_STORAGE_KEY!=='undefined'?CLOUD_ACCESS_STORAGE_KEY:'jm_test_culinaire_access_v20'),
+      BACKUP_KEY,
+      'jm_tc_active_juries_backup_v238',
+      'jm_tc_prepared_dedupe_backup_v238',
+      'jm_tc_qr_repair_backup_v251',
+      'jm_tc_product_sheets_repair_v256'
     ];
   }
 
@@ -117,27 +125,26 @@
 
   function updateRestoreButton(){
     const b=document.getElementById('restoreLotsBtnV207');
-    if(b)b.style.display=localStorage.getItem(BACKUP_KEY)?'inline-flex':'none';
+    if(b)b.style.display='none';
   }
 
   async function resetLots(){
     const first=confirm(
       'Réinitialiser tous les lots actifs ?\n\n'+
-      'Les jurys préparés, réceptions, fiches produits et sauvegardes de reprise seront vidés.\n\n'+
-      'Le PIN, la sécurité, les archives et les modèles seront conservés.'
+      'Tous les anciens essais seront supprimés : jurys, réceptions, fiches produits, résultats, archives et sauvegardes de reprise.\n\n'+
+      'Le PIN, la sécurité et les modèles seront conservés.'
     );
     if(!first)return;
 
     if(!(await checkPin()))return;
 
     const second=confirm(
-      'Dernière confirmation : repartir de zéro pour les lots ?\n\n'+
-      'Une copie de sécurité sera créée automatiquement et pourra être restaurée depuis Outils avancés.'
+      'Dernière confirmation : repartir vraiment de zéro ?\n\n'+
+      'Cette remise à zéro supprimera aussi les archives et les anciennes sauvegardes. Il n’y aura pas de restauration des anciens essais.'
     );
     if(!second)return;
 
     try{
-      saveBackup();
       const security=currentSecurity();
       await detachCurrentJuryCloud();
 
@@ -149,9 +156,9 @@
       localStorage.setItem(CLEAN_KEY,new Date().toISOString());
 
       alert(
-        'Les lots ont été remis à zéro.\n\n'+
-        'Votre PIN et vos archives sont conservés.\n'+
-        'Une sauvegarde des anciens lots est disponible dans Outils avancés.'
+        'Remise à zéro terminée.\n\n'+
+        'Tous les anciens lots, résultats, archives, réceptions et fiches produits ont été supprimés.\n'+
+        'Votre PIN et votre sécurité sont conservés. Vous pouvez maintenant faire un vrai test.'
       );
 
       /* Recharger sans les paramètres session/testeur de l'ancien jury,
@@ -197,7 +204,7 @@
   function bind(){
     const reset=document.getElementById('resetLotsBtnV207');
     const restore=document.getElementById('restoreLotsBtnV207');
-    if(reset)reset.onclick=resetLots;
+    if(reset){reset.textContent='🧹 Repartir vraiment de zéro';reset.onclick=resetLots;}
     if(restore)restore.onclick=restoreLots;
     updateRestoreButton();
   }
