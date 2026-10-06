@@ -3,18 +3,40 @@
   'use strict';
 
   function $(id){ return document.getElementById(id); }
-  var details=null, modal=null, input=null, error=null, confirmBtn=null, cancelBtn=null;
+  var details=null, modal=null, input=null, error=null, confirmBtn=null, cancelBtn=null, resultsDetailsBtn=null;
   var opening=false;
+  var pendingAction=null;
+  var pendingMode='advanced';
+
+  function setModalCopy(mode){
+    if(!modal)return;
+    var h=modal.querySelector('h3');
+    var p=modal.querySelector('p');
+    pendingMode=mode||'advanced';
+    if(pendingMode==='results-details'){
+      if(h)h.textContent='Détails protégés';
+      if(p)p.textContent='Saisissez votre code PIN pour afficher les détails des résultats.';
+      if(confirmBtn)confirmBtn.textContent='Ouvrir les détails';
+    }else{
+      if(h)h.textContent='Outils avancés protégés';
+      if(p)p.textContent='Saisissez votre code PIN pour ouvrir les outils avancés.';
+      if(confirmBtn)confirmBtn.textContent='Ouvrir les outils';
+    }
+  }
 
   function closeModal(){
     if(modal)modal.classList.remove('show');
     if(input)input.value='';
     if(error)error.textContent='';
     opening=false;
+    pendingAction=null;
+    pendingMode='advanced';
   }
 
-  function openModal(){
+  function openModal(mode,action){
     if(!modal)return;
+    pendingAction=typeof action==='function'?action:null;
+    setModalCopy(mode);
     if(input)input.value='';
     if(error)error.textContent='';
     modal.classList.add('show');
@@ -40,8 +62,12 @@
         if(input){input.value='';input.focus();}
         return;
       }
+      var action=pendingAction;
+      var mode=pendingMode;
       closeModal();
-      if(details){
+      if(action){
+        action();
+      }else if(mode==='advanced'&&details){
         details.open=true;
         details.dataset.pinOpened='1';
       }
@@ -50,7 +76,7 @@
     }finally{
       if(confirmBtn){
         confirmBtn.disabled=false;
-        confirmBtn.textContent='Ouvrir les outils';
+        setModalCopy(pendingMode);
       }
     }
   }
@@ -73,7 +99,38 @@
       return;
     }
 
-    openModal();
+    openModal('advanced',function(){
+      if(details){
+        details.open=true;
+        details.dataset.pinOpened='1';
+      }
+    });
+  }
+
+  function requestResultsDetailsOpen(e){
+    var view=document.getElementById('adminView');
+    if(!view)return;
+
+    /* La fermeture des détails reste immédiate et ne redemande pas le PIN. */
+    if(view.classList.contains('show-results-details'))return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    if(typeof e.stopImmediatePropagation==='function')e.stopImmediatePropagation();
+
+    if(typeof securityEnabled!=='function' || !securityEnabled()){
+      alert('Activez d’abord un code PIN dans « Sécurité administrateur » pour protéger Détails.');
+      try{
+        if(typeof openSecurityModal==='function')openSecurityModal();
+      }catch(_){}
+      return;
+    }
+
+    openModal('results-details',function(){
+      if(typeof toggleSimpleResultsDetails==='function'){
+        toggleSimpleResultsDetails();
+      }
+    });
   }
 
   function bind(){
@@ -83,20 +140,40 @@
     error=$('advancedToolsPinErrorV272');
     confirmBtn=$('advancedToolsPinConfirmV272');
     cancelBtn=$('advancedToolsPinCancelV272');
+    resultsDetailsBtn=$('simpleResultsMoreBtn');
 
-    if(!details||!modal||details.dataset.pinGuardBound==='1')return;
-    details.dataset.pinGuardBound='1';
+    if(!modal)return;
 
-    var summary=details.querySelector('summary');
-    if(summary)summary.addEventListener('click',requestOpen,true);
+    if(details&&details.dataset.pinGuardBound!=='1'){
+      details.dataset.pinGuardBound='1';
+      var summary=details.querySelector('summary');
+      if(summary)summary.addEventListener('click',requestOpen,true);
+    }
 
-    if(confirmBtn)confirmBtn.addEventListener('click',validatePin);
-    if(cancelBtn)cancelBtn.addEventListener('click',closeModal);
-    if(input)input.addEventListener('keydown',function(e){
-      if(e.key==='Enter'){e.preventDefault();validatePin();}
-      if(e.key==='Escape'){e.preventDefault();closeModal();}
-    });
-    modal.addEventListener('click',function(e){if(e.target===modal)closeModal();});
+    if(resultsDetailsBtn&&resultsDetailsBtn.dataset.pinGuardBound!=='1'){
+      resultsDetailsBtn.dataset.pinGuardBound='1';
+      resultsDetailsBtn.addEventListener('click',requestResultsDetailsOpen,true);
+    }
+
+    if(confirmBtn&&!confirmBtn.dataset.pinGuardBound){
+      confirmBtn.dataset.pinGuardBound='1';
+      confirmBtn.addEventListener('click',validatePin);
+    }
+    if(cancelBtn&&!cancelBtn.dataset.pinGuardBound){
+      cancelBtn.dataset.pinGuardBound='1';
+      cancelBtn.addEventListener('click',closeModal);
+    }
+    if(input&&!input.dataset.pinGuardBound){
+      input.dataset.pinGuardBound='1';
+      input.addEventListener('keydown',function(e){
+        if(e.key==='Enter'){e.preventDefault();validatePin();}
+        if(e.key==='Escape'){e.preventDefault();closeModal();}
+      });
+    }
+    if(!modal.dataset.pinGuardBound){
+      modal.dataset.pinGuardBound='1';
+      modal.addEventListener('click',function(e){if(e.target===modal)closeModal();});
+    }
   }
 
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',bind);
