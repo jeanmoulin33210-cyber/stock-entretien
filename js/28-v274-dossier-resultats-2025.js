@@ -221,6 +221,17 @@
     }).join("");
   }
 
+  function occenaSupplierKeyV311Report(name){
+    return String(name||"")
+      .normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
+  }
+  function occenaSupplierScoreV311Report(st,name){
+    var data=st&&st.config&&st.config.occenaControl||{};
+    var scores=data.supplierScores&&typeof data.supplierScores==="object"?data.supplierScores:{};
+    return String(scores[occenaSupplierKeyV311Report(name)]||"").trim();
+  }
+
   function lotReport(st){
     var products=st&&st.config&&st.config.products||[];
     var rows=lotSupplierRows(st);
@@ -230,7 +241,8 @@
         var x=r.perProduct[pi];
         return "<td class='score'>"+(x?n(x.total,0):"—")+"</td>";
       }).join("");
-      return "<tr><td class='rank'>"+r.rank+"</td><td><strong>"+esc(r.supplier)+"</strong></td>"+cells+"<td class='score'>"+n(r.total,0)+" / "+n(r.max,0)+"</td><td class='score lot-note5'>"+n(r.note5,2)+"</td></tr>";
+      var occena=occenaSupplierScoreV311Report(st,r.supplier);
+      return "<tr><td class='rank'>"+r.rank+"</td><td><strong>"+esc(r.supplier)+"</strong></td>"+cells+"<td class='score'>"+n(r.total,0)+" / "+n(r.max,0)+"</td><td class='score lot-note5'>"+n(r.note5,2)+"</td><td class='score'>"+(occena?esc(occena):"—")+"</td></tr>";
     }).join("");
     var note=String(st&&st.config&&st.config.reportNote||"").trim();
     var conclusion=String(st&&st.config&&st.config.juryConclusion||"").trim();
@@ -239,7 +251,7 @@
     return "<section class='report-page page-break lot-summary-page'>"+
       "<div class='page-kicker'>Synthèse du lot</div>"+
       "<h2>Résultats complets — "+esc(names)+"</h2>"+
-      "<table class='lot-table'><thead><tr><th>Classement</th><th>Fournisseur</th>"+heads+"<th>Total</th><th>Note /5</th></tr></thead><tbody>"+body+"</tbody></table>"+
+      "<table class='lot-table'><thead><tr><th>Classement</th><th>Fournisseur</th>"+heads+"<th>Total</th><th>Note /5</th><th>OCCENA</th></tr></thead><tbody>"+body+"</tbody></table>"+
       "<p class='calculation-note'>La note sur 5 est calculée automatiquement : total obtenu ÷ total maximal × 5.</p>"+
       (conclusion?"<div class='jury-conclusion'><h3>Conclusion / rapport du jury</h3><div>"+esc(conclusion).replace(/\n/g,"<br>")+"</div></div>":"")+
       (note?"<div class='technical-note'><h3>Note explicative / conformité</h3><div>"+esc(note).replace(/\n/g,"<br>")+"</div></div>":"")+
@@ -381,7 +393,12 @@
     var required=supplierRows.length*5;
     var credited=supplierRows.reduce(function(n,x){return n+Math.min(x.checked,5);},0);
     var pct=required?Math.round(credited/required*1000)/10:0,reached=supplierRows.length>0&&supplierRows.every(function(x){return x.checked>=5;});
-    var globalScore=String(data.globalScore==null?"":data.globalScore).trim();
+    var supplierScores=data.supplierScores&&typeof data.supplierScores==="object"?data.supplierScores:{};
+    var supplierScoreBody=supplierRows.map(function(x){
+      var key=occenaSupplierKeyV311Report(x.supplier);
+      var score=String(supplierScores[key]||"").trim();
+      return "<tr><td><strong>"+esc(x.supplier)+"</strong></td><td class='score'>"+(score?esc(score):"—")+"</td></tr>";
+    }).join("");
     var body=rows.map(function(r){
       var statusLabel=r.status==="conforme"?"Conforme":r.status==="corrige"?"Corrigé":"Non contrôlé";
       var retained=r.status==="corrige"?(r.corrected||"—"):(r.initial||"—");
@@ -392,8 +409,9 @@
       "<p class='page-lead'>Vérification de 5 fiches par fournisseur. Le score OCCENA est présenté à titre informatif et n’intervient dans aucun calcul de classement ou de note dans cette application.</p>"+
       "<div class='occena-report-summary'><div><small>Fiches contrôlées</small><strong>"+checked+"</strong></div><div><small>Fournisseurs</small><strong>"+supplierRows.length+"</strong></div><div><small>Règle</small><strong>5 fiches / fournisseur</strong></div><div class='"+(reached?"ok":"wait")+"'><small>Contrôle</small><strong>"+(reached?"Complet ✓":"À compléter")+"</strong></div></div>"+
       "<table class='occena-report-table'><thead><tr><th>Article</th><th>Fournisseur / échantillon</th><th>Score initial</th><th>Contrôle</th><th>Score retenu</th><th>Correction / observation</th></tr></thead><tbody>"+(body||"<tr><td colspan='6'>Aucun article enregistré.</td></tr>")+"</tbody></table>"+
-      "<div class='occena-global-report "+(reached?"enabled":"disabled")+"'><div><small>Score OCCENA global</small><strong>"+(reached&&globalScore?esc(globalScore):"—")+"</strong></div><p>"+(reached?(globalScore?"Score saisi manuellement après contrôle du seuil minimum.":"Seuil atteint — score global restant à saisir manuellement."):"Le score global n’est pas renseigné tant que chaque fournisseur n’a pas 5 fiches contrôlées.")+"</p></div>"+
-      "<div class='occena-report-warning'><strong>Important :</strong> ce score est conservé dans le dossier mais n’est actuellement appliqué à aucun calcul de résultat.</div>"+
+      "<h3 style='margin:16px 0 6px;color:#173f5c'>Scores OCCENA par fournisseur</h3>"+
+      "<table class='occena-report-table'><thead><tr><th>Fournisseur</th><th>Score OCCENA</th></tr></thead><tbody>"+(supplierScoreBody||"<tr><td colspan='2'>Aucun fournisseur.</td></tr>")+"</tbody></table>"+
+      "<div class='occena-report-warning'><strong>Important :</strong> ces scores sont saisis manuellement et n’interviennent dans aucun calcul de classement ou de note.</div>"+
     "</section>";
   }
 
