@@ -94,7 +94,7 @@
     if(document.getElementById("occenaNextStyleV291"))return;
     var s=document.createElement("style");
     s.id="occenaNextStyleV291";
-    s.textContent=".occena-control-card.occena-focus-v291{outline:3px solid rgba(13,99,143,.26);outline-offset:4px;transition:outline-color .35s ease}";
+    s.textContent=".occena-control-card.occena-focus-v291{outline:3px solid rgba(13,99,143,.26);outline-offset:4px;transition:outline-color .35s ease}.occena-control-card.occena-complete-v304{border:2px solid #48a77a!important;background:#f1fbf6!important;box-shadow:0 0 0 3px rgba(72,167,122,.10)}.occena-control-card.occena-complete-v304 .occena-control-head strong{color:#176b4d}.occena-control-card.occena-complete-v304 .occena-progress-bar span{background:#48a77a!important}#simpleResultsOccenaBtn.occena-step-complete-v304{display:inline-flex!important;background:#e8f6ef!important;border-color:#58a982!important;color:#176b4d!important;font-weight:850!important}";
     document.head.appendChild(s);
   }
   function apply(){
@@ -108,17 +108,25 @@
     var m=metrics(state);
     var wf=workflowReady();
 
+    var card=document.getElementById("occenaControlCard");
+    if(card)card.classList.toggle("occena-complete-v304",m.reached);
+
     if(m.reached){
-      btn.style.display="none";
+      /* V304 — l'étape OCCENA reste visible une fois terminée.
+         Elle passe en vert au lieu de disparaître. */
+      btn.style.display="";
       btn.disabled=false;
-      if(report)report.textContent="📚 3. Dossier résultats";
+      removeHighlight(btn);
+      btn.classList.add("occena-step-complete-v304");
+      btn.textContent="✓ 3. Contrôle OCCENA — OK";
+      if(report)report.textContent="📚 4. Dossier résultats";
       if(wf.closed&&wf.closureReady&&wf.sheetsReady){
-        removeHighlight(btn);
         highlight(report);
         if(title)title.textContent="👉 À faire maintenant : dossier résultats";
-        if(hint)hint.textContent="Chaque fournisseur possède 5 fiches OCCENA contrôlées. Vous pouvez maintenant ouvrir le dossier résultats.";
+        if(hint)hint.textContent="✓ Contrôle OCCENA terminé : 5 fiches validées par fournisseur. Vous pouvez maintenant ouvrir le dossier résultats.";
       }
     }else{
+      btn.classList.remove("occena-step-complete-v304");
       btn.style.display="";
       btn.disabled=false;
       btn.textContent=m.required
