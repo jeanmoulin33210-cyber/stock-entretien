@@ -2680,3 +2680,43 @@ table td{
     grid-template-columns:1fr!important;
   }
 }
+
+
+/* V272 — Fenêtre PIN des Outils avancés */
+.advanced-tools-pin-modal-v272{
+  text-align:center;
+}
+.advanced-tools-pin-icon-v272{
+  width:54px;
+  height:54px;
+  border-radius:17px;
+  display:grid;
+  place-items:center;
+  margin:0 auto 10px;
+  background:#eef6fa;
+  font-size:26px;
+}
+.advanced-tools-pin-modal-v272 h3{
+  margin:0 0 6px;
+}
+.advanced-tools-pin-modal-v272 > p{
+  margin:0 0 15px;
+  color:var(--muted);
+  font-size:11px;
+  line-height:1.45;
+}
+.advanced-tools-pin-modal-v272 .field{
+  text-align:left;
+}
+#advancedToolsPinInputV272{
+  font-size:20px;
+  letter-spacing:.20em;
+  text-align:center;
+}
+.advanced-tools-pin-error-v272{
+  min-height:18px;
+  margin-top:7px;
+  color:#b33b32;
+  font-size:10px;
+  font-weight:800;
+}
