@@ -129,6 +129,50 @@
     return btn;
   }
 
+  function ensureConclusionButtonV307(){
+    var box=document.querySelector(".simple-results-action-buttons");
+    if(!box)return null;
+    var btn=document.getElementById("simpleResultsConclusionBtn");
+    if(!btn){
+      btn=document.createElement("button");
+      btn.type="button";
+      btn.className="btn btn-secondary";
+      btn.id="simpleResultsConclusionBtn";
+      var occena=document.getElementById("simpleResultsOccenaBtn");
+      if(occena)box.insertBefore(btn,occena);
+      else box.appendChild(btn);
+    }
+    if(!btn.__v307Bound){
+      btn.__v307Bound=true;
+      btn.onclick=function(){
+        var card=document.querySelector(".jury-conclusion-card");
+        var input=document.getElementById("juryConclusionInput");
+        if(card){
+          card.scrollIntoView({behavior:"smooth",block:"center"});
+          card.classList.add("occena-focus-v291");
+          setTimeout(function(){card.classList.remove("occena-focus-v291");},1400);
+        }
+        setTimeout(function(){try{input&&input.focus();}catch(e){}},280);
+      };
+    }
+    return btn;
+  }
+
+  function updateConclusionStateV307(){
+    if(typeof state==="undefined"||!state||!state.config)return;
+    var btn=ensureConclusionButtonV307();
+    if(!btn)return;
+    var done=String(state.config.juryConclusion||"").trim().length>0;
+    btn.style.display="";
+    btn.disabled=false;
+    btn.classList.remove("btn-primary","simple-results-next-btn");
+    btn.classList.add("btn-secondary");
+    btn.classList.toggle("occena-step-complete-v304",done);
+    btn.textContent=done
+      ?"✓ Conclusion / rapport jury — OK"
+      :"📝 Conclusion / rapport jury";
+  }
+
   function updateReceptionAndProductStatesV306(){
     if(typeof state==="undefined"||!state||!state.config)return;
 
@@ -178,6 +222,7 @@
     var m=metrics(state);
     var wf=workflowReady();
     updateReceptionAndProductStatesV306();
+    updateConclusionStateV307();
 
     var card=document.getElementById("occenaControlCard");
     if(card)card.classList.toggle("occena-complete-v304",m.reached);
@@ -229,6 +274,7 @@
     ensureStyle();
     ensureButton();
     ensureReceptionButtonV306();
+    ensureConclusionButtonV307();
     apply();
     var badge=document.getElementById("occenaControlState");
     if(badge&&!badge.__v291Observed){
@@ -239,6 +285,16 @@
     if(save&&!save.__v291Bound){
       save.__v291Bound=true;
       save.addEventListener("click",function(){setTimeout(apply,80);});
+    }
+    var conclusionSave=document.getElementById("saveJuryConclusionBtn");
+    if(conclusionSave&&!conclusionSave.__v307Bound){
+      conclusionSave.__v307Bound=true;
+      conclusionSave.addEventListener("click",function(){setTimeout(apply,80);});
+    }
+    var conclusionClear=document.getElementById("clearJuryConclusionBtn");
+    if(conclusionClear&&!conclusionClear.__v307Bound){
+      conclusionClear.__v307Bound=true;
+      conclusionClear.addEventListener("click",function(){setTimeout(apply,80);});
     }
   }
 
