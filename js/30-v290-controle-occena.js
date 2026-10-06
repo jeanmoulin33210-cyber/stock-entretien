@@ -131,31 +131,34 @@
     if(showToast!==false&&typeof toast==="function")toast("Contrôle OCCENA enregistré ✓");
     restoreOccenaPosition();
   }
-  var occenaScrollLock={key:"",top:null,y:0};
+  var occenaScrollLock={key:"",top:null,y:0,token:0};
 
   function rememberOccenaPosition(el){
     var row=el&&el.closest?el.closest("[data-occena-row]"):null;
     occenaScrollLock.key=row?String(row.getAttribute("data-occena-row")||""):"";
     occenaScrollLock.top=row?row.getBoundingClientRect().top:null;
     occenaScrollLock.y=window.scrollY||window.pageYOffset||0;
+    occenaScrollLock.token++;
   }
 
   function restoreOccenaPosition(){
-    var key=occenaScrollLock.key;
-    var top=occenaScrollLock.top;
+    var token=occenaScrollLock.token;
     var y=occenaScrollLock.y;
+
+    /* V295b — Android/Samsung peut recentrer un <select> après la fermeture
+       du menu natif. On rétablit la position absolue de la page sans rerendre
+       la zone OCCENA. Plusieurs passages très courts couvrent ce recentrage
+       différé, sans effet si l’utilisateur touche de nouveau la page. */
     function restore(){
-      var row=key?document.querySelector('[data-occena-row="'+CSS.escape(String(key))+'"]'):null;
-      if(row&&top!==null){
-        var delta=row.getBoundingClientRect().top-top;
-        if(Math.abs(delta)>1)window.scrollBy(0,delta);
-      }else if(Math.abs((window.scrollY||window.pageYOffset||0)-y)>2){
-        window.scrollTo(0,y);
-      }
+      if(token!==occenaScrollLock.token)return;
+      var current=window.scrollY||window.pageYOffset||0;
+      if(Math.abs(current-y)>2)window.scrollTo(0,y);
     }
+
     requestAnimationFrame(restore);
-    setTimeout(restore,60);
-    setTimeout(restore,180);
+    setTimeout(restore,35);
+    setTimeout(restore,110);
+    setTimeout(restore,260);
   }
 
   function refreshWithoutRender(){
@@ -293,9 +296,18 @@
         rememberOccenaPosition(sel);
         capture();
         if(typeof saveState==="function")saveState();
+
+        /* Mise à jour uniquement des éléments concernés : surtout ne pas
+           rappeler render(), sinon la page peut remonter en haut. */
+        refreshWithoutRender();
+
         var row=sel.closest("[data-occena-row]");
         var corrected=row?row.querySelector("[data-occena-corrected]"):null;
         if(corrected)corrected.disabled=String(sel.value||"pending")!=="corrige";
+
+        /* Fermer proprement le contrôle natif puis rester exactement
+           à la même hauteur dans la liste. */
+        try{sel.blur();}catch(e){}
         restoreOccenaPosition();
       };
     });
