@@ -276,6 +276,7 @@
       globalInput.title=m.reached?"Saisie manuelle du score OCCENA global":"Le score global se débloque lorsque chaque fournisseur possède 5 fiches contrôlées.";
     }
     if(saveLabel)saveLabel.textContent="Enregistré";
+    ensurePhoneModeButton();
 
     if(!rows.length){
       box.innerHTML="<div class='occena-empty'>Aucun article / fournisseur dans ce jury.</div>";
@@ -360,6 +361,211 @@
     }
   }
 
+
+  /* V300 — mode téléphone OCCENA plein écran.
+     La page Résultats est figée pendant la saisie : aucune remontée de page
+     ne peut obliger l'utilisateur à redescendre dans une longue liste. */
+  var occenaPhoneIndex=0;
+  var occenaPhoneScrollY=0;
+
+  function occenaPhoneRows(){
+    return rowsFor(state);
+  }
+
+  function ensureOccenaPhoneOverlay(){
+    var modal=document.getElementById("occenaPhoneModalV300");
+    if(modal)return modal;
+
+    modal=document.createElement("div");
+    modal.id="occenaPhoneModalV300";
+    modal.className="occena-phone-modal-v300";
+    modal.innerHTML=
+      "<div class='occena-phone-shell-v300'>"+
+        "<div class='occena-phone-head-v300'>"+
+          "<div><strong>Contrôle OCCENA</strong><span id='occenaPhoneProgressV300'>Fiche 1/1</span></div>"+
+          "<button type='button' id='occenaPhoneCloseV300'>✕</button>"+
+        "</div>"+
+        "<div class='occena-phone-summary-v300' id='occenaPhoneSummaryV300'></div>"+
+        "<div class='occena-phone-card-v300' id='occenaPhoneCardV300'></div>"+
+        "<div class='occena-phone-nav-v300'>"+
+          "<button type='button' id='occenaPhonePrevV300'>← Précédent</button>"+
+          "<button type='button' id='occenaPhoneNextV300'>Suivant →</button>"+
+        "</div>"+
+      "</div>";
+    document.body.appendChild(modal);
+
+    document.getElementById("occenaPhoneCloseV300").onclick=closeOccenaPhoneMode;
+    document.getElementById("occenaPhonePrevV300").onclick=function(){
+      saveOccenaPhoneCard();
+      if(occenaPhoneIndex>0)occenaPhoneIndex--;
+      renderOccenaPhoneCard();
+    };
+    document.getElementById("occenaPhoneNextV300").onclick=function(){
+      saveOccenaPhoneCard();
+      var rows=occenaPhoneRows();
+      if(occenaPhoneIndex<rows.length-1)occenaPhoneIndex++;
+      renderOccenaPhoneCard();
+    };
+    return modal;
+  }
+
+  function findFirstOccenaIncompleteIndex(rows,d){
+    for(var i=0;i<rows.length;i++){
+      if(!complete(d.items[rows[i].key]))return i;
+    }
+    return 0;
+  }
+
+  function openOccenaPhoneMode(startKey){
+    if(typeof state==="undefined"||!state||!state.config)return;
+    var rows=occenaPhoneRows();
+    if(!rows.length){
+      if(typeof toast==="function")toast("Aucune fiche OCCENA à contrôler.");
+      return;
+    }
+
+    var d=dataFor(state);
+    var byKey=startKey?rows.findIndex(function(r){return String(r.key)===String(startKey);}):-1;
+    occenaPhoneIndex=byKey>=0?byKey:findFirstOccenaIncompleteIndex(rows,d);
+
+    occenaPhoneScrollY=window.scrollY||window.pageYOffset||0;
+    document.documentElement.classList.add("occena-phone-open-v300");
+    document.body.classList.add("occena-phone-open-v300");
+    document.body.style.position="fixed";
+    document.body.style.top=(-occenaPhoneScrollY)+"px";
+    document.body.style.left="0";
+    document.body.style.right="0";
+    document.body.style.width="100%";
+
+    var modal=ensureOccenaPhoneOverlay();
+    modal.classList.add("open");
+    renderOccenaPhoneCard();
+  }
+
+  function closeOccenaPhoneMode(){
+    saveOccenaPhoneCard();
+    var modal=document.getElementById("occenaPhoneModalV300");
+    if(modal)modal.classList.remove("open");
+
+    document.documentElement.classList.remove("occena-phone-open-v300");
+    document.body.classList.remove("occena-phone-open-v300");
+    document.body.style.position="";
+    document.body.style.top="";
+    document.body.style.left="";
+    document.body.style.right="";
+    document.body.style.width="";
+    window.scrollTo(0,occenaPhoneScrollY);
+
+    refreshWithoutRender();
+  }
+
+  function saveOccenaPhoneCard(){
+    var card=document.getElementById("occenaPhoneCardV300");
+    if(!card||!card.getAttribute("data-occena-phone-key"))return;
+    var key=card.getAttribute("data-occena-phone-key");
+    var d=dataFor(state);
+    var rec=d.items[key]&&typeof d.items[key]==="object"?d.items[key]:{};
+    rec.initialScore=String(card.querySelector("[data-phone-initial]")?.value||"").trim();
+    var group=card.querySelector("[data-phone-status]");
+    rec.status=String(group?.getAttribute("data-value")||"pending");
+    rec.correctedScore=String(card.querySelector("[data-phone-corrected]")?.value||"").trim();
+    rec.observation=String(card.querySelector("[data-phone-observation]")?.value||"").trim();
+    rec.checkedAt=complete(rec)?(rec.checkedAt||new Date().toISOString()):"";
+    d.items[key]=rec;
+    d.updatedAt=new Date().toISOString();
+    if(typeof saveState==="function")saveState();
+  }
+
+  function renderOccenaPhoneCard(){
+    var rows=occenaPhoneRows();
+    var card=document.getElementById("occenaPhoneCardV300");
+    if(!card||!rows.length)return;
+
+    occenaPhoneIndex=Math.max(0,Math.min(rows.length-1,occenaPhoneIndex));
+    var r=rows[occenaPhoneIndex];
+    var d=dataFor(state);
+    var rec=d.items[r.key]||{};
+    var status=String(rec.status||"pending");
+    var m=metrics(state);
+
+    card.setAttribute("data-occena-phone-key",r.key);
+    card.innerHTML=
+      "<div class='occena-phone-product-v300'>"+esc(r.productName)+"</div>"+
+      "<h3>"+esc(r.supplier)+"</h3>"+
+      "<div class='occena-phone-sample-v300'>Échantillon "+esc(r.sampleId||"—")+"</div>"+
+      "<label><span>Score OCCENA initial</span><input type='text' inputmode='decimal' data-phone-initial value='"+esc(String(rec.initialScore==null?"":rec.initialScore))+"' placeholder='Score'></label>"+
+      "<div class='occena-phone-control-v300'><span>Contrôle</span><div data-phone-status data-value='"+esc(status)+"'>"+
+        "<button type='button' data-phone-status-value='pending' class='"+(status==="pending"?"active":"")+"'>À contrôler</button>"+
+        "<button type='button' data-phone-status-value='conforme' class='"+(status==="conforme"?"active":"")+"'>✓ Conforme</button>"+
+        "<button type='button' data-phone-status-value='corrige' class='"+(status==="corrige"?"active":"")+"'>✎ Corrigé</button>"+
+      "</div></div>"+
+      "<label><span>Score corrigé</span><input type='text' inputmode='decimal' data-phone-corrected value='"+esc(String(rec.correctedScore==null?"":rec.correctedScore))+"' placeholder='Nouveau score' "+(status==="corrige"?"":"disabled")+"></label>"+
+      "<label><span>Correction / observation</span><textarea data-phone-observation rows='3' placeholder='Observation'>"+esc(String(rec.observation||""))+"</textarea></label>";
+
+    card.querySelectorAll("[data-phone-status-value]").forEach(function(btn){
+      btn.onclick=function(){
+        var group=btn.closest("[data-phone-status]");
+        var value=String(btn.getAttribute("data-phone-status-value")||"pending");
+        group.setAttribute("data-value",value);
+        group.querySelectorAll("[data-phone-status-value]").forEach(function(b){
+          b.classList.toggle("active",b===btn);
+        });
+        var corrected=card.querySelector("[data-phone-corrected]");
+        if(corrected)corrected.disabled=value!=="corrige";
+        saveOccenaPhoneCard();
+        updateOccenaPhoneSummary();
+      };
+    });
+
+    card.querySelectorAll("input,textarea").forEach(function(inp){
+      inp.onchange=function(){
+        saveOccenaPhoneCard();
+        updateOccenaPhoneSummary();
+      };
+    });
+
+    var progress=document.getElementById("occenaPhoneProgressV300");
+    if(progress)progress.textContent="Fiche "+(occenaPhoneIndex+1)+" / "+rows.length;
+
+    var prev=document.getElementById("occenaPhonePrevV300");
+    var next=document.getElementById("occenaPhoneNextV300");
+    if(prev)prev.disabled=occenaPhoneIndex<=0;
+    if(next){
+      next.disabled=occenaPhoneIndex>=rows.length-1;
+      next.textContent=occenaPhoneIndex>=rows.length-1?"Dernière fiche":"Suivant →";
+    }
+
+    updateOccenaPhoneSummary(m);
+  }
+
+  function updateOccenaPhoneSummary(m){
+    m=m||metrics(state);
+    var box=document.getElementById("occenaPhoneSummaryV300");
+    if(!box)return;
+    box.innerHTML=(m.suppliers||[]).map(function(x){
+      var n=Math.min(x.checked,5);
+      return "<span class='"+(n>=5?"done":"")+"'>"+esc(x.supplier)+" <strong>"+n+"/5</strong></span>";
+    }).join("");
+  }
+
+  function ensurePhoneModeButton(){
+    var actions=document.querySelector("#occenaControlCard .occena-actions");
+    if(!actions)return;
+    var btn=document.getElementById("occenaPhoneModeBtnV300");
+    if(!btn){
+      btn=document.createElement("button");
+      btn.type="button";
+      btn.id="occenaPhoneModeBtnV300";
+      btn.className="btn btn-primary";
+      btn.textContent="📱 Mode téléphone";
+      actions.insertBefore(btn,actions.firstChild);
+    }
+    btn.onclick=function(){openOccenaPhoneMode();};
+  }
+
+  window.openOccenaPhoneModeV300=openOccenaPhoneMode;
+  window.closeOccenaPhoneModeV300=closeOccenaPhoneMode;
+
   var rawRenderAdmin=typeof renderAdmin==="function"?renderAdmin:null;
   if(rawRenderAdmin){
     renderAdmin=function(){
@@ -373,7 +579,7 @@
     if(document.getElementById("occenaCustomStyleV290"))return;
     var s=document.createElement("style");
     s.id="occenaCustomStyleV290";
-    s.textContent=".occena-control-card,.occena-control-card *{overflow-anchor:none}.occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}.occena-status-field{display:flex;flex-direction:column;gap:6px}.occena-status-field>span{font-size:9px;font-weight:800;color:#526777}.occena-status-buttons{display:flex;gap:5px;flex-wrap:wrap}.occena-status-buttons button{border:1px solid #b8c8d2;background:#fff;color:#355366;border-radius:8px;padding:8px 9px;font:800 9px Arial,sans-serif;cursor:pointer;touch-action:manipulation}.occena-status-buttons button.active{background:#173f5c;color:#fff;border-color:#173f5c}.occena-status-buttons button:focus{outline:2px solid rgba(23,63,92,.22);outline-offset:1px}";
+    s.textContent=".occena-control-card,.occena-control-card *{overflow-anchor:none}.occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}.occena-status-field{display:flex;flex-direction:column;gap:6px}.occena-status-field>span{font-size:9px;font-weight:800;color:#526777}.occena-status-buttons{display:flex;gap:5px;flex-wrap:wrap}.occena-status-buttons button{border:1px solid #b8c8d2;background:#fff;color:#355366;border-radius:8px;padding:8px 9px;font:800 9px Arial,sans-serif;cursor:pointer;touch-action:manipulation}.occena-status-buttons button.active{background:#173f5c;color:#fff;border-color:#173f5c}.occena-status-buttons button:focus{outline:2px solid rgba(23,63,92,.22);outline-offset:1px}.occena-phone-modal-v300{display:none;position:fixed;inset:0;z-index:2147483000;background:#eef3f6}.occena-phone-modal-v300.open{display:block}.occena-phone-shell-v300{height:100dvh;display:flex;flex-direction:column;overflow:hidden;background:#eef3f6}.occena-phone-head-v300{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:#173f5c;color:#fff}.occena-phone-head-v300>div{display:flex;flex-direction:column;gap:2px}.occena-phone-head-v300 strong{font-size:16px}.occena-phone-head-v300 span{font-size:11px;opacity:.8}.occena-phone-head-v300 button{border:0;background:rgba(255,255,255,.14);color:#fff;border-radius:10px;width:38px;height:38px;font-size:18px}.occena-phone-summary-v300{flex:0 0 auto;display:flex;gap:6px;overflow-x:auto;padding:8px 10px;background:#fff;border-bottom:1px solid #dce5ea}.occena-phone-summary-v300 span{white-space:nowrap;border:1px solid #d8e2e8;border-radius:999px;padding:5px 8px;font-size:10px;color:#516b7b}.occena-phone-summary-v300 span.done{background:#e8f6ef;color:#176c50;border-color:#bfe4d2}.occena-phone-card-v300{flex:1 1 auto;overflow:auto;padding:16px 14px 18px;-webkit-overflow-scrolling:touch}.occena-phone-product-v300{font-size:11px;font-weight:900;letter-spacing:.05em;text-transform:uppercase;color:#6b7d89}.occena-phone-card-v300 h3{font-size:22px;color:#173f5c;margin:6px 0 2px}.occena-phone-sample-v300{font-size:12px;color:#71818b;margin-bottom:16px}.occena-phone-card-v300 label{display:block;margin:0 0 14px}.occena-phone-card-v300 label>span,.occena-phone-control-v300>span{display:block;font-size:11px;font-weight:800;color:#526777;margin-bottom:6px}.occena-phone-card-v300 input,.occena-phone-card-v300 textarea{width:100%;font-size:16px;border:1px solid #b9c9d3;border-radius:10px;padding:12px;background:#fff;color:#213d50}.occena-phone-control-v300{margin-bottom:14px}.occena-phone-control-v300>div{display:grid;grid-template-columns:1fr 1fr 1fr;gap:7px}.occena-phone-control-v300 button{min-height:46px;border:1px solid #b7c7d1;border-radius:10px;background:#fff;color:#355366;font-weight:850;font-size:12px;touch-action:manipulation}.occena-phone-control-v300 button.active{background:#173f5c;color:#fff;border-color:#173f5c}.occena-phone-nav-v300{flex:0 0 auto;display:grid;grid-template-columns:1fr 1fr;gap:8px;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:#fff;border-top:1px solid #dce5ea}.occena-phone-nav-v300 button{min-height:48px;border:0;border-radius:10px;background:#173f5c;color:#fff;font-size:14px;font-weight:850}.occena-phone-nav-v300 button:disabled{opacity:.38}.occena-phone-open-v300{overscroll-behavior:none}";
     document.head.appendChild(s);
   }
 
