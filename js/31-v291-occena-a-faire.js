@@ -19,21 +19,29 @@
     var cfg=st&&st.config||{};
     var d=cfg.occenaControl&&typeof cfg.occenaControl==="object"?cfg.occenaControl:{items:{},customRows:[]};
     var items=d.items&&typeof d.items==="object"?d.items:{};
-    var keys=[];
+    var rows=[];
     (cfg.products||[]).forEach(function(p){
-      (p.samples||[]).forEach(function(sm){keys.push(keyFor(p,sm));});
+      (p.samples||[]).forEach(function(sm){
+        rows.push({key:keyFor(p,sm),supplier:String(sm.supplier||"Fournisseur")});
+      });
     });
     (Array.isArray(d.customRows)?d.customRows:[]).forEach(function(r){
-      if(r&&r.id)keys.push("custom__"+String(r.id));
+      if(r&&r.id)rows.push({key:"custom__"+String(r.id),supplier:String(r.supplier||"Fournisseur")});
     });
-    var checked=keys.filter(function(k){return complete(items[k]);}).length;
-    var total=keys.length;
-    var required=total?Math.ceil(total*.30):0;
+    var bySupplier={};
+    rows.forEach(function(r){
+      if(!bySupplier[r.supplier])bySupplier[r.supplier]={supplier:r.supplier,checked:0};
+      if(complete(items[r.key]))bySupplier[r.supplier].checked++;
+    });
+    var suppliers=Object.keys(bySupplier).map(function(k){return bySupplier[k];});
+    var required=suppliers.length*5;
+    var credited=suppliers.reduce(function(n,x){return n+Math.min(x.checked,5);},0);
     return {
-      checked:checked,
-      total:total,
+      checked:credited,
+      total:rows.length,
       required:required,
-      reached:total>0&&checked>=required
+      suppliers:suppliers,
+      reached:suppliers.length>0&&suppliers.every(function(x){return x.checked>=5;})
     };
   }
   function highlight(btn){
@@ -104,22 +112,22 @@
         removeHighlight(btn);
         highlight(report);
         if(title)title.textContent="👉 À faire maintenant : dossier résultats";
-        if(hint)hint.textContent="Le contrôle OCCENA a atteint le seuil de 30 %. Vous pouvez maintenant ouvrir le dossier résultats.";
+        if(hint)hint.textContent="Chaque fournisseur possède 5 fiches OCCENA contrôlées. Vous pouvez maintenant ouvrir le dossier résultats.";
       }
     }else{
       btn.style.display="";
       btn.disabled=false;
-      btn.textContent=m.total
-        ?"🔎 3. Contrôle OCCENA ("+m.checked+"/"+m.required+" min.)"
+      btn.textContent=m.required
+        ?"🔎 3. Contrôle OCCENA ("+m.checked+"/"+m.required+" fiches)"
         :"🔎 3. Contrôle OCCENA";
       if(report)report.textContent="📚 4. Dossier résultats";
       if(wf.closed&&wf.closureReady&&wf.sheetsReady){
         removeHighlight(report);
         highlight(btn);
         if(title)title.textContent="👉 À faire maintenant : contrôle OCCENA";
-        if(hint)hint.textContent=m.total
-          ?"Contrôlez au moins "+m.required+" article"+(m.required>1?"s":"")+" sur "+m.total+" pour atteindre les 30 %, puis le dossier résultats deviendra l’étape suivante."
-          :"Ajoutez les articles à contrôler dans OCCENA.";
+        if(hint)hint.textContent=m.required
+          ?"Validez 5 fiches pour chacun des "+m.suppliers.length+" fournisseur"+(m.suppliers.length>1?"s":"")+". Le dossier résultats deviendra ensuite l’étape suivante."
+          :"Ajoutez les articles / fournisseurs à contrôler dans OCCENA.";
       }
     }
   }
