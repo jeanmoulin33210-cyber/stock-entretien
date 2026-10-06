@@ -81,11 +81,11 @@
           window.openOccenaPhoneModeV300();
           return;
         }
-        var card=document.getElementById("occenaControlCard");
-        if(!card)return;
-        card.scrollIntoView({behavior:"smooth",block:"start"});
-        card.classList.add("occena-focus-v291");
-        setTimeout(function(){card.classList.remove("occena-focus-v291");},1400);
+        if(typeof showView==="function"){
+          showView("occenaView");
+          try{if(typeof window.renderOccenaControlV290==="function")window.renderOccenaControlV290();}catch(e){}
+          return;
+        }
       };
     }
     return btn;
@@ -145,14 +145,15 @@
     if(!btn.__v307Bound){
       btn.__v307Bound=true;
       btn.onclick=function(){
-        var card=document.querySelector(".jury-conclusion-card");
-        var input=document.getElementById("juryConclusionInput");
-        if(card){
-          card.scrollIntoView({behavior:"smooth",block:"center"});
-          card.classList.add("occena-focus-v291");
-          setTimeout(function(){card.classList.remove("occena-focus-v291");},1400);
+        if(typeof showView==="function"){
+          showView("juryReportView");
+          try{if(typeof loadJuryConclusionIntoForm==="function")loadJuryConclusionIntoForm();}catch(e){}
+          try{if(typeof loadReportNoteIntoForm==="function")loadReportNoteIntoForm();}catch(e){}
+          var title=document.getElementById("headerTitle");
+          var sub=document.getElementById("headerSub");
+          if(title)title.textContent="Conclusion / rapport jury";
+          if(sub)sub.textContent=(typeof state!=="undefined"&&state&&state.config)?(state.config.lotName||"Jury Marchés"):"Jury Marchés";
         }
-        setTimeout(function(){try{input&&input.focus();}catch(e){}},280);
       };
     }
     return btn;
@@ -295,6 +296,22 @@
     if(conclusionClear&&!conclusionClear.__v307Bound){
       conclusionClear.__v307Bound=true;
       conclusionClear.addEventListener("click",function(){setTimeout(apply,80);});
+    }
+    var reportBack=document.getElementById("juryReportBackBtn");
+    if(reportBack&&!reportBack.__v308Bound){
+      reportBack.__v308Bound=true;
+      reportBack.onclick=function(){
+        if(typeof openSimplifiedResults==="function")openSimplifiedResults();
+        else if(typeof renderAdmin==="function")renderAdmin();
+      };
+    }
+    var occenaBack=document.getElementById("occenaBackBtnV308");
+    if(occenaBack&&!occenaBack.__v308Bound){
+      occenaBack.__v308Bound=true;
+      occenaBack.onclick=function(){
+        if(typeof openSimplifiedResults==="function")openSimplifiedResults();
+        else if(typeof renderAdmin==="function")renderAdmin();
+      };
     }
   }
 
