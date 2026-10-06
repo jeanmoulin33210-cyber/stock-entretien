@@ -77,14 +77,10 @@
     if(!btn.__v291Bound){
       btn.__v291Bound=true;
       btn.onclick=function(){
+        if(typeof showView==="function")showView("occenaView");
+        try{if(typeof window.renderOccenaControlV290==="function")window.renderOccenaControlV290();}catch(e){}
         if(window.matchMedia&&window.matchMedia("(max-width: 820px)").matches&&typeof window.openOccenaPhoneModeV300==="function"){
           window.openOccenaPhoneModeV300();
-          return;
-        }
-        if(typeof showView==="function"){
-          showView("occenaView");
-          try{if(typeof window.renderOccenaControlV290==="function")window.renderOccenaControlV290();}catch(e){}
-          return;
         }
       };
     }
