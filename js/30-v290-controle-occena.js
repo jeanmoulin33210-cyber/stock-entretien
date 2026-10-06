@@ -121,8 +121,35 @@
       try{await syncDirtyToCloud();}catch(e){}
     }
     if(showToast!==false&&typeof toast==="function")toast("Contrôle OCCENA enregistré ✓");
-    refreshWithoutRender();
+    restoreOccenaPosition();
   }
+  var occenaScrollLock={key:"",top:null,y:0};
+
+  function rememberOccenaPosition(el){
+    var row=el&&el.closest?el.closest("[data-occena-row]"):null;
+    occenaScrollLock.key=row?String(row.getAttribute("data-occena-row")||""):"";
+    occenaScrollLock.top=row?row.getBoundingClientRect().top:null;
+    occenaScrollLock.y=window.scrollY||window.pageYOffset||0;
+  }
+
+  function restoreOccenaPosition(){
+    var key=occenaScrollLock.key;
+    var top=occenaScrollLock.top;
+    var y=occenaScrollLock.y;
+    function restore(){
+      var row=key?document.querySelector('[data-occena-row="'+CSS.escape(String(key))+'"]'):null;
+      if(row&&top!==null){
+        var delta=row.getBoundingClientRect().top-top;
+        if(Math.abs(delta)>1)window.scrollBy(0,delta);
+      }else if(Math.abs((window.scrollY||window.pageYOffset||0)-y)>2){
+        window.scrollTo(0,y);
+      }
+    }
+    requestAnimationFrame(restore);
+    setTimeout(restore,60);
+    setTimeout(restore,180);
+  }
+
   function refreshWithoutRender(){
     var d=dataFor(state);
     var m=metrics(state);
@@ -252,18 +279,27 @@
     });
 
     box.querySelectorAll("[data-occena-status]").forEach(function(sel){
+      sel.onfocus=function(){rememberOccenaPosition(sel);};
+      sel.onpointerdown=function(){rememberOccenaPosition(sel);};
       sel.onchange=function(){
+        rememberOccenaPosition(sel);
         capture();
         if(typeof saveState==="function")saveState();
-        refreshWithoutRender();
+        var row=sel.closest("[data-occena-row]");
+        var corrected=row?row.querySelector("[data-occena-corrected]"):null;
+        if(corrected)corrected.disabled=String(sel.value||"pending")!=="corrige";
+        restoreOccenaPosition();
       };
     });
     box.querySelectorAll("input").forEach(function(inp){
+      inp.onfocus=function(){rememberOccenaPosition(inp);};
+      inp.onpointerdown=function(){rememberOccenaPosition(inp);};
       inp.oninput=function(){var s=document.getElementById("occenaSaveState");if(s)s.textContent="À enregistrer";};
       inp.onchange=function(){
+        rememberOccenaPosition(inp);
         capture();
         if(typeof saveState==="function")saveState();
-        refreshWithoutRender();
+        restoreOccenaPosition();
       };
     });
     if(globalInput){
@@ -285,7 +321,7 @@
     if(document.getElementById("occenaCustomStyleV290"))return;
     var s=document.createElement("style");
     s.id="occenaCustomStyleV290";
-    s.textContent=".occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}";
+    s.textContent=".occena-control-card,.occena-control-card *{overflow-anchor:none}.occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}";
     document.head.appendChild(s);
   }
 
