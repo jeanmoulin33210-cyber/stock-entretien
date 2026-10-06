@@ -9035,42 +9035,65 @@ async function buildReportPdfBlob(st=state){
   return {blob:doc.output('blob'),filename,pages};
 }
 async function emailCurrentReport(){
-  if(!ensureProductSheetsComplete('envoyer le rapport par email'))return;
+  if(!ensureProductSheetsComplete('envoyer le rapport final'))return;
+
   const btn=$('#simpleResultsEmailBtn');
-  const old=btn?.textContent||'📧 Envoyer le rapport par email';
+  const old=btn?.textContent||'📧 Envoyer le rapport final';
+
+  /* Ouvrir une fenêtre immédiatement pendant le clic utilisateur pour éviter
+     que Chrome bloque Gmail après la génération asynchrone du PDF. */
+  let gmailWindow=null;
+  try{
+    gmailWindow=window.open('about:blank','_blank');
+  }catch(e){}
 
   try{
     if(btn){
       btn.disabled=true;
-      btn.textContent='⏳ Création du rapport…';
+      btn.textContent='⏳ Création du rapport final…';
     }
 
     const {blob,filename}=await buildReportPdfBlob(state);
-    const file=new File([blob],filename,{type:'application/pdf'});
 
-    if(navigator.share && (!navigator.canShare || navigator.canShare({files:[file]}))){
-      await navigator.share({
-        title:`Rapport sensoriel — ${state.config?.lotName||'Jury Marchés'}`,
-        text:'Voici le rapport sensoriel du jury.',
-        files:[file]
-      });
-      toast('Rapport prêt à être envoyé ✓');
+    /* Télécharger le PDF afin qu'il puisse être joint dans Gmail. */
+    const fileUrl=URL.createObjectURL(blob);
+    const a=document.createElement('a');
+    a.href=fileUrl;
+    a.download=filename;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    setTimeout(()=>URL.revokeObjectURL(fileUrl),10000);
+
+    const lot=state.config?.lotName||'Jury Marchés';
+    const subject=`Rapport final — ${lot}`;
+    const body=`Bonjour,
+
+Veuillez trouver le rapport final du jury « ${lot} ».
+
+Le fichier PDF « ${filename} » vient d’être téléchargé sur cet appareil. Merci de le joindre à ce message avant l’envoi.
+
+Cordialement`;
+
+    const gmailUrl='https://mail.google.com/mail/?view=cm&fs=1&su='+
+      encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
+
+    if(gmailWindow && !gmailWindow.closed){
+      gmailWindow.location.href=gmailUrl;
     }else{
-      const url=URL.createObjectURL(blob);
-      const a=document.createElement('a');
-      a.href=url;
-      a.download=filename;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      setTimeout(()=>URL.revokeObjectURL(url),5000);
-      alert('Le rapport PDF a été téléchargé. Vous pouvez maintenant le joindre à votre e-mail.');
+      gmailWindow=window.open(gmailUrl,'_blank');
     }
+
+    if(!gmailWindow){
+      alert('Le rapport final a bien été téléchargé, mais Chrome a bloqué l’ouverture de Gmail. Autorisez les fenêtres pop-up puis réessayez.');
+      return;
+    }
+
+    toast('Rapport final téléchargé · Gmail ouvert ✓');
   }catch(e){
-    if(e?.name!=='AbortError'){
-      console.error(e);
-      alert(`Impossible de préparer le rapport. ${e?.message||e}`);
-    }
+    try{if(gmailWindow&&!gmailWindow.closed)gmailWindow.close();}catch(_){}
+    console.error(e);
+    alert(`Impossible de préparer le rapport final. ${e?.message||e}`);
   }finally{
     if(btn){
       btn.disabled=false;
