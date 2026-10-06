@@ -1,5 +1,5 @@
-/* v311 forced refresh */
-const CACHE_NAME='tc-offline-v311-20261006c';
+/* v312 forced refresh */
+const CACHE_NAME='tc-offline-v312-20261006c';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
