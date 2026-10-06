@@ -548,6 +548,102 @@ async function subscribeCloud(){
       }
     })
 }
+/* V278 — validation testeur robuste.
+   La validation est écrite immédiatement dans __validation__ et aussi recopiée
+   dans une réponse ordinaire comme secours. Ainsi un événement temps réel ou
+   un retard réseau ne peut plus faire disparaître le clic « Valider ». */
+const TESTER_VALIDATION_FALLBACK_PREFIX_V278='__TC_VALIDATED_V278__:';
+
+function validationFallbackFromRemarksV278(remarks){
+  if(!Array.isArray(remarks))return null;
+  for(const raw of remarks){
+    const s=String(raw||'');
+    if(s.startsWith(TESTER_VALIDATION_FALLBACK_PREFIX_V278)){
+      const ts=s.slice(TESTER_VALIDATION_FALLBACK_PREFIX_V278.length).trim();
+      if(ts)return ts;
+    }
+  }
+  return null;
+}
+
+function setTesterValidationFallbackV278(t,validatedAt){
+  const tester=state.testers?.[t];
+  if(!tester)return false;
+  const entries=Object.entries(tester.answers||{});
+  if(!entries.length)return false;
+
+  /* Utiliser la dernière fiche renseignée : cette ligne est autorisée exactement
+     comme les autres réponses du testeur et sert uniquement de secours. */
+  const pair=entries[entries.length-1];
+  const a=pair[1];
+  if(!a)return false;
+  if(!Array.isArray(a.remarks))a.remarks=[];
+  const idx=QUESTIONS.length+1;
+  while(a.remarks.length<=idx)a.remarks.push('');
+  a.remarks[idx]=validatedAt
+    ?TESTER_VALIDATION_FALLBACK_PREFIX_V278+String(validatedAt)
+    :'';
+  return true;
+}
+
+async function pushTesterValidationNowV278(t){
+  if(!cloudReady||!cloudClient||!cloudCfg?.sessionId)return false;
+  if(cloudRole==='tester'&&Number(cloudTesterNo)!==Number(t))return false;
+
+  const v=state.testers?.[t]?.validatedAt||null;
+  const row={
+    session_id:cloudCfg.sessionId,
+    tester_no:Number(t),
+    product_id:'__meta__',
+    sample_id:'__validation__',
+    choices:[],
+    remarks:[v],
+    updated_at:new Date().toISOString()
+  };
+  const {error}=await cloudClient
+    .from('test_culinaire_reponses')
+    .upsert([row],{onConflict:'session_id,tester_no,product_id,sample_id'});
+  if(error)throw error;
+
+  lastCloudAnswerHashes.set(`${t}::__validation__`,hashJson(v));
+  return true;
+}
+
+const originalValidateTesterFinalV278=validateTesterFinal;
+validateTesterFinal=function(t=currentTester){
+  const before=testerValidated(t);
+  const result=originalValidateTesterFinalV278(t);
+
+  if(!before&&testerValidated(t)){
+    const stamp=state.testers?.[t]?.validatedAt||new Date().toISOString();
+    setTesterValidationFallbackV278(t,stamp);
+
+    /* Sauvegarder une seconde fois pour envoyer aussi le marqueur de secours. */
+    saveState();
+
+    /* Et envoyer sans attendre les 300 ms de la synchro normale. */
+    pushTesterValidationNowV278(t).catch(function(e){
+      console.warn('Validation immédiate non confirmée, nouvelle tentative automatique',e);
+      scheduleCloudSync();
+    });
+  }
+  return result;
+};
+window.validateTesterFinal=validateTesterFinal;
+
+const originalUnlockTesterV278=unlockTester;
+unlockTester=function(t){
+  const wasValidated=testerValidated(t);
+  const result=originalUnlockTesterV278(t);
+  if(wasValidated&&!testerValidated(t)){
+    setTesterValidationFallbackV278(t,null);
+    saveState();
+    pushTesterValidationNowV278(t).catch(function(){scheduleCloudSync();});
+  }
+  return result;
+};
+window.unlockTester=unlockTester;
+
 async function reloadCloudAnswers(){if(testerPreviewMode)return;
   if(!cloudReady||cloudBusy)return;
 
@@ -565,6 +661,31 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
   if(cloudRole==='tester')q=q.eq('tester_no',cloudTesterNo);
   const {data,error}=await q;if(error)return;
   updateTesterActivityFromRows(data||[]);
+
+  /* Relever l'état officiel de __validation__ et l'éventuel marqueur de secours.
+     Si le secours est plus récent qu'un ancien marqueur nul, il correspond à un
+     clic « Valider » qui n'avait pas encore réussi à mettre à jour __validation__. */
+  const serverValidationV278={};
+  const fallbackValidationV278={};
+  (data||[]).forEach(function(r){
+    const t=Number(r.tester_no);
+    if(!t)return;
+    if(r.product_id==='__meta__'&&r.sample_id==='__validation__'){
+      serverValidationV278[t]={
+        value:Array.isArray(r.remarks)?(r.remarks[0]||null):null,
+        updatedAt:String(r.updated_at||'')
+      };
+      return;
+    }
+    const fb=validationFallbackFromRemarksV278(r.remarks);
+    if(fb){
+      const old=fallbackValidationV278[t];
+      if(!old||String(fb)>String(old.value)){
+        fallbackValidationV278[t]={value:fb,updatedAt:String(r.updated_at||fb)};
+      }
+    }
+  });
+
   if(cloudRole==='admin'){
     for(let t=1;t<=state.config.testerCount;t++){state.testers[t].answers={};state.testers[t].validatedAt=null}
   }else{
@@ -590,6 +711,25 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
     state.testers[t].answers[sampleKey(r.product_id,r.sample_id)]={choices:r.choices||Array(QUESTIONS.length).fill(null),remarks:r.remarks||Array(QUESTIONS.length).fill('')}
   });
 
+  /* Récupération serveur du marqueur de secours V278. */
+  let recoveredValidationV278=false;
+  Object.keys(fallbackValidationV278).forEach(function(k){
+    const t=Number(k);
+    if(!state.testers?.[t])return;
+    const fb=fallbackValidationV278[t];
+    const official=serverValidationV278[t];
+    const officialTime=String(official?.updatedAt||'');
+    const fallbackTime=String(fb?.updatedAt||fb?.value||'');
+
+    if(!state.testers[t].validatedAt &&
+       fb?.value &&
+       (!official?.value) &&
+       (!officialTime || !fallbackTime || fallbackTime>officialTime)){
+      state.testers[t].validatedAt=fb.value;
+      recoveredValidationV278=true;
+    }
+  });
+
   let pendingValidationNeedsPush=false;
   if(cloudRole==='tester'){
     const pt=Number(cloudTesterNo||guestTester||0);
@@ -607,9 +747,9 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
     else if(r.product_id==='__meta__'&&r.sample_id==='__launch__')return;
     else lastCloudAnswerHashes.set(`${t}::${sampleKey(r.product_id,r.sample_id)}`,hashJson({choices:r.choices||[],remarks:r.remarks||[]}))
   });
-  if(pendingValidationNeedsPush){
-    /* Le hash vient d'être reconstruit depuis le serveur (validation nulle) :
-       la prochaine synchro verra donc bien la validation locale à envoyer. */
+  if(pendingValidationNeedsPush||recoveredValidationV278){
+    /* Le hash vient d'être reconstruit depuis le serveur. Une nouvelle synchro
+       consolide ensuite le marqueur officiel __validation__. */
     scheduleCloudSync();
   }
 
