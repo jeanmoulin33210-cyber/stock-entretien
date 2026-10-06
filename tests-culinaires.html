@@ -1529,38 +1529,17 @@
   </div>
 </main>
 
-<main id="adminView" class="view">
-  <div class="results-subpage-back"><button type="button" class="btn btn-ghost btn-small" id="resultsBackHubBtn">← Accueil</button></div>
 
-  <section class="results-hero">
-    <div class="panel results-identity">
-      <div class="eyebrow">Résultats du jury · Administration</div>
-      <h2 id="resultsLotTitle">Résultats</h2>
-      <p id="resultsLotSubtitle"></p>
+<main id="juryReportView" class="view">
+  <div class="product-sheets-shell">
+    <div class="results-subpage-back">
+      <button type="button" class="btn btn-ghost btn-small" id="juryReportBackBtn">← Retour aux résultats</button>
     </div>
-    <div class="panel results-status-card" id="resultsStatusCard">
-      <div class="results-status-icon" id="resultsStatusIcon">⏳</div>
-      <div><strong id="resultsStatusTitle">Résultats provisoires</strong><span id="resultsStatusDetail">Le jury n’est pas encore terminé.</span></div>
-    </div>
-  </section>
-
-  <section class="panel simple-results-actions">
-    <div class="simple-results-actions-copy">
-      <strong id="simpleResultsNextTitle">👉 À faire maintenant</strong>
-      <span id="simpleResultsHint">L’application vous indique l’étape suivante.</span>
-    </div>
-    <div class="simple-results-action-buttons">
-      <button type="button" class="btn btn-secondary" id="simpleResultsClosureBtn">✍️ 1. Clôture</button>
-      <button type="button" class="btn btn-secondary" id="simpleResultsReceptionBtn">📦 Réceptions marchandises</button>
-      <button type="button" class="btn btn-secondary" id="productSheetsBtn">📋 2. Fiches produits</button>
-      <button type="button" class="btn btn-secondary" id="simpleResultsConclusionBtn">📝 Conclusion / rapport jury</button>
-      <button type="button" class="btn btn-secondary" id="simpleResultsOccenaBtn">🔎 3. Contrôle OCCENA</button>
-      <button type="button" class="btn btn-secondary" id="simpleResultsPdfBtn">📚 4. Dossier résultats</button>
-      <button type="button" class="btn btn-secondary simple-results-advanced-action" id="simpleResultsEmailBtn">📧 Envoyer le rapport</button>
-      <button type="button" class="btn btn-ghost" id="simpleResultsMoreBtn">⚙️ Détails</button>
-    </div>
-  </section>
-
+    <section class="panel product-sheets-hero">
+      <div class="eyebrow">DOSSIER DU JURY</div>
+      <h2>Conclusion / rapport jury</h2>
+      <p>Rédigez ici la conclusion générale et, si nécessaire, une note technique à intégrer au rapport final.</p>
+    </section>
   <section class="panel jury-conclusion-card">
     <div class="report-note-head">
       <div>
@@ -1591,6 +1570,20 @@
     </div>
   </section>
 
+
+  </div>
+</main>
+
+<main id="occenaView" class="view">
+  <div class="product-sheets-shell">
+    <div class="results-subpage-back">
+      <button type="button" class="btn btn-ghost btn-small" id="occenaBackBtnV308">← Retour aux résultats</button>
+    </div>
+    <section class="panel product-sheets-hero">
+      <div class="eyebrow">CONTRÔLE DES FICHES</div>
+      <h2>Contrôle OCCENA</h2>
+      <p>Contrôlez 5 fiches par fournisseur. Le score reste informatif et n’intervient dans aucun classement.</p>
+    </section>
   <section class="panel occena-control-card" id="occenaControlCard">
     <div class="occena-control-head">
       <div>
@@ -1618,6 +1611,42 @@
     <div class="occena-actions">
       <span id="occenaSaveState">Enregistré</span>
       <button type="button" class="btn btn-secondary" id="saveOccenaControlBtn">💾 Enregistrer le contrôle OCCENA</button>
+    </div>
+  </section>
+
+
+  </div>
+</main>
+
+<main id="adminView" class="view">
+  <div class="results-subpage-back"><button type="button" class="btn btn-ghost btn-small" id="resultsBackHubBtn">← Accueil</button></div>
+
+  <section class="results-hero">
+    <div class="panel results-identity">
+      <div class="eyebrow">Résultats du jury · Administration</div>
+      <h2 id="resultsLotTitle">Résultats</h2>
+      <p id="resultsLotSubtitle"></p>
+    </div>
+    <div class="panel results-status-card" id="resultsStatusCard">
+      <div class="results-status-icon" id="resultsStatusIcon">⏳</div>
+      <div><strong id="resultsStatusTitle">Résultats provisoires</strong><span id="resultsStatusDetail">Le jury n’est pas encore terminé.</span></div>
+    </div>
+  </section>
+
+  <section class="panel simple-results-actions">
+    <div class="simple-results-actions-copy">
+      <strong id="simpleResultsNextTitle">👉 À faire maintenant</strong>
+      <span id="simpleResultsHint">L’application vous indique l’étape suivante.</span>
+    </div>
+    <div class="simple-results-action-buttons">
+      <button type="button" class="btn btn-secondary" id="simpleResultsClosureBtn">✍️ 1. Clôture</button>
+      <button type="button" class="btn btn-secondary" id="simpleResultsReceptionBtn">📦 Réceptions marchandises</button>
+      <button type="button" class="btn btn-secondary" id="productSheetsBtn">📋 2. Fiches produits</button>
+      <button type="button" class="btn btn-secondary" id="simpleResultsConclusionBtn">📝 Conclusion / rapport jury</button>
+      <button type="button" class="btn btn-secondary" id="simpleResultsOccenaBtn">🔎 3. Contrôle OCCENA</button>
+      <button type="button" class="btn btn-secondary" id="simpleResultsPdfBtn">📚 4. Dossier résultats</button>
+      <button type="button" class="btn btn-secondary simple-results-advanced-action" id="simpleResultsEmailBtn">📧 Envoyer le rapport</button>
+      <button type="button" class="btn btn-ghost" id="simpleResultsMoreBtn">⚙️ Détails</button>
     </div>
   </section>
 
