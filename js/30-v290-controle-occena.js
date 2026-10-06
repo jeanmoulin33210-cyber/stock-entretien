@@ -17,6 +17,7 @@
       st.config.occenaControl.items={};
     }
     if(st.config.occenaControl.globalScore==null)st.config.occenaControl.globalScore="";
+    if(!st.config.occenaControl.supplierScores||typeof st.config.occenaControl.supplierScores!=="object")st.config.occenaControl.supplierScores={};
     if(!Array.isArray(st.config.occenaControl.customRows))st.config.occenaControl.customRows=[];
     return st.config.occenaControl;
   }
