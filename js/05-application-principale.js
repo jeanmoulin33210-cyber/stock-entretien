@@ -4162,7 +4162,7 @@ function renderProjectionData(){
           <div class="projection-rank-row">
             <div class="n">${i+1}</div>
             <strong>${escapeHtml(r.supplier)}</strong>
-            <div class="score">${r.count?fmt(r.avg):'—'} / 65</div>
+            <div class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'} / 5</div>
           </div>`).join('')
         :'<div style="text-align:center;opacity:.7">Aucun résultat disponible.</div>';
     }else{
@@ -6421,7 +6421,7 @@ function renderRanking(){
     $('#rankingTitle').textContent='Classement global fournisseurs';
     const rows=overallRanking();
     if(!rows.length){box.innerHTML='<div class="results-empty">Aucun résultat disponible.</div>';renderSampleDetail(null,null);return}
-    rows.forEach((r,i)=>box.insertAdjacentHTML('beforeend',`<div class="rank-card"><div class="rank-badge">${i+1}</div><div class="rank-main"><strong>${escapeHtml(r.supplier)}</strong><span>${r.samples} échantillon(s) · ${r.count} évaluation(s) complète(s)</span><div class="rank-progress"><i style="width:${Math.max(0,Math.min(100,r.avg/65*100))}%"></i></div></div><div class="rank-score"><strong>${fmt(r.avg)}</strong><span>moy. /65</span></div></div>`));
+    rows.forEach((r,i)=>box.insertAdjacentHTML('beforeend',`<div class="rank-card"><div class="rank-badge">${i+1}</div><div class="rank-main"><strong>${escapeHtml(r.supplier)}</strong><span>${r.samples} échantillon(s) · ${r.count} évaluation(s) complète(s)</span><div class="rank-progress"><i style="width:${Math.max(0,Math.min(100,r.avg/65*100))}%"></i></div></div><div class="rank-score"><strong>${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</strong><span>moy. /5</span></div></div>`));
     renderSampleDetail(null,null);return;
   }
   const p=getProduct(adminProduct)||state.config.products[0];if(!p)return;
@@ -6450,10 +6450,13 @@ function overallRanking(){
   state.config.products.forEach(p=>p.samples.forEach(s=>{const r=sampleStats(p,s),k=s.supplier||'Sans fournisseur';const cur=map.get(k)||{supplier:k,total:0,count:0,samples:0};cur.total+=r.total;cur.count+=r.count;cur.samples+=1;map.set(k,cur)}));
   return [...map.values()].map(r=>({...r,avg:r.count?r.total/r.count:0})).sort((a,b)=>b.avg-a.avg||b.total-a.total||a.supplier.localeCompare(b.supplier));
 }
+function supplierGlobalNote5(avg65){
+  return Number(avg65||0)/13;
+}
 function renderOverall(){
   const b=$('#overallCards');if(!b)return;b.innerHTML='';const rows=overallRanking();
   if(!rows.length){b.innerHTML='<div class="results-empty">Aucun résultat disponible.</div>';return}
-  rows.forEach((r,i)=>b.insertAdjacentHTML('beforeend',`<div class="supplier-card"><div class="supplier-rank">${i+1}</div><div class="supplier-main"><strong>${escapeHtml(r.supplier)}</strong><span>${r.samples} échantillon(s) · ${r.count} évaluation(s)</span></div><div class="supplier-score"><strong>${r.count?fmt(r.avg):'—'}</strong><span>moy. /65</span></div></div>`));
+  rows.forEach((r,i)=>b.insertAdjacentHTML('beforeend',`<div class="supplier-card"><div class="supplier-rank">${i+1}</div><div class="supplier-main"><strong>${escapeHtml(r.supplier)}</strong><span>${r.samples} échantillon(s) · ${r.count} évaluation(s)</span></div><div class="supplier-score"><strong>${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</strong><span>moy. /5</span></div></div>`));
 }
 
 function collectRemarks(){
@@ -7683,7 +7686,7 @@ function openJuryMinutes(st,sourceLabel='Jury'){
   ).join(''):'<tr><td colspan="3">Aucun membre renseigné.</td></tr>';
 
   const supplierRows=suppliers.length?suppliers.map((r,i)=>`
-    <tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.supplier)}</strong></td><td>${r.count}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`
+    <tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.supplier)}</strong></td><td>${r.count}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`
   ).join(''):'<tr><td colspan="4">Aucun résultat exploitable.</td></tr>';
 
   const productSections=products.map((p,pi)=>{
@@ -7691,7 +7694,7 @@ function openJuryMinutes(st,sourceLabel='Jury'){
     return `<section class="section">
       <div class="section-title">${pi+1}. ${reportEsc(p.code?`${p.code} — `:'')}${reportEsc(p.name||`Produit ${pi+1}`)}</div>
       <table><thead><tr><th>Rang</th><th>N° échantillon</th><th>Fournisseur</th><th>Évaluations</th><th>Moyenne /65</th></tr></thead><tbody>
-      ${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td>${reportEsc(r.supplier)}</td><td>${r.count}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`).join('')}
+      ${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td>${reportEsc(r.supplier)}</td><td>${r.count}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`).join('')}
       </tbody></table>
     </section>`
   }).join('');
@@ -7810,7 +7813,7 @@ function openJuryDossier(st,sourceLabel='Jury'){
   const generatedAt=new Date().toISOString();
 
   const memberRows=members.length?members.map((m,i)=>`<tr><td>${i+1}</td><td><strong>${reportEsc(m.name)}</strong></td><td>${reportEsc(m.role||'—')}</td></tr>`).join(''):'<tr><td colspan="3">Aucun membre renseigné.</td></tr>';
-  const supplierRows=suppliers.length?suppliers.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.supplier)}</strong></td><td>${r.samples}</td><td>${r.count}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`).join(''):'<tr><td colspan="5">Aucun résultat exploitable.</td></tr>';
+  const supplierRows=suppliers.length?suppliers.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.supplier)}</strong></td><td>${r.samples}</td><td>${r.count}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`).join(''):'<tr><td colspan="5">Aucun résultat exploitable.</td></tr>';
   const criterionCards=criteria.map(x=>`<div class="criterion"><small>${reportEsc(x.name)}</small><strong>${x.count?fmt(x.avg):'—'}</strong><span>/ ${fmt(x.max)} · ${x.count} notes</span></div>`).join('');
   const timelineRows=timeline.length?timeline.map(e=>`<div class="timeline-row"><div class="time">${reportEsc(reportDate(e.at))}</div><div><strong>${reportEsc(e.label)}</strong><span>${reportEsc(e.detail)}</span></div></div>`).join(''):'<div class="empty">Aucun événement enregistré.</div>';
 
@@ -7819,7 +7822,7 @@ function openJuryDossier(st,sourceLabel='Jury'){
     return `<section class="section page-break-avoid">
       <div class="section-title">Résultats détaillés — ${pi+1}. ${reportEsc(p.code?`${p.code} — `:'')}${reportEsc(p.name||`Produit ${pi+1}`)}</div>
       <table><thead><tr><th>Rang</th><th>Échantillon</th><th>Fournisseur</th><th>Évaluations</th><th>Moyenne /65</th></tr></thead><tbody>
-      ${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td>${reportEsc(r.supplier)}</td><td>${r.count}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`).join('')}
+      ${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td>${reportEsc(r.supplier)}</td><td>${r.count}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`).join('')}
       </tbody></table>
     </section>`
   }).join('');
@@ -7963,13 +7966,13 @@ function openJurySummary(st,sourceLabel='Jury'){
     return `<section class="product-card">
       <div class="product-head"><strong>${pi+1}. ${reportEsc(p.code?`${p.code} — `:'')}${reportEsc(p.name||`Produit ${pi+1}`)}</strong><span>${rows.length} échantillon(s)</span></div>
       <table><thead><tr><th>#</th><th>Éch.</th><th class="supplier-col">Fournisseur</th><th>/65</th></tr></thead><tbody>
-      ${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td class="supplier-col">${reportEsc(r.supplier)}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`).join('')}
+      ${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td class="supplier-col">${reportEsc(r.supplier)}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`).join('')}
       </tbody></table>
     </section>`
   }).join('');
 
   const supplierRows=supplierRank.length?supplierRank.map((r,i)=>`
-    <tr><td>${i+1}</td><td class="supplier-col"><strong>${reportEsc(r.supplier)}</strong></td><td>${r.samples}</td><td>${r.count}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`
+    <tr><td>${i+1}</td><td class="supplier-col"><strong>${reportEsc(r.supplier)}</strong></td><td>${r.samples}</td><td>${r.count}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`
   ).join(''):'<tr><td colspan="5">Aucun résultat exploitable.</td></tr>';
 
   const criteriaCards=criteria.map(x=>`<div class="criterion"><small>${reportEsc(x.name)}</small><strong>${x.count?fmt(x.avg):'—'}</strong><span>/ ${fmt(x.max)}</span></div>`).join('');
@@ -9224,7 +9227,7 @@ function renderArchives(){
       <button class="btn btn-ghost btn-small" data-archive-copy="${rec.id}">Reprendre comme modèle</button>
       <button class="btn btn-danger btn-small" data-archive-delete="${rec.id}">Supprimer</button>
     </div>
-    <div class="archive-detail"><div class="archive-detail-grid"><div class="archive-mini-panel"><h4>Classement global fournisseurs</h4><div class="archive-ranking">${ranking.length?ranking.slice(0,8).map((r,i)=>`<div class="archive-rank-row"><div class="n">${i+1}</div><div><strong>${escapeHtml(r.supplier)}</strong><br><span>${r.count} évaluation(s)</span></div><div class="archive-score">${r.count?fmt(r.avg):'—'}/65</div></div>`).join(''):'<span style="font-size:11px;color:var(--muted)">Aucun résultat.</span>'}</div></div><div class="archive-mini-panel"><h4>Remarques du jury</h4><div class="archive-remarks-preview">${remarks.length?remarks.slice(0,8).map(x=>`<div class="archive-remark"><strong>${escapeHtml(x.tester)}</strong> · ${escapeHtml(x.product)} · Éch. ${escapeHtml(x.sample)}<br>${escapeHtml(x.remark)}</div>`).join(''):'<span style="font-size:11px;color:var(--muted)">Aucune remarque.</span>'}${remarks.length>8?`<span style="font-size:10px;color:var(--muted)">+ ${remarks.length-8} autre(s) remarque(s)</span>`:''}</div></div></div></div>`;
+    <div class="archive-detail"><div class="archive-detail-grid"><div class="archive-mini-panel"><h4>Classement global fournisseurs</h4><div class="archive-ranking">${ranking.length?ranking.slice(0,8).map((r,i)=>`<div class="archive-rank-row"><div class="n">${i+1}</div><div><strong>${escapeHtml(r.supplier)}</strong><br><span>${r.count} évaluation(s)</span></div><div class="archive-score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}/5</div></div>`).join(''):'<span style="font-size:11px;color:var(--muted)">Aucun résultat.</span>'}</div></div><div class="archive-mini-panel"><h4>Remarques du jury</h4><div class="archive-remarks-preview">${remarks.length?remarks.slice(0,8).map(x=>`<div class="archive-remark"><strong>${escapeHtml(x.tester)}</strong> · ${escapeHtml(x.product)} · Éch. ${escapeHtml(x.sample)}<br>${escapeHtml(x.remark)}</div>`).join(''):'<span style="font-size:11px;color:var(--muted)">Aucune remarque.</span>'}${remarks.length>8?`<span style="font-size:10px;color:var(--muted)">+ ${remarks.length-8} autre(s) remarque(s)</span>`:''}</div></div></div></div>`;
     list.appendChild(card)
   });
   list.querySelectorAll('[data-archive-toggle]').forEach(b=>b.onclick=()=>{const c=b.closest('.archive-card');c.classList.toggle('open');b.textContent=c.classList.contains('open')?'Masquer les résultats':'Voir les résultats'});
