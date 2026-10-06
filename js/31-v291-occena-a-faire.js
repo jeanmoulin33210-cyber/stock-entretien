@@ -78,6 +78,10 @@
       btn.__v291Bound=true;
       btn.onclick=function(){
         if(typeof showView==="function")showView("occenaView");
+        var title=document.getElementById("headerTitle");
+        var sub=document.getElementById("headerSub");
+        if(title)title.textContent="Contrôle OCCENA";
+        if(sub)sub.textContent=(typeof state!=="undefined"&&state&&state.config)?(state.config.lotName||"Jury Marchés"):"Jury Marchés";
         try{if(typeof window.renderOccenaControlV290==="function")window.renderOccenaControlV290();}catch(e){}
         if(window.matchMedia&&window.matchMedia("(max-width: 820px)").matches&&typeof window.openOccenaPhoneModeV300==="function"){
           window.openOccenaPhoneModeV300();
