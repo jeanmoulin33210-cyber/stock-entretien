@@ -7248,52 +7248,121 @@ function closeProductSheets(){captureProductSheetForm();saveState();renderAdmin(
 function productSheetAnnexHtml(st){
   const products=st?.config?.products||[];
   if(!products.length)return '';
-  return products.map((p,pi)=>{
-    const blocks=(p.samples||[]).map(sm=>{
-      const r=ensureProductSheetRecord(st,p,sm),ss=productSheetStats(st,p,sm);
-      const yn=v=>v==='oui'?'OUI':v==='non'?'NON':'—';
-      const labeling=r.labeling==='conforme'?'Conforme':r.labeling==='non-conforme'?'Non conforme':'—';
-      return `<div class="product-annex-supplier">
-        <h3>${reportEsc(sm.supplier||'Fournisseur')} <span>— Échantillon ${reportEsc(sm.id)}</span></h3>
-        <table><tbody>
-          <tr><th>Marque</th><td>${reportEsc(r.brand||'—')}</td><th>Poids / grammage</th><td>${reportEsc(r.weight||'—')}</td></tr>
-          <tr><th>Caractéristiques</th><td colspan="3">${reportEsc(r.characteristics||'—')}</td></tr>
-          <tr><th>Étiquetage</th><td>${reportEsc(labeling)}</td><th>N° lot fournisseur</th><td>${reportEsc(r.supplierLot||'—')}</td></tr>
-          <tr><th>Fiche technique</th><td>${yn(r.technicalSheet)}</td><th>T° livraison conforme</th><td>${yn(r.deliveryTempConformity)}${String(r.deliveryTemp||'').trim()?` · ${reportEsc(r.deliveryTemp)} °C`:''}</td></tr>
-          <tr><th>Emballage / conditionnement</th><td>${yn(r.packagingConformity)}</td><th>Date fabrication</th><td>${reportEsc(r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—')}</td></tr>
-          <tr><th>DDM / utilisation optimale</th><td>${reportEsc(r.ddm?formatClosureDate(r.ddm):'—')}</td><th>DLC</th><td>${reportEsc(r.dlc?formatClosureDate(r.dlc):'—')}</td></tr>
-          <tr><th>Observations</th><td colspan="3">${reportEsc(r.observations||'—')}</td></tr>
-          ${r.receptionFound?`<tr><th>Réception</th><td colspan="3">${reportEsc(formatClosureDate(r.receptionDate))} ${reportEsc(r.receptionTime||'')} · T° véhicule ${reportEsc(String(r.receptionVehicleTemp??'')||'—')} °C · T° produit ${reportEsc(String(r.deliveryTemp??'')||'—')} °C · T° intérieur ${reportEsc(String(r.receptionInteriorTemp??'')||'—')} °C · ${reportEsc(r.receptionDecision==='refus'?'Refus':'Acceptation')}</td></tr>`:''}
-        </tbody></table>
-        <div class="product-annex-score"><strong>Résultat sensoriel du jury : ${ss.count?`${fmt(ss.avg65)} /65 · ${fmt(ss.note5)} /5`:'—'}</strong><div>${ss.criteria.map(c=>`${reportEsc(c.name)} : ${ss.count?`${fmt(c.avg)}/${fmt(c.max)}`:'—'}`).join(' · ')}</div></div>
-      </div>`;
-    }).join('');
-    return `<section class="section page-break product-eval-annex"><div class="section-kicker">Annexe — fiche d’évaluation produit ${pi+1}/${products.length}</div><h2>${reportEsc(p.name||`Produit ${pi+1}`)}</h2><div class="small-note">Les résultats sensoriels sont repris automatiquement des fiches des testeurs.</div>${blocks||'<div class="empty-note">Aucun fournisseur / échantillon.</div>'}</section>`;
-  }).join('');
+  const sections=[];
+  products.forEach((p,pi)=>{
+    const samples=p.samples||[];
+    for(let offset=0;offset<samples.length;offset+=3){
+      const group=samples.slice(offset,offset+3);
+      const pageNo=Math.floor(offset/3)+1;
+      const pageTotal=Math.max(1,Math.ceil(samples.length/3));
+      const blocks=group.map(sm=>{
+        const r=ensureProductSheetRecord(st,p,sm),ss=productSheetStats(st,p,sm);
+        const yn=v=>v==='oui'?'OUI':v==='non'?'NON':'—';
+        const labeling=r.labeling==='conforme'?'Conforme':r.labeling==='non-conforme'?'Non conforme':'—';
+        return `<article class="product-eval-card">
+          <div class="product-eval-card-head">
+            <div><strong>${reportEsc(sm.supplier||'Fournisseur')}</strong><span>Échantillon ${reportEsc(sm.id)}</span></div>
+            <div class="product-eval-note"><small>Note /5</small><b>${ss.count?fmt(ss.note5):'—'}</b></div>
+          </div>
+          <table class="product-eval-table"><tbody>
+            <tr><th>Marque</th><td>${reportEsc(r.brand||'—')}</td><th>Poids / grammage</th><td>${reportEsc(r.weight||'—')}</td></tr>
+            <tr><th>Caractéristiques</th><td colspan="3">${reportEsc(r.characteristics||'—')}</td></tr>
+            <tr><th>Étiquetage</th><td>${reportEsc(labeling)}</td><th>N° lot fournisseur</th><td>${reportEsc(r.supplierLot||'—')}</td></tr>
+            <tr><th>Fiche technique</th><td>${yn(r.technicalSheet)}</td><th>T° livraison conforme</th><td>${yn(r.deliveryTempConformity)}${String(r.deliveryTemp||'').trim()?` · ${reportEsc(r.deliveryTemp)} °C`:''}</td></tr>
+            <tr><th>Emballage / conditionnement</th><td>${yn(r.packagingConformity)}</td><th>Date fabrication</th><td>${reportEsc(r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—')}</td></tr>
+            <tr><th>DDM / utilisation optimale</th><td>${reportEsc(r.ddm?formatClosureDate(r.ddm):'—')}</td><th>DLC</th><td>${reportEsc(r.dlc?formatClosureDate(r.dlc):'—')}</td></tr>
+            <tr><th>Observations</th><td colspan="3">${reportEsc(r.observations||'—')}</td></tr>
+          </tbody></table>
+          <div class="product-eval-scoreline">
+            <span>Résultat sensoriel : <strong>${ss.count?`${fmt(ss.avg65)} /65`:'—'}</strong></span>
+            <span>${ss.criteria.map(c=>`${reportEsc(c.name)} : ${ss.count?`${fmt(c.avg)}/${fmt(c.max)}`:'—'}`).join(' · ')}</span>
+          </div>
+        </article>`;
+      }).join('');
+      sections.push(`<section class="section page-break product-eval-page">
+        <div class="section-kicker">Fiches d’évaluation des échantillons · ${pi+1}/${products.length}</div>
+        <h2>${reportEsc(p.name||`Produit ${pi+1}`)}</h2>
+        <div class="small-note">Trois fiches maximum par page · résultats sensoriels repris automatiquement des tests.</div>
+        <div class="product-eval-grid">${blocks||'<div class="empty-note">Aucun fournisseur / échantillon.</div>'}</div>
+        ${pageTotal>1?`<div class="product-eval-page-no">Page ${pageNo}/${pageTotal} pour cet article</div>`:''}
+      </section>`);
+    }
+  });
+  return sections.join('');
+}
+function reportPdfProductEvalCardV283(doc,st,p,sm,x,y,w,h){
+  const r=ensureProductSheetRecord(st,p,sm),ss=productSheetStats(st,p,sm);
+  const yn=v=>v==='oui'?'OUI':v==='non'?'NON':'—';
+  const label=v=>v==='conforme'?'Conforme':v==='non-conforme'?'Non conforme':'—';
+  doc.setDrawColor(185,207,224);doc.setFillColor(251,253,254);doc.roundedRect(x,y,w,h,2,2,'FD');
+  doc.setFillColor(232,242,248);doc.rect(x,y,w,10,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(23,79,120);
+  doc.text(String(sm.supplier||'Fournisseur'),x+3,y+6.3,{maxWidth:w-45});
+  doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(82,111,132);
+  doc.text('Échantillon '+String(sm.id||''),x+3,y+9);
+  doc.setFont('helvetica','bold');doc.setFontSize(11);doc.setTextColor(18,51,90);
+  doc.text(ss.count?fmt(ss.note5):'—',x+w-4,y+6.8,{align:'right'});
+  doc.setFontSize(5.8);doc.setTextColor(82,111,132);doc.text('NOTE /5',x+w-4,y+9.1,{align:'right'});
+
+  const rows=[
+    ['Marque',r.brand||'—','Poids / grammage',r.weight||'—'],
+    ['Caractéristiques',r.characteristics||'—','',''],
+    ['Étiquetage',label(r.labeling),'N° lot',r.supplierLot||'—'],
+    ['Fiche technique',yn(r.technicalSheet),'T° livraison',yn(r.deliveryTempConformity)+(String(r.deliveryTemp||'').trim()?(' · '+r.deliveryTemp+' °C'):'')],
+    ['Emballage',yn(r.packagingConformity),'Date fabrication',r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—'],
+    ['DDM',r.ddm?formatClosureDate(r.ddm):'—','DLC',r.dlc?formatClosureDate(r.dlc):'—'],
+    ['Observations',r.observations||'—','','']
+  ];
+  const top=y+12,rowH=6.2,c1=30,c2=58,c3=31,c4=w-c1-c2-c3;
+  let yy=top;
+  doc.setFontSize(6.4);
+  rows.forEach((row,idx)=>{
+    let xx=x;
+    const vals=[row[0],row[1],row[2],row[3]],ws=[c1,c2,c3,c4];
+    vals.forEach((val,i)=>{
+      doc.setDrawColor(213,226,234);
+      doc.rect(xx,yy,ws[i],rowH);
+      if(i===0||i===2){
+        doc.setFillColor(241,247,250);doc.rect(xx,yy,ws[i],rowH,'F');
+        doc.setFont('helvetica','bold');doc.setTextColor(70,94,111);
+      }else{
+        doc.setFont('helvetica','normal');doc.setTextColor(49,73,91);
+      }
+      if(val)doc.text(doc.splitTextToSize(String(val),ws[i]-2).slice(0,2),xx+1,yy+2.5,{maxWidth:ws[i]-2});
+      xx+=ws[i];
+    });
+    yy+=rowH;
+  });
+  const sy=y+h-11;
+  doc.setDrawColor(207,222,231);doc.line(x+3,sy-2,x+w-3,sy-2);
+  doc.setFont('helvetica','bold');doc.setFontSize(7);doc.setTextColor(23,58,97);
+  doc.text('Résultat sensoriel : '+(ss.count?fmt(ss.avg65)+' /65':'—'),x+3,sy+1);
+  doc.setFont('helvetica','normal');doc.setFontSize(5.8);doc.setTextColor(92,113,128);
+  const crit=ss.criteria.map(c=>c.name+' '+(ss.count?fmt(c.avg)+'/'+fmt(c.max):'—')).join(' · ');
+  doc.text(doc.splitTextToSize(crit,w-6).slice(0,2),x+3,sy+5,{maxWidth:w-6});
 }
 function appendProductSheetsPdf(doc,st){
   const products=st?.config?.products||[];
   products.forEach((p,pi)=>{
-    doc.addPage();let y=20;
-    y=reportPdfTitle(doc,`Annexe — Fiche produit ${pi+1}/${products.length} : ${p.name||`Produit ${pi+1}`}`,y);
-    for(const sm of p.samples||[]){
-      const r=ensureProductSheetRecord(st,p,sm),ss=productSheetStats(st,p,sm);
-      y=reportPdfNeedPage(doc,y,60);
-      y=reportPdfParagraph(doc,`${sm.supplier||'Fournisseur'} — Échantillon ${sm.id}`,y,{size:10,bold:true});
-      const yn=v=>v==='oui'?'OUI':v==='non'?'NON':'—';
-      y=reportPdfSimpleTable(doc,['Élément','Valeur'],[
-        ['Marque',r.brand||'—'],['Caractéristiques',r.characteristics||'—'],
-        ['Étiquetage',r.labeling==='conforme'?'Conforme':r.labeling==='non-conforme'?'Non conforme':'—'],
-        ['Poids / grammage',r.weight||'—'],['Conforme fiche technique',yn(r.technicalSheet)],
-        ['Température livraison',`${yn(r.deliveryTempConformity)}${String(r.deliveryTemp||'').trim()?` · ${r.deliveryTemp} °C`:''}`],
-        ['Emballage / conditionnement',yn(r.packagingConformity)],
-        ['Date fabrication',r.manufacturingDate?formatClosureDate(r.manufacturingDate):'—'],
-        ['DDM',r.ddm?formatClosureDate(r.ddm):'—'],['DLC',r.dlc?formatClosureDate(r.dlc):'—'],
-        ['N° lot fournisseur',r.supplierLot||'—'],['Observations',r.observations||'—']
-      ],y,[55,127]);
-      y=reportPdfParagraph(doc,`Résultat sensoriel : ${ss.count?`${fmt(ss.avg65)} /65 · ${fmt(ss.note5)} /5`:'—'}`,y+2,{size:9,bold:true});
-      if(ss.count)y=reportPdfParagraph(doc,ss.criteria.map(c=>`${c.name} ${fmt(c.avg)}/${fmt(c.max)}`).join(' · '),y,{size:8});
-      y+=4;
+    const samples=p.samples||[];
+    for(let offset=0;offset<samples.length;offset+=3){
+      doc.addPage();
+      let y=24;
+      doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(49,90,120);
+      doc.text('Fiches d’évaluation des échantillons',14,y);
+      doc.setDrawColor(154,177,195);doc.line(67,y-1,196,y-1);
+      y+=9;
+      doc.setFontSize(19);doc.setTextColor(18,51,90);
+      doc.text(String(p.name||`Produit ${pi+1}`),14,y);
+      y+=8;
+      doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(92,113,128);
+      doc.text('Trois fiches maximum par page · note sur 5 mise en évidence.',14,y);
+      y+=6;
+      const group=samples.slice(offset,offset+3);
+      const gap=5,cardH=72;
+      group.forEach((sm,idx)=>{
+        reportPdfProductEvalCardV283(doc,st,p,sm,14,y+idx*(cardH+gap),182,cardH);
+      });
     }
   });
 }
@@ -7301,80 +7370,117 @@ function appendProductSheetsPdf(doc,st){
 function reportReceptionAnnex(st){
   const receptions=Array.isArray(st?.config?.receptions)?st.config.receptions.filter(Boolean):[];
   if(!receptions.length)return '';
-  return receptions.map((r,ri)=>{
-    const lines=(r.lines||[]).filter(x=>x.received!==false);
-    const rows=lines.map(line=>`<tr>
-      <td>${reportEsc(line.productName||'—')}</td>
-      <td>${reportEsc(r.vehicleTemp||'—')}</td>
-      <td>${reportEsc(line.productTemp||'—')}</td>
-      <td>${reportEsc(line.interiorTemp||'—')}</td>
-      <td>${reportEsc(line.dlc?formatClosureDate(line.dlc):'')}</td>
-      <td>${reportEsc(line.packaging==='non-conforme'?'NON CONFORME':'Conforme')}</td>
-      <td>${line.decision==='refus'?'':'X'}</td>
-      <td>${line.decision==='refus'?'X':''}</td>
-      <td>${reportEsc(line.observations||'')}</td>
-    </tr>`).join('');
-    return `<section class="section page-break reception-annex">
-      <div class="section-kicker">Annexe — contrôle de réception ${ri+1}/${receptions.length}</div>
+  const pages=[];
+  for(let offset=0;offset<receptions.length;offset+=3){
+    const group=receptions.slice(offset,offset+3);
+    const pageNo=Math.floor(offset/3)+1;
+    const pageTotal=Math.ceil(receptions.length/3);
+    const cards=group.map((r,idx)=>{
+      const lines=(r.lines||[]).filter(x=>x.received!==false);
+      const rows=lines.map(line=>`<tr>
+        <td>${reportEsc(line.productName||'—')}</td>
+        <td>${reportEsc(r.vehicleTemp||'—')}</td>
+        <td>${reportEsc(line.productTemp||'—')}</td>
+        <td>${reportEsc(line.interiorTemp||'—')}</td>
+        <td>${reportEsc(line.dlc?formatClosureDate(line.dlc):'')}</td>
+        <td>${reportEsc(line.packaging==='non-conforme'?'NON CONFORME':'Conforme')}</td>
+        <td>${line.decision==='refus'?'Refus':'Accepté'}</td>
+        <td>${reportEsc(line.observations||'')}</td>
+      </tr>`).join('');
+      return `<article class="reception-report-card">
+        <div class="reception-report-card-head">
+          <div><strong>${reportEsc(r.supplier||'Fournisseur')}</strong><span>Réception ${offset+idx+1}/${receptions.length}</span></div>
+          <div class="reception-report-date">${reportEsc(formatClosureDate(r.date))} · ${reportEsc(r.time||'—')}</div>
+        </div>
+        <div class="reception-meta-grid">
+          <div><small>Établissement</small><b>${reportEsc(r.establishment||'—')}</b></div>
+          <div><small>Lot</small><b>${reportEsc(st.config?.lotName||'—')}</b></div>
+          <div><small>Livreur</small><b>${reportEsc(r.driverName||'—')}</b></div>
+          <div><small>Agent réceptionnaire</small><b>${reportEsc(r.receiverName||'—')}</b></div>
+        </div>
+        <table class="reception-report-table">
+          <thead><tr><th>Produit</th><th>T° véhicule</th><th>T° produit</th><th>T° intérieur</th><th>DLC / DDM</th><th>Emballage</th><th>Décision</th><th>Observations</th></tr></thead>
+          <tbody>${rows||'<tr><td colspan="8">Aucun produit renseigné.</td></tr>'}</tbody>
+        </table>
+        <div class="reception-signature-inline">
+          <strong>Signature du livreur</strong>
+          ${r.driverSignature?`<img src="${r.driverSignature}" alt="Signature du livreur">`:'<span>Signature non disponible</span>'}
+        </div>
+      </article>`;
+    }).join('');
+    pages.push(`<section class="section page-break reception-report-page reception-count-${group.length}">
+      <div class="section-kicker">Annexe — contrôle de réception</div>
       <h2>Relevé de réception des échantillons</h2>
-      <table><tbody>
-        <tr><th>Établissement</th><td colspan="3">${reportEsc(r.establishment||'—')}</td></tr>
-        <tr><th>Lot</th><td>${reportEsc(st.config?.lotName||'—')}</td><th>Fournisseur</th><td>${reportEsc(r.supplier||'—')}</td></tr>
-        <tr><th>Date</th><td>${reportEsc(formatClosureDate(r.date))}</td><th>Heure</th><td>${reportEsc(r.time||'—')}</td></tr>
-        <tr><th>Livreur</th><td>${reportEsc(r.driverName||'—')}</td><th>Agent réceptionnaire</th><td>${reportEsc(r.receiverName||'—')}</td></tr>
-      </tbody></table>
-      <table class="reception-report-table">
-        <thead><tr><th>Produit</th><th>T° véhicule</th><th>T° produit</th><th>T° intérieur</th><th>DLC / DDM</th><th>Emballage</th><th>Accept.</th><th>Refus</th><th>Observations</th></tr></thead>
-        <tbody>${rows||'<tr><td colspan="9">Aucun produit renseigné.</td></tr>'}</tbody>
-      </table>
-      <div class="reception-signature-report">
-        <strong>Signature du livreur</strong>
-        ${r.driverSignature?`<img src="${r.driverSignature}" alt="Signature du livreur">`:'<span>Signature non disponible</span>'}
-      </div>
-    </section>`;
-  }).join('');
+      <div class="small-note">Les relevés sont regroupés jusqu’à trois par page pour conserver une lecture claire.</div>
+      <div class="reception-report-grid">${cards}</div>
+      ${pageTotal>1?`<div class="reception-page-no">Page ${pageNo}/${pageTotal} des relevés de réception</div>`:''}
+    </section>`);
+  }
+  return pages.join('');
+}
+function reportPdfReceptionCardV283(doc,st,r,index,total,x,y,w,h){
+  doc.setDrawColor(185,207,224);doc.setFillColor(251,253,254);doc.roundedRect(x,y,w,h,2,2,'FD');
+  doc.setFillColor(232,242,248);doc.rect(x,y,w,9,'F');
+  doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(23,79,120);
+  doc.text(String(r.supplier||'Fournisseur'),x+3,y+5.8,{maxWidth:w-45});
+  doc.setFont('helvetica','normal');doc.setFontSize(6.5);doc.setTextColor(82,111,132);
+  doc.text('Réception '+index+'/'+total,x+w-3,y+5.8,{align:'right'});
+  let yy=y+13;
+  doc.setFontSize(6.6);doc.setTextColor(49,73,91);
+  doc.text('Établissement : '+String(r.establishment||'—'),x+3,yy);
+  doc.text('Lot : '+String(st.config?.lotName||'—'),x+w/2,yy);yy+=4;
+  doc.text('Date : '+String(formatClosureDate(r.date))+' '+String(r.time||''),x+3,yy);
+  doc.text('Livreur : '+String(r.driverName||'—')+' · Agent : '+String(r.receiverName||'—'),x+w/2,yy);yy+=5;
+
+  const lines=(r.lines||[]).filter(v=>v.received!==false);
+  const headers=['Produit','T° véh.','T° prod.','T° int.','DLC/DDM','Emballage','Décision'];
+  const widths=[42,17,17,17,28,31,30];
+  const rowH=5.8;
+  let xx=x;
+  doc.setFillColor(241,247,250);doc.setFont('helvetica','bold');doc.setFontSize(5.6);doc.setTextColor(70,94,111);
+  headers.forEach((hdr,i)=>{doc.rect(xx,yy,widths[i],rowH,'FD');doc.text(hdr,xx+1,yy+3.7,{maxWidth:widths[i]-2});xx+=widths[i];});
+  yy+=rowH;
+  doc.setFont('helvetica','normal');doc.setFontSize(5.6);doc.setTextColor(49,73,91);
+  lines.slice(0,5).forEach(line=>{
+    const vals=[
+      line.productName||'—',r.vehicleTemp||'—',line.productTemp||'—',line.interiorTemp||'—',
+      line.dlc?formatClosureDate(line.dlc):'',
+      line.packaging==='non-conforme'?'Non conf.':'Conforme',
+      line.decision==='refus'?'Refus':'Accepté'
+    ];
+    xx=x;
+    vals.forEach((val,i)=>{doc.rect(xx,yy,widths[i],rowH);doc.text(String(val),xx+1,yy+3.7,{maxWidth:widths[i]-2});xx+=widths[i];});
+    yy+=rowH;
+  });
+  yy+=3;
+  doc.setFont('helvetica','bold');doc.setFontSize(6);doc.setTextColor(70,94,111);doc.text('Signature du livreur',x+3,yy);
+  if(r.driverSignature){
+    try{doc.addImage(r.driverSignature,'PNG',x+38,yy-5,38,12);}catch(e){}
+  }else{
+    doc.setFont('helvetica','normal');doc.setTextColor(120,132,140);doc.text('Non disponible',x+38,yy);
+  }
 }
 function appendReceptionAnnexPdf(doc,st){
   const receptions=Array.isArray(st?.config?.receptions)?st.config.receptions.filter(Boolean):[];
-  receptions.forEach((r,ri)=>{
+  if(!receptions.length)return;
+  for(let offset=0;offset<receptions.length;offset+=3){
     doc.addPage();
-    let y=20;
-    y=reportPdfTitle(doc,`Annexe — Réception des échantillons ${ri+1}/${receptions.length}`,y);
-    y=reportPdfParagraph(doc,`${r.establishment||'Établissement non renseigné'} · ${st.config?.lotName||'Lot'}`,y,{size:9});
-    y=reportPdfParagraph(doc,`Fournisseur : ${r.supplier||'—'} · Date : ${formatClosureDate(r.date)} ${r.time||''}`,y,{size:9,bold:true});
-    y=reportPdfParagraph(doc,`Livreur : ${r.driverName||'—'} · Agent réceptionnaire : ${r.receiverName||'—'} · T° véhicule : ${r.vehicleTemp||'—'} °C`,y,{size:9});
-
-    const lines=(r.lines||[]).filter(x=>x.received!==false);
-    y=reportPdfSimpleTable(
-      doc,
-      ['Produit','T° prod.','T° int.','DLC/DDM','Emballage','Décision','Observations'],
-      lines.map(line=>[
-        line.productName||'—',
-        line.productTemp||'—',
-        line.interiorTemp||'—',
-        line.dlc?formatClosureDate(line.dlc):'',
-        line.packaging==='non-conforme'?'Non conf.':'Conforme',
-        line.decision==='refus'?'REFUS':'Accepté',
-        line.observations||''
-      ]),
-      y,
-      [40,20,20,27,25,22,28]
-    );
-
-    y=reportPdfParagraph(doc,'Signature du livreur',y+3,{size:9,bold:true});
-    if(r.driverSignature){
-      try{
-        y=reportPdfNeedPage(doc,y,35);
-        doc.addImage(r.driverSignature,'PNG',14,y,70,25);
-        y+=30;
-      }catch(e){
-        y=reportPdfParagraph(doc,'Signature enregistrée (image non insérable dans ce navigateur).',y,{size:8});
-      }
-    }else{
-      y=reportPdfParagraph(doc,'Signature non disponible.',y,{size:8});
-    }
-  });
+    let y=24;
+    doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(49,90,120);
+    doc.text('Annexe — contrôle de réception',14,y);
+    doc.setDrawColor(154,177,195);doc.line(62,y-1,196,y-1);
+    y+=9;
+    doc.setFontSize(19);doc.setTextColor(18,51,90);
+    doc.text('Relevé de réception des échantillons',14,y);
+    y+=8;
+    doc.setFont('helvetica','normal');doc.setFontSize(7);doc.setTextColor(92,113,128);
+    doc.text('Jusqu’à trois relevés regroupés sur une même page.',14,y);
+    y+=6;
+    const group=receptions.slice(offset,offset+3),gap=5,cardH=72;
+    group.forEach((rec,idx)=>reportPdfReceptionCardV283(doc,st,rec,offset+idx+1,receptions.length,14,y+idx*(cardH+gap),182,cardH));
+  }
 }
+
 
 
 function pvDate(v){
@@ -7937,16 +8043,28 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
   </tr>`).join('');
 
   const closureMembers=(closure.members||[]).filter(x=>x.present!==false);
-  const closureSection=closureHasUsefulData(st)?`<section class="section page-break">
+  const closureSection=closureHasUsefulData(st)?`<section class="section page-break closure-report-page">
     <div class="section-kicker">Clôture administrative</div>
     <h2>Fiche de clôture du jury</h2>
-    <table><tbody>
-      <tr><th>Date de dégustation</th><td>${reportEsc(formatClosureDate(closure.date))}</td><th>Lieu</th><td>${reportEsc(closure.place||'—')}</td></tr>
-      <tr><th>Responsable du jury</th><td>${reportEsc(closure.chair||'—')}</td><th>Fonction</th><td>${reportEsc(closure.chairRole||'—')}</td></tr>
-      <tr><th>Second signataire</th><td>${reportEsc(closure.coSigner||'—')}</td><th>Fonction</th><td>${reportEsc(closure.coSignerRole||'—')}</td></tr>
-      <tr><th>Membres présents</th><td colspan="3">${closureMembers.length?closureMembers.map(x=>`${reportEsc(x.name)}${x.role?` — ${reportEsc(x.role)}`:''}`).join('<br>'):'—'}</td></tr>
-      <tr><th>Observations générales</th><td colspan="3">${closure.notes?reportEsc(closure.notes).replace(/\n/g,'<br>'):'Aucune observation générale.'}</td></tr>
-    </tbody></table>
+    <div class="closure-report-intro">Validation administrative et traçabilité du jury.</div>
+    <div class="closure-report-grid">
+      <div><small>Date de dégustation</small><strong>${reportEsc(formatClosureDate(closure.date))}</strong></div>
+      <div><small>Lieu</small><strong>${reportEsc(closure.place||'—')}</strong></div>
+      <div><small>Responsable du jury</small><strong>${reportEsc(closure.chair||'—')}</strong><span>${reportEsc(closure.chairRole||'—')}</span></div>
+      <div><small>Second signataire</small><strong>${reportEsc(closure.coSigner||'—')}</strong><span>${reportEsc(closure.coSignerRole||'—')}</span></div>
+    </div>
+    <div class="closure-report-box">
+      <h3>Membres présents</h3>
+      <div class="closure-members">${closureMembers.length?closureMembers.map(x=>`<span>${reportEsc(x.name)}${x.role?` · ${reportEsc(x.role)}`:''}</span>`).join(''):'<span>—</span>'}</div>
+    </div>
+    <div class="closure-report-box">
+      <h3>Observations générales</h3>
+      <div>${closure.notes?reportEsc(closure.notes).replace(/\n/g,'<br>'):'Aucune observation générale.'}</div>
+    </div>
+    ${closure.chairSignature||closure.coSignature?`<div class="closure-signatures">
+      <div><strong>Responsable du jury</strong>${closure.chairSignature?`<img src="${closure.chairSignature}" alt="Signature du responsable">`:'<span>Signature non renseignée</span>'}</div>
+      <div><strong>Second signataire</strong>${closure.coSignature?`<img src="${closure.coSignature}" alt="Signature du second signataire">`:'<span>Signature non renseignée</span>'}</div>
+    </div>`:''}
   </section>`:'';
   const receptionSection=reportReceptionAnnex(st);
   const productSheetsSection=productSheetAnnexHtml(st);
@@ -8020,13 +8138,34 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
     .lot-summary h2{text-align:left}
     .footer{margin-top:30px;padding-top:10px;border-top:1px solid var(--line);display:flex;justify-content:space-between;gap:10px;color:var(--muted);font-size:9px}
     .small-note{font-size:9px;color:var(--muted);line-height:1.45;margin-top:8px}
-    .reception-report-table{font-size:8px}.reception-report-table th,.reception-report-table td{padding:5px 3px}
-    .reception-signature-report{margin-top:16px;border:1px solid var(--line);border-radius:8px;padding:10px;min-height:95px}
-    .reception-signature-report strong{display:block;font-size:10px}.reception-signature-report img{display:block;max-width:260px;max-height:75px;object-fit:contain;margin-top:6px}
-    .reception-signature-report span{display:block;font-size:9px;color:var(--muted);margin-top:6px}
-    .product-annex-supplier{margin:15px 0 18px;break-inside:avoid}.product-annex-supplier h3{font-size:13px;color:var(--blue);margin:0 0 7px}.product-annex-supplier h3 span{font-size:10px;color:var(--muted);font-weight:500}
-    .product-annex-supplier table{font-size:9px}.product-annex-supplier th{width:22%;text-align:left}.product-annex-supplier td{text-align:left}
-    .product-annex-score{margin-top:7px;border-left:4px solid var(--blue);background:#f6fafc;padding:7px 9px;font-size:9px;line-height:1.45}.product-annex-score strong{display:block;color:#214d68}
+    .closure-report-page{padding-top:58px;min-height:880px}
+    .closure-report-page h2{font-size:29px;color:#12335a;margin:8px 0 6px}
+    .closure-report-intro{font-size:11px;color:#647a89;margin-bottom:24px}
+    .closure-report-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+    .closure-report-grid>div{border:1px solid #c7dbe7;border-radius:9px;background:#f8fbfd;padding:12px}
+    .closure-report-grid small{display:block;font-size:8px;text-transform:uppercase;letter-spacing:.05em;color:#718695;margin-bottom:4px}
+    .closure-report-grid strong{display:block;font-size:13px;color:#173a61}.closure-report-grid span{display:block;font-size:9px;color:#667c8b;margin-top:3px}
+    .closure-report-box{border:1px solid #c7dbe7;border-radius:9px;background:#fbfdfe;padding:13px 15px;margin-top:12px}
+    .closure-report-box h3{margin:0 0 9px;color:#173a61;font-size:12px}.closure-members{display:flex;flex-wrap:wrap;gap:6px}.closure-members span{padding:5px 8px;border-radius:999px;background:#eaf3f8;color:#315a78;font-size:9px}
+    .closure-signatures{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:16px}.closure-signatures>div{border:1px solid #c7dbe7;border-radius:9px;padding:10px;min-height:85px}.closure-signatures strong{display:block;font-size:9px;color:#173a61}.closure-signatures img{display:block;max-width:100%;height:58px;object-fit:contain;margin-top:4px}.closure-signatures span{font-size:8px;color:#7a8c98}
+    .summary-technical-note{margin-top:14px!important}
+    .reception-report-page{padding-top:50px;min-height:900px}.reception-report-page h2{font-size:28px;color:#12335a;margin:8px 0 6px}
+    .reception-report-grid{display:grid;grid-template-columns:1fr;gap:11px;margin-top:18px}
+    .reception-report-card{border:1px solid #b9cfe0;border-radius:9px;overflow:hidden;background:#fbfdfe;break-inside:avoid;page-break-inside:avoid}
+    .reception-report-card-head{display:flex;justify-content:space-between;align-items:baseline;gap:10px;padding:8px 10px;background:#e8f2f8;color:#174f78}.reception-report-card-head strong{font-size:12px}.reception-report-card-head span{display:block;font-size:8px;color:#6b8190}.reception-report-date{font-size:9px;color:#526f84;white-space:nowrap}
+    .reception-meta-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:0;border-bottom:1px solid #d9e5ec}.reception-meta-grid>div{padding:6px 8px;border-right:1px solid #e1e9ee}.reception-meta-grid>div:last-child{border-right:0}.reception-meta-grid small{display:block;font-size:7px;text-transform:uppercase;color:#7a8c98}.reception-meta-grid b{display:block;font-size:8.5px;color:#31495b;margin-top:2px}
+    .reception-report-table{font-size:7.5px;margin:0}.reception-report-table th,.reception-report-table td{padding:4px 3px}
+    .reception-signature-inline{display:flex;align-items:center;gap:12px;min-height:38px;padding:5px 9px;border-top:1px solid #d9e5ec}.reception-signature-inline strong{font-size:8px;color:#526f84}.reception-signature-inline img{display:block;max-width:130px;max-height:30px;object-fit:contain}.reception-signature-inline span{font-size:8px;color:#84939d}
+    .reception-page-no,.product-eval-page-no{text-align:right;font-size:8px;color:#7a8c98;margin-top:8px}
+    .reception-count-3 .reception-report-card-head{padding:6px 9px}.reception-count-3 .reception-meta-grid>div{padding:4px 6px}.reception-count-3 .reception-report-table{font-size:6.8px}.reception-count-3 .reception-report-table th,.reception-count-3 .reception-report-table td{padding:3px 2px}.reception-count-3 .reception-signature-inline{min-height:30px}
+    .product-eval-page{padding-top:44px;min-height:900px}.product-eval-page h2{font-size:27px;color:#12335a;margin:8px 0 4px}
+    .product-eval-grid{display:grid;grid-template-columns:1fr;gap:10px;margin-top:14px}
+    .product-eval-card{border:1px solid #b9cfe0;border-radius:9px;overflow:hidden;background:#fbfdfe;break-inside:avoid;page-break-inside:avoid}
+    .product-eval-card-head{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:7px 9px;background:#e8f2f8}.product-eval-card-head>div:first-child strong{display:block;font-size:11px;color:#174f78}.product-eval-card-head>div:first-child span{display:block;font-size:8px;color:#6b8190;margin-top:1px}
+    .product-eval-note{min-width:66px;text-align:center;border-left:1px solid #c7dbe7;padding-left:9px}.product-eval-note small{display:block;font-size:7px;text-transform:uppercase;color:#718695}.product-eval-note b{display:block;font-size:20px;line-height:1;color:#12335a;margin-top:2px}
+    .product-eval-table{font-size:7.4px;margin:0}.product-eval-table th,.product-eval-table td{padding:4px 5px;text-align:left}.product-eval-table th{width:19%;color:#526f84;background:#f1f6f9}
+    .product-eval-scoreline{padding:6px 9px;border-top:1px solid #d9e5ec;color:#526f84;font-size:7.4px;line-height:1.4}.product-eval-scoreline span{display:block}.product-eval-scoreline strong{color:#173a61}
+
     @media print{
       @page{size:A4 portrait;margin:12mm}
       body{background:#fff}
@@ -8037,6 +8176,10 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
       .product-section{break-inside:auto;page-break-inside:auto;padding-top:14mm;min-height:auto}
       .supplier-comment-card{break-inside:avoid;page-break-inside:avoid}
       .lot-summary{padding-top:16mm;min-height:250mm}
+      .closure-report-page{padding-top:16mm;min-height:250mm}
+      .reception-report-page{padding-top:14mm;min-height:250mm}
+      .product-eval-page{padding-top:12mm;min-height:250mm}
+      .reception-report-card,.product-eval-card{break-inside:avoid;page-break-inside:avoid}
       table{break-inside:auto}
       tr{break-inside:avoid;page-break-inside:avoid}
     }
@@ -8090,13 +8233,8 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
           <div class="jury-conclusion-title">Conclusion / rapport du jury</div>
           <div class="jury-conclusion-text">${reportEsc(juryConclusion).replace(/\n/g,'<br>')}</div>
         </div>`:''}
+        ${reportNote?`<div class="report-note summary-technical-note"><strong>Note explicative / conformité</strong><br>${reportEsc(reportNote).replace(/\n/g,'<br>')}</div>`:''}
       </section>
-
-      ${reportNote?`<section class="section page-break">
-        <div class="section-kicker">Note explicative / conformité</div>
-        <h2>Observation complémentaire</h2>
-        <div class="report-note">${reportEsc(reportNote).replace(/\n/g,'<br>')}</div>
-      </section>`:''}
 
       ${closureSection}
       ${receptionSection}
@@ -8324,6 +8462,48 @@ function reportPdfConclusionBoxV282(doc,text,y){
   return y+h+4;
 }
 
+function appendClosurePdfV283(doc,st){
+  const c=st?.config?.closure||{};
+  if(!closureHasUsefulData(st))return;
+  doc.addPage();
+  let y=28;
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(49,90,120);
+  doc.text('Clôture administrative',14,y);doc.setDrawColor(154,177,195);doc.line(51,y-1,196,y-1);
+  y+=10;doc.setFontSize(20);doc.setTextColor(18,51,90);doc.text('Fiche de clôture du jury',14,y);y+=12;
+  const rows=[
+    ['Date de dégustation',formatClosureDate(c.date),'Lieu',c.place||'—'],
+    ['Responsable du jury',c.chair||'—','Fonction',c.chairRole||'—'],
+    ['Second signataire',c.coSigner||'—','Fonction',c.coSignerRole||'—']
+  ];
+  const widths=[39,52,39,52],rowH=11;
+  rows.forEach(row=>{
+    let x=14;
+    row.forEach((val,idx)=>{
+      doc.setDrawColor(199,219,231);
+      if(idx===0||idx===2){doc.setFillColor(241,247,250);doc.rect(x,y,widths[idx],rowH,'FD');doc.setFont('helvetica','bold');doc.setTextColor(82,111,132);}
+      else{doc.rect(x,y,widths[idx],rowH);doc.setFont('helvetica','normal');doc.setTextColor(49,73,91);}
+      doc.setFontSize(7.2);doc.text(doc.splitTextToSize(String(val||'—'),widths[idx]-4).slice(0,2),x+2,y+5,{maxWidth:widths[idx]-4});
+      x+=widths[idx];
+    });
+    y+=rowH;
+  });
+  y+=10;
+  const members=(c.members||[]).filter(x=>x.present!==false).map(x=>x.name+(x.role?' · '+x.role:''));
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(23,58,97);doc.text('Membres présents',14,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(49,73,91);
+  const memberLines=doc.splitTextToSize(members.length?members.join(' · '):'—',182);
+  doc.text(memberLines,14,y);y+=memberLines.length*4+8;
+  doc.setFont('helvetica','bold');doc.setFontSize(9);doc.setTextColor(23,58,97);doc.text('Observations générales',14,y);y+=6;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(49,73,91);
+  const obs=doc.splitTextToSize(c.notes||'Aucune observation générale.',182);doc.text(obs,14,y);y+=obs.length*4+10;
+  if(c.chairSignature||c.coSignature){
+    doc.setFont('helvetica','bold');doc.setFontSize(8);doc.setTextColor(82,111,132);
+    doc.text('Responsable du jury',14,y);doc.text('Second signataire',108,y);
+    try{if(c.chairSignature)doc.addImage(c.chairSignature,'PNG',14,y+3,70,24);}catch(e){}
+    try{if(c.coSignature)doc.addImage(c.coSignature,'PNG',108,y+3,70,24);}catch(e){}
+  }
+}
+
 async function buildReportPdfBlob(st=state){
   const JsPDF=window.jspdf?.jsPDF;
   if(!JsPDF)throw new Error('Le module PDF n’est pas chargé. Vérifiez la connexion Internet puis réessayez.');
@@ -8458,9 +8638,11 @@ async function buildReportPdfBlob(st=state){
   if(juryConclusion)y=reportPdfConclusionBoxV282(doc,juryConclusion,y);
 
   if(reportNote){
-    y=reportPdfTitle(doc,'Note explicative / conformité',y+4);
-    y=reportPdfParagraph(doc,reportNote,y,{size:10});
+    y=reportPdfParagraph(doc,'Note explicative / conformité : '+reportNote,y+2,{size:8});
   }
+
+  // Fiche de clôture après la synthèse et la conclusion
+  appendClosurePdfV283(doc,st);
 
   // Annexes de réception signées
   appendReceptionAnnexPdf(doc,st);
