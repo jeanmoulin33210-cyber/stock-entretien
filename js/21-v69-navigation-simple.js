@@ -19,6 +19,37 @@ function loadReportNoteIntoForm(){
     stateLabel.classList.remove('changed');
   }
 }
+function loadJuryConclusionIntoForm(){
+  const input=$('#juryConclusionInput');
+  const stateLabel=$('#juryConclusionState');
+  if(!input)return;
+  input.value=state.config?.juryConclusion||'';
+  if(stateLabel){stateLabel.textContent='Enregistré';stateLabel.classList.remove('changed');}
+}
+function saveJuryConclusion(){
+  const input=$('#juryConclusionInput');
+  if(!input)return;
+  if(!state.config)state.config={};
+  state.config.juryConclusion=String(input.value||'').trim();
+  state.config.juryConclusionUpdatedAt=new Date().toISOString();
+  saveState();
+  const stateLabel=$('#juryConclusionState');
+  if(stateLabel){stateLabel.textContent='Enregistré ✓';stateLabel.classList.remove('changed');}
+  toast('Conclusion enregistrée dans le rapport ✓');
+}
+function clearJuryConclusion(){
+  const input=$('#juryConclusionInput');
+  if(!input)return;
+  input.value='';
+  if(!state.config)state.config={};
+  state.config.juryConclusion='';
+  state.config.juryConclusionUpdatedAt=new Date().toISOString();
+  saveState();
+  const stateLabel=$('#juryConclusionState');
+  if(stateLabel){stateLabel.textContent='Enregistré';stateLabel.classList.remove('changed');}
+  toast('Conclusion supprimée du rapport');
+}
+
 function saveReportNote(){
   const input=$('#reportNoteInput');
   if(!input)return;
@@ -54,6 +85,7 @@ function openSimplifiedResults(){
   selectedAdminSample='';
   renderAdmin();
   loadReportNoteIntoForm();
+  loadJuryConclusionIntoForm();
   const v=$('#adminView');
   if(v)v.classList.remove('show-results-details');
   syncSimpleResultsActions();
@@ -186,6 +218,8 @@ function closeSimpleResultsHub(){
 
   bind('saveReportNoteBtn',()=>saveReportNote());
   bind('clearReportNoteBtn',()=>clearReportNote());
+  bind('saveJuryConclusionBtn',()=>saveJuryConclusion());
+  bind('clearJuryConclusionBtn',()=>clearJuryConclusion());
   bind('archiveMoreFiltersBtn',()=>toggleArchiveFilters());
 
   const note=document.getElementById('reportNoteInput');
@@ -196,6 +230,13 @@ function closeSimpleResultsHub(){
         s.textContent='À enregistrer';
         s.classList.add('changed');
       }
+    };
+  }
+  const conclusion=document.getElementById('juryConclusionInput');
+  if(conclusion){
+    conclusion.oninput=()=>{
+      const s=document.getElementById('juryConclusionState');
+      if(s){s.textContent='À enregistrer';s.classList.add('changed');}
     };
   }
 })();
