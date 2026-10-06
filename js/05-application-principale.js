@@ -6708,15 +6708,31 @@ function setClosureSaveIndicator(text){
   const b=$('#saveClosureBtn');
   if(b)b.textContent=text;
 }
-function scheduleClosureAutosave(){
+function scheduleClosureAutosave(preserveScrollY=null){
   clearTimeout(closureAutosaveTimer);
   setClosureSaveIndicator('Enregistrement automatique…');
+
+  const keepY=Number.isFinite(Number(preserveScrollY))?Number(preserveScrollY):null;
+  const restorePosition=()=>{
+    if(keepY===null)return;
+    requestAnimationFrame(()=>{
+      const current=window.scrollY||window.pageYOffset||0;
+      if(Math.abs(current-keepY)>2)window.scrollTo(0,keepY);
+    });
+  };
+
   closureAutosaveTimer=setTimeout(async()=>{
     try{
       const c=captureClosureForm();
       saveState();
       renderClosureStatus(c);
       setClosureSaveIndicator('✓ Enregistré automatiquement');
+
+      /* V286 — une signature ne doit jamais faire remonter la fiche.
+         On remet immédiatement la page exactement à la position où la personne
+         a signé, sans recharger ni rerendre la fiche. */
+      restorePosition();
+
       if(typeof syncDirtyToCloud==='function'){
         try{await syncDirtyToCloud()}catch(e){}
       }
@@ -6724,7 +6740,7 @@ function scheduleClosureAutosave(){
       console.warn('Enregistrement automatique de la clôture impossible',e);
       setClosureSaveIndicator('Enregistrer la fiche');
     }
-  },500);
+  },keepY===null?500:40);
 }
 
 async function saveClosure(){
@@ -6807,7 +6823,14 @@ function setupSignatureCanvas(id,dataUrl){
       });
       return;
     }
-    scheduleClosureAutosave();
+
+    /* V286 — responsable, second signataire et signatures des testeurs :
+       conserver la position exacte de l'écran pendant l'enregistrement. */
+    const y=signatureScrollY;
+    requestAnimationFrame(()=>{
+      if(Math.abs((window.scrollY||window.pageYOffset||0)-y)>2)window.scrollTo(0,y);
+    });
+    scheduleClosureAutosave(y);
   };
   canvas.addEventListener('pointerdown',start);
   canvas.addEventListener('pointermove',move);
