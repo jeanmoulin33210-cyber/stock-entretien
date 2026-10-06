@@ -2752,3 +2752,31 @@ table td{
     margin-top:9px;
   }
 }
+
+
+/* ===== V282 — Conclusion libre du rapport ===== */
+#adminView .jury-conclusion-card{
+  margin-top:14px;
+  background:#f7fbfd!important;
+  border:2px solid #c7dce8!important;
+}
+#juryConclusionInput{
+  width:100%;
+  min-height:150px;
+  resize:vertical;
+  margin-top:12px;
+  padding:13px 14px;
+  border:1px solid #c8d9e3;
+  border-radius:10px;
+  background:#fff;
+  color:#243b4b;
+  font:inherit;
+  line-height:1.5;
+}
+#juryConclusionInput:focus{
+  outline:3px solid rgba(44,126,168,.13);
+  border-color:#6fa6c3;
+}
+@media(max-width:720px){
+  #juryConclusionInput{min-height:180px}
+}
