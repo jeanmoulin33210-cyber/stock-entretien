@@ -109,7 +109,8 @@
       var key=row.getAttribute("data-occena-row");
       var rec=d.items[key]&&typeof d.items[key]==="object"?d.items[key]:{};
       rec.initialScore=String(row.querySelector("[data-occena-initial]")?.value||"").trim();
-      rec.status=String(row.querySelector("[data-occena-status]")?.value||"pending");
+      var statusEl=row.querySelector("[data-occena-status]");
+      rec.status=String(statusEl?(statusEl.value||statusEl.getAttribute("data-value")||"pending"):"pending");
       rec.correctedScore=String(row.querySelector("[data-occena-corrected]")?.value||"").trim();
       rec.observation=String(row.querySelector("[data-occena-observation]")?.value||"").trim();
       rec.checkedAt=complete(rec)?(rec.checkedAt||new Date().toISOString()):"";
@@ -145,10 +146,8 @@
     var token=occenaScrollLock.token;
     var y=occenaScrollLock.y;
 
-    /* V296 — Android/Samsung peut recentrer un <select> après la fermeture
-       du menu natif. On rétablit la position absolue de la page sans rerendre
-       la zone OCCENA. Plusieurs passages très courts couvrent ce recentrage
-       différé, sans effet si l’utilisateur touche de nouveau la page. */
+    /* V297 — filet de sécurité de position. Les statuts OCCENA utilisent
+       désormais des boutons fixes (plus de menu <select> natif Android). */
     function restore(){
       if(token!==occenaScrollLock.token)return;
       var current=window.scrollY||window.pageYOffset||0;
@@ -193,6 +192,13 @@
       row.classList.toggle("complete",ok);
       var corrected=row.querySelector("[data-occena-corrected]");
       if(corrected)corrected.disabled=status!=="corrige";
+      var statusGroup=row.querySelector("[data-occena-status]");
+      if(statusGroup){
+        statusGroup.setAttribute("data-value",status);
+        statusGroup.querySelectorAll("[data-occena-status-value]").forEach(function(b){
+          b.classList.toggle("active",String(b.getAttribute("data-occena-status-value")||"")===status);
+        });
+      }
       var statusBox=row.querySelector(".occena-row-status");
       if(statusBox){
         var del=statusBox.querySelector("[data-occena-delete]");
@@ -268,11 +274,11 @@
         return "<div class='occena-row "+(ok?"complete":"")+"' data-occena-row='"+esc(r.key)+"'>"+
           "<div class='occena-row-id'><strong>"+esc(r.supplier)+"</strong><span>Échantillon "+esc(r.sampleId||"—")+"</span></div>"+
           "<label><span>Score OCCENA initial</span><input type='text' inputmode='decimal' data-occena-initial value='"+esc(String(rec.initialScore==null?"":rec.initialScore))+"' placeholder='Score'></label>"+
-          "<label><span>Contrôle</span><select data-occena-status>"+
-            "<option value='pending' "+(status==="pending"?"selected":"")+">À contrôler</option>"+
-            "<option value='conforme' "+(status==="conforme"?"selected":"")+">✓ Conforme</option>"+
-            "<option value='corrige' "+(status==="corrige"?"selected":"")+">✎ Corrigé</option>"+
-          "</select></label>"+
+          "<div class='occena-status-field'><span>Contrôle</span><div class='occena-status-buttons' data-occena-status data-value='"+esc(status)+"'>"+
+            "<button type='button' data-occena-status-value='pending' class='"+(status==="pending"?"active":"")+"'>À contrôler</button>"+
+            "<button type='button' data-occena-status-value='conforme' class='"+(status==="conforme"?"active":"")+"'>✓ Conforme</button>"+
+            "<button type='button' data-occena-status-value='corrige' class='"+(status==="corrige"?"active":"")+"'>✎ Corrigé</button>"+
+          "</div></div>"+
           "<label><span>Score corrigé</span><input type='text' inputmode='decimal' data-occena-corrected value='"+esc(String(rec.correctedScore==null?"":rec.correctedScore))+"' placeholder='Nouveau score' "+(status==="corrige"?"":"disabled")+"></label>"+
           "<label class='occena-observation'><span>Correction / observation</span><input type='text' data-occena-observation value='"+esc(String(rec.observation||""))+"' placeholder='Ex. : additif non renseigné'></label>"+
           "<div class='occena-row-status'>"+(ok?"Contrôle validé":"À compléter")+
@@ -290,27 +296,29 @@
       btn.onclick=function(){deleteCustomArticle(btn.getAttribute("data-occena-delete"));};
     });
 
-    box.querySelectorAll("[data-occena-status]").forEach(function(sel){
-      sel.onfocus=function(){rememberOccenaPosition(sel);};
-      sel.onpointerdown=function(){rememberOccenaPosition(sel);};
-      sel.onchange=function(){
-        /* V296 — ne surtout pas remémoriser ici : sur Android/Samsung,
-           le <select> natif peut avoir déjà déplacé la page avant onchange.
-           On conserve donc la position mémorisée au pointerdown/focus. */
+    box.querySelectorAll("[data-occena-status-value]").forEach(function(btn){
+      btn.onpointerdown=function(){rememberOccenaPosition(btn);};
+      btn.onclick=function(e){
+        if(e&&typeof e.preventDefault==="function")e.preventDefault();
+        rememberOccenaPosition(btn);
+
+        var group=btn.closest("[data-occena-status]");
+        var row=btn.closest("[data-occena-row]");
+        var value=String(btn.getAttribute("data-occena-status-value")||"pending");
+        if(group){
+          group.setAttribute("data-value",value);
+          group.querySelectorAll("[data-occena-status-value]").forEach(function(b){
+            b.classList.toggle("active",b===btn);
+          });
+        }
+
         capture();
         if(typeof saveState==="function")saveState();
-
-        /* Mise à jour uniquement des éléments concernés : surtout ne pas
-           rappeler render(), sinon la page peut remonter en haut. */
         refreshWithoutRender();
 
-        var row=sel.closest("[data-occena-row]");
         var corrected=row?row.querySelector("[data-occena-corrected]"):null;
-        if(corrected)corrected.disabled=String(sel.value||"pending")!=="corrige";
+        if(corrected)corrected.disabled=value!=="corrige";
 
-        /* Fermer proprement le contrôle natif puis rester exactement
-           à la même hauteur dans la liste. */
-        try{sel.blur();}catch(e){}
         restoreOccenaPosition();
       };
     });
@@ -344,7 +352,7 @@
     if(document.getElementById("occenaCustomStyleV290"))return;
     var s=document.createElement("style");
     s.id="occenaCustomStyleV290";
-    s.textContent=".occena-control-card,.occena-control-card *{overflow-anchor:none}.occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}";
+    s.textContent=".occena-control-card,.occena-control-card *{overflow-anchor:none}.occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}.occena-status-field{display:flex;flex-direction:column;gap:6px}.occena-status-field>span{font-size:9px;font-weight:800;color:#526777}.occena-status-buttons{display:flex;gap:5px;flex-wrap:wrap}.occena-status-buttons button{border:1px solid #b8c8d2;background:#fff;color:#355366;border-radius:8px;padding:8px 9px;font:800 9px Arial,sans-serif;cursor:pointer;touch-action:manipulation}.occena-status-buttons button.active{background:#173f5c;color:#fff;border-color:#173f5c}.occena-status-buttons button:focus{outline:2px solid rgba(23,63,92,.22);outline-offset:1px}";
     document.head.appendChild(s);
   }
 
