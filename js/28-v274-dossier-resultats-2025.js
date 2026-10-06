@@ -110,48 +110,113 @@
     return rankRows(rows,"note5");
   }
 
-  function receptionSheets(st){
-    var recs=Array.isArray(st&&st.config&&st.config.receptions)?st.config.receptions:[];
-    if(!recs.length){
-      return "<section class='section page-break'><div class='section-title'>1. Fiches de réception des fournisseurs</div><div class='empty'>Aucune réception fournisseur enregistrée pour ce lot.</div></section>";
-    }
-    return recs.map(function(r,ri){
-      var lines=(r.lines||[]).filter(function(x){return x&&x.received!==false;});
-      var lineRows=lines.length?lines.map(function(x){
-        return "<tr><td>"+esc(x.productName||"Produit")+"</td><td>"+esc(temp(x.productTemp))+"</td><td>"+esc(temp(x.interiorTemp))+"</td><td>"+esc(x.dlc?dateFr(x.dlc):"—")+"</td><td>"+esc(yn(x.packaging))+"</td><td>"+esc(x.decision==="refus"?"Refus":x.decision==="acceptation"?"Acceptation":x.decision||"—")+"</td><td>"+esc(x.observations||"RAS")+"</td></tr>";
-      }).join(""):"<tr><td colspan='7'>Aucun produit renseigné.</td></tr>";
-      var sig=r.driverSignature?"<img class='sig-img' src='"+r.driverSignature+"' alt='Signature du livreur'>":"<div class='sig-blank'>Signature non enregistrée</div>";
-      return "<section class='section reception-sheet "+(ri?"page-break":"page-break")+"'>"+
-        "<div class='section-title'>1. Fiche de réception — "+esc(r.supplier||"Fournisseur")+"</div>"+
-        "<div class='meta-grid'>"+
-          "<div><small>Date</small><strong>"+esc(dateFr(r.date))+"</strong></div>"+
-          "<div><small>Heure</small><strong>"+esc(r.time||"—")+"</strong></div>"+
-          "<div><small>Établissement</small><strong>"+esc(r.establishment||st.config.receptionEstablishment||"—")+"</strong></div>"+
-          "<div><small>T° véhicule</small><strong>"+esc(temp(r.vehicleTemp))+"</strong></div>"+
-          "<div><small>Livreur</small><strong>"+esc(r.driverName||"—")+"</strong></div>"+
-          "<div><small>Agent réceptionnaire</small><strong>"+esc(r.receiverName||"—")+"</strong></div>"+
-        "</div>"+
-        "<table><thead><tr><th>Produit</th><th>T° produit</th><th>T° intérieur</th><th>DLC</th><th>Emballage</th><th>Décision</th><th>Observations</th></tr></thead><tbody>"+lineRows+"</tbody></table>"+
-        "<div class='signature-one'><strong>Signature du livreur</strong>"+sig+"</div>"+
-      "</section>";
+  function supplierCommentsV287(st,p,sm){
+    try{
+      if(typeof reportSupplierComments==="function")return reportSupplierComments(st,p,sm);
+    }catch(e){}
+    return {positive:[],negative:[],manual:commentsForSample(st,p,sm)};
+  }
+
+  function reportCorrespondenceV287(st){
+    var products=st&&st.config&&st.config.products||[];
+    var suppliers=[];
+    products.forEach(function(p){
+      (p.samples||[]).forEach(function(sm){
+        var s=String(sm.supplier||"Sans fournisseur");
+        if(suppliers.indexOf(s)<0)suppliers.push(s);
+      });
+    });
+    suppliers.sort(function(a,b){return a.localeCompare(b,"fr");});
+    var heads=products.map(function(p){return "<th>"+esc(p.name||"Article")+"<br><span>N° échantillon</span></th>";}).join("");
+    var rows=suppliers.map(function(supplier){
+      var cells=products.map(function(p){
+        var ids=(p.samples||[]).filter(function(sm){return String(sm.supplier||"Sans fournisseur")===supplier;})
+          .map(function(sm){return String(sm.id||"—");});
+        return "<td>"+esc(ids.length?ids.join(", "):"—")+"</td>";
+      }).join("");
+      return "<tr><td><strong>"+esc(supplier)+"</strong></td>"+cells+"</tr>";
     }).join("");
+    return "<table class='correspondence-table'><thead><tr><th>Fournisseur</th>"+heads+"</tr></thead><tbody>"+(rows||"<tr><td colspan='2'>Aucune correspondance.</td></tr>")+"</tbody></table>";
+  }
+
+  function receptionSheets(st){
+    var recs=Array.isArray(st&&st.config&&st.config.receptions)?st.config.receptions.filter(Boolean):[];
+    if(!recs.length){
+      return "<section class='report-page page-break reception-page'><div class='page-kicker'>Annexe · contrôle de réception</div><h2>Relevés de réception des échantillons</h2><div class='empty-box'>Aucune réception fournisseur enregistrée pour ce lot.</div></section>";
+    }
+
+    var pages=[];
+    for(var offset=0;offset<recs.length;offset+=3){
+      var group=recs.slice(offset,offset+3);
+      var cards=group.map(function(r,idx){
+        var lines=(r.lines||[]).filter(function(x){return x&&x.received!==false;});
+        var body=lines.length?lines.map(function(x){
+          return "<tr>"+
+            "<td>"+esc(x.productName||"Produit")+"</td>"+
+            "<td>"+esc(temp(r.vehicleTemp))+"</td>"+
+            "<td>"+esc(temp(x.productTemp))+"</td>"+
+            "<td>"+esc(temp(x.interiorTemp))+"</td>"+
+            "<td>"+esc(x.dlc?dateFr(x.dlc):"—")+"</td>"+
+            "<td>"+esc(yn(x.packaging))+"</td>"+
+            "<td class='decision'>"+esc(x.decision==="refus"?"Refus":"Accepté")+"</td>"+
+            "<td>"+esc(x.observations||"RAS")+"</td>"+
+          "</tr>";
+        }).join(""):"<tr><td colspan='8'>Aucun produit renseigné.</td></tr>";
+        var sig=r.driverSignature?"<img class='sig-img compact' src='"+r.driverSignature+"' alt='Signature du livreur'>":"<span class='sig-missing'>Signature non enregistrée</span>";
+
+        return "<article class='reception-card'>"+
+          "<div class='reception-head'><div><strong>"+esc(r.supplier||"Fournisseur")+"</strong><span>Réception "+(offset+idx+1)+" / "+recs.length+"</span></div><b>"+esc(dateFr(r.date))+" · "+esc(r.time||"—")+"</b></div>"+
+          "<div class='reception-meta'>"+
+            "<div><small>Établissement</small><strong>"+esc(r.establishment||st.config.receptionEstablishment||"—")+"</strong></div>"+
+            "<div><small>Lot</small><strong>"+esc(st.config.lotName||"—")+"</strong></div>"+
+            "<div><small>Livreur</small><strong>"+esc(r.driverName||"—")+"</strong></div>"+
+            "<div><small>Agent réceptionnaire</small><strong>"+esc(r.receiverName||"—")+"</strong></div>"+
+          "</div>"+
+          "<table class='reception-table'><thead><tr><th>Produit</th><th>T° véhicule</th><th>T° produit</th><th>T° intérieur</th><th>DLC / DDM</th><th>Emballage</th><th>Décision</th><th>Observations</th></tr></thead><tbody>"+body+"</tbody></table>"+
+          "<div class='reception-sign'><strong>Signature du livreur</strong>"+sig+"</div>"+
+        "</article>";
+      }).join("");
+
+      pages.push("<section class='report-page page-break reception-page reception-count-"+group.length+"'>"+
+        "<div class='page-kicker'>Annexe · contrôle de réception</div>"+
+        "<h2>Relevés de réception des échantillons</h2>"+
+        "<p class='page-lead'>Les réceptions sont regroupées pour faciliter la lecture tout en conservant les informations saisies et les signatures.</p>"+
+        "<div class='reception-stack'>"+cards+"</div>"+
+      "</section>");
+    }
+    return pages.join("");
   }
 
   function productReports(st){
     var products=st&&st.config&&st.config.products||[];
     return products.map(function(p,pi){
       var rows=productRankingRows(st,p);
+      var density=rows.length<=5?"normal":rows.length<=8?"compact":"dense";
       var body=rows.map(function(r){
-        return "<tr><td class='rank'>"+r.rank+"</td><td>"+esc(r.supplier)+"</td><td><strong>"+esc(r.sample)+"</strong></td><td class='score'>"+n(r.total,0)+" / "+n(r.max,0)+"</td><td class='score'>"+n(r.note5,2)+" / 5</td></tr>";
+        return "<tr><td class='rank'>"+r.rank+"</td><td><strong>"+esc(r.supplier)+"</strong></td><td>"+esc(r.sample)+"</td><td class='score'>"+n(r.total,0)+" / "+n(r.max,0)+"</td><td class='score note5-cell'>"+n(r.note5,2)+"</td></tr>";
       }).join("");
-      var comments=[];
-      rows.forEach(function(r){
-        r.comments.forEach(function(c){comments.push("<li><strong>"+esc(r.supplier)+" — éch. "+esc(r.sample)+" :</strong> "+esc(c)+"</li>");});
-      });
-      return "<section class='section "+(pi===0?"page-break":"")+" page-break-avoid'>"+
-        "<div class='section-title'>2. Rapport produit — "+esc(p.name||("Produit "+(pi+1)))+"</div>"+
-        "<table><thead><tr><th>Rang</th><th>Fournisseur</th><th>Échantillon</th><th>Score</th><th>Note /5</th></tr></thead><tbody>"+body+"</tbody></table>"+
-        "<div class='comments'><strong>Remarques du jury</strong>"+(comments.length?"<ul>"+comments.slice(0,20).join("")+"</ul>":"<p>Aucune remarque saisie.</p>")+"</div>"+
+
+      var cards=rows.map(function(r){
+        var sm=(p.samples||[]).find(function(x){return String(x.id)===String(r.sample)&&String(x.supplier||"Sans fournisseur")===String(r.supplier);})||
+               (p.samples||[]).find(function(x){return String(x.id)===String(r.sample);});
+        var groups=sm?supplierCommentsV287(st,p,sm):{positive:[],negative:[],manual:r.comments||[]};
+        function list(items,empty){
+          return items&&items.length?"<ul>"+items.map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>":"<span class='comment-empty'>"+empty+"</span>";
+        }
+        return "<article class='supplier-card'>"+
+          "<div class='supplier-card-head'><strong>"+esc(r.supplier)+"</strong><span>Échantillon "+esc(r.sample)+" · "+n(r.note5,2)+" / 5</span></div>"+
+          "<div class='comment-block positive'><h4>Arguments positifs</h4>"+list(groups.positive,"Aucun")+"</div>"+
+          "<div class='comment-block negative'><h4>Arguments négatifs</h4>"+list(groups.negative,"Aucun")+"</div>"+
+          "<div class='comment-block manual'><h4>Remarques libres</h4>"+list(groups.manual,"Aucune")+"</div>"+
+        "</article>";
+      }).join("");
+
+      return "<section class='report-page page-break product-page density-"+density+"'>"+
+        "<div class='page-kicker'>Article "+(pi+1)+" / "+products.length+"</div>"+
+        "<h2>"+esc(p.name||("Produit "+(pi+1)))+"</h2>"+
+        (p.code?"<div class='product-code'>Référence / code : "+esc(p.code)+"</div>":"")+
+        "<table class='ranking-table'><thead><tr><th>Classement</th><th>Fournisseur</th><th>N° échantillon</th><th>Score</th><th>Note /5</th></tr></thead><tbody>"+body+"</tbody></table>"+
+        "<div class='supplier-grid'>"+(cards||"<div class='empty-box'>Aucun commentaire enregistré.</div>")+"</div>"+
       "</section>";
     }).join("");
   }
@@ -163,55 +228,94 @@
     var body=rows.map(function(r){
       var cells=products.map(function(p,pi){
         var x=r.perProduct[pi];
-        return "<td class='score'>"+(x?n(x.total,0)+" / "+n(x.max,0):"—")+"</td>";
+        return "<td class='score'>"+(x?n(x.total,0):"—")+"</td>";
       }).join("");
-      return "<tr><td class='rank'>"+r.rank+"</td><td><strong>"+esc(r.supplier)+"</strong></td>"+cells+"<td class='score'>"+n(r.total,0)+" / "+n(r.max,0)+"</td><td class='score big-note'>"+n(r.note5,2)+" / 5</td></tr>";
+      return "<tr><td class='rank'>"+r.rank+"</td><td><strong>"+esc(r.supplier)+"</strong></td>"+cells+"<td class='score'>"+n(r.total,0)+" / "+n(r.max,0)+"</td><td class='score lot-note5'>"+n(r.note5,2)+"</td></tr>";
     }).join("");
     var note=String(st&&st.config&&st.config.reportNote||"").trim();
-    return "<section class='section page-break'>"+
-      "<div class='section-title'>3. Rapport global du lot — classement et note sur 5</div>"+
-      "<table class='lot-table'><thead><tr><th>Rang</th><th>Fournisseur</th>"+heads+"<th>Total</th><th>Note /5</th></tr></thead><tbody>"+body+"</tbody></table>"+
-      (note?"<div class='technical-note'><strong>Note complémentaire / précision technique</strong><p>"+esc(note).replace(/\n/g,"<br>")+"</p></div>":"")+
-      "<div class='note'>La note sur 5 est calculée automatiquement à partir du total des points du fournisseur par rapport au maximum possible sur le lot.</div>"+
+    var conclusion=String(st&&st.config&&st.config.juryConclusion||"").trim();
+    var names=products.map(function(p){return p.name||"Produit";}).join(", ");
+
+    return "<section class='report-page page-break lot-summary-page'>"+
+      "<div class='page-kicker'>Synthèse du lot</div>"+
+      "<h2>Résultats complets — "+esc(names)+"</h2>"+
+      "<table class='lot-table'><thead><tr><th>Classement</th><th>Fournisseur</th>"+heads+"<th>Total</th><th>Note /5</th></tr></thead><tbody>"+body+"</tbody></table>"+
+      "<p class='calculation-note'>La note sur 5 est calculée automatiquement : total obtenu ÷ total maximal × 5.</p>"+
+      (conclusion?"<div class='jury-conclusion'><h3>Conclusion / rapport du jury</h3><div>"+esc(conclusion).replace(/\n/g,"<br>")+"</div></div>":"")+
+      (note?"<div class='technical-note'><h3>Note explicative / conformité</h3><div>"+esc(note).replace(/\n/g,"<br>")+"</div></div>":"")+
+    "</section>";
+  }
+
+  function closureSheet(st){
+    var c=st&&st.config&&st.config.closure||{};
+    var has=!!(c.date||c.place||c.chair||c.coSigner||c.notes||c.chairSignature||c.coSignature||(c.members||[]).length);
+    if(!has)return "";
+    var members=(c.members||[]).filter(function(m){return m.present!==false;});
+    var memberText=members.length?members.map(function(m){return esc(m.name||"Testeur")+(m.role?" · "+esc(m.role):"");}).join("<br>"):"—";
+    return "<section class='report-page page-break closure-page'>"+
+      "<div class='page-kicker'>Clôture administrative</div>"+
+      "<h2>Fiche de clôture du jury</h2>"+
+      "<p class='page-lead'>Validation administrative et traçabilité du jury.</p>"+
+      "<table class='closure-table'><tbody>"+
+        "<tr><th>Date de dégustation</th><td>"+esc(dateFr(c.date))+"</td><th>Lieu</th><td>"+esc(c.place||"—")+"</td></tr>"+
+        "<tr><th>Responsable du jury</th><td>"+esc(c.chair||"—")+"</td><th>Fonction</th><td>"+esc(c.chairRole||"—")+"</td></tr>"+
+        "<tr><th>Second signataire</th><td>"+esc(c.coSigner||"—")+"</td><th>Fonction</th><td>"+esc(c.coSignerRole||"—")+"</td></tr>"+
+        "<tr><th>Membres présents</th><td colspan='3'>"+memberText+"</td></tr>"+
+        "<tr><th>Observations générales</th><td colspan='3'>"+(c.notes?esc(c.notes).replace(/\n/g,"<br>"):"Aucune observation générale.")+"</td></tr>"+
+      "</tbody></table>"+
+      "<div class='closure-signs'>"+
+        "<div><strong>Responsable du jury</strong><span>"+esc(c.chair||"—")+"</span>"+(c.chairSignature?"<img src='"+c.chairSignature+"' alt='Signature du responsable'>":"<em>Signature non renseignée</em>")+"</div>"+
+        "<div><strong>Second signataire</strong><span>"+esc(c.coSigner||"—")+"</span>"+(c.coSignature?"<img src='"+c.coSignature+"' alt='Signature du second signataire'>":"<em>Signature non renseignée</em>")+"</div>"+
+      "</div>"+
     "</section>";
   }
 
   function sampleSheets(st){
-    var out=[];
+    var pages=[];
     var products=st&&st.config&&st.config.products||[];
+
     products.forEach(function(p,pi){
-      (p.samples||[]).forEach(function(sm){
-        var rec=typeof ensureProductSheetRecord==="function"?ensureProductSheetRecord(st,p,sm):{};
-        var ss=typeof productSheetStats==="function"?productSheetStats(st,p,sm):{count:0,avg65:0,note5:0,criteria:[]};
-        var comments=commentsForSample(st,p,sm);
-        var criteria=(ss.criteria||[]).map(function(c){
-          return "<tr><td>"+esc(c.name)+"</td><td class='score'>"+(ss.count?n(c.avg,2)+" / "+n(c.max,0):"—")+"</td></tr>";
+      var samples=p.samples||[];
+      for(var offset=0;offset<samples.length;offset+=3){
+        var group=samples.slice(offset,offset+3);
+        var cards=group.map(function(sm){
+          var rec=typeof ensureProductSheetRecord==="function"?ensureProductSheetRecord(st,p,sm):{};
+          var ss=typeof productSheetStats==="function"?productSheetStats(st,p,sm):{count:0,avg65:0,note5:0,criteria:[]};
+          var comments=commentsForSample(st,p,sm);
+          var criteria=(ss.criteria||[]).map(function(c){
+            return esc(c.name)+" : "+(ss.count?n(c.avg,2)+"/"+n(c.max,0):"—");
+          }).join(" · ");
+          var reception=rec.receptionFound
+            ?dateFr(rec.receptionDate)+" "+(rec.receptionTime||"")+" · T° véhicule "+temp(rec.receptionVehicleTemp)+" · T° produit "+temp(rec.deliveryTemp)+" · "+(rec.receptionDecision==="refus"?"Refus":"Acceptation")
+            :"—";
+
+          return "<article class='sample-card'>"+
+            "<div class='sample-card-head'><div><strong>"+esc(sm.supplier||"Fournisseur")+"</strong><span>"+esc(p.name||("Produit "+(pi+1)))+" · Échantillon "+esc(sm.id||"—")+"</span></div><div class='sample-note'><small>Note /5</small><b>"+(ss.count?n(ss.note5,2):"—")+"</b></div></div>"+
+            "<table class='sample-meta'><tbody>"+
+              "<tr><th>Marque</th><td>"+esc(rec.brand||"—")+"</td><th>Poids / grammage</th><td>"+esc(rec.weight||"—")+"</td></tr>"+
+              "<tr><th>Caractéristiques</th><td colspan='3'>"+esc(rec.characteristics||"—")+"</td></tr>"+
+              "<tr><th>Étiquetage</th><td>"+esc(yn(rec.labeling))+"</td><th>N° lot fournisseur</th><td>"+esc(rec.supplierLot||"—")+"</td></tr>"+
+              "<tr><th>Fiche technique</th><td>"+esc(yn(rec.technicalSheet))+"</td><th>T° livraison conforme</th><td>"+esc(yn(rec.deliveryTempConformity))+(String(rec.deliveryTemp||"").trim()?" · "+esc(temp(rec.deliveryTemp)):"")+"</td></tr>"+
+              "<tr><th>Emballage</th><td>"+esc(yn(rec.packagingConformity))+"</td><th>Date fabrication</th><td>"+esc(rec.manufacturingDate?dateFr(rec.manufacturingDate):"—")+"</td></tr>"+
+              "<tr><th>DDM</th><td>"+esc(rec.ddm?dateFr(rec.ddm):"—")+"</td><th>DLC</th><td>"+esc(rec.dlc?dateFr(rec.dlc):"—")+"</td></tr>"+
+              "<tr><th>Observations</th><td colspan='3'>"+esc(rec.observations||"RAS")+"</td></tr>"+
+              "<tr><th>Réception</th><td colspan='3'>"+esc(reception)+"</td></tr>"+
+            "</tbody></table>"+
+            "<div class='sample-sensory-line'><strong>Résultat sensoriel : "+(ss.count?n(ss.avg65,2)+" / 65":"—")+"</strong><span>"+esc(criteria||"—")+"</span></div>"+
+            "<div class='sample-comments'><strong>Appréciations / remarques</strong>"+(comments.length?"<span>"+comments.map(esc).join(" · ")+"</span>":"<span>RAS</span>")+"</div>"+
+          "</article>";
         }).join("");
-        var receptionLine="";
-        if(rec.receptionFound){
-          receptionLine="<tr><th>Réception</th><td colspan='3'>"+esc(dateFr(rec.receptionDate))+" "+esc(rec.receptionTime||"")+" · T° véhicule "+esc(temp(rec.receptionVehicleTemp))+" · T° produit "+esc(temp(rec.deliveryTemp))+" · "+esc(rec.receptionDecision==="refus"?"Refus":"Acceptation")+"</td></tr>";
-        }
-        out.push("<section class='section page-break sample-sheet'>"+
-          "<div class='section-kicker'>4. FICHE D'ÉVALUATION DE L'ÉCHANTILLON</div>"+
+
+        pages.push("<section class='report-page page-break sample-page'>"+
+          "<div class='page-kicker'>Fiches d’évaluation des échantillons · "+(pi+1)+" / "+products.length+"</div>"+
           "<h2>"+esc(p.name||("Produit "+(pi+1)))+"</h2>"+
-          "<div class='sample-head'><span>Fournisseur : <strong>"+esc(sm.supplier||"—")+"</strong></span><span>Échantillon : <strong>"+esc(sm.id||"—")+"</strong></span></div>"+
-          "<table class='sample-meta'><tbody>"+
-            "<tr><th>Marque</th><td>"+esc(rec.brand||"—")+"</td><th>Poids / grammage</th><td>"+esc(rec.weight||"—")+"</td></tr>"+
-            "<tr><th>Caractéristiques</th><td colspan='3'>"+esc(rec.characteristics||"—")+"</td></tr>"+
-            "<tr><th>Étiquetage</th><td>"+esc(yn(rec.labeling))+"</td><th>N° lot fournisseur</th><td>"+esc(rec.supplierLot||"—")+"</td></tr>"+
-            "<tr><th>Conforme fiche technique</th><td>"+esc(yn(rec.technicalSheet))+"</td><th>Emballage</th><td>"+esc(yn(rec.packagingConformity))+"</td></tr>"+
-            "<tr><th>DDM</th><td>"+esc(rec.ddm?dateFr(rec.ddm):"—")+"</td><th>DLC</th><td>"+esc(rec.dlc?dateFr(rec.dlc):"—")+"</td></tr>"+
-            "<tr><th>Observations techniques</th><td colspan='3'>"+esc(rec.observations||"RAS")+"</td></tr>"+receptionLine+
-          "</tbody></table>"+
-          "<div class='sample-sensory'>"+
-            "<div><h3>Évaluation sensorielle</h3><table><thead><tr><th>Critère</th><th>Moyenne</th></tr></thead><tbody>"+criteria+"</tbody></table></div>"+
-            "<div class='sample-final'><small>Résultat du jury</small><strong>"+(ss.count?n(ss.avg65,2)+" / 65":"—")+"</strong><span>NOTE DÉFINITIVE</span><b>"+(ss.count?n(ss.note5,2)+" / 5":"—")+"</b></div>"+
-          "</div>"+
-          "<div class='comments'><strong>Appréciations / remarques</strong>"+(comments.length?"<ul>"+comments.slice(0,24).map(function(x){return "<li>"+esc(x)+"</li>";}).join("")+"</ul>":"<p>RAS</p>")+"</div>"+
+          "<p class='page-lead'>Trois fiches maximum par page. La note sur 5 est mise en évidence.</p>"+
+          "<div class='sample-stack'>"+cards+"</div>"+
         "</section>");
-      });
+      }
     });
-    return out.join("");
+
+    return pages.join("");
   }
 
   function attendance(st){
@@ -223,9 +327,11 @@
       var sig=m.signature?"<img class='member-sign-img' src='"+m.signature+"' alt='Signature'>":"<div class='member-sign-blank'></div>";
       return "<tr><td>"+(i+1)+"</td><td><strong>"+esc(m.name||("Testeur "+(i+1)))+"</strong></td><td>"+esc(m.role||"—")+"</td><td>"+(m.present===false?"Absent":"Présent")+"</td><td class='member-sign-cell'>"+sig+"</td></tr>";
     }).join("");
-    return "<section class='section page-break attendance'>"+
-      "<div class='section-title'>5. Émargement des testeurs</div>"+
-      "<table><thead><tr><th>N°</th><th>Nom</th><th>Fonction / établissement</th><th>Présence</th><th>Signature</th></tr></thead><tbody>"+body+"</tbody></table>"+
+    return "<section class='report-page page-break attendance-page'>"+
+      "<div class='page-kicker'>Émargement</div>"+
+      "<h2>Émargement des testeurs</h2>"+
+      "<p class='page-lead'>Feuille de présence et signatures des membres du jury.</p>"+
+      "<table class='attendance-table'><thead><tr><th>N°</th><th>Nom</th><th>Fonction / établissement</th><th>Présence</th><th>Signature</th></tr></thead><tbody>"+body+"</tbody></table>"+
       "<div class='jury-signs'>"+
         "<div><strong>Responsable / président du jury</strong><span>"+esc(c.chair||"—")+"</span>"+(c.chairSignature?"<img src='"+c.chairSignature+"' alt='Signature responsable'>":"")+"</div>"+
         "<div><strong>Second signataire</strong><span>"+esc(c.coSigner||"—")+"</span>"+(c.coSignature?"<img src='"+c.coSignature+"' alt='Signature second signataire'>":"")+"</div>"+
@@ -234,28 +340,66 @@
   }
 
   function dossierHtml(st,sourceLabel){
-    var cfg=st.config||{},c=cfg.closure||{};
+    var cfg=st.config||{},cl=cfg.closure||{};
     var generated=new Date();
     var complete=typeof stateValidatedCount==="function"?stateValidatedCount(st):0;
     var final=!!(cfg.juryClose&&cfg.juryClose.closedAt)&&complete===Number(cfg.testerCount||0);
-    var status=final?"DOSSIER RÉSULTATS FINAL":"DOSSIER RÉSULTATS PROVISOIRE";
-    var cover="<main class='page cover'><div><div class='kicker'>Jury Marchés · Tests culinaires · "+esc(sourceLabel||"Jury")+"</div><h1>"+status+"</h1><h2>"+esc(cfg.lotName||"Jury")+"</h2>"+
-      "<p class='lead'>Dossier généré automatiquement par l'application.</p>"+
-      "<div class='cover-grid'>"+
-        "<div><small>Date du jury</small><strong>"+esc(dateFr(c.date))+"</strong></div>"+
-        "<div><small>Lieu</small><strong>"+esc(c.place||"—")+"</strong></div>"+
-        "<div><small>Responsable</small><strong>"+esc(c.chair||"—")+"</strong></div>"+
-        "<div><small>Composition</small><strong>"+(cfg.products||[]).length+" produit(s) · "+Number(cfg.testerCount||0)+" testeur(s)</strong></div>"+
-      "</div>"+
-      "<div class='contents'><strong>Contenu du dossier</strong><ol><li>Fiches de réception des fournisseurs</li><li>Rapport sur les produits</li><li>Rapport global du lot et note sur 5</li><li>Toutes les fiches échantillons</li><li>Émargement des testeurs</li></ol></div>"+
-      "<div class='no-occena'>Les anciennes fiches OCCENA ne sont pas reprises : les informations utiles sont intégrées directement aux fiches échantillons.</div>"+
-      "</div><footer>Généré le "+esc(generated.toLocaleString("fr-FR"))+"</footer></main>";
+    var status=final?"Rapport définitif":"Rapport provisoire";
+    var products=cfg.products||[];
+    var productNames=products.map(function(p){return p.name||"Article";});
+    var testerCount=Number(cfg.testerCount||0);
 
-    return "<!doctype html><html lang='fr'><head><meta charset='utf-8'><title>"+esc(status)+" — "+esc(cfg.lotName||"Jury")+"</title><style>"+
-      "@page{size:A4 portrait;margin:11mm}*{box-sizing:border-box}body{font-family:Arial,Helvetica,sans-serif;margin:0;background:#eef3f7;color:#223746;font-size:9px;line-height:1.35}.toolbar{position:sticky;top:0;z-index:50;background:#173f5c;color:#fff;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;gap:10px}.toolbar-actions{display:flex;gap:8px;align-items:center}.toolbar button{border:0;border-radius:8px;padding:8px 12px;font-weight:800;cursor:pointer}.toolbar .back-home{background:#eef4f7;color:#173f5c}.toolbar .print-dossier{background:#fff;color:#173f5c}.page{max-width:190mm;margin:14px auto;background:#fff;padding:13mm;box-shadow:0 10px 30px rgba(20,47,67,.10)}.cover{min-height:260mm;display:flex;flex-direction:column;justify-content:space-between}.kicker,.section-kicker{text-transform:uppercase;letter-spacing:.14em;font-weight:800;font-size:8px;color:#6f8290}.cover h1{font-size:27px;color:#173f5c;margin:8px 0 4px}.cover h2{font-size:16px;margin:0;color:#4b687a}.lead{color:#72828d}.cover-grid,.meta-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin:18px 0}.cover-grid div,.meta-grid div{border:1px solid #dfe6eb;border-radius:8px;padding:8px}.cover-grid small,.meta-grid small{display:block;color:#7c8b95;text-transform:uppercase;font-size:7px}.cover-grid strong,.meta-grid strong{display:block;margin-top:3px;color:#234e68}.contents{border:1px solid #d6e3eb;background:#f7fafc;border-radius:10px;padding:12px;margin-top:18px}.contents li{margin:5px 0}.no-occena{margin-top:12px;padding:8px;border-left:4px solid #2c7ea8;background:#eef7fb;color:#496676}.cover footer{border-top:2px solid #2c7ea8;padding-top:7px;color:#71818b}.section{margin:10px 0}.section-title{font-size:13px;font-weight:800;color:#173f5c;border-left:4px solid #2c7ea8;background:#f4f8fa;padding:6px 8px;margin-bottom:8px}.page-break{break-before:page;page-break-before:always}.page-break-avoid{break-inside:avoid;page-break-inside:avoid}table{width:100%;border-collapse:collapse}th,td{border:1px solid #d7e1e7;padding:5px 6px;vertical-align:top}th{background:#edf4f7;color:#526c7c;font-size:7px;text-transform:uppercase}.rank{text-align:center;font-weight:800}.score{text-align:right;font-weight:800}.big-note{color:#0d638f;font-size:10px}.comments,.technical-note{margin-top:8px;border:1px solid #dfe6eb;border-radius:8px;padding:8px;background:#fbfdfe}.comments ul{margin:6px 0 0 16px;padding:0}.comments li{margin:3px 0}.signature-one{margin-top:10px;border:1px solid #dfe6eb;border-radius:8px;padding:8px;max-width:90mm}.sig-img{max-width:75mm;max-height:24mm;display:block;margin-top:5px}.sig-blank{height:22mm;border-bottom:1px solid #b9c7d0;color:#8a989f;padding-top:5px}.sample-sheet h2{color:#173f5c;font-size:18px;margin:5px 0}.sample-head{display:flex;justify-content:space-between;background:#f5f8fa;border:1px solid #dfe6eb;padding:8px;margin:8px 0}.sample-meta th{width:24%}.sample-sensory{display:grid;grid-template-columns:1.5fr .8fr;gap:10px;margin-top:10px}.sample-final{border:2px solid #2c7ea8;border-radius:10px;padding:12px;text-align:center}.sample-final small,.sample-final span{display:block;color:#6e808d;text-transform:uppercase;font-size:7px}.sample-final strong{display:block;font-size:17px;color:#173f5c;margin:6px 0 12px}.sample-final b{display:block;font-size:24px;color:#0d638f;margin-top:4px}.member-sign-cell{height:23mm;min-width:42mm}.member-sign-img{display:block;max-width:38mm;max-height:18mm;margin:auto}.member-sign-blank{height:18mm}.jury-signs{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.jury-signs>div{border:1px solid #dfe6eb;border-radius:8px;min-height:35mm;padding:8px}.jury-signs strong,.jury-signs span{display:block}.jury-signs img{display:block;max-width:70mm;max-height:24mm;margin-top:5px}.empty,.note{color:#6f818d;padding:8px}.lot-table{font-size:7.5px}"+
-      "@media print{body{background:#fff}.toolbar{display:none}.page{max-width:none;margin:0;padding:0;box-shadow:none}.cover{min-height:272mm}}"+
-      "</style></head><body><div class='toolbar'><strong>"+esc(status)+"</strong><div class='toolbar-actions'><button class='back-home' onclick='if(window.opener&&!window.opener.closed){window.opener.focus();window.close();}else{history.back();}'>← Retour à l’accueil</button><button class='print-dossier' onclick='window.print()'>Imprimer / Enregistrer tout le dossier en PDF</button></div></div>"+
-      cover+receptionSheets(st)+productReports(st)+lotReport(st)+sampleSheets(st)+attendance(st)+"</body></html>";
+    var cover="<main class='report-page cover'>"+
+      "<div class='cover-topline'><span>JURY MARCHÉS · TESTS CULINAIRES</span><span>"+esc(sourceLabel||"Jury")+"</span></div>"+
+      "<div class='cover-center'>"+
+        "<div class='cover-eyebrow'>DOSSIER RÉSULTATS</div>"+
+        "<h1>Rapport sensoriel — "+esc(cfg.lotName||"Jury Marchés")+"</h1>"+
+        "<h2>"+esc(productNames.join(" · "))+"</h2>"+
+        "<div class='cover-rule'></div>"+
+        "<div class='cover-intro'>"+
+          "<p><strong>Organisation du test :</strong> "+testerCount+" testeur"+(testerCount>1?"s":"")+" évalue"+(testerCount>1?"nt":"")+" les "+products.length+" article"+(products.length>1?"s":"")+" du lot selon le même barème sensoriel.</p>"+
+          "<p><strong>Barème :</strong> Couleur 10 · Texture 10 · Aspect visuel 10 · Odeur 10 · Goût 25.</p>"+
+          "<p><strong>Validation du rapport :</strong> "+(final?"rapport définitif après validation de l’ensemble des testeurs.":"rapport provisoire tant que tous les testeurs n’ont pas terminé et validé leur test.")+"</p>"+
+          (cfg.marketRef&&cfg.marketRef.lot?"<p><strong>Référence marché :</strong> lot "+esc(cfg.marketRef.lot)+(cfg.marketRef.family?" · "+esc(cfg.marketRef.family):"")+".</p>":"")+
+        "</div>"+
+        "<div class='correspondence-title'><span></span><strong>Tableau récapitulatif — Fournisseurs / numéros d’échantillons</strong><span></span></div>"+
+        reportCorrespondenceV287(st)+
+        "<p class='cover-note'>Les mêmes testeurs participent à l’ensemble des articles du lot afin de rendre la comparaison cohérente.</p>"+
+      "</div>"+
+      "<footer><span>"+esc(status)+"</span><span>Généré le "+esc(generated.toLocaleString("fr-FR"))+"</span></footer>"+
+    "</main>";
+
+    var css=
+      "@page{size:A4 portrait;margin:10mm}"+
+      "*{box-sizing:border-box;-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}"+
+      "html,body{margin:0;padding:0}body{font-family:Arial,Helvetica,sans-serif;background:#e9eef2;color:#223746;font-size:9px;line-height:1.35}"+
+      ".toolbar{position:sticky;top:0;z-index:50;background:#173f5c;color:#fff;padding:9px 13px;display:flex;justify-content:space-between;align-items:center;gap:10px}.toolbar-actions{display:flex;gap:8px;align-items:center}.toolbar button{border:0;border-radius:8px;padding:8px 12px;font-weight:800;cursor:pointer}.toolbar .back-home{background:#eef4f7;color:#173f5c}.toolbar .print-dossier{background:#fff;color:#173f5c}"+
+      ".report-page{max-width:190mm;min-height:267mm;margin:14px auto;background:#fff;padding:15mm 13mm 12mm;box-shadow:0 10px 30px rgba(20,47,67,.10);position:relative}"+
+      ".page-break{break-before:page;page-break-before:always}"+
+      ".page-kicker,.cover-eyebrow{font-size:8px;font-weight:900;letter-spacing:.15em;text-transform:uppercase;color:#2c6f93}"+
+      ".report-page h2{font-size:25px;line-height:1.15;margin:7px 0 5px;color:#173f5c}.page-lead{margin:0 0 15px;color:#667b89;font-size:9px}"+
+      ".cover{display:flex;flex-direction:column;justify-content:space-between;padding-top:13mm}.cover-topline{display:flex;justify-content:space-between;gap:12px;font-size:7.5px;font-weight:800;letter-spacing:.08em;color:#607786;border-bottom:2px solid #173f5c;padding-bottom:7px}.cover-center{padding-top:25mm}.cover-eyebrow{text-align:center}.cover h1{text-align:center;font-size:30px;line-height:1.15;color:#173f5c;margin:9px 0 8px}.cover h2{text-align:center;font-size:15px;font-weight:600;color:#526b7a;margin:0}.cover-rule{width:60mm;height:3px;background:#2c7ea8;margin:18px auto 23px}.cover-intro{max-width:160mm;margin:0 auto 22px;border:1.5px solid #9fb8c8;border-left:5px solid #2c7ea8;border-radius:8px;padding:11px 13px;color:#334f61}.cover-intro p{margin:4px 0}.cover-intro strong{color:#173f5c}.correspondence-title{display:flex;align-items:center;gap:10px;margin:18px 0 9px;text-align:center;color:#173f5c}.correspondence-title span{height:1px;background:#8da8b9;flex:1}.correspondence-title strong{font-size:10px}.cover-note{text-align:center;font-size:7.5px;color:#6c7f8a;margin-top:8px}.cover footer{display:flex;justify-content:space-between;border-top:1.5px solid #9fb8c8;padding-top:7px;color:#6d808d;font-size:7.5px}"+
+      "table{width:100%;border-collapse:collapse}th,td{border:1.2px solid #9fb0bb;padding:5px 6px;vertical-align:middle}th{background:#dfe9ef;color:#173f5c;font-size:7px;text-transform:uppercase;font-weight:900}.correspondence-table{font-size:8px}.correspondence-table th{padding:7px}.correspondence-table th span{font-size:6.5px}.correspondence-table td{text-align:center}.correspondence-table td:first-child{text-align:left;color:#173f5c}"+
+      ".ranking-table{margin-top:14px;font-size:8.2px}.ranking-table th{padding:7px 5px}.ranking-table td{padding:7px 5px;text-align:center}.ranking-table td:nth-child(2){text-align:left}.rank{font-weight:900;text-align:center}.score{font-weight:800;text-align:right}.note5-cell,.lot-note5{font-size:11px;color:#0d638f;font-weight:900}.product-code{font-size:8px;color:#718490;margin-bottom:8px}"+
+      ".supplier-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:9px;margin-top:14px;align-items:start}.supplier-card{border:1.4px solid #aac0cf;border-radius:8px;overflow:hidden;background:#fff;break-inside:avoid;page-break-inside:avoid}.supplier-card-head{display:flex;justify-content:space-between;gap:8px;align-items:baseline;padding:7px 9px;background:#dfeaf0;border-bottom:1px solid #b7cbd8;color:#174f78}.supplier-card-head strong{font-size:10px}.supplier-card-head span{font-size:7.5px;color:#526f84}.comment-block{padding:6px 9px;border-top:1px solid #d4e0e7;min-height:30px}.comment-block:first-of-type{border-top:0}.comment-block h4{margin:0 0 3px;font-size:8px}.comment-block.positive h4{color:#257451}.comment-block.negative h4{color:#a53f3f}.comment-block.manual h4{color:#506a7c}.comment-block ul{margin:2px 0 0 14px;padding:0;font-size:7.5px}.comment-block li{margin:1px 0}.comment-empty{font-size:7px;color:#82919a;font-style:italic}.density-compact .supplier-grid{gap:7px}.density-compact .supplier-card-head{padding:5px 7px}.density-compact .comment-block{padding:4px 7px;min-height:24px}.density-compact .comment-block ul{font-size:6.8px}.density-dense .supplier-grid{gap:5px}.density-dense .supplier-card-head{padding:4px 6px}.density-dense .supplier-card-head strong{font-size:8.5px}.density-dense .comment-block{padding:3px 6px;min-height:20px}.density-dense .comment-block h4{font-size:7px}.density-dense .comment-block ul{font-size:6.1px;line-height:1.2}"+
+      ".lot-summary-page{padding-top:19mm}.lot-table{font-size:7.5px;margin-top:16px}.lot-table th{padding:7px 4px}.lot-table td{padding:8px 4px}.calculation-note{font-size:7.5px;color:#6c7f8a;margin:8px 0 0}.jury-conclusion,.technical-note{margin-top:18px;border:1.5px solid #9fb8c8;border-radius:9px;padding:12px 14px;background:#f3f7f9}.jury-conclusion{border-left:5px solid #2c7ea8}.technical-note{border-left:5px solid #687f8e}.jury-conclusion h3,.technical-note h3{margin:0 0 7px;color:#173f5c;font-size:11px}.jury-conclusion div,.technical-note div{font-size:9px;line-height:1.5}"+
+      ".closure-page{padding-top:20mm}.closure-table{font-size:9px;margin-top:18px}.closure-table th{width:19%;text-align:left;padding:8px}.closure-table td{text-align:left;padding:8px}.closure-signs{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:18px}.closure-signs>div{border:1.5px solid #9fb8c8;border-radius:9px;padding:10px;min-height:38mm}.closure-signs strong,.closure-signs span{display:block}.closure-signs strong{color:#173f5c}.closure-signs span{color:#6d7e89;margin-top:3px}.closure-signs img{display:block;max-width:75mm;max-height:23mm;margin-top:6px}.closure-signs em{display:block;color:#8a989f;margin-top:8px}"+
+      ".reception-page{padding-top:16mm}.reception-stack{display:grid;gap:9px}.reception-card{border:1.4px solid #9fb8c8;border-radius:8px;overflow:hidden;break-inside:avoid;page-break-inside:avoid}.reception-head{display:flex;justify-content:space-between;gap:10px;align-items:baseline;padding:6px 8px;background:#dfeaf0;border-bottom:1px solid #b7cbd8;color:#174f78}.reception-head strong{display:block;font-size:9.5px}.reception-head span{display:block;font-size:6.5px;color:#6c8190}.reception-head b{font-size:7px}.reception-meta{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));border-bottom:1px solid #c6d5de}.reception-meta div{padding:4px 6px;border-right:1px solid #d2dfe6}.reception-meta div:last-child{border-right:0}.reception-meta small{display:block;font-size:5.8px;text-transform:uppercase;color:#748894}.reception-meta strong{display:block;font-size:6.8px;color:#334f61;margin-top:1px}.reception-table{font-size:5.9px}.reception-table th,.reception-table td{padding:3px 2px}.reception-table .decision{font-weight:800}.reception-sign{display:flex;align-items:center;gap:10px;min-height:22px;padding:3px 7px;border-top:1px solid #c6d5de}.reception-sign strong{font-size:6.5px;color:#526f84}.sig-img.compact{max-width:35mm;max-height:10mm}.sig-missing{font-size:6px;color:#89969e}.reception-count-3 .reception-stack{gap:6px}.reception-count-3 .reception-head{padding:4px 7px}.reception-count-3 .reception-meta div{padding:3px 5px}.reception-count-3 .reception-table{font-size:5.3px}"+
+      ".sample-page{padding-top:13mm}.sample-stack{display:grid;gap:7px}.sample-card{border:1.4px solid #9fb8c8;border-radius:8px;overflow:hidden;break-inside:avoid;page-break-inside:avoid;background:#fff}.sample-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;background:#dfeaf0;border-bottom:1px solid #b7cbd8;padding:5px 8px}.sample-card-head>div:first-child strong{display:block;color:#174f78;font-size:9px}.sample-card-head>div:first-child span{display:block;color:#637b8a;font-size:6.5px}.sample-note{min-width:26mm;text-align:center;border-left:1px solid #aac0cf}.sample-note small{display:block;font-size:6px;text-transform:uppercase;color:#617789}.sample-note b{display:block;font-size:17px;line-height:1.05;color:#0d638f}.sample-meta{font-size:5.9px}.sample-meta th,.sample-meta td{padding:2.7px 3px;text-align:left}.sample-meta th{width:19%;background:#edf3f6}.sample-sensory-line{padding:4px 7px;border-top:1px solid #c6d5de;background:#f5f8fa}.sample-sensory-line strong{display:block;font-size:6.8px;color:#173f5c}.sample-sensory-line span{display:block;font-size:5.8px;color:#607786;margin-top:1px}.sample-comments{padding:3px 7px;border-top:1px solid #d5e0e6;font-size:5.8px}.sample-comments strong{color:#526f84;margin-right:5px}.sample-comments span{color:#4d626f}"+
+      ".attendance-page{padding-top:18mm}.attendance-table{margin-top:16px;font-size:8px}.attendance-table th{padding:7px}.attendance-table td{padding:7px}.member-sign-cell{height:17mm;min-width:35mm}.member-sign-img{display:block;max-width:32mm;max-height:14mm;margin:auto}.member-sign-blank{height:13mm}.jury-signs{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:14px}.jury-signs>div{border:1.5px solid #9fb8c8;border-radius:8px;min-height:28mm;padding:8px}.jury-signs strong,.jury-signs span{display:block}.jury-signs img{display:block;max-width:65mm;max-height:20mm;margin-top:5px}.empty-box{border:1.5px solid #9fb8c8;border-radius:8px;padding:15px;color:#6c7f8a;margin-top:18px}"+
+      "@media print{body{background:#fff}.toolbar{display:none!important}.report-page{max-width:none;min-height:277mm;margin:0;padding-left:10mm;padding-right:10mm;box-shadow:none;break-after:auto}.page-break{break-before:page;page-break-before:always}.cover{padding-top:12mm}.cover-center{padding-top:20mm}th,.supplier-card-head,.reception-head,.sample-card-head,.jury-conclusion,.technical-note,.sample-sensory-line{ -webkit-print-color-adjust:exact!important;print-color-adjust:exact!important;color-adjust:exact!important}"+
+      "}";
+
+    return "<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Dossier résultats — "+esc(cfg.lotName||"Jury")+"</title><style>"+css+"</style></head><body>"+
+      "<div class='toolbar'><strong>Dossier résultats · "+esc(cfg.lotName||"Jury")+"</strong><div class='toolbar-actions'><button class='back-home' onclick='if(window.opener&&!window.opener.closed){window.opener.focus();window.close();}else{history.back();}'>← Retour à l’accueil</button><button class='print-dossier' onclick='window.print()'>Imprimer / Enregistrer tout le dossier en PDF</button></div></div>"+
+      cover+
+      productReports(st)+
+      lotReport(st)+
+      closureSheet(st)+
+      receptionSheets(st)+
+      sampleSheets(st)+
+      attendance(st)+
+      "</body></html>";
   }
 
   // Individual tester signatures on the Closure screen.

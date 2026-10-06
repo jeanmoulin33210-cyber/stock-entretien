@@ -61,7 +61,7 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
         }
       }catch(e){}
     });
-    navigator.serviceWorker.register('./service-worker.js?v=286',{updateViaCache:'none'}).then(reg=>{
+    navigator.serviceWorker.register('./service-worker.js?v=287',{updateViaCache:'none'}).then(reg=>{
       try{reg.update()}catch(e){}
       console.log('Service worker actif',reg.scope)
     }).catch(err=>console.warn('Service worker non installé',err))
