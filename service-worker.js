@@ -1,3 +1,4 @@
+/* v290 forced refresh */
 const CACHE_NAME='tc-offline-v290-20261006';
 const APP_SHELL=[
   './',
