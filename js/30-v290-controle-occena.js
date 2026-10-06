@@ -514,12 +514,11 @@
     supplier=String(supplier||"").trim();
     if(!supplier)return;
 
-    var productName=prompt("Article / produit :",String(current.productName||""));
+    /* V302 — le nouvel article doit toujours partir d'un champ vide.
+       Le numéro d'échantillon n'est pas demandé pour une fiche OCCENA ajoutée. */
+    var productName=prompt("Article / produit :","");
     productName=String(productName||"").trim();
     if(!productName)return;
-
-    var sampleId=prompt("N° échantillon (facultatif) :","");
-    sampleId=String(sampleId||"").trim();
 
     var d=dataFor(state);
     var id=(typeof uid==="function"?uid("occena"):"occena_"+Date.now()+"_"+Math.random().toString(36).slice(2,8));
@@ -527,7 +526,7 @@
       id:id,
       productName:productName,
       supplier:supplier,
-      sampleId:sampleId
+      sampleId:""
     });
     d.updatedAt=new Date().toISOString();
     if(typeof saveState==="function")saveState();
