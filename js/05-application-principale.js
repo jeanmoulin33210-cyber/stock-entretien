@@ -7954,14 +7954,19 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
     .toolbar{position:sticky;top:0;z-index:10;display:flex;justify-content:flex-end;gap:8px;padding:10px 16px;background:#fff;border-bottom:1px solid var(--line)}
     button{border:0;border-radius:9px;padding:10px 14px;font-weight:700;cursor:pointer}.primary{background:var(--blue);color:#fff}.secondary{background:#eef3f6;color:#29485b}
     .page{max-width:920px;margin:18px auto;background:#fff;padding:40px 48px;box-shadow:0 14px 34px rgba(24,45,60,.10)}
-    .cover{min-height:930px;display:flex;flex-direction:column;justify-content:center}
-    .eyebrow{font-size:10px;letter-spacing:.13em;text-transform:uppercase;color:var(--blue);font-weight:800}
-    h1{font-size:31px;line-height:1.15;margin:8px 0 10px;color:#26343e}
+    .cover{min-height:930px;display:flex;flex-direction:column;justify-content:flex-start;padding-top:54px}
+    h1{font-size:34px;line-height:1.16;margin:0 0 10px;color:#12335a;letter-spacing:-.02em}
     h2{font-size:23px;margin:5px 0 14px;color:#273b49}
-    .subtitle{font-size:15px;color:var(--muted);line-height:1.5;margin-bottom:25px}
-    .intro{font-size:12px;line-height:1.55;border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:16px 0;margin:14px 0 24px}
-    .intro strong{color:#253b4a}
-    .status{display:inline-flex;align-self:flex-start;padding:7px 10px;border-radius:999px;background:${isFinal?'#e7f6ef':'#fff3dc'};color:${isFinal?'#137653':'#895b00'};font-size:10px;font-weight:800}
+    .subtitle{font-size:17px;color:#2f4658;line-height:1.5;margin-bottom:52px}
+    .intro{font-size:12px;line-height:1.72;padding:0;margin:0 0 54px;color:#31495b}
+    .intro strong{color:#173a61}
+    .recap-title{display:flex;align-items:center;justify-content:center;gap:15px;text-align:center;font-size:14px;font-weight:800;color:#173a61;margin:0 0 18px}
+    .recap-title:before,.recap-title:after{content:"";height:1px;background:#9ab1c3;flex:1 1 70px;max-width:90px}
+    .cover table{font-size:10.5px;margin-top:0;border-color:#aebfcc}
+    .cover th{background:#edf4f8;color:#173a61;font-size:10px;padding:10px 7px;line-height:1.35}
+    .cover td{padding:9px 7px}
+    .cover td:first-child{color:#173a61}
+    .cover .small-note{margin-top:12px;font-size:9px;color:#5c7180;line-height:1.45}
     .section{margin-top:28px}
     .page-break{break-before:page;page-break-before:always}
     .section-kicker{font-size:10px;font-weight:800;color:var(--blue);letter-spacing:.08em;text-transform:uppercase}
@@ -7993,7 +7998,7 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
       body{background:#fff}
       .toolbar{display:none!important}
       .page{max-width:none;margin:0;padding:0;box-shadow:none}
-      .cover{min-height:auto}
+      .cover{min-height:260mm;padding-top:15mm}
       .page-break{break-before:page;page-break-before:always}
       .supplier-comment{break-inside:avoid;page-break-inside:avoid}
       table{break-inside:auto}
@@ -8014,17 +8019,17 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
 
     <main class="page">
       <section class="cover">
-        <div class="eyebrow">Jury Marchés · Tests culinaires · ${reportEsc(sourceLabel)}</div>
         <h1>${reportEsc(reportTitle)}</h1>
         <div class="subtitle">${reportEsc(productNames.join(' · '))}</div>
-        <span class="status">${reportEsc(reportStatus)}</span>
 
         <div class="intro">
           <strong>Organisation du test :</strong> ${testerCount} testeur${testerCount>1?'s':''} évaluent les ${products.length} article${products.length>1?'s':''} du lot avec le même barème sensoriel de 65 points par article.<br>
           <strong>Barème :</strong> Couleur 10 · Texture 10 · Aspect visuel 10 · Odeur 10 · Goût 25.<br>
-          <strong>Capacité maximale :</strong> ${fmt(maxPerProduct)} points par fournisseur et par article, soit ${fmt(maxLot)} points pour l’ensemble du lot.
+          <strong>Capacité maximale :</strong> ${fmt(maxPerProduct)} points par fournisseur et par article, soit ${fmt(maxLot)} points pour l’ensemble du lot.<br>
+          ${isFinal
+            ?'<strong>Validation du rapport :</strong> rapport définitif après validation de l’ensemble des testeurs.'
+            :'<strong>Attention :</strong> rapport provisoire tant que tous les testeurs n’ont pas terminé et validé leur test.'}
           ${market.lot?`<br><strong>Référence marché :</strong> lot ${reportEsc(market.lot)}${market.family?` · ${reportEsc(market.family)}`:''}.`:''}
-          ${!isFinal?'<br><strong>Attention :</strong> rapport provisoire tant que tous les testeurs n’ont pas terminé et validé leur test.':''}
         </div>
 
         <div class="recap-title">Tableau récapitulatif — Fournisseurs / numéros d’échantillons</div>
@@ -8153,6 +8158,57 @@ function reportPdfSimpleTable(doc,headers,rows,y,widths=null){
 
   return y+4;
 }
+function reportPdfLabelLineV281(doc,label,text,y){
+  doc.setFontSize(9);
+  doc.setTextColor(23,58,97);
+  doc.setFont('helvetica','bold');
+  doc.text(label,14,y);
+  const x=14+doc.getTextWidth(label)+1.5;
+  doc.setFont('helvetica','normal');
+  doc.setTextColor(49,73,91);
+  const lines=doc.splitTextToSize(String(text||''),196-x);
+  doc.text(lines,x,y);
+  return y+Math.max(7,lines.length*5);
+}
+function reportPdfFirstPageTableV281(doc,products,suppliers,y){
+  const left=14,usable=182,first=52;
+  const n=Math.max(1,products.length),other=(usable-first)/n;
+  const widths=[first,...Array(n).fill(other)];
+  const headerH=16,rowH=10;
+  doc.setDrawColor(174,191,204);doc.setLineWidth(.25);
+  let x=left;
+  doc.setFillColor(237,244,248);
+  doc.setFont('helvetica','bold');doc.setTextColor(23,58,97);doc.setFontSize(8.5);
+  doc.rect(x,y,widths[0],headerH,'FD');
+  doc.text('Fournisseur',x+widths[0]/2,y+9.5,{align:'center'});
+  x+=widths[0];
+  products.forEach((p,i)=>{
+    doc.rect(x,y,widths[i+1],headerH,'FD');
+    doc.text(String(p.name||('Article '+(i+1))),x+widths[i+1]/2,y+6,{align:'center',maxWidth:widths[i+1]-4});
+    doc.setFontSize(7.5);
+    doc.text('N° échantillon',x+widths[i+1]/2,y+11.5,{align:'center'});
+    doc.setFontSize(8.5);
+    x+=widths[i+1];
+  });
+  let yy=y+headerH;
+  suppliers.forEach(supplier=>{
+    x=left;
+    doc.setFont('helvetica','bold');doc.setTextColor(23,58,97);
+    doc.rect(x,yy,widths[0],rowH);
+    doc.text(String(supplier),x+widths[0]/2,yy+6.5,{align:'center',maxWidth:widths[0]-4});
+    x+=widths[0];
+    doc.setFont('helvetica','normal');doc.setTextColor(49,73,91);
+    products.forEach((p,i)=>{
+      const ids=(p.samples||[]).filter(sm=>(sm.supplier||'Sans fournisseur')===supplier).map(sm=>String(sm.id));
+      doc.rect(x,yy,widths[i+1],rowH);
+      doc.text(ids.length?ids.join(', '):'—',x+widths[i+1]/2,yy+6.5,{align:'center'});
+      x+=widths[i+1];
+    });
+    yy+=rowH;
+  });
+  return yy;
+}
+
 async function buildReportPdfBlob(st=state){
   const JsPDF=window.jspdf?.jsPDF;
   if(!JsPDF)throw new Error('Le module PDF n’est pas chargé. Vérifiez la connexion Internet puis réessayez.');
@@ -8164,37 +8220,57 @@ async function buildReportPdfBlob(st=state){
   const maxLot=maxPerProduct*products.length;
   const reportNote=String(st.config?.reportNote||'').trim();
 
-  let y=20;
-  doc.setFont('helvetica','bold');
-  doc.setFontSize(18);
-  doc.text(`Rapport sensoriel — ${st.config?.lotName||'Jury Marchés'}`,14,y);
-  y+=9;
+  const totalSamplesPdf=(st.config?.products||[]).reduce((n,p)=>n+(p.samples||[]).length,0);
+  const expectedPdf=totalSamplesPdf*testerCount;
+  const completedPdf=stateCompletedCount(st);
+  const validatedPdf=stateValidatedCount(st);
+  const isFinalPdf=expectedPdf>0&&completedPdf===expectedPdf&&validatedPdf===testerCount;
 
-  doc.setFont('helvetica','normal');
-  doc.setFontSize(10);
-  const subtitle=products.map((p,i)=>p.name||`Article ${i+1}`).join(' · ');
-  y=reportPdfParagraph(doc,subtitle,y,{size:10});
-  y=reportPdfParagraph(
-    doc,
-    `${testerCount} testeur${testerCount>1?'s':''} · Barème 65 points par article · ${maxPerProduct} points maximum par article · ${maxLot} points maximum pour le lot.`,
-    y,
-    {size:9}
-  );
-
-  // Correspondance fournisseurs / échantillons
-  y=reportPdfTitle(doc,'Fournisseurs / numéros d’échantillons',y+3);
   const suppliers=[...new Set(products.flatMap(p=>(p.samples||[]).map(sm=>sm.supplier||'Sans fournisseur')))]
     .sort((a,b)=>a.localeCompare(b,'fr'));
 
-  const corrHeaders=['Fournisseur',...products.map(p=>p.name||'Article')];
-  const corrRows=suppliers.map(supplier=>[
-    supplier,
-    ...products.map(p=>(p.samples||[])
-      .filter(sm=>(sm.supplier||'Sans fournisseur')===supplier)
-      .map(sm=>String(sm.id)).join(', ')||'—')
-  ]);
-  const corrWidths=[48,...Array(Math.max(1,products.length)).fill((182-48)/Math.max(1,products.length))];
-  y=reportPdfSimpleTable(doc,corrHeaders,corrRows,y,corrWidths);
+  let y=30;
+  doc.setTextColor(18,51,90);
+  doc.setFont('helvetica','bold');
+  doc.setFontSize(20);
+  doc.text(`Rapport sensoriel — ${st.config?.lotName||'Jury Marchés'}`,14,y,{maxWidth:182});
+  y+=11;
+
+  doc.setFont('helvetica','normal');
+  doc.setFontSize(12);
+  doc.setTextColor(47,70,88);
+  const subtitle=products.map((p,i)=>p.name||`Article ${i+1}`).join(' · ');
+  doc.text(subtitle,14,y,{maxWidth:182});
+  y+=20;
+
+  y=reportPdfLabelLineV281(
+    doc,'Organisation du test :',
+    `${testerCount} testeur${testerCount>1?'s':''} évaluent les ${products.length} article${products.length>1?'s':''} du lot avec le même barème sensoriel de 65 points par article.`,y
+  );
+  y=reportPdfLabelLineV281(doc,'Barème :','Couleur 10 · Texture 10 · Aspect visuel 10 · Odeur 10 · Goût 25.',y);
+  y=reportPdfLabelLineV281(
+    doc,'Capacité maximale :',
+    `${maxPerProduct} points par fournisseur et par article, soit ${maxLot} points pour l’ensemble du lot.`,y
+  );
+  y=reportPdfLabelLineV281(
+    doc,isFinalPdf?'Validation du rapport :':'Attention :',
+    isFinalPdf?'rapport définitif après validation de l’ensemble des testeurs.':'rapport provisoire tant que tous les testeurs n’ont pas terminé et validé leur test.',y
+  );
+
+  y+=15;
+  const sectionTitle='Tableau récapitulatif — Fournisseurs / numéros d’échantillons';
+  doc.setFont('helvetica','bold');doc.setFontSize(12.5);doc.setTextColor(23,58,97);
+  const tw=doc.getTextWidth(sectionTitle),cx=105;
+  doc.setDrawColor(154,177,195);doc.setLineWidth(.3);
+  doc.line(14,y-1,Math.max(14,cx-tw/2-6),y-1);
+  doc.line(Math.min(196,cx+tw/2+6),y-1,196,y-1);
+  doc.text(sectionTitle,cx,y,{align:'center'});
+  y+=9;
+
+  y=reportPdfFirstPageTableV281(doc,products,suppliers,y);
+  y+=8;
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(92,113,128);
+  doc.text('Les mêmes testeurs participent à l’ensemble des articles du lot afin de rendre la comparaison cohérente.',14,y,{maxWidth:182});
 
   // Chapitre par article
   products.forEach((p,pi)=>{
