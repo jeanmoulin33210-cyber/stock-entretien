@@ -4044,7 +4044,8 @@ function projectionSlidesAvailable(){
 function projectionTesterState(t,total){
   const done=testerCompleted(t);
   const validated=testerValidated(t);
-  if(validated)return {label:'Terminé ✓',cls:'done'};
+  if(validated)return {label:'Validé ✓',cls:'done'};
+  if(total>0&&done>=total)return {label:'À valider',cls:'running'};
   if(done>0)return {label:'En cours',cls:'running'};
   return {label:'Pas commencé',cls:'waiting'};
 }

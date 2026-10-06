@@ -550,6 +550,17 @@ async function subscribeCloud(){
 }
 async function reloadCloudAnswers(){if(testerPreviewMode)return;
   if(!cloudReady||cloudBusy)return;
+
+  /* V277 — un testeur peut cliquer « Valider » juste au moment où le temps réel
+     recharge sa dernière réponse. Dans ce très court intervalle, le marqueur
+     __validation__ n'est pas encore remonté au serveur. On conserve donc la
+     validation locale jusqu'à ce qu'elle ait été effectivement synchronisée. */
+  const pendingLocalValidation={};
+  if(cloudRole==='tester'){
+    const pt=Number(cloudTesterNo||guestTester||0);
+    if(pt&&state.testers?.[pt]?.validatedAt)pendingLocalValidation[pt]=state.testers[pt].validatedAt;
+  }
+
   let q=cloudClient.from('test_culinaire_reponses').select('tester_no,product_id,sample_id,choices,remarks,updated_at').eq('session_id',cloudCfg.sessionId);
   if(cloudRole==='tester')q=q.eq('tester_no',cloudTesterNo);
   const {data,error}=await q;if(error)return;
@@ -578,6 +589,17 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
     }
     state.testers[t].answers[sampleKey(r.product_id,r.sample_id)]={choices:r.choices||Array(QUESTIONS.length).fill(null),remarks:r.remarks||Array(QUESTIONS.length).fill('')}
   });
+
+  let pendingValidationNeedsPush=false;
+  if(cloudRole==='tester'){
+    const pt=Number(cloudTesterNo||guestTester||0);
+    const localPending=pendingLocalValidation[pt]||null;
+    if(pt&&localPending&&state.testers?.[pt]&&!state.testers[pt].validatedAt){
+      state.testers[pt].validatedAt=localPending;
+      pendingValidationNeedsPush=true;
+    }
+  }
+
   originalSaveState();lastCloudAnswerHashes=new Map();
   (data||[]).forEach(r=>{
     const t=Number(r.tester_no);
@@ -585,7 +607,13 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
     else if(r.product_id==='__meta__'&&r.sample_id==='__launch__')return;
     else lastCloudAnswerHashes.set(`${t}::${sampleKey(r.product_id,r.sample_id)}`,hashJson({choices:r.choices||[],remarks:r.remarks||[]}))
   });
-  if($('#adminView').classList.contains('active'))originalRenderAdmin();else if($('#liveDayView')?.classList.contains('active'))renderLiveDayCards();else if($('#launchView')?.classList.contains('active'))renderLaunchView();else if($('#juryView')?.classList.contains('active'))renderJuryView();else if($('#homeView').classList.contains('active'))originalRenderHome();else if($('#testerView').classList.contains('active'))renderSample()
+  if(pendingValidationNeedsPush){
+    /* Le hash vient d'être reconstruit depuis le serveur (validation nulle) :
+       la prochaine synchro verra donc bien la validation locale à envoyer. */
+    scheduleCloudSync();
+  }
+
+  if($('#adminView').classList.contains('active'))originalRenderAdmin();else if($('#liveDayView')?.classList.contains('active'))renderLiveDayCards();else if($('#launchView')?.classList.contains('active'))renderLaunchView();else if($('#juryView')?.classList.contains('active'))renderJuryView();else if($('#projectionView')?.classList.contains('active'))renderProjectionData();else if($('#homeView').classList.contains('active'))originalRenderHome();else if($('#testerView').classList.contains('active'))renderSample()
 }
 async function reloadCloudConfig(){if(testerPreviewMode)return;
   if(!cloudReady||cloudBusy)return;
