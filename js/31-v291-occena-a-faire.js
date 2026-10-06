@@ -77,6 +77,10 @@
     if(!btn.__v291Bound){
       btn.__v291Bound=true;
       btn.onclick=function(){
+        if(window.matchMedia&&window.matchMedia("(max-width: 820px)").matches&&typeof window.openOccenaPhoneModeV300==="function"){
+          window.openOccenaPhoneModeV300();
+          return;
+        }
         var card=document.getElementById("occenaControlCard");
         if(!card)return;
         card.scrollIntoView({behavior:"smooth",block:"start"});
