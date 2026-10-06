@@ -94,6 +94,7 @@ function syncSimpleResultsActions(){
   const hint=$('#simpleResultsHint');
   const title=$('#simpleResultsNextTitle');
   const closureBtn=$('#simpleResultsClosureBtn');
+  const receptionBtn=$('#simpleResultsReceptionBtn');
   const sheetsBtn=$('#productSheetsBtn');
   const reportBtn=$('#simpleResultsPdfBtn');
   const archiveBtn=$('#simpleResultsArchiveBtn');
@@ -108,11 +109,13 @@ function syncSimpleResultsActions(){
   const closureReady=closureIsReady();
   const ps=(typeof productSheetsProgress==='function')?productSheetsProgress(state):{total:0,filled:0};
   const sheetsReady=ps.total>0&&ps.filled===ps.total;
+  const rs=(typeof receptionStatusForConfig==='function')?receptionStatusForConfig(state.config):{key:'pending',done:0,total:0};
+  const receptionsReady=rs.key==='done'&&Number(rs.done||0)>0;
   const archived=!!state.config?._archive?.archivedAt;
 
-  const stepButtons=[closureBtn,sheetsBtn,reportBtn,archiveBtn].filter(Boolean);
+  const stepButtons=[closureBtn,receptionBtn,sheetsBtn,reportBtn,archiveBtn].filter(Boolean);
   stepButtons.forEach(b=>{
-    b.classList.remove('btn-primary','simple-results-next-btn');
+    b.classList.remove('btn-primary','simple-results-next-btn','simple-results-complete-v305');
     b.classList.add('btn-secondary');
   });
 
@@ -120,9 +123,19 @@ function syncSimpleResultsActions(){
     closureBtn.disabled=!closed;
     closureBtn.textContent=closureReady?'✓ 1. Clôture':'✍️ 1. Clôture';
   }
+  if(receptionBtn){
+    receptionBtn.disabled=false;
+    receptionBtn.textContent=receptionsReady
+      ?'✓ Réceptions marchandises — OK'
+      :`📦 Réceptions marchandises${Number(rs.total||0)>0?` (${Number(rs.done||0)}/${Number(rs.total||0)})`:''}`;
+    receptionBtn.classList.toggle('simple-results-complete-v305',receptionsReady);
+  }
   if(sheetsBtn){
     sheetsBtn.disabled=!complete;
-    sheetsBtn.textContent=`📋 2. Fiches produits${ps.total?` (${ps.filled}/${ps.total})`:''}`;
+    sheetsBtn.textContent=sheetsReady
+      ?'✓ 2. Fiches produits — OK'
+      :`📋 2. Fiches produits${ps.total?` (${ps.filled}/${ps.total})`:''}`;
+    sheetsBtn.classList.toggle('simple-results-complete-v305',sheetsReady);
   }
   if(reportBtn){
     reportBtn.disabled=!(complete&&closed&&closureReady&&sheetsReady);
@@ -193,6 +206,30 @@ function closeSimpleResultsHub(){
   if(m)m.classList.remove('show');
 }
 
+function openSimpleResultsReceptionV305(){
+  if(typeof state==='undefined'||!state?.config)return;
+  if(typeof receptionStatusForConfig!=='function'||typeof openReceptionView!=='function')return;
+
+  draftConfig=null;
+  const rs=receptionStatusForConfig(state.config);
+  if(rs.key==='done'){
+    const idx=(typeof latestValidatedReceptionIndex==='function')
+      ?latestValidatedReceptionIndex(state.config)
+      :-1;
+    if(idx>=0){openReceptionView(idx);return;}
+  }
+  openReceptionView(-1);
+}
+
+function ensureSimpleResultsCompleteStyleV305(){
+  if(document.getElementById('simpleResultsCompleteStyleV305'))return;
+  const s=document.createElement('style');
+  s.id='simpleResultsCompleteStyleV305';
+  s.textContent='.simple-results-action-buttons .simple-results-complete-v305{display:inline-flex!important;background:#e8f6ef!important;border-color:#58a982!important;color:#176b4d!important;font-weight:850!important;box-shadow:0 0 0 2px rgba(72,167,122,.08)}';
+  document.head.appendChild(s);
+}
+ensureSimpleResultsCompleteStyleV305();
+
 (function initResultsArchiveV138(){
   const bind=(id,fn)=>{
     const el=document.getElementById(id);
@@ -208,6 +245,7 @@ function closeSimpleResultsHub(){
   bind('archivesBackHubBtn',()=>renderHome());
 
   bind('simpleResultsClosureBtn',()=>renderClosure());
+  bind('simpleResultsReceptionBtn',()=>openSimpleResultsReceptionV305());
   bind('simpleResultsPdfBtn',()=>openCurrentReport());
   bind('productSheetsBtn',()=>openProductSheets());
   bind('productSheetsBackBtn',()=>closeProductSheets());
