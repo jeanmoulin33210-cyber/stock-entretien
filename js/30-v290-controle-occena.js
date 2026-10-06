@@ -88,12 +88,20 @@
     return false;
   }
   function metrics(st){
-    var data=dataFor(st),rows=rowsFor(st),checked=0;
-    rows.forEach(function(r){if(complete(data.items[r.key]))checked++;});
-    var total=rows.length;
-    var required=total?Math.ceil(total*.30):0;
-    var pct=total?Math.round(checked/total*1000)/10:0;
-    return{checked:checked,total:total,required:required,pct:pct,reached:total>0&&checked>=required};
+    var data=dataFor(st),rows=rowsFor(st),bySupplier={};
+    rows.forEach(function(r){
+      var supplier=String(r.supplier||"Fournisseur");
+      if(!bySupplier[supplier])bySupplier[supplier]={supplier:supplier,checked:0,total:0,target:5};
+      bySupplier[supplier].total++;
+      if(complete(data.items[r.key]))bySupplier[supplier].checked++;
+    });
+    var suppliers=Object.keys(bySupplier).sort(function(a,b){return a.localeCompare(b,"fr");}).map(function(k){return bySupplier[k];});
+    var checked=rows.filter(function(r){return complete(data.items[r.key]);}).length;
+    var required=suppliers.length*5;
+    var credited=suppliers.reduce(function(n,x){return n+Math.min(x.checked,5);},0);
+    var pct=required?Math.round(credited/required*1000)/10:0;
+    var reached=suppliers.length>0&&suppliers.every(function(x){return x.checked>=5;});
+    return{checked:checked,total:rows.length,required:required,credited:credited,pct:pct,reached:reached,suppliers:suppliers};
   }
   function capture(){
     var d=dataFor(state);
@@ -159,18 +167,18 @@
     var globalInput=document.getElementById("occenaGlobalScore");
 
     if(badge){
-      badge.textContent=m.reached?"✓ Seuil de 30 % atteint":m.pct+" % contrôlé";
+      badge.textContent=m.reached?"✓ 5 fiches par fournisseur":"Contrôle en cours";
       badge.classList.toggle("done",m.reached);
     }
     if(copy){
-      copy.textContent=m.total
-        ?m.checked+" article"+(m.checked>1?"s":"")+" contrôlé"+(m.checked>1?"s":"")+" sur "+m.total+" · minimum demandé : "+m.required+"."
-        :"Aucun article à contrôler.";
+      copy.textContent=m.suppliers&&m.suppliers.length
+        ?m.suppliers.map(function(x){return x.supplier+" "+Math.min(x.checked,5)+"/5";}).join(" · ")
+        :"Aucun fournisseur à contrôler.";
     }
     if(fill)fill.style.width=Math.max(0,Math.min(100,m.pct))+"%";
     if(globalInput){
       globalInput.disabled=!m.reached;
-      globalInput.title=m.reached?"Saisie manuelle du score OCCENA global":"Le score global se débloque à partir de 30 % d’articles contrôlés.";
+      globalInput.title=m.reached?"Saisie manuelle du score OCCENA global":"Le score global se débloque lorsque chaque fournisseur possède 5 fiches contrôlées.";
     }
 
     document.querySelectorAll("[data-occena-row]").forEach(function(row){
@@ -224,19 +232,19 @@
     var saveLabel=document.getElementById("occenaSaveState");
 
     if(badge){
-      badge.textContent=m.reached?"✓ Seuil de 30 % atteint":m.pct+" % contrôlé";
+      badge.textContent=m.reached?"✓ 5 fiches par fournisseur":"Contrôle en cours";
       badge.classList.toggle("done",m.reached);
     }
     if(copy){
-      copy.textContent=m.total
-        ?m.checked+" article"+(m.checked>1?"s":"")+" contrôlé"+(m.checked>1?"s":"")+" sur "+m.total+" · minimum demandé : "+m.required+"."
-        :"Aucun article à contrôler.";
+      copy.textContent=m.suppliers&&m.suppliers.length
+        ?m.suppliers.map(function(x){return x.supplier+" "+Math.min(x.checked,5)+"/5";}).join(" · ")
+        :"Aucun fournisseur à contrôler.";
     }
     if(fill)fill.style.width=Math.max(0,Math.min(100,m.pct))+"%";
     if(globalInput){
       globalInput.value=String(d.globalScore||"");
       globalInput.disabled=!m.reached;
-      globalInput.title=m.reached?"Saisie manuelle du score OCCENA global":"Le score global se débloque à partir de 30 % d’articles contrôlés.";
+      globalInput.title=m.reached?"Saisie manuelle du score OCCENA global":"Le score global se débloque lorsque chaque fournisseur possède 5 fiches contrôlées.";
     }
     if(saveLabel)saveLabel.textContent="Enregistré";
 
