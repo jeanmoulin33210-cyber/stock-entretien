@@ -1974,18 +1974,25 @@ function receptionStatusForConfig(cfg){
   try{repairReceptionsForConfigV258(cfg)}catch(e){}
 
   const suppliers=receptionSupplierNames(cfg);
-  const juryKey=receptionJuryKey(cfg);
   const valid=(Array.isArray(cfg?.receptions)?cfg.receptions:[])
     .filter(r=>r&&r.validatedAt&&receptionRecordMatchesConfigV258(r,cfg));
 
-  if(!valid.length)return{key:'pending',label:'À réceptionner'};
-  if(!suppliers.length)return{key:'done',label:'Réception enregistrée'};
-
   const received=new Set(valid.map(r=>receptionNormV258(r.supplier)).filter(Boolean));
+
+  /* V289 — le suivi de réception se fait par fournisseur / fiche, et non
+     uniquement par lot. Les compteurs peuvent donc afficher 1/5, 2/5, etc. */
+  if(!suppliers.length){
+    const done=received.size||valid.length;
+    if(!done)return{key:'pending',label:'À réceptionner',done:0,total:0};
+    return{key:'done',label:`${done} réception${done>1?'s':''} enregistrée${done>1?'s':''}`,done,total:done};
+  }
+
+  const total=suppliers.length;
   const done=suppliers.filter(name=>received.has(receptionNormV258(name))).length;
 
-  if(done>=suppliers.length)return{key:'done',label:'Réception enregistrée'};
-  return{key:'partial',label:`Réception partielle ${done}/${suppliers.length}`};
+  if(done<=0)return{key:'pending',label:`À réceptionner · 0/${total}`,done:0,total};
+  if(done>=total)return{key:'done',label:`Réceptions terminées · ${done}/${total}`,done,total};
+  return{key:'partial',label:`Réception partielle · ${done}/${total}`,done,total};
 }
 function allReceptionLots(){
   if(localStorage.getItem('jm_tc_lots_clean_mode_v207'))return [];
@@ -2057,6 +2064,11 @@ function availableReceptionLots(){
 }
 function completedReceptionLots(){
   return allReceptionLots().filter(c=>(c?.receptionStatus?.key||'pending')==='done');
+}
+function receptionHistoryLots(){
+  /* V289 — l’historique doit être consultable dès la première fiche validée,
+     même si les autres fournisseurs du lot ne sont pas encore réceptionnés. */
+  return allReceptionLots().filter(c=>Number(c?.receptionStatus?.done||0)>0);
 }
 function closeReceptionLotPicker(){
   $('#receptionLotModal')?.classList.remove('show');
@@ -2173,17 +2185,20 @@ function showReceptionHistoryPicker(choices){
   const modal=$('#receptionHistoryModal'),list=$('#receptionHistoryList');
   if(!modal||!list)return;
   const intro=modal.querySelector('p');
-  if(intro)intro.textContent=choices.length>1
-    ?`${choices.length} lots ont une réception terminée. Touchez un lot pour consulter sa fiche.`
-    :'1 lot a une réception terminée. Touchez-le pour consulter sa fiche.';
+  const totalSaved=choices.reduce((sum,c)=>sum+Number(c?.receptionStatus?.done||0),0);
+  if(intro)intro.textContent=totalSaved
+    ?`${totalSaved} fiche${totalSaved>1?'s':''} de réception enregistrée${totalSaved>1?'s':''}. Touchez un lot pour les consulter.`
+    :'Aucune fiche de réception enregistrée pour le moment.';
   list.innerHTML=choices.length?choices.map(c=>{
     const suppliers=c.suppliers?.length?`${c.suppliers.length} fournisseur${c.suppliers.length>1?'s':''}`:'Aucun fournisseur renseigné';
     const products=`${c.products} produit${c.products>1?'s':''}`;
+    const rs=c.receptionStatus||{done:0,total:0};
+    const progress=Number(rs.total||0)>0?`${Number(rs.done||0)}/${Number(rs.total||0)}`:`${Number(rs.done||0)}`;
     return `<button type="button" class="reception-lot-choice" data-reception-history="${escapeHtml(c.id)}">
-      <span><strong>${escapeHtml(c.lotName)}</strong><span>${products} · ${suppliers}</span><span style="display:block;margin-top:4px;font-size:11px;font-weight:900;color:#137653">✓ Réception enregistrée</span></span>
+      <span><strong>${escapeHtml(c.lotName)}</strong><span>${products} · ${suppliers}</span><span style="display:block;margin-top:4px;font-size:11px;font-weight:900;color:#137653">✓ ${progress} réception${Number(rs.done||0)>1?'s':''} enregistrée${Number(rs.done||0)>1?'s':''}</span></span>
       <span class="lot-arrow">›</span>
     </button>`;
-  }).join(''):'<div class="reception-lot-empty">Aucune réception terminée pour le moment.</div>';
+  }).join(''):'<div class="reception-lot-empty">Aucune réception enregistrée pour le moment.</div>';
 
   list.querySelectorAll('[data-reception-history]').forEach(btn=>{
     btn.onclick=()=>{
@@ -2195,9 +2210,9 @@ function showReceptionHistoryPicker(choices){
 }
 function openReceptionHistoryFromHome(){
   draftConfig=null;
-  const choices=completedReceptionLots();
+  const choices=receptionHistoryLots();
   if(!choices.length){
-    alert('Aucune réception terminée pour le moment.');
+    alert('Aucune fiche de réception enregistrée pour le moment.');
     return;
   }
   showReceptionHistoryPicker(choices);
@@ -2224,15 +2239,27 @@ function changeReceptionLot(){
 function renderHomeReceptionBadge(){
   const badge=$('#homeReceptionBadge');
   const historyBadge=$('#homeReceptionHistoryBadge');
-  const pending=availableReceptionLots();
-  const done=completedReceptionLots();
+  const lots=allReceptionLots();
+
+  const progress=lots.reduce((acc,c)=>{
+    const rs=c?.receptionStatus||{};
+    acc.done+=Number(rs.done||0);
+    acc.total+=Number(rs.total||0);
+    return acc;
+  },{done:0,total:0});
+
   if(badge){
-    badge.textContent=String(pending.length);
-    badge.title=pending.length?`${pending.length} lot${pending.length>1?'s':''} à réceptionner ou partiellement réceptionné${pending.length>1?'s':''}`:'Aucune réception en attente';
+    badge.textContent=progress.total?`${progress.done}/${progress.total}`:'0';
+    badge.title=progress.total
+      ?`${progress.done} réception${progress.done>1?'s':''} enregistrée${progress.done>1?'s':''} sur ${progress.total}`
+      :'Aucune réception à effectuer';
   }
+
   if(historyBadge){
-    historyBadge.textContent=String(done.length);
-    historyBadge.title=done.length?`${done.length} lot${done.length>1?'s':''} avec réception terminée`:'Aucune réception terminée';
+    historyBadge.textContent=String(progress.done);
+    historyBadge.title=progress.done
+      ?`${progress.done} fiche${progress.done>1?'s':''} de réception enregistrée${progress.done>1?'s':''}`
+      :'Aucune fiche de réception enregistrée';
   }
 }
 
