@@ -121,10 +121,54 @@
       try{await syncDirtyToCloud();}catch(e){}
     }
     if(showToast!==false&&typeof toast==="function")toast("Contrôle OCCENA enregistré ✓");
-    var y=window.scrollY||window.pageYOffset||0;
-    render();
-    requestAnimationFrame(function(){window.scrollTo(0,y);});
+    refreshWithoutRender();
   }
+  function refreshWithoutRender(){
+    var d=dataFor(state);
+    var m=metrics(state);
+    var badge=document.getElementById("occenaControlState");
+    var copy=document.getElementById("occenaProgressCopy");
+    var fill=document.getElementById("occenaProgressFill");
+    var globalInput=document.getElementById("occenaGlobalScore");
+
+    if(badge){
+      badge.textContent=m.reached?"✓ Seuil de 30 % atteint":m.pct+" % contrôlé";
+      badge.classList.toggle("done",m.reached);
+    }
+    if(copy){
+      copy.textContent=m.total
+        ?m.checked+" article"+(m.checked>1?"s":"")+" contrôlé"+(m.checked>1?"s":"")+" sur "+m.total+" · minimum demandé : "+m.required+"."
+        :"Aucun article à contrôler.";
+    }
+    if(fill)fill.style.width=Math.max(0,Math.min(100,m.pct))+"%";
+    if(globalInput){
+      globalInput.disabled=!m.reached;
+      globalInput.title=m.reached?"Saisie manuelle du score OCCENA global":"Le score global se débloque à partir de 30 % d’articles contrôlés.";
+    }
+
+    document.querySelectorAll("[data-occena-row]").forEach(function(row){
+      var key=row.getAttribute("data-occena-row");
+      var rec=d.items[key]||{};
+      var status=String(rec.status||"pending");
+      var ok=complete(rec);
+      row.classList.toggle("complete",ok);
+      var corrected=row.querySelector("[data-occena-corrected]");
+      if(corrected)corrected.disabled=status!=="corrige";
+      var statusBox=row.querySelector(".occena-row-status");
+      if(statusBox){
+        var del=statusBox.querySelector("[data-occena-delete]");
+        var delHtml=del?del.outerHTML:"";
+        statusBox.innerHTML=(ok?"Contrôle validé":"À compléter")+delHtml;
+        var newDel=statusBox.querySelector("[data-occena-delete]");
+        if(newDel)newDel.onclick=function(){deleteCustomArticle(newDel.getAttribute("data-occena-delete"));};
+      }
+    });
+
+    if(typeof window.syncOccenaNextStepV291==="function"){
+      try{window.syncOccenaNextStepV291();}catch(e){}
+    }
+  }
+
   function renderKeepPosition(rowKey){
     var savedY=window.scrollY||window.pageYOffset||0;
     var oldRow=rowKey?document.querySelector('[data-occena-row="'+CSS.escape(String(rowKey))+'"]'):null;
@@ -209,21 +253,17 @@
 
     box.querySelectorAll("[data-occena-status]").forEach(function(sel){
       sel.onchange=function(){
-        var row=sel.closest("[data-occena-row]");
-        var key=row?row.getAttribute("data-occena-row"):"";
         capture();
         if(typeof saveState==="function")saveState();
-        renderKeepPosition(key);
+        refreshWithoutRender();
       };
     });
     box.querySelectorAll("input").forEach(function(inp){
       inp.oninput=function(){var s=document.getElementById("occenaSaveState");if(s)s.textContent="À enregistrer";};
       inp.onchange=function(){
-        var row=inp.closest("[data-occena-row]");
-        var key=row?row.getAttribute("data-occena-row"):"";
         capture();
         if(typeof saveState==="function")saveState();
-        renderKeepPosition(key);
+        refreshWithoutRender();
       };
     });
     if(globalInput){
