@@ -7694,7 +7694,7 @@ function openJuryMinutes(st,sourceLabel='Jury'){
     return `<section class="section">
       <div class="section-title">${pi+1}. ${reportEsc(p.code?`${p.code} — `:'')}${reportEsc(p.name||`Produit ${pi+1}`)}</div>
       <table><thead><tr><th>Rang</th><th>N° échantillon</th><th>Fournisseur</th><th>Évaluations</th><th>Moyenne /65</th></tr></thead><tbody>
-      ${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td>${reportEsc(r.supplier)}</td><td>${r.count}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`).join('')}
+      ${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td>${reportEsc(r.supplier)}</td><td>${r.count}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`).join('')}
       </tbody></table>
     </section>`
   }).join('');
@@ -7743,7 +7743,7 @@ function openJuryMinutes(st,sourceLabel='Jury'){
 
     <section class="section">
       <div class="section-title">Synthèse finale des fournisseurs</div>
-      <table><thead><tr><th>Rang</th><th>Fournisseur</th><th>Évaluations</th><th>Moyenne /65</th></tr></thead><tbody>${supplierRows}</tbody></table>
+      <table><thead><tr><th>Rang</th><th>Fournisseur</th><th>Évaluations</th><th>Moyenne /5</th></tr></thead><tbody>${supplierRows}</tbody></table>
       ${products.length>1?'<div class="note">Cette synthèse globale regroupe plusieurs produits. Le détail par produit ci-dessous reste la lecture de référence pour chaque article testé.</div>':''}
     </section>
 
@@ -7822,7 +7822,7 @@ function openJuryDossier(st,sourceLabel='Jury'){
     return `<section class="section page-break-avoid">
       <div class="section-title">Résultats détaillés — ${pi+1}. ${reportEsc(p.code?`${p.code} — `:'')}${reportEsc(p.name||`Produit ${pi+1}`)}</div>
       <table><thead><tr><th>Rang</th><th>Échantillon</th><th>Fournisseur</th><th>Évaluations</th><th>Moyenne /65</th></tr></thead><tbody>
-      ${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td>${reportEsc(r.supplier)}</td><td>${r.count}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`).join('')}
+      ${rows.map((r,i)=>`<tr><td class="rank">${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td>${reportEsc(r.supplier)}</td><td>${r.count}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`).join('')}
       </tbody></table>
     </section>`
   }).join('');
@@ -7880,7 +7880,7 @@ function openJuryDossier(st,sourceLabel='Jury'){
 
     <section class="section page-break-avoid">
       <div class="section-title">3. Synthèse globale des fournisseurs</div>
-      <table><thead><tr><th>Rang</th><th>Fournisseur</th><th>Échantillons</th><th>Évaluations</th><th>Moyenne /65</th></tr></thead><tbody>${supplierRows}</tbody></table>
+      <table><thead><tr><th>Rang</th><th>Fournisseur</th><th>Échantillons</th><th>Évaluations</th><th>Moyenne /5</th></tr></thead><tbody>${supplierRows}</tbody></table>
       ${products.length>1?'<div class="note">La synthèse globale regroupe plusieurs produits. Les résultats détaillés par produit constituent la lecture de référence pour chaque article.</div>':''}
     </section>
 
@@ -7966,7 +7966,7 @@ function openJurySummary(st,sourceLabel='Jury'){
     return `<section class="product-card">
       <div class="product-head"><strong>${pi+1}. ${reportEsc(p.code?`${p.code} — `:'')}${reportEsc(p.name||`Produit ${pi+1}`)}</strong><span>${rows.length} échantillon(s)</span></div>
       <table><thead><tr><th>#</th><th>Éch.</th><th class="supplier-col">Fournisseur</th><th>/65</th></tr></thead><tbody>
-      ${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td class="supplier-col">${reportEsc(r.supplier)}</td><td class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}</td></tr>`).join('')}
+      ${rows.map((r,i)=>`<tr><td>${i+1}</td><td><strong>${reportEsc(r.sample)}</strong></td><td class="supplier-col">${reportEsc(r.supplier)}</td><td class="score">${r.count?fmt(r.avg):'—'}</td></tr>`).join('')}
       </tbody></table>
     </section>`
   }).join('');
@@ -8016,7 +8016,7 @@ function openJurySummary(st,sourceLabel='Jury'){
       <div>
         <div class="card">
           <div class="card-title">Synthèse fournisseurs</div>
-          <table><thead><tr><th>Rang</th><th class="supplier-col">Fournisseur</th><th>Échant.</th><th>Éval.</th><th>/65</th></tr></thead><tbody>${supplierRows}</tbody></table>
+          <table><thead><tr><th>Rang</th><th class="supplier-col">Fournisseur</th><th>Échant.</th><th>Éval.</th><th>/5</th></tr></thead><tbody>${supplierRows}</tbody></table>
           ${products.length>1?'<div style="font-size:6px;color:#74858f;margin-top:4px">Cette synthèse regroupe plusieurs produits. Lire le détail par produit pour l’interprétation.</div>':''}
         </div>
         <div class="card" style="margin-top:6px"><div class="card-title">Observations générales</div><div class="obs">${c.notes?reportEsc(c.notes).replace(/\n/g,'<br>'):'Aucune observation générale.'}</div></div>
