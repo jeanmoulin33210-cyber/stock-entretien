@@ -145,7 +145,7 @@
     var token=occenaScrollLock.token;
     var y=occenaScrollLock.y;
 
-    /* V295b — Android/Samsung peut recentrer un <select> après la fermeture
+    /* V296 — Android/Samsung peut recentrer un <select> après la fermeture
        du menu natif. On rétablit la position absolue de la page sans rerendre
        la zone OCCENA. Plusieurs passages très courts couvrent ce recentrage
        différé, sans effet si l’utilisateur touche de nouveau la page. */
@@ -159,6 +159,7 @@
     setTimeout(restore,35);
     setTimeout(restore,110);
     setTimeout(restore,260);
+    setTimeout(restore,500);
   }
 
   function refreshWithoutRender(){
@@ -293,7 +294,9 @@
       sel.onfocus=function(){rememberOccenaPosition(sel);};
       sel.onpointerdown=function(){rememberOccenaPosition(sel);};
       sel.onchange=function(){
-        rememberOccenaPosition(sel);
+        /* V296 — ne surtout pas remémoriser ici : sur Android/Samsung,
+           le <select> natif peut avoir déjà déplacé la page avant onchange.
+           On conserve donc la position mémorisée au pointerdown/focus. */
         capture();
         if(typeof saveState==="function")saveState();
 
