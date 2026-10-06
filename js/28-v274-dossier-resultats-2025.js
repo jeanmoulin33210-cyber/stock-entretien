@@ -391,7 +391,7 @@
       "}";
 
     return "<!doctype html><html lang='fr'><head><meta charset='utf-8'><meta name='viewport' content='width=device-width,initial-scale=1'><title>Dossier résultats — "+esc(cfg.lotName||"Jury")+"</title><style>"+css+"</style></head><body>"+
-      "<div class='toolbar'><strong>Dossier résultats · "+esc(cfg.lotName||"Jury")+"</strong><div class='toolbar-actions'><button class='back-home' onclick='if(window.opener&&!window.opener.closed){window.opener.focus();window.close();}else{history.back();}'>← Retour à l’accueil</button><button class='print-dossier' onclick='window.print()'>Imprimer / Enregistrer tout le dossier en PDF</button></div></div>"+
+      "<div class='toolbar'><strong>Dossier résultats · NOUVELLE PRÉSENTATION v288 · "+esc(cfg.lotName||"Jury")+"</strong><div class='toolbar-actions'><button class='back-home' onclick='if(window.opener&&!window.opener.closed){window.opener.focus();window.close();}else{history.back();}'>← Retour à l’accueil</button><button class='print-dossier' onclick='window.print()'>Imprimer / Enregistrer tout le dossier en PDF</button></div></div>"+
       cover+
       productReports(st)+
       lotReport(st)+
@@ -505,15 +505,30 @@
     window.syncSimpleResultsActions=syncSimpleResultsActions;
   }
 
+  function hardBindDossierButtonV288(id){
+    var oldBtn=document.getElementById(id);
+    if(!oldBtn)return;
+    var btn=oldBtn.cloneNode(true);
+    oldBtn.parentNode.replaceChild(btn,oldBtn);
+    btn.onclick=function(e){
+      if(e){e.preventDefault();e.stopPropagation();}
+      openJuryDossier(state,"Jury actif");
+      return false;
+    };
+    if(id==="simpleResultsPdfBtn")btn.textContent="📚 3. Dossier résultats";
+  }
+
   function rebind(){
     var closure=document.getElementById("closureBtn");
     if(closure)closure.onclick=function(){renderClosure();};
     var simpleClosure=document.getElementById("simpleResultsClosureBtn");
     if(simpleClosure)simpleClosure.onclick=function(){renderClosure();};
-    var dossier=document.getElementById("simpleResultsPdfBtn");
-    if(dossier)dossier.onclick=function(){openCurrentDossier();};
-    var mainDossier=document.getElementById("dossierBtn");
-    if(mainDossier)mainDossier.onclick=function(){openCurrentDossier();};
+
+    /* V288 — liaison dure : on supprime les anciens gestionnaires qui pouvaient
+       encore ouvrir le générateur « Rapport final » au lieu du Dossier résultats. */
+    hardBindDossierButtonV288("simpleResultsPdfBtn");
+    hardBindDossierButtonV288("dossierBtn");
+
     if(document.getElementById("closureView")&&document.getElementById("closureView").classList.contains("active"))setTimeout(addMemberSignatures,40);
   }
 
