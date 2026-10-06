@@ -6471,9 +6471,9 @@ function occenaSupplierScoresV311(){
   return state.config.occenaControl.supplierScores;
 }
 function limitOccenaSupplierScoreV311(value){
-  let raw=String(value??'').replace(/\s+/g,'').replace(/[^0-9,.-]/g,'');
-  const neg=raw.startsWith('-');
-  raw=raw.replace(/-/g,'');
+  let raw=String(value??'').replace(/\s+/g,'').replace(/[^0-9,.+\-]/g,'');
+  const sign=raw.startsWith('-')?'-':raw.startsWith('+')?'+':'';
+  raw=raw.replace(/[+\-]/g,'');
   const m=raw.match(/^([^,.]*)([,.]?)(.*)$/);
   let left=String(m?.[1]||'').replace(/\D/g,'');
   const sep=String(m?.[2]||'');
@@ -6485,7 +6485,7 @@ function limitOccenaSupplierScoreV311(value){
   let out=left;
   if(sep&&right)out+=sep+right;
   else if(sep&&left&&raw.endsWith(sep))out+=sep;
-  if(neg&&out)out='-'+out;
+  if(sign&&out)out=sign+out;
   return out;
 }
 function occenaSupplierScoreV311(name){
@@ -6502,11 +6502,16 @@ function saveOccenaSupplierScoreV311(name,value,sync=false){
   if(sync&&typeof syncDirtyToCloud==='function'){
     Promise.resolve(syncDirtyToCloud()).catch(()=>{});
   }
+  document.querySelectorAll('[data-occena-supplier-score]').forEach(el=>{
+    if((el.getAttribute('data-occena-supplier-score')||'')===String(name||'')&&document.activeElement!==el){
+      el.value=clean;
+    }
+  });
   return clean;
 }
 function occenaSupplierInlineHtmlV311(name){
   const value=occenaSupplierScoreV311(name);
-  return `<label class="supplier-occena-v311"><span>OCCENA</span><input type="text" inputmode="decimal" autocomplete="off" data-occena-supplier-score="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="—" aria-label="Score OCCENA ${escapeHtml(name)}"></label>`;
+  return `<div class="supplier-occena-v311"><span>OCCENA</span><div class="supplier-occena-entry-v312"><button type="button" data-occena-sign-v312="-" data-occena-sign-supplier-v312="${escapeHtml(name)}" aria-label="Mettre le score OCCENA en négatif">−</button><input type="text" inputmode="decimal" autocomplete="off" data-occena-supplier-score="${escapeHtml(name)}" value="${escapeHtml(value)}" placeholder="—" aria-label="Score OCCENA ${escapeHtml(name)}"><button type="button" data-occena-sign-v312="+" data-occena-sign-supplier-v312="${escapeHtml(name)}" aria-label="Mettre le score OCCENA en positif">+</button></div></div>`;
 }
 function bindOccenaSupplierScoresV311(root){
   (root||document).querySelectorAll('[data-occena-supplier-score]').forEach(input=>{
@@ -6525,12 +6530,34 @@ function bindOccenaSupplierScoresV311(root){
       toast('Score OCCENA enregistré ✓');
     };
   });
+  (root||document).querySelectorAll('[data-occena-sign-v312]').forEach(btn=>{
+    if(btn.__occenaSignV312Bound)return;
+    btn.__occenaSignV312Bound=true;
+    btn.onclick=()=>{
+      const supplier=btn.getAttribute('data-occena-sign-supplier-v312')||'';
+      const sign=btn.getAttribute('data-occena-sign-v312')||'';
+      const wrap=btn.closest('.supplier-occena-v311');
+      const input=wrap?.querySelector('[data-occena-supplier-score]');
+      if(!input)return;
+      let body=String(input.value||'').replace(/^[+\-]/,'');
+      if(!body){
+        input.focus();
+        input.value=sign;
+        return;
+      }
+      const clean=saveOccenaSupplierScoreV311(supplier,sign+body,true);
+      document.querySelectorAll('[data-occena-supplier-score]').forEach(el=>{
+        if((el.getAttribute('data-occena-supplier-score')||'')===supplier)el.value=clean;
+      });
+      if(typeof toast==='function')toast('Signe OCCENA '+(sign==='-'?'négatif':'positif')+' ✓');
+    };
+  });
 }
 function ensureOccenaSupplierScoreStyleV311(){
   if(document.getElementById('occenaSupplierScoreStyleV311'))return;
   const s=document.createElement('style');
   s.id='occenaSupplierScoreStyleV311';
-  s.textContent='.supplier-card{align-items:center}.supplier-occena-v311{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:76px}.supplier-occena-v311 span{font-size:9px;font-weight:850;letter-spacing:.04em;color:#6a7d89}.supplier-occena-v311 input{width:72px;padding:3px 2px;border:0;border-bottom:1px solid #b8c8d2;border-radius:0;background:transparent;text-align:center;font-size:15px;font-weight:900;color:#173f5c;outline:none}.supplier-occena-v311 input:focus{border-bottom-color:#173f5c}.rank-card .supplier-occena-v311{margin-left:8px}@media(max-width:700px){.supplier-occena-v311{min-width:62px}.supplier-occena-v311 input{width:58px;font-size:14px}}';
+  s.textContent='.supplier-card{align-items:center}.supplier-occena-v311{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:2px;min-width:106px}.supplier-occena-v311>span{font-size:9px;font-weight:850;letter-spacing:.04em;color:#6a7d89}.supplier-occena-entry-v312{display:flex;align-items:center;gap:2px}.supplier-occena-entry-v312 button{width:24px;height:28px;padding:0;border:0;background:transparent;color:#426276;font-size:18px;font-weight:900;line-height:1;cursor:pointer;touch-action:manipulation}.supplier-occena-entry-v312 button:active{transform:scale(.92)}.supplier-occena-v311 input{width:62px;padding:3px 1px;border:0;border-bottom:1px solid #b8c8d2;border-radius:0;background:transparent;text-align:center;font-size:15px;font-weight:900;color:#173f5c;outline:none}.supplier-occena-v311 input:focus{border-bottom-color:#173f5c}.rank-card .supplier-occena-v311{margin-left:8px}@media(max-width:700px){.supplier-occena-v311{min-width:98px}.supplier-occena-entry-v312 button{width:22px;height:30px}.supplier-occena-v311 input{width:54px;font-size:14px}}';
   document.head.appendChild(s);
 }
 function renderOverall(){
