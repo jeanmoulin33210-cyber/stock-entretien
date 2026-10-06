@@ -17,6 +17,7 @@
       st.config.occenaControl.items={};
     }
     if(st.config.occenaControl.globalScore==null)st.config.occenaControl.globalScore="";
+    if(!Array.isArray(st.config.occenaControl.customRows))st.config.occenaControl.customRows=[];
     return st.config.occenaControl;
   }
   function rowsFor(st){
@@ -27,11 +28,55 @@
           key:keyFor(p,sm),
           productName:String(p.name||"Article"),
           supplier:String(sm.supplier||"Fournisseur"),
-          sampleId:String(sm.id||"")
+          sampleId:String(sm.id||""),
+          custom:false
         });
       });
     });
+    var d=dataFor(st);
+    (d.customRows||[]).forEach(function(r){
+      if(!r||!r.id)return;
+      out.push({
+        key:"custom__"+String(r.id),
+        productName:String(r.productName||"Article ajouté"),
+        supplier:String(r.supplier||"Fournisseur"),
+        sampleId:String(r.sampleId||""),
+        custom:true,
+        customId:String(r.id)
+      });
+    });
     return out;
+  }
+
+  function addCustomArticle(){
+    var name=prompt("Nom de l’article à ajouter :","");
+    name=String(name||"").trim();
+    if(!name)return;
+    var supplier=prompt("Fournisseur de cet article :","");
+    supplier=String(supplier||"").trim();
+    if(!supplier)return;
+    var d=dataFor(state);
+    var id=(typeof uid==="function"?uid("occena"):"occena_"+Date.now()+"_"+Math.random().toString(36).slice(2,8));
+    d.customRows.push({id:id,productName:name,supplier:supplier,sampleId:""});
+    d.updatedAt=new Date().toISOString();
+    if(typeof saveState==="function")saveState();
+    render();
+    setTimeout(function(){
+      var el=document.querySelector('[data-occena-row="custom__'+CSS.escape(String(id))+'"]');
+      if(el)el.scrollIntoView({behavior:"smooth",block:"center"});
+    },40);
+  }
+
+  function deleteCustomArticle(id){
+    var d=dataFor(state);
+    var row=(d.customRows||[]).find(function(r){return String(r.id)===String(id);});
+    var label=row?(row.productName+" · "+row.supplier):"cet article";
+    if(!confirm("Supprimer "+label+" du contrôle OCCENA ?"))return;
+    d.customRows=(d.customRows||[]).filter(function(r){return String(r.id)!==String(id);});
+    delete d.items["custom__"+String(id)];
+    d.updatedAt=new Date().toISOString();
+    if(typeof saveState==="function")saveState();
+    render();
   }
   function complete(rec){
     if(!rec)return false;
@@ -129,11 +174,20 @@
           "</select></label>"+
           "<label><span>Score corrigé</span><input type='text' inputmode='decimal' data-occena-corrected value='"+esc(String(rec.correctedScore==null?"":rec.correctedScore))+"' placeholder='Nouveau score' "+(status==="corrige"?"":"disabled")+"></label>"+
           "<label class='occena-observation'><span>Correction / observation</span><input type='text' data-occena-observation value='"+esc(String(rec.observation||""))+"' placeholder='Ex. : additif non renseigné'></label>"+
-          "<div class='occena-row-status'>"+(ok?"Contrôle validé":"À compléter")+"</div>"+
+          "<div class='occena-row-status'>"+(ok?"Contrôle validé":"À compléter")+
+            (r.custom?"<button type='button' class='occena-delete-custom' data-occena-delete='"+esc(r.customId)+"'>Supprimer</button>":"")+
+          "</div>"+
         "</div>";
       }).join("");
       return "<section class='occena-product-block'><h4>"+esc(productName)+"</h4>"+lines+"</section>";
-    }).join("");
+    }).join("")+
+    "<div class='occena-add-article-wrap'><button type='button' class='btn btn-secondary' id='occenaAddArticleBtn'>＋ Ajouter un article</button><span>Ajoutez ici un article / fournisseur qui n’est pas déjà dans le jury.</span></div>";
+
+    var addBtn=document.getElementById("occenaAddArticleBtn");
+    if(addBtn)addBtn.onclick=addCustomArticle;
+    box.querySelectorAll("[data-occena-delete]").forEach(function(btn){
+      btn.onclick=function(){deleteCustomArticle(btn.getAttribute("data-occena-delete"));};
+    });
 
     box.querySelectorAll("[data-occena-status]").forEach(function(sel){
       sel.onchange=function(){capture();if(typeof saveState==="function")saveState();render();};
@@ -157,7 +211,16 @@
     window.renderAdmin=renderAdmin;
   }
 
+  function ensureStyle(){
+    if(document.getElementById("occenaCustomStyleV290"))return;
+    var s=document.createElement("style");
+    s.id="occenaCustomStyleV290";
+    s.textContent=".occena-add-article-wrap{margin:14px 0 4px;padding:12px;border:1.5px dashed #9fb8c8;border-radius:11px;background:#fff;display:flex;align-items:center;gap:10px;flex-wrap:wrap}.occena-add-article-wrap span{font-size:9px;color:#687e8c}.occena-delete-custom{display:block;margin-top:5px;border:0;background:transparent;color:#a04444;font-size:7.5px;font-weight:800;cursor:pointer;padding:0}.occena-row-status{align-self:center}";
+    document.head.appendChild(s);
+  }
+
   function bind(){
+    ensureStyle();
     var b=document.getElementById("saveOccenaControlBtn");
     if(b)b.onclick=function(){persist(true);};
     if(document.getElementById("adminView")&&document.getElementById("adminView").classList.contains("active"))render();

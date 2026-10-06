@@ -354,6 +354,24 @@
         rows.push({product:String(p.name||"Article"),supplier:String(sm.supplier||"Fournisseur"),sample:String(sm.id||"—"),status:status,initial:initial,corrected:corrected,observation:String(rec.observation||""),complete:complete});
       });
     });
+    (Array.isArray(data.customRows)?data.customRows:[]).forEach(function(r){
+      if(!r||!r.id)return;
+      var key="custom__"+String(r.id);
+      var rec=items[key]||{},status=String(rec.status||"pending");
+      var initial=String(rec.initialScore==null?"":rec.initialScore).trim();
+      var corrected=String(rec.correctedScore==null?"":rec.correctedScore).trim();
+      var complete=(status==="conforme"&&!!initial)||(status==="corrige"&&!!initial&&!!corrected);
+      rows.push({
+        product:String(r.productName||"Article ajouté"),
+        supplier:String(r.supplier||"Fournisseur"),
+        sample:String(r.sampleId||"Ajout manuel"),
+        status:status,
+        initial:initial,
+        corrected:corrected,
+        observation:String(rec.observation||""),
+        complete:complete
+      });
+    });
     var checked=rows.filter(function(x){return x.complete;}).length,total=rows.length,required=total?Math.ceil(total*.30):0;
     var pct=total?Math.round(checked/total*1000)/10:0,reached=total>0&&checked>=required;
     var globalScore=String(data.globalScore==null?"":data.globalScore).trim();
