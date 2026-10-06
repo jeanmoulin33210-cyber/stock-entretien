@@ -103,6 +103,84 @@
     var reached=suppliers.length>0&&suppliers.every(function(x){return x.checked>=5;});
     return{checked:checked,total:rows.length,required:required,credited:credited,pct:pct,reached:reached,suppliers:suppliers};
   }
+  function limitOccenaGlobalScoreV310(value){
+    var raw=String(value==null?"":value).replace(/\s+/g,"").replace(/[^0-9,.-]/g,"");
+    var negative=raw.indexOf("-")===0;
+    raw=raw.replace(/-/g,"");
+    var sepIndex=-1,sep="";
+    for(var i=0;i<raw.length;i++){
+      if(raw[i]===","||raw[i]==="."){sepIndex=i;sep=raw[i];break;}
+    }
+    var left=sepIndex>=0?raw.slice(0,sepIndex):raw;
+    var right=sepIndex>=0?raw.slice(sepIndex+1):"";
+    left=left.replace(/\D/g,"");
+    right=right.replace(/\D/g,"");
+
+    var digits=(left+right).slice(0,4);
+    var leftCount=Math.min(left.length,digits.length);
+    var cleanLeft=digits.slice(0,leftCount);
+    var cleanRight=digits.slice(leftCount);
+
+    var out=cleanLeft;
+    if(sepIndex>=0&&digits.length>leftCount)out+=sep+cleanRight;
+    else if(sepIndex>=0&&cleanLeft&&digits.length===leftCount&&raw.endsWith(sep))out+=sep;
+    if(negative&&out)out="-"+out;
+    return out;
+  }
+
+  function refreshOccenaFinalScoreV310(m,d){
+    m=m||metrics(state);
+    d=d||dataFor(state);
+    var input=document.getElementById("occenaGlobalScore");
+    var card=document.getElementById("occenaFinalScoreCardV310");
+    var label=document.getElementById("occenaFinalScoreStateV310");
+    if(!input)return;
+
+    var value=limitOccenaGlobalScoreV310(d.globalScore||"");
+    if(String(d.globalScore||"")!==value)d.globalScore=value;
+    if(document.activeElement!==input)input.value=value;
+
+    input.disabled=!m.reached;
+    input.title=m.reached
+      ?"Saisie manuelle du score OCCENA — 4 chiffres maximum"
+      :"Le score OCCENA se saisit lorsque chaque fournisseur possède 5 fiches contrôlées.";
+
+    if(card)card.classList.toggle("ready",m.reached&&!!value);
+    if(label){
+      label.textContent=!m.reached
+        ?"Après contrôle"
+        :(value?"✓ Enregistré":"À saisir");
+    }
+  }
+
+  function bindOccenaFinalScoreV310(){
+    var input=document.getElementById("occenaGlobalScore");
+    if(!input||input.__v310Bound)return;
+    input.__v310Bound=true;
+    input.setAttribute("maxlength","7");
+    input.oninput=function(){
+      var clean=limitOccenaGlobalScoreV310(input.value);
+      if(input.value!==clean)input.value=clean;
+      var d=dataFor(state);
+      d.globalScore=clean;
+      d.updatedAt=new Date().toISOString();
+      if(typeof saveState==="function")saveState();
+      refreshOccenaFinalScoreV310(metrics(state),d);
+    };
+    input.onchange=async function(){
+      var d=dataFor(state);
+      d.globalScore=limitOccenaGlobalScoreV310(input.value);
+      d.updatedAt=new Date().toISOString();
+      input.value=d.globalScore;
+      if(typeof saveState==="function")saveState();
+      refreshOccenaFinalScoreV310(metrics(state),d);
+      if(typeof syncDirtyToCloud==="function"){
+        try{await syncDirtyToCloud();}catch(e){}
+      }
+      if(typeof toast==="function")toast("Score OCCENA enregistré ✓");
+    };
+  }
+
   function capture(){
     var d=dataFor(state);
     document.querySelectorAll("[data-occena-row]").forEach(function(row){
@@ -198,10 +276,7 @@
         :"Aucun fournisseur à contrôler.";
     }
     if(fill)fill.style.width=Math.max(0,Math.min(100,m.pct))+"%";
-    if(globalInput){
-      globalInput.disabled=!m.reached;
-      globalInput.title=m.reached?"Saisie manuelle du score OCCENA global":"Le score global se débloque lorsque chaque fournisseur possède 5 fiches contrôlées.";
-    }
+    if(globalInput)refreshOccenaFinalScoreV310(m,d);
 
     document.querySelectorAll("[data-occena-row]").forEach(function(row){
       var key=row.getAttribute("data-occena-row");
@@ -270,11 +345,7 @@
         :"Aucun fournisseur à contrôler.";
     }
     if(fill)fill.style.width=Math.max(0,Math.min(100,m.pct))+"%";
-    if(globalInput){
-      globalInput.value=String(d.globalScore||"");
-      globalInput.disabled=!m.reached;
-      globalInput.title=m.reached?"Saisie manuelle du score OCCENA global":"Le score global se débloque lorsque chaque fournisseur possède 5 fiches contrôlées.";
-    }
+    if(globalInput)refreshOccenaFinalScoreV310(m,d);
     if(saveLabel)saveLabel.textContent="Enregistré";
     ensurePhoneModeButton();
 
@@ -684,12 +755,15 @@
 
   function bind(){
     ensureStyle();
+    bindOccenaFinalScoreV310();
     var b=document.getElementById("saveOccenaControlBtn");
     if(b)b.onclick=function(){persist(true);};
+    try{refreshOccenaFinalScoreV310(metrics(state),dataFor(state));}catch(e){}
     if(document.getElementById("adminView")&&document.getElementById("adminView").classList.contains("active"))render();
   }
 
   window.renderOccenaControlV290=render;
+  window.refreshOccenaFinalScoreV310=function(){try{bindOccenaFinalScoreV310();refreshOccenaFinalScoreV310(metrics(state),dataFor(state));}catch(e){}};
   window.saveOccenaControlV290=persist;
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",bind);
   else bind();
