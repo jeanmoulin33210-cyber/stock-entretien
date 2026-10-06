@@ -4044,7 +4044,7 @@ function projectionSlidesAvailable(){
 function projectionTesterState(t,total){
   const done=testerCompleted(t);
   const validated=testerValidated(t);
-  if(validated)return {label:'Validé ✓',cls:'done'};
+  if(validated)return {label:'Terminé ✓',cls:'done'};
   if(total>0&&done>=total)return {label:'À valider',cls:'running'};
   if(done>0)return {label:'En cours',cls:'running'};
   return {label:'Pas commencé',cls:'waiting'};
@@ -4475,6 +4475,11 @@ function renderJuryView(){
         return;
       }
       state.testers[t].validatedAt=new Date().toISOString();
+      try{
+        if(typeof setTesterValidationFallbackV278==='function'){
+          setTesterValidationFallbackV278(t,state.testers[t].validatedAt);
+        }
+      }catch(e){}
       saveState();
       renderJuryView();
       if(document.getElementById('projectionView')?.classList.contains('active'))renderProjectionData();

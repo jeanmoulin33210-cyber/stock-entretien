@@ -595,11 +595,53 @@ function setTesterValidationFallbackV278(t,validatedAt){
   return true;
 }
 
+function validationFallbackAnswerRowV280(t){
+  const tester=state.testers?.[t];
+  if(!tester)return null;
+  const entries=Object.entries(tester.answers||{});
+  for(let i=entries.length-1;i>=0;i--){
+    const k=entries[i][0],a=entries[i][1];
+    if(!a||!validationFallbackFromRemarksV278(a.remarks))continue;
+    const parts=String(k).split('__');
+    if(parts.length<2)continue;
+    return {
+      key:k,
+      row:{
+        session_id:cloudCfg.sessionId,
+        tester_no:Number(t),
+        product_id:parts[0],
+        sample_id:parts.slice(1).join('__'),
+        choices:Array.isArray(a.choices)?a.choices:[],
+        remarks:Array.isArray(a.remarks)?a.remarks:[],
+        updated_at:new Date().toISOString()
+      },
+      hash:hashJson(a)
+    };
+  }
+  return null;
+}
+
 async function pushTesterValidationNowV278(t){
   if(!cloudReady||!cloudClient||!cloudCfg?.sessionId)return false;
   if(cloudRole==='tester'&&Number(cloudTesterNo)!==Number(t))return false;
 
   const v=state.testers?.[t]?.validatedAt||null;
+
+  /* V280 — enregistrer D'ABORD la preuve de validation dans une réponse
+     ordinaire. Cette ligne suit exactement le même chemin que les notes, qui
+     remontent déjà correctement. */
+  const fallback=validationFallbackAnswerRowV280(t);
+  if(v&&fallback){
+    const {error:fallbackError}=await cloudClient
+      .from('test_culinaire_reponses')
+      .upsert([fallback.row],{onConflict:'session_id,tester_no,product_id,sample_id'});
+    if(fallbackError)throw fallbackError;
+    lastCloudAnswerHashes.set(`${t}::${fallback.key}`,fallback.hash);
+  }
+
+  /* Le marqueur officiel reste utilisé quand le serveur l'accepte. S'il échoue,
+     la preuve ci-dessus suffit pour que l'écran administrateur retrouve
+     automatiquement l'état « Terminé ». */
   const row={
     session_id:cloudCfg.sessionId,
     tester_no:Number(t),
@@ -612,7 +654,10 @@ async function pushTesterValidationNowV278(t){
   const {error}=await cloudClient
     .from('test_culinaire_reponses')
     .upsert([row],{onConflict:'session_id,tester_no,product_id,sample_id'});
-  if(error)throw error;
+  if(error){
+    console.warn('Marqueur officiel de validation non enregistré ; secours V280 actif',error);
+    return true;
+  }
 
   lastCloudAnswerHashes.set(`${t}::__validation__`,hashJson(v));
   return true;
@@ -812,23 +857,72 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
         await syncAccessCodes();lastCloudConfigHash=hashJson(state.config)
       }
     }
-    const rows=[];
+
+    const answerRows=[],answerHashes=[];
+    const validationRows=[],validationHashes=[];
     const testers=cloudRole==='admin'?Array.from({length:state.config.testerCount},(_,i)=>i+1):[cloudTesterNo];
+
     for(const t of testers){
       if(!t||!state.testers[t])continue;
+
       for(const [k,a] of Object.entries(state.testers[t]?.answers||{})){
-        const hk=`${t}::${k}`,h=hashJson(a);if(lastCloudAnswerHashes.get(hk)===h)continue;
-        const [product_id,sample_id]=k.split('__');
-        rows.push({session_id:cloudCfg.sessionId,tester_no:t,product_id,sample_id,choices:a.choices,remarks:a.remarks,updated_at:new Date().toISOString()});
-        lastCloudAnswerHashes.set(hk,h)
+        const hk=`${t}::${k}`,h=hashJson(a);
+        if(lastCloudAnswerHashes.get(hk)===h)continue;
+        const parts=String(k).split('__');
+        if(parts.length<2)continue;
+        answerRows.push({
+          session_id:cloudCfg.sessionId,
+          tester_no:t,
+          product_id:parts[0],
+          sample_id:parts.slice(1).join('__'),
+          choices:a.choices,
+          remarks:a.remarks,
+          updated_at:new Date().toISOString()
+        });
+        answerHashes.push([hk,h]);
       }
-      const v=state.testers[t]?.validatedAt||null,vk=`${t}::__validation__`,vh=hashJson(v);
+
+      const v=state.testers[t]?.validatedAt||null;
+      const vk=`${t}::__validation__`,vh=hashJson(v);
       if(lastCloudAnswerHashes.get(vk)!==vh){
-        rows.push({session_id:cloudCfg.sessionId,tester_no:t,product_id:'__meta__',sample_id:'__validation__',choices:[],remarks:[v],updated_at:new Date().toISOString()});
-        lastCloudAnswerHashes.set(vk,vh)
+        validationRows.push({
+          session_id:cloudCfg.sessionId,
+          tester_no:t,
+          product_id:'__meta__',
+          sample_id:'__validation__',
+          choices:[],
+          remarks:[v],
+          updated_at:new Date().toISOString()
+        });
+        validationHashes.push([vk,vh]);
       }
     }
-    if(rows.length){const {error}=await cloudClient.from('test_culinaire_reponses').upsert(rows,{onConflict:'session_id,tester_no,product_id,sample_id'});if(error)throw error}
+
+    /* V280 : les réponses ordinaires (dont le secours de validation) sont
+       envoyées séparément. Un problème sur __validation__ ne peut donc plus
+       annuler l'enregistrement du secours. */
+    if(answerRows.length){
+      const {error}=await cloudClient
+        .from('test_culinaire_reponses')
+        .upsert(answerRows,{onConflict:'session_id,tester_no,product_id,sample_id'});
+      if(error)throw error;
+      answerHashes.forEach(([k,h])=>lastCloudAnswerHashes.set(k,h));
+    }
+
+    if(validationRows.length){
+      const {error}=await cloudClient
+        .from('test_culinaire_reponses')
+        .upsert(validationRows,{onConflict:'session_id,tester_no,product_id,sample_id'});
+      if(!error){
+        validationHashes.forEach(([k,h])=>lastCloudAnswerHashes.set(k,h));
+      }else{
+        /* Ne pas considérer l'échec comme un échec des notes : le secours
+           V280 vient d'être envoyé dans une réponse ordinaire. On garde le
+           hash de validation non synchronisé pour retenter plus tard. */
+        console.warn('Marqueur __validation__ non synchronisé ; secours V280 conservé',error);
+      }
+    }
+
     setCloudStatus('online','● Partagé sécurisé')
   }catch(e){
     console.error(e);setCloudStatus('error','● Erreur cloud');
