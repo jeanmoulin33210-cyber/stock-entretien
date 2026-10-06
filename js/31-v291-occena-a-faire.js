@@ -94,9 +94,79 @@
     if(document.getElementById("occenaNextStyleV291"))return;
     var s=document.createElement("style");
     s.id="occenaNextStyleV291";
-    s.textContent=".occena-control-card.occena-focus-v291{outline:3px solid rgba(13,99,143,.26);outline-offset:4px;transition:outline-color .35s ease}.occena-control-card.occena-complete-v304{border:2px solid #48a77a!important;background:#f1fbf6!important;box-shadow:0 0 0 3px rgba(72,167,122,.10)}.occena-control-card.occena-complete-v304 .occena-control-head strong{color:#176b4d}.occena-control-card.occena-complete-v304 .occena-progress-bar span{background:#48a77a!important}#simpleResultsOccenaBtn.occena-step-complete-v304{display:inline-flex!important;background:#e8f6ef!important;border-color:#58a982!important;color:#176b4d!important;font-weight:850!important}";
+    s.textContent=".occena-control-card.occena-focus-v291{outline:3px solid rgba(13,99,143,.26);outline-offset:4px;transition:outline-color .35s ease}.occena-control-card.occena-complete-v304{border:2px solid #48a77a!important;background:#f1fbf6!important;box-shadow:0 0 0 3px rgba(72,167,122,.10)}.occena-control-card.occena-complete-v304 .occena-control-head strong{color:#176b4d}.occena-control-card.occena-complete-v304 .occena-progress-bar span{background:#48a77a!important}.simple-results-action-buttons .occena-step-complete-v304{display:inline-flex!important;background:#e8f6ef!important;border-color:#58a982!important;color:#176b4d!important;font-weight:850!important;box-shadow:0 0 0 2px rgba(72,167,122,.08)!important}";
     document.head.appendChild(s);
   }
+  function ensureReceptionButtonV306(){
+    var box=document.querySelector(".simple-results-action-buttons");
+    if(!box)return null;
+    var btn=document.getElementById("simpleResultsReceptionBtn");
+    if(!btn){
+      btn=document.createElement("button");
+      btn.type="button";
+      btn.className="btn btn-secondary";
+      btn.id="simpleResultsReceptionBtn";
+      var sheets=document.getElementById("productSheetsBtn");
+      if(sheets)box.insertBefore(btn,sheets);
+      else box.appendChild(btn);
+    }
+    if(!btn.__v306Bound){
+      btn.__v306Bound=true;
+      btn.onclick=function(){
+        try{
+          if(typeof draftConfig!=="undefined")draftConfig=null;
+          var cfg=(typeof state!=="undefined"&&state)?state.config:null;
+          if(!cfg)return;
+          var rs=(typeof receptionStatusForConfig==="function")?receptionStatusForConfig(cfg):{key:"pending"};
+          if(rs.key==="done"&&typeof latestValidatedReceptionIndex==="function"&&typeof openReceptionView==="function"){
+            var idx=latestValidatedReceptionIndex(cfg);
+            if(idx>=0){openReceptionView(idx);return;}
+          }
+          if(typeof openReceptionView==="function")openReceptionView(-1);
+        }catch(e){}
+      };
+    }
+    return btn;
+  }
+
+  function updateReceptionAndProductStatesV306(){
+    if(typeof state==="undefined"||!state||!state.config)return;
+
+    var receptionBtn=ensureReceptionButtonV306();
+    var sheetsBtn=document.getElementById("productSheetsBtn");
+
+    var rs={key:"pending",done:0,total:0};
+    try{
+      if(typeof receptionStatusForConfig==="function")rs=receptionStatusForConfig(state.config)||rs;
+    }catch(e){}
+    var receptionDone=rs.key==="done"&&Number(rs.done||0)>0;
+
+    if(receptionBtn){
+      receptionBtn.style.display="";
+      receptionBtn.disabled=false;
+      receptionBtn.classList.remove("btn-primary","simple-results-next-btn");
+      receptionBtn.classList.add("btn-secondary");
+      receptionBtn.classList.toggle("occena-step-complete-v304",receptionDone);
+      receptionBtn.textContent=receptionDone
+        ?"✓ Réceptions marchandises — OK"
+        :("📦 Réceptions marchandises"+(Number(rs.total||0)>0?" ("+Number(rs.done||0)+"/"+Number(rs.total||0)+")":""));
+    }
+
+    var ps={total:0,filled:0};
+    try{
+      if(typeof productSheetsProgress==="function")ps=productSheetsProgress(state)||ps;
+    }catch(e){}
+    var sheetsDone=Number(ps.total||0)>0&&Number(ps.filled||0)===Number(ps.total||0);
+
+    if(sheetsBtn){
+      sheetsBtn.style.display="";
+      sheetsBtn.classList.toggle("occena-step-complete-v304",sheetsDone);
+      sheetsBtn.textContent=sheetsDone
+        ?"✓ 2. Fiches produits — OK"
+        :("📋 2. Fiches produits"+(Number(ps.total||0)>0?" ("+Number(ps.filled||0)+"/"+Number(ps.total||0)+")":""));
+    }
+  }
+
   function apply(){
     if(typeof state==="undefined"||!state||!state.config)return;
     ensureStyle();
@@ -107,6 +177,7 @@
     var hint=document.getElementById("simpleResultsHint");
     var m=metrics(state);
     var wf=workflowReady();
+    updateReceptionAndProductStatesV306();
 
     var card=document.getElementById("occenaControlCard");
     if(card)card.classList.toggle("occena-complete-v304",m.reached);
@@ -157,6 +228,7 @@
   function bind(){
     ensureStyle();
     ensureButton();
+    ensureReceptionButtonV306();
     apply();
     var badge=document.getElementById("occenaControlState");
     if(badge&&!badge.__v291Observed){
