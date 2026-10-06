@@ -4456,7 +4456,7 @@ function renderJuryView(){
       <div class="jury-tester-foot">
         <strong>${pct} %</strong>
         <div class="jury-card-actions">
-          ${validated?`<button class="btn btn-ghost btn-small jury-unlock" data-unlock-tester="${i}">Déverrouiller</button>`:''}
+          ${validated?`<button class="btn btn-ghost btn-small jury-unlock" data-unlock-tester="${i}">Déverrouiller</button>`:done>=total&&total>0?`<button class="btn btn-primary btn-small jury-confirm-finished" data-confirm-finished-tester="${i}">✓ Confirmer terminé</button>`:''}
         </div>
       </div>`;
 
@@ -4465,6 +4465,21 @@ function renderJuryView(){
 
   grid.querySelectorAll('[data-unlock-tester]').forEach(
     b=>b.onclick=()=>unlockTester(Number(b.dataset.unlockTester))
+  );
+  grid.querySelectorAll('[data-confirm-finished-tester]').forEach(
+    b=>b.onclick=()=>{
+      const t=Number(b.dataset.confirmFinishedTester);
+      if(!t||testerValidated(t))return;
+      if(testerCompleted(t)!==m.total||m.total<=0){
+        alert('Ce testeur n’a pas encore terminé toutes ses dégustations.');
+        return;
+      }
+      state.testers[t].validatedAt=new Date().toISOString();
+      saveState();
+      renderJuryView();
+      if(document.getElementById('projectionView')?.classList.contains('active'))renderProjectionData();
+      toast((state.testers[t]?.name||('Testeur '+t))+' confirmé terminé ✓');
+    }
   );
 
   const sheetLinks=$('#juryTesterSheetLinks');

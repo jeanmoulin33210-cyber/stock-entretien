@@ -116,9 +116,18 @@ function makePublicCloudConfig(cfg){
     marketRef:cfg.marketRef?{lot:cfg.marketRef.lot||'',family:cfg.marketRef.family||''}:null
   }
 }
+function currentShareBuildV279(){
+  try{
+    const badge=String(document.getElementById('appBuildBadge')?.textContent||'');
+    const m=badge.match(/v(\d+)/i);
+    if(m)return m[1];
+  }catch(e){}
+  return '279';
+}
 function shareUrl(testerNo=null){
   const u=new URL(currentBaseUrl());
-  u.searchParams.set('appBuild','268');
+  /* V279 — ne plus figer les téléphones sur une ancienne version (v268). */
+  u.searchParams.set('appBuild',currentShareBuildV279());
   u.searchParams.set('session',cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
