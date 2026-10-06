@@ -7831,6 +7831,7 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
   const isFinal=expected>0&&completed===expected&&validated===testerCount;
   const market=st.config.marketRef||{};
   const reportNote=String(st.config?.reportNote||'').trim();
+  const juryConclusion=String(st.config?.juryConclusion||'').trim();
   const generatedAt=new Date().toISOString();
   const closure=st.config?.closure||{};
   const reportStatus=isFinal?(st.config?.juryClose?.closedAt?'RAPPORT FINAL — JURY FERMÉ':'RAPPORT FINAL'):'RAPPORT PROVISOIRE';
@@ -7869,7 +7870,7 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
     }).join('')}
   </tr>`).join('');
 
-  /* Un chapitre par article */
+  /* Un chapitre par article — V282 : cartes côte à côte et densité adaptative */
   const productSections=products.map((p,pi)=>{
     const supplierStats=(p.samples||[]).map(sm=>{
       const stats=stateSampleStats(st,p,sm);
@@ -7884,6 +7885,7 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
     }).sort((a,b)=>b.total-a.total||a.supplier.localeCompare(b.supplier,'fr'));
 
     const ranked=reportRankWithTies(supplierStats,r=>r.total);
+    const density=ranked.length<=5?'normal':ranked.length<=8?'compact':'dense';
 
     const rows=ranked.map(r=>`<tr>
       <td class="rank">${r.rank}</td>
@@ -7893,18 +7895,24 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
       <td class="score">${fmt(r.note5)}</td>
     </tr>`).join('');
 
-    const commentBlocks=ranked.map(r=>{
-      const has=r.comments.positive.length||r.comments.negative.length||r.comments.manual.length;
-      if(!has)return '';
-      return `<div class="supplier-comment">
-        <h3>${reportEsc(r.supplier)} <span>— Échantillon ${reportEsc(r.sample)}</span></h3>
-        ${r.comments.positive.length?`<div class="comment-title positive-title">Arguments positifs</div><ul>${r.comments.positive.map(x=>`<li>${reportEsc(x)}</li>`).join('')}</ul>`:''}
-        ${r.comments.negative.length?`<div class="comment-title negative-title">Arguments négatifs</div><ul>${r.comments.negative.map(x=>`<li>${reportEsc(x)}</li>`).join('')}</ul>`:''}
-        ${r.comments.manual.length?`<div class="comment-title">Remarques libres</div><ul>${r.comments.manual.map(x=>`<li>${reportEsc(x)}</li>`).join('')}</ul>`:''}
+    const sectionList=(title,items,cls)=>{
+      const body=items.length
+        ?`<ul>${items.map(x=>`<li>${reportEsc(x)}</li>`).join('')}</ul>`
+        :'<div class="comment-empty">Aucun</div>';
+      return `<div class="comment-section ${cls}">
+        <div class="comment-title">${title}</div>
+        ${body}
       </div>`;
-    }).join('');
+    };
 
-    return `<section class="section product-section page-break">
+    const commentBlocks=ranked.map(r=>`<article class="supplier-comment-card">
+      <div class="supplier-comment-head"><strong>${reportEsc(r.supplier)}</strong><span>Échantillon ${reportEsc(r.sample)}</span></div>
+      ${sectionList('Arguments positifs',r.comments.positive,'positive')}
+      ${sectionList('Arguments négatifs',r.comments.negative,'negative')}
+      ${sectionList('Remarques libres',r.comments.manual,'manual')}
+    </article>`).join('');
+
+    return `<section class="section product-section page-break density-${density}" data-supplier-count="${ranked.length}">
       <div class="section-kicker">${pi+1}. Article testé</div>
       <h2>${reportEsc(p.name||`Article ${pi+1}`)}</h2>
       ${p.code?`<div class="article-code">Référence / code : ${reportEsc(p.code)}</div>`:''}
@@ -7912,7 +7920,7 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
         <thead><tr><th>Classement</th><th>Fournisseur</th><th>N° échantillon</th><th>Score / ${fmt(maxPerProduct)}</th><th>Note /5</th></tr></thead>
         <tbody>${rows||'<tr><td colspan="5">Aucun résultat.</td></tr>'}</tbody>
       </table>
-      <div class="article-comments">
+      <div class="article-comments-grid">
         ${commentBlocks||'<div class="empty-note">Aucun commentaire saisi pour cet article.</div>'}
       </div>
     </section>`;
@@ -7977,10 +7985,36 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
     td:first-child,.rank{font-weight:800}
     .score{font-weight:800;white-space:nowrap}
     .recap-title{text-align:center;font-size:12px;font-weight:800;margin:18px 0 7px}
-    .supplier-comment{margin:18px 0 0;padding-top:12px;border-top:1px solid #e2e8ec;break-inside:avoid}
-    .supplier-comment h3{font-size:13px;color:var(--blue);margin:0 0 9px}.supplier-comment h3 span{font-size:10px;color:var(--muted);font-weight:500}
-    .comment-title{font-size:10px;font-weight:800;margin:8px 0 3px}.positive-title{color:var(--green)}.negative-title{color:var(--red)}
+    .product-section{padding-top:48px;min-height:900px;break-inside:auto}
+    .product-section .section-kicker{display:flex;align-items:center;gap:12px;color:#315a78}
+    .product-section .section-kicker:after{content:"";height:1px;background:#9ab1c3;flex:1}
+    .product-section h2{font-size:31px;color:#12335a;margin:8px 0 4px}
+    .product-section .article-code{font-size:11px;margin:0 0 15px;color:#617789}
+    .ranking-table{margin-bottom:15px}
+    .article-comments-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-top:16px;align-items:start}
+    .supplier-comment-card{border:1px solid #b9cfe0;border-radius:9px;overflow:hidden;background:#fbfdfe;break-inside:avoid;page-break-inside:avoid}
+    .supplier-comment-head{display:flex;align-items:baseline;gap:6px;flex-wrap:wrap;padding:8px 10px;background:#e8f2f8;color:#174f78}
+    .supplier-comment-head strong{font-size:13px}.supplier-comment-head span{font-size:9.5px;color:#526f84}
+    .comment-section{padding:7px 10px;border-top:1px solid #d9e5ec}
+    .comment-title{font-size:10px;font-weight:800;margin:0 0 4px}
+    .comment-section.positive .comment-title{color:#24704f}.comment-section.positive .comment-title:before{content:"+ ";font-weight:900}
+    .comment-section.negative .comment-title{color:#b13b3b}.comment-section.negative .comment-title:before{content:"− ";font-weight:900}
+    .comment-section.manual .comment-title{color:#5b7085}.comment-section.manual .comment-title:before{content:"• "}
+    .comment-section ul{margin:3px 0 0 17px;padding:0;font-size:9.5px;line-height:1.34}
+    .comment-empty{font-size:8.8px;color:#8a98a2;font-style:italic}
+    .density-normal .supplier-comment-card:last-child:nth-child(odd){grid-column:1/-1}
+    .density-compact .article-comments-grid{gap:7px}.density-compact .supplier-comment-head{padding:6px 8px}.density-compact .supplier-comment-head strong{font-size:11px}.density-compact .comment-section{padding:5px 8px}.density-compact .comment-title{font-size:8.8px}.density-compact .comment-section ul{font-size:8.1px;line-height:1.24}
+    .density-dense .article-comments-grid{gap:5px}.density-dense .supplier-comment-head{padding:5px 7px}.density-dense .supplier-comment-head strong{font-size:10px}.density-dense .supplier-comment-head span{font-size:7.5px}.density-dense .comment-section{padding:4px 7px}.density-dense .comment-title{font-size:8px}.density-dense .comment-section ul{font-size:7.3px;line-height:1.18;margin-left:14px}
     ul{margin:4px 0 7px 19px;padding:0;font-size:10.5px;line-height:1.45}
+    .lot-summary{padding-top:58px;min-height:880px}
+    .lot-summary .section-kicker{color:#315a78}
+    .lot-summary h2{font-size:28px!important;color:#12335a;margin:8px 0 22px!important}
+    .lot-summary table{font-size:11px}
+    .lot-summary th{background:#eaf3f8;color:#173a61;padding:10px 7px}
+    .lot-summary td{padding:11px 7px}
+    .jury-conclusion-report{margin-top:28px;border:1px solid #b9cfe0;border-radius:10px;background:#f7fbfd;padding:14px 16px;break-inside:avoid}
+    .jury-conclusion-title{font-size:13px;font-weight:800;color:#173a61;margin-bottom:8px}
+    .jury-conclusion-text{font-size:10.5px;line-height:1.55;color:#31495b;white-space:normal}
     .empty-note{font-size:10px;color:var(--muted);font-style:italic;margin-top:14px}
     .report-note{padding:14px 16px;border:1px solid #cfdbe2;border-left:5px solid var(--blue);background:#f7fbfd;font-size:11px;line-height:1.55}
     .lot-summary h2{text-align:left}
@@ -8000,7 +8034,9 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
       .page{max-width:none;margin:0;padding:0;box-shadow:none}
       .cover{min-height:260mm;padding-top:15mm}
       .page-break{break-before:page;page-break-before:always}
-      .supplier-comment{break-inside:avoid;page-break-inside:avoid}
+      .product-section{break-inside:auto;page-break-inside:auto;padding-top:14mm;min-height:auto}
+      .supplier-comment-card{break-inside:avoid;page-break-inside:avoid}
+      .lot-summary{padding-top:16mm;min-height:250mm}
       table{break-inside:auto}
       tr{break-inside:avoid;page-break-inside:avoid}
     }
@@ -8050,6 +8086,10 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
           <tbody>${lotRows||'<tr><td colspan="5">Aucun résultat.</td></tr>'}</tbody>
         </table>
         <div class="small-note">La note sur 5 est calculée automatiquement : total obtenu ÷ total maximal × 5.</div>
+        ${juryConclusion?`<div class="jury-conclusion-report">
+          <div class="jury-conclusion-title">Conclusion / rapport du jury</div>
+          <div class="jury-conclusion-text">${reportEsc(juryConclusion).replace(/\n/g,'<br>')}</div>
+        </div>`:''}
       </section>
 
       ${reportNote?`<section class="section page-break">
@@ -8209,6 +8249,81 @@ function reportPdfFirstPageTableV281(doc,products,suppliers,y){
   return yy;
 }
 
+function reportPdfCommentCardDataV282(doc,r,width,density){
+  const font=density==='dense'?6.2:density==='compact'?6.8:7.5;
+  const lineH=density==='dense'?2.8:density==='compact'?3.1:3.4;
+  const textW=width-8;
+  const groups=[
+    {title:'Arguments positifs',items:r.comments?.positive||[],rgb:[36,112,79]},
+    {title:'Arguments négatifs',items:r.comments?.negative||[],rgb:[177,59,59]},
+    {title:'Remarques libres',items:r.comments?.manual||[],rgb:[91,112,133]}
+  ];
+  let h=9;
+  const prepared=groups.map(g=>{
+    const items=g.items.length?g.items:['Aucun'];
+    const lines=[];
+    items.forEach(item=>{
+      const wrapped=doc.splitTextToSize((g.items.length?'• ':'')+String(item),textW);
+      wrapped.forEach(x=>lines.push(x));
+    });
+    h+=4+Math.max(lineH,lines.length*lineH)+2;
+    return {...g,lines};
+  });
+  return{font,lineH,h,groups:prepared};
+}
+function reportPdfDrawCommentCardV282(doc,r,x,y,w,density,forcedH=null){
+  const data=reportPdfCommentCardDataV282(doc,r,w,density);
+  const h=Math.max(data.h,forcedH||0);
+  doc.setDrawColor(185,207,224);doc.setFillColor(251,253,254);doc.roundedRect(x,y,w,h,2,2,'FD');
+  doc.setFillColor(232,242,248);doc.rect(x,y,w,8,'F');
+  doc.setTextColor(23,79,120);doc.setFont('helvetica','bold');doc.setFontSize(density==='dense'?7.5:8.5);
+  doc.text(String(r.supplier||''),x+3,y+5.2,{maxWidth:w-28});
+  doc.setFont('helvetica','normal');doc.setFontSize(density==='dense'?6.3:7.1);doc.setTextColor(82,111,132);
+  doc.text('Éch. '+String(r.sample||''),x+w-3,y+5.2,{align:'right'});
+  let yy=y+12;
+  data.groups.forEach(g=>{
+    doc.setFont('helvetica','bold');doc.setFontSize(data.font);doc.setTextColor(...g.rgb);
+    doc.text(g.title,x+3,yy);yy+=3.5;
+    doc.setFont('helvetica','normal');doc.setTextColor(49,73,91);
+    g.lines.forEach(line=>{doc.text(line,x+4,yy,{maxWidth:w-8});yy+=data.lineH;});
+    yy+=2;
+  });
+  return h;
+}
+function reportPdfProductCardsV282(doc,ranked,y){
+  const count=ranked.length;if(!count)return y;
+  const density=count<=5?'normal':count<=8?'compact':'dense';
+  const gap=5,left=14,usable=182,colW=(usable-gap)/2;
+  let i=0;
+  while(i<count){
+    const lastSingle=(density==='normal'&&count%2===1&&i===count-1);
+    if(lastSingle){
+      const h=reportPdfCommentCardDataV282(doc,ranked[i],usable,density).h;
+      if(y+h>282){doc.addPage();y=18;}
+      reportPdfDrawCommentCardV282(doc,ranked[i],left,y,usable,density,h);
+      y+=h+5;i++;continue;
+    }
+    const a=ranked[i],b=ranked[i+1];
+    const ha=reportPdfCommentCardDataV282(doc,a,colW,density).h;
+    const hb=b?reportPdfCommentCardDataV282(doc,b,colW,density).h:0;
+    const rowH=Math.max(ha,hb);
+    if(y+rowH>282){doc.addPage();y=18;}
+    reportPdfDrawCommentCardV282(doc,a,left,y,colW,density,rowH);
+    if(b)reportPdfDrawCommentCardV282(doc,b,left+colW+gap,y,colW,density,rowH);
+    y+=rowH+5;i+=2;
+  }
+  return y;
+}
+function reportPdfConclusionBoxV282(doc,text,y){
+  const lines=doc.splitTextToSize(String(text||''),174);
+  const h=14+Math.max(8,lines.length*4.2);
+  if(y+h>282){doc.addPage();y=24;}
+  doc.setDrawColor(185,207,224);doc.setFillColor(247,251,253);doc.roundedRect(14,y,182,h,2,2,'FD');
+  doc.setFont('helvetica','bold');doc.setFontSize(10);doc.setTextColor(23,58,97);doc.text('Conclusion / rapport du jury',18,y+7);
+  doc.setFont('helvetica','normal');doc.setFontSize(8.5);doc.setTextColor(49,73,91);doc.text(lines,18,y+13);
+  return y+h+4;
+}
+
 async function buildReportPdfBlob(st=state){
   const JsPDF=window.jspdf?.jsPDF;
   if(!JsPDF)throw new Error('Le module PDF n’est pas chargé. Vérifiez la connexion Internet puis réessayez.');
@@ -8219,6 +8334,7 @@ async function buildReportPdfBlob(st=state){
   const maxPerProduct=testerCount*65;
   const maxLot=maxPerProduct*products.length;
   const reportNote=String(st.config?.reportNote||'').trim();
+  const juryConclusion=String(st.config?.juryConclusion||'').trim();
 
   const totalSamplesPdf=(st.config?.products||[]).reduce((n,p)=>n+(p.samples||[]).length,0);
   const expectedPdf=totalSamplesPdf*testerCount;
@@ -8272,10 +8388,20 @@ async function buildReportPdfBlob(st=state){
   doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(92,113,128);
   doc.text('Les mêmes testeurs participent à l’ensemble des articles du lot afin de rendre la comparaison cohérente.',14,y,{maxWidth:182});
 
-  // Chapitre par article
+  // Chapitre par article — V282 : même présentation pour chaque article, jusqu'à 10 fournisseurs
   products.forEach((p,pi)=>{
-    doc.addPage(); y=20;
-    y=reportPdfTitle(doc,`${pi+1}. ${p.name||`Article ${pi+1}`}`,y);
+    doc.addPage(); y=26;
+    doc.setFont('helvetica','bold');doc.setFontSize(8.5);doc.setTextColor(49,90,120);
+    doc.text(`${pi+1}. Article testé`,14,y);
+    doc.setDrawColor(154,177,195);doc.line(42,y-1,196,y-1);
+    y+=10;
+    doc.setFont('helvetica','bold');doc.setFontSize(21);doc.setTextColor(18,51,90);
+    doc.text(String(p.name||`Article ${pi+1}`),14,y);
+    y+=7;
+    if(p.code){
+      doc.setFont('helvetica','normal');doc.setFontSize(9);doc.setTextColor(97,119,137);
+      doc.text('Référence / code : '+String(p.code),14,y);y+=7;
+    }
 
     const rows=(p.samples||[]).map(sm=>{
       const stats=stateSampleStats(st,p,sm);
@@ -8291,31 +8417,19 @@ async function buildReportPdfBlob(st=state){
     const ranked=reportRankWithTies(rows,r=>r.total);
     y=reportPdfSimpleTable(
       doc,
-      ['Rang','Fournisseur','Échantillon',`Score / ${maxPerProduct}`,'Note /5'],
-      ranked.map(r=>[r.rank,r.supplier,r.sample,fmt(r.total),fmt(r.note5)]),
+      ['Classement','Fournisseur','N° échantillon',`Score / ${maxPerProduct}`,'Note /5'],
+      ranked.map(r=>[r.rank,r.supplier,r.sample,`${fmt(r.total)} / ${fmt(maxPerProduct)}`,fmt(r.note5)]),
       y,
-      [15,69,28,38,32]
+      [25,62,31,40,24]
     );
-
-    ranked.forEach(r=>{
-      const has=r.comments.positive.length||r.comments.negative.length||r.comments.manual.length;
-      if(!has)return;
-      y=reportPdfParagraph(doc,`${r.supplier} — échantillon ${r.sample}`,y+2,{size:10,bold:true});
-      if(r.comments.positive.length){
-        y=reportPdfParagraph(doc,'Arguments positifs : '+r.comments.positive.join(' · '),y,{size:9});
-      }
-      if(r.comments.negative.length){
-        y=reportPdfParagraph(doc,'Arguments négatifs : '+r.comments.negative.join(' · '),y,{size:9});
-      }
-      if(r.comments.manual.length){
-        y=reportPdfParagraph(doc,'Remarques : '+r.comments.manual.join(' · '),y,{size:9});
-      }
-    });
+    y=reportPdfProductCardsV282(doc,ranked,y+4);
   });
 
-  // Synthèse du lot
-  doc.addPage(); y=20;
-  y=reportPdfTitle(doc,'Synthèse du lot',y);
+  // Synthèse du lot — V282 : page harmonisée
+  doc.addPage(); y=32;
+  doc.setFont('helvetica','bold');doc.setFontSize(20);doc.setTextColor(18,51,90);
+  doc.text('Résultats complets — '+products.map(p=>p.name||'Article').join(', '),14,y,{maxWidth:182});
+  y+=14;
 
   const supplierRows=suppliers.map(supplier=>{
     const perProduct=products.map(p=>{
@@ -8334,10 +8448,14 @@ async function buildReportPdfBlob(st=state){
   y=reportPdfSimpleTable(
     doc,
     sumHeaders,
-    rankedLot.map(r=>[r.rank,r.supplier,...r.perProduct.map(n=>fmt(n)),fmt(r.total),fmt(r.note5)]),
+    rankedLot.map(r=>[r.rank,r.supplier,...r.perProduct.map(n=>fmt(n)),`${fmt(r.total)} / ${fmt(maxLot)}`,fmt(r.note5)]),
     y,
     sumWidths
   );
+  doc.setFont('helvetica','normal');doc.setFontSize(8);doc.setTextColor(92,113,128);
+  doc.text('La note sur 5 est calculée automatiquement : total obtenu ÷ total maximal × 5.',14,y+2);
+  y+=10;
+  if(juryConclusion)y=reportPdfConclusionBoxV282(doc,juryConclusion,y);
 
   if(reportNote){
     y=reportPdfTitle(doc,'Note explicative / conformité',y+4);
