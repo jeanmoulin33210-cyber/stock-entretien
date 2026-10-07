@@ -2044,3 +2044,216 @@ reloadCloudAnswers=async function(){
   }
 };
 window.reloadCloudAnswers=reloadCloudAnswers;
+
+
+/* --- V335 : synchronisation 100 % automatique entre testeurs, S24 et ordinateur --- */
+let autoReconcileBusyV335=false;
+let autoValidationPublishBusyV335=false;
+
+function serverValidationBackupV335(cfg){
+  const b=cfg?._validatedTestersV333;
+  return b&&typeof b==='object'?b:{};
+}
+
+function mergeValidationBackupFromServerV335(serverCfg){
+  if(cloudRole!=='admin'||!serverCfg||typeof serverCfg!=='object')return false;
+  const remote=serverValidationBackupV335(serverCfg);
+  if(!Object.keys(remote).length)return false;
+
+  if(!state.config._validatedTestersV333||
+     hashJson(state.config._validatedTestersV333)!==hashJson(remote)){
+    state.config._validatedTestersV333=deepClone(remote);
+    state.config._validatedTestersV333UpdatedAt=
+      serverCfg._validatedTestersV333UpdatedAt||state.config._validatedTestersV333UpdatedAt||'';
+  }
+
+  const restored=applyValidationBackupV333(state,serverCfg);
+  if(restored){
+    originalSaveState();
+    setAnswerHashesFromLocalV328();
+  }
+  return !!restored;
+}
+
+async function publishValidationBackupV335(){
+  if(autoValidationPublishBusyV335)return false;
+  if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId)return false;
+
+  const desired=validationBackupV333(state);
+  autoValidationPublishBusyV335=true;
+  try{
+    const {data:session,error:readError}=await cloudClient
+      .from('test_culinaire_sessions')
+      .select('config')
+      .eq('session_id',cloudCfg.sessionId)
+      .maybeSingle();
+    if(readError)throw readError;
+    if(!session?.config)return false;
+
+    const remote=deepClone(session.config||{});
+    const current=serverValidationBackupV335(remote);
+    if(hashJson(current)===hashJson(desired)){
+      state.config._validatedTestersV333=deepClone(desired);
+      state.config._validatedTestersV333UpdatedAt=
+        remote._validatedTestersV333UpdatedAt||state.config._validatedTestersV333UpdatedAt||'';
+      originalSaveState();
+      return false;
+    }
+
+    /* Le serveur est la base ; on y ajoute seulement les données locales plus
+       riches puis la liste certifiée des validations. Un appareil ancien ne
+       peut donc pas effacer la fin de jury d'un autre appareil. */
+    const merged=deepClone(remote);
+    try{preserveRicherAdminLocalDataV256(merged,state.config||{})}catch(e){}
+    try{preserveRicherAdminWorkflowV323(merged,state.config||{})}catch(e){}
+    try{restoreAdminShareMetadataV248(merged,state.config||{})}catch(e){}
+
+    merged._validatedTestersV333=deepClone(desired);
+    merged._validatedTestersV333UpdatedAt=new Date().toISOString();
+
+    const {error:updateError}=await cloudClient
+      .from('test_culinaire_sessions')
+      .update({
+        config:merged,
+        public_config:makePublicCloudConfig(merged),
+        updated_at:new Date().toISOString()
+      })
+      .eq('session_id',cloudCfg.sessionId);
+    if(updateError)throw updateError;
+
+    state.config=merged;
+    originalSaveState();
+    lastCloudConfigHash=hashJson(merged);
+    setAnswerHashesFromLocalV328();
+    return true;
+  }catch(e){
+    console.warn('V335 : sauvegarde automatique des validations différée',e);
+    return false;
+  }finally{
+    autoValidationPublishBusyV335=false;
+  }
+}
+
+async function automaticReconcileV335(){
+  if(autoReconcileBusyV335||testerPreviewMode)return;
+  if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId)return;
+  if(cloudBusy)return;
+
+  autoReconcileBusyV335=true;
+  try{
+    /* 1. Relire les réponses/validations des testeurs. */
+    await reloadCloudAnswers();
+
+    /* 2. Relire la copie de secours des validations dans la session. */
+    const {data:session,error}=await cloudClient
+      .from('test_culinaire_sessions')
+      .select('config')
+      .eq('session_id',cloudCfg.sessionId)
+      .maybeSingle();
+    if(!error&&session?.config){
+      mergeValidationBackupFromServerV335(session.config);
+
+      /* Récupérer aussi une fermeture effectuée automatiquement sur l'autre
+         appareil, sans attendre une intervention manuelle. */
+      if(session.config?.juryClose?.closedAt && !state.config?.juryClose?.closedAt){
+        try{
+          const localCfg=state.config;
+          preserveRicherAdminWorkflowV323(localCfg,session.config);
+          originalSaveState();
+        }catch(e){}
+      }
+    }
+
+    /* 3. Dès qu'un administrateur a vu une nouvelle validation, la recopier
+       automatiquement dans la configuration partagée pour tous les appareils. */
+    await publishValidationBackupV335();
+
+    /* 4. Lorsque toutes les fiches sont complètes et validées, terminer le
+       jury automatiquement, quel que soit l'écran affiché. */
+    if(typeof juryReadyToClose==='function' &&
+       typeof autoCloseJuryIfReady==='function' &&
+       !isJuryClosed() &&
+       juryReadyToClose()){
+      await autoCloseJuryIfReady();
+    }
+
+    setCloudStatus('online','● Partagé sécurisé');
+  }catch(e){
+    console.warn('V335 : rapprochement automatique différé',e);
+  }finally{
+    autoReconcileBusyV335=false;
+  }
+}
+
+/* Au démarrage/reconnexion, la copie de secours 4/4 est appliquée immédiatement. */
+const rebuildLocalFromCloudBeforeV335=rebuildLocalFromCloud;
+rebuildLocalFromCloud=function(config,rows=[]){
+  rebuildLocalFromCloudBeforeV335(config,rows);
+  if(cloudRole==='admin'){
+    mergeValidationBackupFromServerV335(config||{});
+    originalSaveState();
+    setAnswerHashesFromLocalV328();
+  }
+};
+
+/* Toute nouvelle réponse/validation reçue déclenche immédiatement le
+   rapprochement complet, sans bouton "Recharger". */
+const reloadCloudAnswersBeforeV335=reloadCloudAnswers;
+reloadCloudAnswers=async function(){
+  await reloadCloudAnswersBeforeV335();
+
+  if(cloudRole==='admin'){
+    try{
+      await publishValidationBackupV335();
+      if(typeof juryReadyToClose==='function' &&
+         typeof autoCloseJuryIfReady==='function' &&
+         !isJuryClosed() &&
+         juryReadyToClose()){
+        await autoCloseJuryIfReady();
+      }
+    }catch(e){}
+    setCloudStatus('online','● Partagé sécurisé');
+  }
+};
+window.reloadCloudAnswers=reloadCloudAnswers;
+
+/* Toute mise à jour de configuration reçue (S24 ou ordinateur) récupère aussi
+   automatiquement les validations certifiées et la fin de jury. */
+const reloadCloudConfigBeforeV335=reloadCloudConfig;
+reloadCloudConfig=async function(){
+  await reloadCloudConfigBeforeV335();
+  if(cloudRole==='admin'){
+    mergeValidationBackupFromServerV335(state.config||{});
+    try{
+      if(typeof juryReadyToClose==='function' &&
+         typeof autoCloseJuryIfReady==='function' &&
+         !isJuryClosed() &&
+         juryReadyToClose()){
+        await autoCloseJuryIfReady();
+      }
+    }catch(e){}
+    setCloudStatus('online','● Partagé sécurisé');
+  }
+};
+window.reloadCloudConfig=reloadCloudConfig;
+
+/* Filet de sécurité : si un événement temps réel est raté (Wi-Fi, veille,
+   changement de réseau), un contrôle discret toutes les 4 secondes remet
+   automatiquement les appareils au même état. Aucun clignotement du bandeau. */
+setInterval(function(){
+  try{
+    if(!cloudReady||cloudRole!=='admin'||cloudBusy||autoReconcileBusyV335)return;
+    if(typeof isJuryOfficiallyOpen==='function' &&
+       typeof isJuryClosed==='function' &&
+       (isJuryOfficiallyOpen()||isJuryClosed())){
+      automaticReconcileV335();
+    }
+  }catch(e){}
+},4000);
+
+window.addEventListener('online',function(){
+  setTimeout(function(){try{automaticReconcileV335()}catch(e){}},500);
+});
+
+/* Un premier rapprochement est lancé après l'ouverture de l'application. */
+setTimeout(function(){try{automaticReconcileV335()}catch(e){}},1800);
