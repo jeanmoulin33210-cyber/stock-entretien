@@ -9,7 +9,7 @@
   window.forceIpadAppRefresh=function(){
     try{
       var base=window.location.href.split('#')[0].split('?')[0];
-      window.location.replace(base+'?v=328-ipad-'+(new Date().getTime()));
+      window.location.replace(base+'?v=329-ipad-'+(new Date().getTime()));
     }catch(e){
       window.location.reload(true);
     }
@@ -28,7 +28,7 @@
     window.setTimeout(function(){
       showDiag(
         'Safari / iPadOS trop ancien pour le moteur actuel',
-        'La page HTML est bien chargée en v328, mais ce Safari ne comprend pas certaines instructions JavaScript de l’application. Dites-moi la version iPadOS affichée dans Réglages &gt; Général &gt; Informations.'
+        'La page HTML est bien chargée en v329, mais ce Safari ne comprend pas certaines instructions JavaScript de l’application. Dites-moi la version iPadOS affichée dans Réglages &gt; Général &gt; Informations.'
       );
     },100);
     return;
@@ -39,19 +39,19 @@
     var badge=document.getElementById('appBuildBadge');
     if(engineOk){
       if(badge){
-        badge.innerHTML='v328 · OK';
+        badge.innerHTML='v329 · OK';
         badge.style.background='#e6f5ee';
         badge.style.color='#146c4e';
       }
     }else{
       if(badge){
-        badge.innerHTML='v328 · moteur arrêté';
+        badge.innerHTML='v329 · moteur arrêté';
         badge.style.background='#fff0d8';
         badge.style.color='#8c5a00';
       }
       showDiag(
         'L’application ne s’est pas démarrée',
-        'Le fichier v328 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
+        'Le fichier v329 est affiché, mais le moteur JavaScript n’a pas démarré. Sur iPad, essayez d’abord « Forcer l’actualisation iPad ». Si le message revient, dites-moi exactement ce qui est affiché ici.'
       );
     }
   },5000);
