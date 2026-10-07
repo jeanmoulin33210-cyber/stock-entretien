@@ -99,7 +99,7 @@ function syncSimpleResultsActions(){
   const reportBtn=$('#simpleResultsPdfBtn');
   const archiveBtn=$('#simpleResultsArchiveBtn');
   const moreBtn=$('#simpleResultsMoreBtn');
-  if(!hint||!archiveBtn)return;
+  if(!hint)return;
 
   const total=totalSamples();
   const done=totalCompleted();
@@ -142,8 +142,10 @@ function syncSimpleResultsActions(){
     reportBtn.disabled=!(complete&&closed&&closureReady&&sheetsReady);
     reportBtn.textContent='📄 3. Rapport final';
   }
-  archiveBtn.disabled=!(complete&&closed&&closureReady&&sheetsReady);
-  archiveBtn.textContent=archived?'✓ 4. Archivé':'📁 4. Archiver';
+  if(archiveBtn){
+    archiveBtn.disabled=!(complete&&closed&&closureReady&&sheetsReady);
+    archiveBtn.textContent=archived?'✓ 4. Archivé':'📁 4. Archiver';
+  }
 
   const highlight=b=>{
     if(!b)return;
