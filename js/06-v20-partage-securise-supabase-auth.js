@@ -48,9 +48,20 @@ function saveCloudCfg(){
   if(cloudCfg.sessionId&&cloudCfg.accessCode)localStorage.setItem(CLOUD_ACCESS_STORAGE_KEY,JSON.stringify({sessionId:cloudCfg.sessionId,accessCode:cloudCfg.accessCode}));
 }
 function hashJson(v){try{return JSON.stringify(v)}catch(e){return String(Date.now())}}
+function cloudSessionShortV327(){
+  const sid=String(cloudCfg?.sessionId||state?.config?._shareSessionId||state?.config?.juryLaunch?.sessionId||'').trim();
+  if(!sid)return '';
+  return sid.replace(/[^a-zA-Z0-9]/g,'').slice(-4).toUpperCase();
+}
 function setCloudStatus(kind='local',text='● Local'){
   const els=[document.getElementById('cloudStatus'),document.getElementById('cloudPageStatus')].filter(Boolean);
-  els.forEach(el=>{el.className='cloud-status'+(kind==='online'?' online':kind==='syncing'?' syncing':kind==='error'?' error':'');el.textContent=text});
+  const code=(kind==='online'||kind==='syncing')?cloudSessionShortV327():'';
+  const shown=code?text+' · '+code:text;
+  els.forEach(el=>{
+    el.className='cloud-status'+(kind==='online'?' online':kind==='syncing'?' syncing':kind==='error'?' error':'');
+    el.textContent=shown;
+    if(code)el.title='Session sécurisée '+code;
+  });
 }
 function cloudMsg(text,kind='warn'){
   const el=document.getElementById('cloudMessage');if(!el)return;
