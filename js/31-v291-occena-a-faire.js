@@ -94,7 +94,7 @@
     if(document.getElementById("occenaNextStyleV291"))return;
     var s=document.createElement("style");
     s.id="occenaNextStyleV291";
-    s.textContent=".occena-control-card.occena-focus-v291{outline:3px solid rgba(13,99,143,.26);outline-offset:4px;transition:outline-color .35s ease}.occena-control-card.occena-complete-v304{border:2px solid #48a77a!important;background:#f1fbf6!important;box-shadow:0 0 0 3px rgba(72,167,122,.10)}.occena-control-card.occena-complete-v304 .occena-control-head strong{color:#176b4d}.occena-control-card.occena-complete-v304 .occena-progress-bar span{background:#48a77a!important}.simple-results-action-buttons .occena-step-complete-v304{display:inline-flex!important;background:#e8f6ef!important;border-color:#58a982!important;color:#176b4d!important;font-weight:850!important;box-shadow:0 0 0 2px rgba(72,167,122,.08)!important}";
+    s.textContent=".occena-control-card.occena-focus-v291{outline:3px solid rgba(13,99,143,.26);outline-offset:4px;transition:outline-color .35s ease}.occena-control-card.occena-complete-v304{border:2px solid #48a77a!important;background:#f1fbf6!important;box-shadow:0 0 0 3px rgba(72,167,122,.10)}.occena-control-card.occena-complete-v304 .occena-control-head strong{color:#176b4d}.occena-control-card.occena-complete-v304 .occena-progress-bar span{background:#48a77a!important}.simple-results-action-buttons .occena-step-complete-v304{display:inline-flex!important;background:#e8f6ef!important;border-color:#58a982!important;color:#176b4d!important;font-weight:850!important;box-shadow:0 0 0 2px rgba(72,167,122,.08)!important}@keyframes finalReportPulseV322{0%,100%{box-shadow:0 0 0 0 rgba(13,99,143,.14),0 5px 16px rgba(13,99,143,.12)}50%{box-shadow:0 0 0 7px rgba(13,99,143,0),0 7px 20px rgba(13,99,143,.20)}}.simple-results-action-buttons .final-report-ready-v322{display:inline-flex!important;background:#0d638f!important;border-color:#0d638f!important;color:#fff!important;font-weight:900!important;animation:finalReportPulseV322 1.8s ease-in-out infinite}.simple-results-action-buttons .final-report-opened-v322{display:inline-flex!important;background:#e8f6ef!important;border-color:#58a982!important;color:#176b4d!important;font-weight:850!important;animation:none!important}";
     document.head.appendChild(s);
   }
   function ensureJuryButtonV309(){
@@ -273,6 +273,44 @@
     }
   }
 
+  function updateFinalReportStateV322(m,wf){
+    var email=document.getElementById("simpleResultsEmailBtn");
+    if(!email||typeof state==="undefined"||!state||!state.config)return;
+
+    var total=0,testers=Number(state.config.testerCount||0),done=0,validated=0;
+    try{if(typeof totalSamples==="function")total=Number(totalSamples()||0);}catch(e){}
+    try{if(typeof totalCompleted==="function")done=Number(totalCompleted()||0);}catch(e){}
+    try{if(typeof validatedCount==="function")validated=Number(validatedCount()||0);}catch(e){}
+    var juryDone=total>0&&testers>0&&done===total*testers&&validated===testers;
+
+    var rs={key:"pending",done:0,total:0};
+    try{if(typeof receptionStatusForConfig==="function")rs=receptionStatusForConfig(state.config)||rs;}catch(e){}
+    var receptionDone=rs.key==="done"&&Number(rs.done||0)>0;
+
+    var ps={total:0,filled:0};
+    try{if(typeof productSheetsProgress==="function")ps=productSheetsProgress(state)||ps;}catch(e){}
+    var sheetsDone=Number(ps.total||0)>0&&Number(ps.filled||0)===Number(ps.total||0);
+
+    var conclusionDone=String(state.config.juryConclusion||"").trim().length>0;
+    var allReady=juryDone&&wf.closed&&wf.closureReady&&receptionDone&&sheetsDone&&conclusionDone&&!!m.reached;
+    var opened=email.dataset.finalReportOpenedV322==="1";
+
+    email.disabled=!allReady;
+    email.classList.remove("final-report-ready-v322","final-report-opened-v322","btn-primary","simple-results-next-btn");
+
+    if(opened&&allReady){
+      email.classList.add("final-report-opened-v322");
+      email.textContent="✓ Rapport préparé — Gmail ouvert";
+    }else if(allReady){
+      email.classList.add("final-report-ready-v322");
+      email.textContent="📧 Rapport final prêt — Envoyer";
+    }else{
+      email.textContent="📧 Envoyer le rapport final";
+    }
+
+    return allReady;
+  }
+
   function apply(){
     if(typeof state==="undefined"||!state||!state.config)return;
     ensureStyle();
@@ -320,6 +358,13 @@
           ?"Validez 5 fiches pour chacun des "+m.suppliers.length+" fournisseur"+(m.suppliers.length>1?"s":"")+". Le dossier résultats deviendra ensuite l’étape suivante."
           :"Ajoutez les articles / fournisseurs à contrôler dans OCCENA.";
       }
+    }
+
+    var finalReady=updateFinalReportStateV322(m,wf);
+    if(finalReady){
+      removeHighlight(report);
+      if(title)title.textContent="✓ Tout est prêt — rapport final";
+      if(hint)hint.textContent="Toutes les étapes sont terminées. Le rapport final est prêt à être préparé et envoyé par Gmail.";
     }
   }
 
