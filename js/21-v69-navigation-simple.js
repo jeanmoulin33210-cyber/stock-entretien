@@ -121,7 +121,8 @@ function syncSimpleResultsActions(){
 
   if(closureBtn){
     closureBtn.disabled=!closed;
-    closureBtn.textContent=closureReady?'✓ 1. Clôture':'✍️ 1. Clôture';
+    closureBtn.textContent=closureReady?'✓ 1. Clôture — OK':'✍️ 1. Clôture';
+    closureBtn.classList.toggle('simple-results-complete-v305',closureReady);
   }
   if(receptionBtn){
     receptionBtn.disabled=false;
