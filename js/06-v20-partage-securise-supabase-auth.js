@@ -2005,3 +2005,42 @@ bindAdminSyncButtonsV330=function(){
   }
 };
 bindAdminSyncButtonsV330();
+
+
+/* --- V334 : stabilisation multi-appareils, fin du clignotement de synchro --- */
+function syncValidationBackupIntoConfigV334(){
+  if(cloudRole!=='admin'||!state?.config)return false;
+  const next=validationBackupV333(state);
+  const prev=(state.config._validatedTestersV333&&typeof state.config._validatedTestersV333==='object')
+    ?state.config._validatedTestersV333:{};
+  if(hashJson(next)===hashJson(prev))return false;
+  state.config._validatedTestersV333=next;
+  state.config._validatedTestersV333UpdatedAt=new Date().toISOString();
+  originalSaveState();
+  return true;
+}
+
+/* Toute validation faite depuis le PC est maintenant aussi inscrite dans
+   la configuration partagée, pas seulement dans la table des réponses. */
+const syncDirtyToCloudBeforeV334=syncDirtyToCloud;
+syncDirtyToCloud=async function(){
+  try{syncValidationBackupIntoConfigV334()}catch(e){}
+  return syncDirtyToCloudBeforeV334();
+};
+
+/* Quand la configuration V333 certifie une validation, elle devient la référence
+   locale. On aligne aussi les hashes pour ne pas tenter de renvoyer la même
+   validation en boucle si le marqueur __validation__ est absent/refusé côté serveur. */
+const reloadCloudAnswersBeforeV334=reloadCloudAnswers;
+reloadCloudAnswers=async function(){
+  await reloadCloudAnswersBeforeV334();
+  if(cloudRole==='admin'&&state?.config?._validatedTestersV333){
+    applyValidationBackupV333(state,state.config);
+    originalSaveState();
+    setAnswerHashesFromLocalV328();
+    setCloudStatus('online','● Partagé sécurisé');
+    if(document.getElementById('juryView')?.classList.contains('active'))renderJuryView();
+    else if(document.getElementById('adminView')?.classList.contains('active'))originalRenderAdmin();
+  }
+};
+window.reloadCloudAnswers=reloadCloudAnswers;
