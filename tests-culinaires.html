@@ -1144,6 +1144,15 @@
         <button class="btn btn-secondary" id="checkServerSecurityBtn">🛡️ Vérifier sécurité V32</button>
         <button class="btn btn-ghost" id="disconnectCloudBtn">Mode local</button>
       </div>
+      <div class="panel" id="adminSyncBoxV328" style="margin-top:14px;padding:14px;background:#f4f9fc;border:1px solid #cfe0ea">
+        <strong style="display:block;margin-bottom:5px">Synchronisation administrateur</strong>
+        <div class="cloud-help" id="adminSyncHelpV328">Si deux appareils administrateurs affichent des données différentes dans la même session, choisissez l'appareil qui contient l'état correct puis envoyez-le volontairement vers la session sécurisée.</div>
+        <div class="row-actions" style="margin-top:10px">
+          <button class="btn btn-primary" id="forcePushAdminStateV328Btn">📤 Envoyer cet état à la session</button>
+          <button class="btn btn-secondary" id="forceReloadAdminStateV328Btn">📥 Recharger depuis la session</button>
+        </div>
+        <div class="connection-banner" id="adminSyncMessageV328"></div>
+      </div>
       <div class="connection-banner" id="cloudMessage"></div>
       <div class="server-diag" id="serverSecurityDiagnostic"><h4>Diagnostic sécurité serveur</h4><div class="server-diag-grid" id="serverSecurityDiagnosticGrid"></div></div>
     </div>
