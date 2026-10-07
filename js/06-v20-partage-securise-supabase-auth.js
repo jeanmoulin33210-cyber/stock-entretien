@@ -78,15 +78,8 @@ function bindAdminSyncButtonsV330(){
 
   if(push){
     push.type='button';
-    push.onclick=async function(e){
-      try{
-        e?.preventDefault?.();
-        e?.stopPropagation?.();
-        await forcePushAdminStateV328();
-      }catch(err){
-        console.error(err);
-        alert('Impossible de lancer l’envoi vers la session. '+(err?.message||err||''));
-      }
+    push.onclick=function(e){
+      return forcePushAdminStateV331(e);
     };
   }
 
@@ -1277,19 +1270,67 @@ function setAnswerHashesFromLocalV328(){
   }
 }
 
-async function forcePushAdminStateV328(){
+let forcePushArmedUntilV331=0;
+
+function resetForcePushArmV331(){
+  forcePushArmedUntilV331=0;
+  const btn=document.getElementById('forcePushAdminStateV328Btn');
+  if(btn)refreshAdminSyncLabelsV328();
+}
+
+function forcePushAdminStateV331(e){
+  try{
+    e?.preventDefault?.();
+    e?.stopPropagation?.();
+  }catch(_){}
+
+  const btn=document.getElementById('forcePushAdminStateV328Btn');
+  const code=cloudSessionShortV327()||'session';
+  const now=Date.now();
+
+  if(now>forcePushArmedUntilV331){
+    forcePushArmedUntilV331=now+8000;
+    if(btn){
+      btn.disabled=false;
+      btn.textContent='✅ Confirmer l’envoi à '+code;
+    }
+    adminSyncMessageV328(
+      'Appuyez une deuxième fois sur le bouton pour envoyer l’état de cet appareil vers '+code+'.',
+      'warn'
+    );
+    setTimeout(()=>{
+      if(Date.now()>forcePushArmedUntilV331)resetForcePushArmV331();
+    },8200);
+    return false;
+  }
+
+  forcePushArmedUntilV331=0;
+  if(btn)btn.textContent='⏳ Envoi vers '+code+'…';
+
+  Promise.resolve(forcePushAdminStateV328({skipConfirm:true}))
+    .catch(err=>{
+      console.error(err);
+      alert('Impossible d’envoyer cet état à '+code+'. '+(err?.message||err||''));
+    });
+  return false;
+}
+window.forcePushAdminStateV331=forcePushAdminStateV331;
+
+async function forcePushAdminStateV328(options={}){
   if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId){
     alert('La session sécurisée administrateur n’est pas connectée.');
     return;
   }
 
   const code=cloudSessionShortV327()||'session';
-  const ok=confirm(
-    'Envoyer l’état de CET appareil vers '+code+' ?\n\n'+
-    'Utilisez cette commande uniquement sur l’appareil qui affiche les bonnes données. '+
-    'La configuration, la clôture, la conclusion, OCCENA et les validations de cet appareil deviendront la référence partagée.'
-  );
-  if(!ok)return;
+  if(!options?.skipConfirm){
+    const ok=confirm(
+      'Envoyer l’état de CET appareil vers '+code+' ?\n\n'+
+      'Utilisez cette commande uniquement sur l’appareil qui affiche les bonnes données. '+
+      'La configuration, la clôture, la conclusion, OCCENA et les validations de cet appareil deviendront la référence partagée.'
+    );
+    if(!ok)return;
+  }
 
   const btn=document.getElementById('forcePushAdminStateV328Btn');
   try{
