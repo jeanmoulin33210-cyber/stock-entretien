@@ -2092,11 +2092,23 @@ async function publishValidationBackupV335(){
 
     const remote=deepClone(session.config||{});
     const current=serverValidationBackupV335(remote);
-    if(hashJson(current)===hashJson(desired)){
-      state.config._validatedTestersV333=deepClone(desired);
+
+    /* V335 : une validation acquise ne doit jamais disparaître simplement parce
+       qu'un autre appareil avait encore un état plus ancien. On fait donc
+       l'union des validations serveur + locales. Une suppression volontaire
+       reste gérée par le mécanisme de déverrouillage/sauvegarde existant. */
+    const target=deepClone(current);
+    Object.keys(desired).forEach(k=>{
+      if(desired[k])target[k]=desired[k];
+    });
+
+    if(hashJson(current)===hashJson(target)){
+      state.config._validatedTestersV333=deepClone(target);
       state.config._validatedTestersV333UpdatedAt=
         remote._validatedTestersV333UpdatedAt||state.config._validatedTestersV333UpdatedAt||'';
+      applyValidationBackupV333(state,{_validatedTestersV333:target});
       originalSaveState();
+      setAnswerHashesFromLocalV328();
       return false;
     }
 
@@ -2108,7 +2120,7 @@ async function publishValidationBackupV335(){
     try{preserveRicherAdminWorkflowV323(merged,state.config||{})}catch(e){}
     try{restoreAdminShareMetadataV248(merged,state.config||{})}catch(e){}
 
-    merged._validatedTestersV333=deepClone(desired);
+    merged._validatedTestersV333=deepClone(target);
     merged._validatedTestersV333UpdatedAt=new Date().toISOString();
 
     const {error:updateError}=await cloudClient
@@ -2245,7 +2257,8 @@ setInterval(function(){
     if(!cloudReady||cloudRole!=='admin'||cloudBusy||autoReconcileBusyV335)return;
     if(typeof isJuryOfficiallyOpen==='function' &&
        typeof isJuryClosed==='function' &&
-       (isJuryOfficiallyOpen()||isJuryClosed())){
+       isJuryOfficiallyOpen() &&
+       !isJuryClosed()){
       automaticReconcileV335();
     }
   }catch(e){}
