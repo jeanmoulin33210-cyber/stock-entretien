@@ -56,6 +56,15 @@
 
 
 
+<style id="resultsLayoutV317">
+.primary-supplier-ranking-v317{margin-top:14px}
+.results-details-v317{display:none}
+#adminView.show-results-details .results-details-v317{display:block}
+.results-lower-grid-v317{grid-template-columns:1fr!important}
+@media(max-width:700px){
+  .primary-supplier-ranking-v317{margin-top:10px}
+}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v316</div>
@@ -1643,6 +1652,18 @@
     </div>
   </section>
 
+  <section class="panel results-card primary-supplier-ranking-v317">
+    <div class="results-card-head">
+      <div>
+        <h3>Classement général fournisseurs</h3>
+        <p>Tous produits confondus · moyenne /5 · score OCCENA saisi manuellement.</p>
+      </div>
+    </div>
+    <div class="overall-cards" id="overallCards"></div>
+  </section>
+
+  <div class="results-details-v317">
+
   <div class="results-toolbar">
     <button class="btn btn-ghost btn-small" id="adminHomeBtn">← Accueil</button>
     <span class="spacer"></span>
@@ -1671,14 +1692,10 @@
       <div id="sampleDetail"></div>
     </div>
   </section>
-  <section class="results-lower-grid">
+  <section class="results-lower-grid results-lower-grid-v317">
     <div class="panel results-card">
       <div class="results-card-head"><div><h3>Avancement des testeurs</h3><p>Fiches complètes sur l’ensemble du jury.</p></div></div>
       <div class="compact-progress" id="testerProgressBars"></div>
-    </div>
-    <div class="panel results-card">
-      <div class="results-card-head"><div><h3>Classement global fournisseurs</h3><p>Tous produits confondus · moyenne par évaluation.</p></div></div>
-      <div class="overall-cards" id="overallCards"></div>
     </div>
   </section>
   <section class="panel results-card remarks-results" style="margin-top:14px">
@@ -1689,6 +1706,8 @@
     <div class="results-card-head"><div><h3>Remarques libres du jury</h3><p>Uniquement les commentaires écrits librement par les testeurs.</p></div><span class="blind-badge" id="remarksCountBadge">0 remarque</span></div>
     <div class="remarks-cards" id="remarksCards"></div>
   </section>
+
+  </div>
 </main>
 
 
