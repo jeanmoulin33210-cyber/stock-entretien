@@ -54,7 +54,7 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
       if(reloaded)return;
       reloaded=true;
       try{
-        const k='jm_tc_sw_v335a_reloaded';
+        const k='jm_tc_sw_v335b_reloaded';
         if(!sessionStorage.getItem(k)){
           sessionStorage.setItem(k,'1');
           location.reload();
