@@ -273,9 +273,10 @@
     }
   }
 
-  function updateFinalReportStateV322(m,wf){
+  function updateFinalReportStateV324(m,wf){
     var email=document.getElementById("simpleResultsEmailBtn");
-    if(!email||typeof state==="undefined"||!state||!state.config)return;
+    var dossier=document.getElementById("simpleResultsPdfBtn");
+    if((!email&&!dossier)||typeof state==="undefined"||!state||!state.config)return false;
 
     var total=0,testers=Number(state.config.testerCount||0),done=0,validated=0;
     try{if(typeof totalSamples==="function")total=Number(totalSamples()||0);}catch(e){}
@@ -291,22 +292,36 @@
     try{if(typeof productSheetsProgress==="function")ps=productSheetsProgress(state)||ps;}catch(e){}
     var sheetsDone=Number(ps.total||0)>0&&Number(ps.filled||0)===Number(ps.total||0);
 
+    var closureDone=typeof closureIsReady==="function"?!!closureIsReady():!!wf.closureReady;
     var conclusionDone=String(state.config.juryConclusion||"").trim().length>0;
-    var allReady=juryDone&&wf.closed&&wf.closureReady&&receptionDone&&sheetsDone&&conclusionDone&&!!m.reached;
-    if(!allReady)delete email.dataset.finalReportOpenedV322;
-    var opened=email.dataset.finalReportOpenedV322==="1";
+    var occenaDone=!!m.reached;
 
-    email.disabled=!allReady;
-    email.classList.remove("final-report-ready-v322","final-report-opened-v322","btn-primary","simple-results-next-btn");
+    /* V324 — une seule règle, visible et compréhensible :
+       les 6 étapes affichées doivent être OK. Aucun drapeau caché supplémentaire. */
+    var allReady=juryDone&&closureDone&&receptionDone&&sheetsDone&&conclusionDone&&occenaDone;
 
-    if(opened&&allReady){
-      email.classList.add("final-report-opened-v322");
-      email.textContent="✓ Rapport préparé — Gmail ouvert";
-    }else if(allReady){
-      email.classList.add("final-report-ready-v322");
-      email.textContent="📧 Rapport final prêt — Envoyer";
-    }else{
-      email.textContent="📧 Envoyer le rapport final";
+    if(dossier){
+      dossier.disabled=!allReady;
+      dossier.textContent="📚 4. Dossier résultats";
+      dossier.classList.toggle("btn-primary",allReady);
+      dossier.classList.toggle("simple-results-next-btn",allReady);
+    }
+
+    if(email){
+      if(!allReady)delete email.dataset.finalReportOpenedV322;
+      var opened=email.dataset.finalReportOpenedV322==="1";
+      email.disabled=!allReady;
+      email.classList.remove("final-report-ready-v322","final-report-opened-v322","btn-primary","simple-results-next-btn");
+
+      if(opened&&allReady){
+        email.classList.add("final-report-opened-v322");
+        email.textContent="✓ Rapport préparé — Gmail ouvert";
+      }else if(allReady){
+        email.classList.add("final-report-ready-v322");
+        email.textContent="📧 Rapport final prêt — Envoyer";
+      }else{
+        email.textContent="📧 Envoyer le rapport final";
+      }
     }
 
     return allReady;
@@ -361,7 +376,7 @@
       }
     }
 
-    var finalReady=updateFinalReportStateV322(m,wf);
+    var finalReady=updateFinalReportStateV324(m,wf);
     if(finalReady){
       removeHighlight(report);
       if(title)title.textContent="✓ Tout est prêt — rapport final";
