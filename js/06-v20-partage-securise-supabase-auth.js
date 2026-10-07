@@ -73,8 +73,8 @@ function serverSecurityStatus(title,text,ok=true){
   if(box){box.style.background=ok?'#f1faf6':'#fff5e8';box.style.borderColor=ok?'#c6e5d7':'#f0d7aa'}
 }
 function bindAdminSyncButtonsV330(){
-  const push=document.getElementById('forcePushAdminStateV328Btn');
-  const pull=document.getElementById('forceReloadAdminStateV328Btn');
+  const push=(document.getElementById('forcePushAdminStateV328Btn')||document.getElementById('forcePushAdminStateV330Btn'));
+  const pull=(document.getElementById('forceReloadAdminStateV328Btn')||document.getElementById('forceReloadAdminStateV330Btn'));
 
   if(push){
     push.type='button';
@@ -1244,7 +1244,7 @@ clearAnswers=async function(){
   }
 };
 function adminSyncMessageV328(text,kind='warn'){
-  const el=document.getElementById('adminSyncMessageV328');
+  const el=(document.getElementById('adminSyncMessageV328')||document.getElementById('adminSyncMessageV330'));
   if(!el)return;
   el.className='connection-banner show '+kind;
   el.textContent=text;
@@ -1252,9 +1252,9 @@ function adminSyncMessageV328(text,kind='warn'){
 
 function refreshAdminSyncLabelsV328(){
   const code=cloudSessionShortV327();
-  const push=document.getElementById('forcePushAdminStateV328Btn');
-  const pull=document.getElementById('forceReloadAdminStateV328Btn');
-  const box=document.getElementById('adminSyncBoxV328');
+  const push=(document.getElementById('forcePushAdminStateV328Btn')||document.getElementById('forcePushAdminStateV330Btn'));
+  const pull=(document.getElementById('forceReloadAdminStateV328Btn')||document.getElementById('forceReloadAdminStateV330Btn'));
+  const box=(document.getElementById('adminSyncBoxV328')||document.getElementById('adminSyncBoxV330'));
   if(box)box.style.display=(cloudReady&&cloudRole==='admin')?'':'none';
   if(push)push.textContent='📤 Envoyer cet état'+(code?' à '+code:' à la session');
   if(pull)pull.textContent='📥 Recharger depuis '+(code||'la session');
@@ -1274,7 +1274,7 @@ let forcePushArmedUntilV331=0;
 
 function resetForcePushArmV331(){
   forcePushArmedUntilV331=0;
-  const btn=document.getElementById('forcePushAdminStateV328Btn');
+  const btn=(document.getElementById('forcePushAdminStateV328Btn')||document.getElementById('forcePushAdminStateV330Btn'));
   if(btn)refreshAdminSyncLabelsV328();
 }
 
@@ -1284,7 +1284,7 @@ function forcePushAdminStateV331(e){
     e?.stopPropagation?.();
   }catch(_){}
 
-  const btn=document.getElementById('forcePushAdminStateV328Btn');
+  const btn=(document.getElementById('forcePushAdminStateV328Btn')||document.getElementById('forcePushAdminStateV330Btn'));
   const code=cloudSessionShortV327()||'session';
   const now=Date.now();
 
@@ -1332,7 +1332,7 @@ async function forcePushAdminStateV328(options={}){
     if(!ok)return;
   }
 
-  const btn=document.getElementById('forcePushAdminStateV328Btn');
+  const btn=(document.getElementById('forcePushAdminStateV328Btn')||document.getElementById('forcePushAdminStateV330Btn'));
   try{
     if(btn){btn.disabled=true;btn.textContent='⏳ Envoi vers '+code+'…';}
     setCloudStatus('syncing','● Synchronisation sécurisée…');
@@ -1510,7 +1510,7 @@ async function forceReloadAdminStateV328(){
   );
   if(!ok)return;
 
-  const btn=document.getElementById('forceReloadAdminStateV328Btn');
+  const btn=(document.getElementById('forceReloadAdminStateV328Btn')||document.getElementById('forceReloadAdminStateV330Btn'));
   try{
     if(btn){btn.disabled=true;btn.textContent='⏳ Rechargement '+code+'…';}
     setCloudStatus('syncing','● Synchronisation sécurisée…');
