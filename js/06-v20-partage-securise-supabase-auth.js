@@ -10,6 +10,9 @@ let cloudCfg={url:DEFAULT_SUPABASE_URL,key:DEFAULT_SUPABASE_KEY,sessionId:'',acc
 let cloudClient=null,cloudReady=false,cloudChannel=null,cloudPresenceChannel=null,cloudSyncTimer=null;
 let cloudPresenceState={},testerActivityMeta={};
 let lastCloudConfigHash='',lastCloudAnswerHashes=new Map(),cloudBusy=false,guestTester=null;
+/* V323 — aucune demande de synchro/rafraîchissement ne doit être perdue
+   lorsqu'une opération cloud est déjà en cours. */
+let cloudSyncPendingV323=false,cloudConfigReloadPendingV323=false,cloudAnswersReloadPendingV323=false;
 let cloudRole=null,cloudTesterNo=null,cloudUserId=null,cloudSecure=true;
 const originalSaveState=saveState;
 const originalRenderHome=renderHome;
@@ -378,6 +381,82 @@ function preserveRicherAdminLocalDataV256(cfg,prev){
   return cfg;
 }
 
+function preserveRicherAdminWorkflowV323(cfg,prev){
+  if(!cfg||!prev)return cfg;
+
+  function newer(localTs,remoteTs){
+    localTs=String(localTs||'');remoteTs=String(remoteTs||'');
+    return !!localTs&&(!remoteTs||localTs>remoteTs);
+  }
+  function closureScore(x){
+    if(!x||typeof x!=='object')return 0;
+    return ['date','place','chair','chairRole','coSigner','coSignerRole','notes','chairSignature','coSignature']
+      .reduce((n,k)=>n+(String(x[k]||'').trim()?1:0),0);
+  }
+  function occenaScore(x){
+    if(!x||typeof x!=='object')return 0;
+    const items=x.items&&typeof x.items==='object'?Object.values(x.items):[];
+    const done=items.filter(v=>v&&typeof v==='object'&&String(v.checkedAt||'').trim()).length;
+    const scores=x.supplierScores&&typeof x.supplierScores==='object'
+      ?Object.values(x.supplierScores).filter(v=>String(v||'').trim()).length:0;
+    return done*10+scores;
+  }
+
+  try{
+    const lc=prev.closure&&typeof prev.closure==='object'?prev.closure:null;
+    const rc=cfg.closure&&typeof cfg.closure==='object'?cfg.closure:null;
+    if(lc && (
+      closureScore(lc)>closureScore(rc) ||
+      newer(lc.updatedAt,rc&&rc.updatedAt)
+    )){
+      cfg.closure=deepClone(lc);
+    }
+  }catch(e){}
+
+  try{
+    const localConclusion=String(prev.juryConclusion||'').trim();
+    const remoteConclusion=String(cfg.juryConclusion||'').trim();
+    if(localConclusion && (
+      !remoteConclusion ||
+      newer(prev.juryConclusionUpdatedAt,cfg.juryConclusionUpdatedAt)
+    )){
+      cfg.juryConclusion=prev.juryConclusion;
+      cfg.juryConclusionUpdatedAt=prev.juryConclusionUpdatedAt||cfg.juryConclusionUpdatedAt||'';
+    }
+  }catch(e){}
+
+  try{
+    const localNote=String(prev.reportNote||'').trim();
+    const remoteNote=String(cfg.reportNote||'').trim();
+    if(localNote && (
+      !remoteNote ||
+      newer(prev.reportNoteUpdatedAt,cfg.reportNoteUpdatedAt)
+    )){
+      cfg.reportNote=prev.reportNote;
+      cfg.reportNoteUpdatedAt=prev.reportNoteUpdatedAt||cfg.reportNoteUpdatedAt||'';
+    }
+  }catch(e){}
+
+  try{
+    const lo=prev.occenaControl&&typeof prev.occenaControl==='object'?prev.occenaControl:null;
+    const ro=cfg.occenaControl&&typeof cfg.occenaControl==='object'?cfg.occenaControl:null;
+    if(lo && (
+      occenaScore(lo)>occenaScore(ro) ||
+      newer(lo.updatedAt,ro&&ro.updatedAt)
+    )){
+      cfg.occenaControl=deepClone(lo);
+    }
+  }catch(e){}
+
+  try{
+    if(prev.juryClose?.closedAt && !cfg.juryClose?.closedAt){
+      cfg.juryClose=deepClone(prev.juryClose);
+    }
+  }catch(e){}
+
+  return cfg;
+}
+
 function restoreAdminShareMetadataV248(cfg,previousCfg=null){
   if(!cfg||typeof cfg!=='object'||cloudRole!=='admin')return cfg;
 
@@ -386,6 +465,7 @@ function restoreAdminShareMetadataV248(cfg,previousCfg=null){
   /* V256 — ne jamais écraser une fiche produit locale plus complète
      par une configuration cloud moins riche. */
   preserveRicherAdminLocalDataV256(cfg,prev);
+  preserveRicherAdminWorkflowV323(cfg,prev);
 
   const sid=String(
     cfg._shareSessionId||
@@ -416,6 +496,7 @@ function rebuildLocalFromCloud(config,rows=[]){
   updateTesterActivityFromRows(rows);
   const previous=state?.testers||{};
   const previousCfg=deepClone(state?.config||{});
+  const serverConfigHashV323=hashJson(config||{});
   const incoming=(cloudRole==='admin')
     ?restoreAdminShareMetadataV248(deepClone(config||{}),previousCfg)
     :config;
@@ -443,6 +524,17 @@ function rebuildLocalFromCloud(config,rows=[]){
     const k=sampleKey(r.product_id,r.sample_id);
     state.testers[t].answers[k]={choices:Array.isArray(r.choices)?r.choices:Array(QUESTIONS.length).fill(null),remarks:Array.isArray(r.remarks)?r.remarks:Array(QUESTIONS.length).fill('')}
   });
+
+  /* V323 — si le serveur ne possède pas encore une validation que cet
+     administrateur a déjà localement, la conserver afin de la repousser. */
+  if(cloudRole==='admin'){
+    for(let t=1;t<=state.config.testerCount;t++){
+      if(!state.testers[t]?.validatedAt && previous[t]?.validatedAt){
+        state.testers[t].validatedAt=previous[t].validatedAt;
+      }
+    }
+  }
+
   if(cloudRole==='admin'){
     restoreAdminShareMetadataV248(state.config,previousCfg);
     try{
@@ -456,7 +548,10 @@ function rebuildLocalFromCloud(config,rows=[]){
   currentProduct=state.config.products[0]?.id||'';
   currentSample=state.config.products[0]?.samples[0]?.id||'';
   adminProduct=currentProduct;
-  lastCloudConfigHash=hashJson(state.config);lastCloudAnswerHashes=new Map();
+  /* V323 — mémoriser ce que le SERVEUR avait réellement. Si les données
+     locales plus riches ont été conservées, le prochain sync les détectera. */
+  lastCloudConfigHash=cloudRole==='admin'?serverConfigHashV323:hashJson(state.config);
+  lastCloudAnswerHashes=new Map();
   for(let t=1;t<=state.config.testerCount;t++){
     Object.entries(state.testers[t]?.answers||{}).forEach(([k,a])=>lastCloudAnswerHashes.set(`${t}::${k}`,hashJson(a)));
     lastCloudAnswerHashes.set(`${t}::__validation__`,hashJson(state.testers[t]?.validatedAt||null))
@@ -520,6 +615,7 @@ async function connectCloud({create=false}={}){
     await fetchCloudState();
     cloudReady=true
   }
+  if(cloudRole==='admin')scheduleCloudSync();
   saveCloudCfg();$('#cloudSession').value=cloudCfg.sessionId;
   await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');
   cloudMsg(`Session sécurisée connectée · ${cloudRole==='admin'?'administrateur':`testeur ${cloudTesterNo}`}.`,'ok');
@@ -699,7 +795,9 @@ unlockTester=function(t){
 window.unlockTester=unlockTester;
 
 async function reloadCloudAnswers(){if(testerPreviewMode)return;
-  if(!cloudReady||cloudBusy)return;
+  if(!cloudReady)return;
+  if(cloudBusy){cloudAnswersReloadPendingV323=true;return;}
+  cloudAnswersReloadPendingV323=false;
 
   /* V277 — un testeur peut cliquer « Valider » juste au moment où le temps réel
      recharge sa dernière réponse. Dans ce très court intervalle, le marqueur
@@ -810,7 +908,17 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
   if($('#adminView').classList.contains('active'))originalRenderAdmin();else if($('#liveDayView')?.classList.contains('active'))renderLiveDayCards();else if($('#launchView')?.classList.contains('active'))renderLaunchView();else if($('#juryView')?.classList.contains('active'))renderJuryView();else if($('#projectionView')?.classList.contains('active'))renderProjectionData();else if($('#homeView').classList.contains('active'))originalRenderHome();else if($('#testerView').classList.contains('active'))renderSample()
 }
 async function reloadCloudConfig(){if(testerPreviewMode)return;
-  if(!cloudReady||cloudBusy)return;
+  if(!cloudReady)return;
+  if(cloudBusy){cloudConfigReloadPendingV323=true;return;}
+  cloudConfigReloadPendingV323=false;
+
+  /* V323 — ne jamais remplacer des modifications administrateur locales
+     qui attendent encore leur envoi par une ancienne version du serveur. */
+  if(cloudRole==='admin' && hashJson(state.config)!==lastCloudConfigHash){
+    scheduleCloudSync();
+    cloudConfigReloadPendingV323=true;
+    return;
+  }
   if(cloudRole==='admin'){
     const {data,error}=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',cloudCfg.sessionId).maybeSingle();if(error||!data?.config)return;
     if(hashJson(data.config)===hashJson(state.config))return;
@@ -846,7 +954,10 @@ async function pushAllAnswers(){
   if(rows.length){const {error}=await cloudClient.from('test_culinaire_reponses').upsert(rows,{onConflict:'session_id,tester_no,product_id,sample_id'});if(error)throw error}
 }
 async function syncDirtyToCloud(){if(testerPreviewMode)return;
-  if(!cloudReady||cloudBusy)return;cloudBusy=true;setCloudStatus('syncing','● Synchronisation sécurisée…');
+  if(!cloudReady)return;
+  if(cloudBusy){cloudSyncPendingV323=true;return;}
+  cloudSyncPendingV323=false;
+  cloudBusy=true;setCloudStatus('syncing','● Synchronisation sécurisée…');
   try{
     if(cloudRole==='admin'){
       const cfgHash=hashJson(state.config);
@@ -928,9 +1039,32 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
     console.error(e);setCloudStatus('error','● Erreur cloud');
     const msg=String(e?.message||e);
     cloudMsg(/row-level security|policy/i.test(msg)?'Sécurité Supabase : cette opération n’est pas autorisée pour ce rôle.':`Synchronisation impossible : ${msg}`,'bad')
-  }finally{cloudBusy=false}
+  }finally{
+    cloudBusy=false;
+
+    /* V323 — rejouer ce qui est arrivé pendant la synchro au lieu de le perdre. */
+    const configStillDirty=cloudRole==='admin'&&hashJson(state.config)!==lastCloudConfigHash;
+    if(cloudSyncPendingV323||configStillDirty){
+      cloudSyncPendingV323=false;
+      clearTimeout(cloudSyncTimer);
+      cloudSyncTimer=setTimeout(syncDirtyToCloud,90);
+    }
+    if(cloudAnswersReloadPendingV323){
+      cloudAnswersReloadPendingV323=false;
+      setTimeout(reloadCloudAnswers,140);
+    }
+    if(cloudConfigReloadPendingV323){
+      cloudConfigReloadPendingV323=false;
+      setTimeout(reloadCloudConfig,170);
+    }
+  }
 }
-function scheduleCloudSync(){if(!cloudReady)return;clearTimeout(cloudSyncTimer);cloudSyncTimer=setTimeout(syncDirtyToCloud,300)}
+function scheduleCloudSync(){
+  if(!cloudReady)return;
+  cloudSyncPendingV323=true;
+  clearTimeout(cloudSyncTimer);
+  cloudSyncTimer=setTimeout(syncDirtyToCloud,300);
+}
 saveState=function(){if(testerPreviewMode)return;originalSaveState();scheduleCloudSync()};
 renderHome=function(){originalRenderHome();if(cloudReady)setCloudStatus('online','● Partagé sécurisé');renderShareLinks()};
 renderAdmin=function(){originalRenderAdmin();if(cloudReady)setCloudStatus('online','● Partagé sécurisé')};
@@ -957,7 +1091,7 @@ async function autoConnectFromUrl(){
   if(cloudCfg.url&&cloudCfg.key&&cloudCfg.sessionId){
     try{
       $('#cloudUrl').value=cloudCfg.url;$('#cloudKey').value=cloudCfg.key;$('#cloudSession').value=cloudCfg.sessionId;
-      buildCloudClient();setCloudStatus('syncing','● Authentification…');await ensureCloudAuth();await joinSecureSession();await fetchCloudState();cloudReady=true;saveCloudCfg();await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');
+      buildCloudClient();setCloudStatus('syncing','● Authentification…');await ensureCloudAuth();await joinSecureSession();await fetchCloudState();cloudReady=true;if(cloudRole==='admin')scheduleCloudSync();saveCloudCfg();await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');
       if(guestTester||cloudRole==='tester'){document.body.classList.add('guest-mode');guestTester=cloudTesterNo||guestTester;currentTester=guestTester;openTester(guestTester);$('#testerSelect').disabled=true}
       else originalRenderHome()
     }catch(e){
