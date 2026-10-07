@@ -6893,7 +6893,7 @@ function renderClosure(){
   renderClosureStatus(c);
   setupSignatureCanvas('chairSignature',c.chairSignature||'');
   setupSignatureCanvas('coSignature',c.coSignature||'');
-  setClosureSaveIndicator('✓ Enregistré automatiquement');
+  setClosureSaveIndicator('💾 Enregistrer');
 }
 function captureClosureForm(){
   const c=normalizeClosureMembers();
@@ -6921,37 +6921,18 @@ function setClosureSaveIndicator(text){
 }
 function scheduleClosureAutosave(preserveScrollY=null){
   clearTimeout(closureAutosaveTimer);
-  setClosureSaveIndicator('Enregistrement automatique…');
+
+  /* V320 — la clôture n'est plus enregistrée automatiquement.
+     Toute modification indique seulement qu'il faut appuyer sur Enregistrer. */
+  setClosureSaveIndicator('💾 Enregistrer');
 
   const keepY=Number.isFinite(Number(preserveScrollY))?Number(preserveScrollY):null;
-  const restorePosition=()=>{
-    if(keepY===null)return;
+  if(keepY!==null){
     requestAnimationFrame(()=>{
       const current=window.scrollY||window.pageYOffset||0;
       if(Math.abs(current-keepY)>2)window.scrollTo(0,keepY);
     });
-  };
-
-  closureAutosaveTimer=setTimeout(async()=>{
-    try{
-      const c=captureClosureForm();
-      saveState();
-      renderClosureStatus(c);
-      setClosureSaveIndicator('✓ Enregistré automatiquement');
-
-      /* V286 — une signature ne doit jamais faire remonter la fiche.
-         On remet immédiatement la page exactement à la position où la personne
-         a signé, sans recharger ni rerendre la fiche. */
-      restorePosition();
-
-      if(typeof syncDirtyToCloud==='function'){
-        try{await syncDirtyToCloud()}catch(e){}
-      }
-    }catch(e){
-      console.warn('Enregistrement automatique de la clôture impossible',e);
-      setClosureSaveIndicator('Enregistrer la fiche');
-    }
-  },keepY===null?500:40);
+  }
 }
 
 async function saveClosure(){
@@ -6964,7 +6945,10 @@ async function saveClosure(){
     try{await syncDirtyToCloud()}catch(e){}
   }
 
-  setClosureSaveIndicator('✓ Enregistré automatiquement');
+  setClosureSaveIndicator(ready?'✓ Enregistré':'💾 Enregistrer');
+  if(typeof syncSimpleResultsActions==='function'){
+    try{syncSimpleResultsActions()}catch(e){}
+  }
 
   if(ready){
     toast('Fiche de clôture complète et enregistrée ✓');
@@ -9505,7 +9489,7 @@ async function duplicateArchive(id){
 function copyArchiveAsNew(id){return duplicateArchive(id)}
 
 $('#homeBtn').onclick=renderHome;$('#archivesBtn').onclick=renderArchives;$('#archivesHomeBtn').onclick=renderHome;$('#archivesBackHubBtn').onclick=()=>renderHome();$('#archiveMoreFiltersBtn').onclick=()=>toggleArchiveFilters();
-$('#closureBackBtn').onclick=()=>{captureClosureForm();saveState();renderAdmin()};
+$('#closureBackBtn').onclick=()=>{renderAdmin()};
 $('#saveClosureBtn').onclick=saveClosure;
 ['closureDate','closurePlace','closureChair','closureChairRole','closureCoSigner','closureCoSignerRole','closureNotes'].forEach(id=>{
   const el=$('#'+id);
