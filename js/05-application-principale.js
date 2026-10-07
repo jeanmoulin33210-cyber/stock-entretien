@@ -9608,3 +9608,38 @@ ensureRunningJuryCloudSync=async function(){
     throw e;
   }
 };
+
+
+/* --- V335 : interface jury automatique, sans confirmation manuelle normale --- */
+const renderJuryViewBeforeV335=renderJuryView;
+renderJuryView=function(){
+  renderJuryViewBeforeV335();
+
+  /* Un testeur qui a rempli toutes ses fiches doit valider lui-même sur son
+     téléphone. Le responsable n'a plus à confirmer sa fin depuis le PC. */
+  document.querySelectorAll('.jury-confirm-finished').forEach(function(btn){
+    const card=btn.closest('.jury-tester-card');
+    const status=card?.querySelector('.jury-tester-status');
+    if(status){
+      status.textContent='Validation finale attendue';
+      status.title='La validation du testeur remontera automatiquement dès qu’il valide sur son téléphone.';
+    }
+    const actions=btn.parentElement;
+    btn.remove();
+    if(actions&&!actions.querySelector('.jury-auto-wait')){
+      const info=document.createElement('span');
+      info.className='jury-auto-wait small';
+      info.textContent='Synchronisation automatique';
+      actions.appendChild(info);
+    }
+  });
+
+  /* Le bouton de fin reste uniquement comme témoin/compatibilité : le jury
+     se ferme automatiquement dès que tous les testeurs ont validé. */
+  const finishBtn=document.getElementById('juryFinishBtn');
+  if(finishBtn&&!isJuryClosed()){
+    finishBtn.textContent='🏁 Fin automatique du jury';
+    finishBtn.title='Le jury se terminera automatiquement dès que tous les testeurs auront validé.';
+  }
+};
+window.renderJuryView=renderJuryView;
