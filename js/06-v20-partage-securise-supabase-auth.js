@@ -1828,3 +1828,180 @@ bindAdminSyncButtonsV330=function(){
   }
 };
 bindAdminSyncButtonsV330();
+
+
+/* --- V333 : sauvegarde des validations dans la configuration partagée --- */
+function validationBackupV333(sourceState=state){
+  const out={};
+  const count=Number(sourceState?.config?.testerCount||0);
+  for(let t=1;t<=count;t++){
+    const stamp=sourceState?.testers?.[t]?.validatedAt||null;
+    if(stamp)out[String(t)]=String(stamp);
+  }
+  return out;
+}
+
+function applyValidationBackupV333(targetState,config){
+  const backup=config?._validatedTestersV333;
+  if(!backup||typeof backup!=='object')return 0;
+  let restored=0;
+  const count=Number(targetState?.config?.testerCount||0);
+  for(let t=1;t<=count;t++){
+    const stamp=backup[String(t)]||backup[t]||null;
+    if(stamp&&targetState?.testers?.[t]&&!targetState.testers[t].validatedAt){
+      targetState.testers[t].validatedAt=String(stamp);
+      restored++;
+    }
+  }
+  return restored;
+}
+
+/* Le rechargement manuel du PC doit aussi lire la copie de secours V333. */
+const applyServerAdminSnapshotV328BeforeV333=applyServerAdminSnapshotV328;
+applyServerAdminSnapshotV328=function(config,rows){
+  applyServerAdminSnapshotV328BeforeV333(config,rows);
+  applyValidationBackupV333(state,config||state.config||{});
+  originalSaveState();
+  setAnswerHashesFromLocalV328();
+};
+
+/* Après une actualisation temps réel des réponses, ne jamais reperdre une
+   validation déjà certifiée dans la configuration partagée. */
+const reloadCloudAnswersBeforeV333=reloadCloudAnswers;
+reloadCloudAnswers=async function(){
+  await reloadCloudAnswersBeforeV333();
+  if(cloudRole==='admin'){
+    const restored=applyValidationBackupV333(state,state.config||{});
+    if(restored){
+      originalSaveState();
+      if(document.getElementById('adminView')?.classList.contains('active'))originalRenderAdmin();
+      else if(document.getElementById('homeView')?.classList.contains('active'))originalRenderHome();
+    }
+  }
+};
+window.reloadCloudAnswers=reloadCloudAnswers;
+
+/* V333 remplace l'envoi V332 : les validations sont envoyées deux fois,
+   dans les réponses ET dans la configuration de session. */
+const forcePushAdminStateV332BeforeV333=forcePushAdminStateV328;
+forcePushAdminStateV328=async function(options={}){
+  if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId){
+    alert('La session sécurisée administrateur n’est pas connectée.');
+    return false;
+  }
+
+  const code=cloudSessionShortV327()||'session';
+  if(!options?.skipConfirm){
+    const ok=confirm(
+      'Envoyer l’état COMPLET de CET appareil vers '+code+' ?\n\n'+
+      'Les réponses, la clôture et les validations de cet appareil deviendront la référence partagée.'
+    );
+    if(!ok)return false;
+  }
+
+  if(cloudBusy){
+    adminSyncMessageV328('Une synchronisation est déjà en cours. Attendez quelques secondes puis réessayez.','warn');
+    return false;
+  }
+
+  const snap=authoritativeSnapshotV332();
+  const backup=validationBackupV333(snap);
+  const expectedValidated=Object.keys(backup).map(Number);
+  const btn=(document.getElementById('forcePushAdminStateV328Btn')||document.getElementById('forcePushAdminStateV330Btn'));
+
+  cloudBusy=true;
+  try{
+    if(btn){btn.disabled=true;btn.textContent='⏳ Envoi complet vers '+code+'…';}
+    setCloudStatus('syncing','● Synchronisation sécurisée…');
+    adminSyncMessageV328('Envoi de l’état complet et des validations vers '+code+'…','warn');
+
+    const outgoing=deepClone(snap.config||{});
+    outgoing._shareSessionId=cloudCfg.sessionId;
+    outgoing._validatedTestersV333=backup;
+    outgoing._validatedTestersV333UpdatedAt=new Date().toISOString();
+    if(outgoing.juryLaunch?.openedAt){
+      outgoing.juryLaunch={...(outgoing.juryLaunch||{}),sessionId:cloudCfg.sessionId};
+    }
+
+    const {error:configError}=await cloudClient
+      .from('test_culinaire_sessions')
+      .update({
+        config:outgoing,
+        public_config:makePublicCloudConfig(outgoing),
+        updated_at:new Date().toISOString()
+      })
+      .eq('session_id',cloudCfg.sessionId);
+    if(configError)throw configError;
+
+    await upsertRowsV332(answerRowsFromSnapshotV332(snap));
+
+    const validationRows=validationRowsFromSnapshotV332(snap);
+    const {error:validationError}=await cloudClient
+      .from('test_culinaire_reponses')
+      .upsert(validationRows,{onConflict:'session_id,tester_no,product_id,sample_id'});
+    if(validationError)console.warn('V333 : validation meta partiellement refusée, secours config actif',validationError);
+
+    const {data:serverSession,error:verifyConfigError}=await cloudClient
+      .from('test_culinaire_sessions')
+      .select('config')
+      .eq('session_id',cloudCfg.sessionId)
+      .maybeSingle();
+    if(verifyConfigError)throw verifyConfigError;
+
+    const serverBackup=serverSession?.config?._validatedTestersV333||{};
+    const verified=expectedValidated.filter(t=>!!(serverBackup[String(t)]||serverBackup[t]));
+    if(verified.length!==expectedValidated.length){
+      throw new Error('La session n’a confirmé que '+verified.length+'/'+expectedValidated.length+' validations.');
+    }
+
+    state.config=outgoing;
+    state.testers=snap.testers;
+    originalSaveState();
+    lastCloudConfigHash=hashJson(outgoing);
+    setAnswerHashesFromLocalV328();
+
+    setCloudStatus('online','● Partagé sécurisé');
+    adminSyncMessageV328(
+      '✓ État envoyé vers '+code+' · validations sauvegardées '+verified.length+'/'+expectedValidated.length+'. Recharger maintenant l’ordinateur depuis '+code+'.',
+      'ok'
+    );
+    toast('Validations sauvegardées '+verified.length+'/'+expectedValidated.length+' ✓');
+    return true;
+  }catch(e){
+    console.error(e);
+    setCloudStatus('error','● Erreur cloud');
+    adminSyncMessageV328('Envoi impossible : '+(e?.message||e),'bad');
+    return false;
+  }finally{
+    cloudBusy=false;
+    if(btn){btn.disabled=false;refreshAdminSyncLabelsV328();}
+  }
+};
+
+async function forcePushAdminStateV333(e){
+  try{e?.preventDefault?.();e?.stopPropagation?.();}catch(_){}
+  return forcePushAdminStateV328({skipConfirm:false});
+}
+window.forcePushAdminStateV333=forcePushAdminStateV333;
+window.forcePushAdminStateV332=forcePushAdminStateV333;
+window.forcePushAdminStateV331=forcePushAdminStateV333;
+
+bindAdminSyncButtonsV330=function(){
+  const push=(document.getElementById('forcePushAdminStateV328Btn')||document.getElementById('forcePushAdminStateV330Btn'));
+  const pull=(document.getElementById('forceReloadAdminStateV328Btn')||document.getElementById('forceReloadAdminStateV330Btn'));
+  if(push){push.type='button';push.onclick=forcePushAdminStateV333;}
+  if(pull){
+    pull.type='button';
+    pull.onclick=async function(e){
+      try{
+        e?.preventDefault?.();
+        e?.stopPropagation?.();
+        await forceReloadAdminStateV328();
+      }catch(err){
+        console.error(err);
+        alert('Impossible de lancer le rechargement depuis la session. '+(err?.message||err||''));
+      }
+    };
+  }
+};
+bindAdminSyncButtonsV330();
