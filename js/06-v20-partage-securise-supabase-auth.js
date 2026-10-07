@@ -77,7 +77,8 @@ function renderCloudPage(){
   $('#cloudUrl').value=cloudCfg.url||'';$('#cloudKey').value=cloudCfg.key||'';$('#cloudSession').value=cloudCfg.sessionId||'';
   if(cloudReady)serverSecurityStatus(`Sécurité serveur active · ${cloudRole==='admin'?'Administrateur':`Testeur ${cloudTesterNo||''}`}`,`Utilisateur Supabase authentifié. RLS limite les données accessibles à ce rôle.`,true);
   else serverSecurityStatus('Sécurité serveur V32','Supabase Auth + rôles + RLS. Le script SQL V20 doit avoir été exécuté et les connexions anonymes activées.',true);
-  renderShareLinks()
+  renderShareLinks();
+  refreshAdminSyncLabelsV328();
 }
 function currentBaseUrl(){
   const publicStableUrl='https://jeanmoulin33210-cyber.github.io/stock-entretien/tests-culinaires.html';
@@ -636,7 +637,7 @@ async function connectCloud({create=false}={}){
   }
   if(cloudRole==='admin')scheduleCloudSync();
   saveCloudCfg();$('#cloudSession').value=cloudCfg.sessionId;
-  await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');
+  await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');refreshAdminSyncLabelsV328();
   cloudMsg(`Session sécurisée connectée · ${cloudRole==='admin'?'administrateur':`testeur ${cloudTesterNo}`}.`,'ok');
   serverSecurityStatus('Sécurité serveur active ✓',`Supabase Auth connecté · rôle ${cloudRole==='admin'?'administrateur':`testeur ${cloudTesterNo}`}.`,true);
   renderShareLinks();
@@ -1215,6 +1216,195 @@ clearAnswers=async function(){
     else{lastCloudAnswerHashes=new Map();setCloudStatus('online','● Partagé sécurisé')}
   }
 };
+function adminSyncMessageV328(text,kind='warn'){
+  const el=document.getElementById('adminSyncMessageV328');
+  if(!el)return;
+  el.className='connection-banner show '+kind;
+  el.textContent=text;
+}
+
+function refreshAdminSyncLabelsV328(){
+  const code=cloudSessionShortV327();
+  const push=document.getElementById('forcePushAdminStateV328Btn');
+  const pull=document.getElementById('forceReloadAdminStateV328Btn');
+  const box=document.getElementById('adminSyncBoxV328');
+  if(box)box.style.display=(cloudReady&&cloudRole==='admin')?'':'none';
+  if(push)push.textContent='📤 Envoyer cet état'+(code?' à '+code:' à la session');
+  if(pull)pull.textContent='📥 Recharger depuis '+(code||'la session');
+}
+
+function setAnswerHashesFromLocalV328(){
+  lastCloudAnswerHashes=new Map();
+  for(let t=1;t<=Number(state.config?.testerCount||0);t++){
+    Object.entries(state.testers?.[t]?.answers||{}).forEach(([k,a])=>{
+      lastCloudAnswerHashes.set(`${t}::${k}`,hashJson(a));
+    });
+    lastCloudAnswerHashes.set(`${t}::__validation__`,hashJson(state.testers?.[t]?.validatedAt||null));
+  }
+}
+
+async function forcePushAdminStateV328(){
+  if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId){
+    alert('La session sécurisée administrateur n’est pas connectée.');
+    return;
+  }
+
+  const code=cloudSessionShortV327()||'session';
+  const ok=confirm(
+    'Envoyer l’état de CET appareil vers '+code+' ?\n\n'+
+    'Utilisez cette commande uniquement sur l’appareil qui affiche les bonnes données. '+
+    'La configuration, la clôture, la conclusion, OCCENA et les validations de cet appareil deviendront la référence partagée.'
+  );
+  if(!ok)return;
+
+  const btn=document.getElementById('forcePushAdminStateV328Btn');
+  try{
+    if(btn){btn.disabled=true;btn.textContent='⏳ Envoi vers '+code+'…';}
+    setCloudStatus('syncing','● Synchronisation sécurisée…');
+    adminSyncMessageV328('Envoi de l’état complet de cet appareil vers '+code+'…','warn');
+
+    const outgoing=deepClone(state.config||{});
+    outgoing._shareSessionId=cloudCfg.sessionId;
+    if(outgoing.juryLaunch?.openedAt){
+      outgoing.juryLaunch={...(outgoing.juryLaunch||{}),sessionId:cloudCfg.sessionId};
+    }
+
+    const {error}=await cloudClient
+      .from('test_culinaire_sessions')
+      .update({
+        config:outgoing,
+        public_config:makePublicCloudConfig(outgoing),
+        updated_at:new Date().toISOString()
+      })
+      .eq('session_id',cloudCfg.sessionId);
+    if(error)throw error;
+
+    state.config=outgoing;
+    originalSaveState();
+
+    /* Envoyer toutes les réponses et surtout les validations 4/4 sans dépendre
+       des hashes de synchronisation automatique. */
+    await pushAllAnswers();
+
+    lastCloudConfigHash=hashJson(outgoing);
+    setAnswerHashesFromLocalV328();
+
+    setCloudStatus('online','● Partagé sécurisé');
+    adminSyncMessageV328('✓ État de cet appareil envoyé vers '+code+'. Vous pouvez maintenant recharger l’autre appareil depuis la session.','ok');
+    toast('État envoyé vers '+code+' ✓');
+  }catch(e){
+    console.error(e);
+    setCloudStatus('error','● Erreur cloud');
+    adminSyncMessageV328('Envoi impossible : '+(e?.message||e),'bad');
+  }finally{
+    if(btn){btn.disabled=false;refreshAdminSyncLabelsV328();}
+  }
+}
+
+function applyServerAdminSnapshotV328(config,rows){
+  const cfg=deepClone(config||{});
+  cfg._shareSessionId=cloudCfg.sessionId;
+  if(cfg.juryLaunch?.openedAt){
+    cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:cloudCfg.sessionId};
+  }
+
+  const newState=makeInitialState(cfg);
+  (rows||[]).forEach(r=>{
+    const t=Number(r.tester_no);
+    if(!newState.testers?.[t])return;
+
+    if(r.product_id==='__meta__'&&r.sample_id==='__validation__'){
+      newState.testers[t].validatedAt=Array.isArray(r.remarks)?(r.remarks[0]||null):null;
+      return;
+    }
+    if(r.product_id==='__meta__'&&r.sample_id==='__launch__'){
+      const remarks=Array.isArray(r.remarks)?r.remarks:[];
+      const openedAt=String(remarks[0]||r.updated_at||'');
+      const instanceId=String(remarks[1]||newState.config?.juryInstanceId||'').trim();
+      if(openedAt){
+        if(instanceId){
+          newState.config.juryInstanceId=instanceId;
+          newState.config._juryInstanceId=instanceId;
+        }
+        newState.config.juryLaunch={
+          openedAt,
+          instanceId:instanceId||juryInstanceId(newState.config),
+          sessionId:cloudCfg.sessionId
+        };
+      }
+      return;
+    }
+
+    const k=sampleKey(r.product_id,r.sample_id);
+    newState.testers[t].answers[k]={
+      choices:Array.isArray(r.choices)?r.choices:Array(QUESTIONS.length).fill(null),
+      remarks:Array.isArray(r.remarks)?r.remarks:Array(QUESTIONS.length).fill('')
+    };
+  });
+
+  state=newState;
+  originalSaveState();
+  lastCloudConfigHash=hashJson(state.config);
+  setAnswerHashesFromLocalV328();
+
+  currentTester=Math.min(currentTester,state.config.testerCount)||1;
+  currentProduct=state.config.products[0]?.id||'';
+  currentSample=state.config.products[0]?.samples[0]?.id||'';
+  adminProduct=currentProduct;
+}
+
+async function forceReloadAdminStateV328(){
+  if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId){
+    alert('La session sécurisée administrateur n’est pas connectée.');
+    return;
+  }
+
+  const code=cloudSessionShortV327()||'session';
+  const ok=confirm(
+    'Recharger CET appareil depuis '+code+' ?\n\n'+
+    'Les données locales de cet appareil seront remplacées par l’état actuellement enregistré dans la session sécurisée.'
+  );
+  if(!ok)return;
+
+  const btn=document.getElementById('forceReloadAdminStateV328Btn');
+  try{
+    if(btn){btn.disabled=true;btn.textContent='⏳ Rechargement '+code+'…';}
+    setCloudStatus('syncing','● Synchronisation sécurisée…');
+    adminSyncMessageV328('Lecture de '+code+'…','warn');
+
+    const {data:session,error:e1}=await cloudClient
+      .from('test_culinaire_sessions')
+      .select('config')
+      .eq('session_id',cloudCfg.sessionId)
+      .maybeSingle();
+    if(e1)throw e1;
+    if(!session?.config)throw new Error('Configuration partagée introuvable.');
+
+    const {data:rows,error:e2}=await cloudClient
+      .from('test_culinaire_reponses')
+      .select('tester_no,product_id,sample_id,choices,remarks,updated_at')
+      .eq('session_id',cloudCfg.sessionId);
+    if(e2)throw e2;
+
+    applyServerAdminSnapshotV328(session.config,rows||[]);
+    setCloudStatus('online','● Partagé sécurisé');
+    adminSyncMessageV328('✓ Cet appareil a été rechargé depuis '+code+'.','ok');
+    toast('Données rechargées depuis '+code+' ✓');
+
+    if(document.getElementById('adminView')?.classList.contains('active')){
+      originalRenderAdmin();
+    }else{
+      originalRenderHome();
+    }
+  }catch(e){
+    console.error(e);
+    setCloudStatus('error','● Erreur cloud');
+    adminSyncMessageV328('Rechargement impossible : '+(e?.message||e),'bad');
+  }finally{
+    if(btn){btn.disabled=false;refreshAdminSyncLabelsV328();}
+  }
+}
+
 async function disconnectCloud(){
   cloudReady=false;cloudRole=null;cloudTesterNo=null;cloudUserId=null;
   if(cloudChannel&&cloudClient)try{await cloudClient.removeChannel(cloudChannel)}catch(e){}
@@ -1228,7 +1418,7 @@ async function autoConnectFromUrl(){
   if(cloudCfg.url&&cloudCfg.key&&cloudCfg.sessionId){
     try{
       $('#cloudUrl').value=cloudCfg.url;$('#cloudKey').value=cloudCfg.key;$('#cloudSession').value=cloudCfg.sessionId;
-      buildCloudClient();setCloudStatus('syncing','● Authentification…');await ensureCloudAuth();await joinSecureSession();await fetchCloudState();cloudReady=true;if(cloudRole==='admin')scheduleCloudSync();saveCloudCfg();await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');
+      buildCloudClient();setCloudStatus('syncing','● Authentification…');await ensureCloudAuth();await joinSecureSession();await fetchCloudState();cloudReady=true;if(cloudRole==='admin')scheduleCloudSync();saveCloudCfg();await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');refreshAdminSyncLabelsV328();
       if(guestTester||cloudRole==='tester'){document.body.classList.add('guest-mode');guestTester=cloudTesterNo||guestTester;currentTester=guestTester;openTester(guestTester);$('#testerSelect').disabled=true}
       else originalRenderHome()
     }catch(e){
@@ -1239,6 +1429,8 @@ async function autoConnectFromUrl(){
   }else setCloudStatus('local','● Local')
 }
 $('#cloudBtn').onclick=renderCloudPage;$('#cloudHomeBtn').onclick=renderHome;
+document.getElementById('forcePushAdminStateV328Btn')?.addEventListener('click',forcePushAdminStateV328);
+document.getElementById('forceReloadAdminStateV328Btn')?.addEventListener('click',forceReloadAdminStateV328);
 /* V32 gère la création d'une nouvelle session avec un UUID neuf. */
 $('#connectCloudBtn').onclick=async()=>{try{await connectCloud({create:false})}catch(e){setCloudStatus('error','● Erreur');cloudMsg(e.message||String(e),'bad');serverSecurityStatus('Sécurité serveur non prête',e.message||String(e),false)}};
 $('#disconnectCloudBtn').onclick=disconnectCloud;
