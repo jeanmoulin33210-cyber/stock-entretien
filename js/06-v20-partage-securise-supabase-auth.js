@@ -494,6 +494,12 @@ function restoreAdminShareMetadataV248(cfg,previousCfg=null){
 
 function rebuildLocalFromCloud(config,rows=[]){
   updateTesterActivityFromRows(rows);
+  const serverValidationV323={};
+  rows.forEach(r=>{
+    if(r.product_id==='__meta__'&&r.sample_id==='__validation__'){
+      serverValidationV323[Number(r.tester_no)]=Array.isArray(r.remarks)?(r.remarks[0]||null):null;
+    }
+  });
   const previous=state?.testers||{};
   const previousCfg=deepClone(state?.config||{});
   const serverConfigHashV323=hashJson(config||{});
@@ -554,7 +560,9 @@ function rebuildLocalFromCloud(config,rows=[]){
   lastCloudAnswerHashes=new Map();
   for(let t=1;t<=state.config.testerCount;t++){
     Object.entries(state.testers[t]?.answers||{}).forEach(([k,a])=>lastCloudAnswerHashes.set(`${t}::${k}`,hashJson(a)));
-    lastCloudAnswerHashes.set(`${t}::__validation__`,hashJson(state.testers[t]?.validatedAt||null))
+    /* V323 — hash de la valeur réellement lue sur le serveur. Une validation
+       locale conservée mais absente du serveur sera donc bien renvoyée. */
+    lastCloudAnswerHashes.set(`${t}::__validation__`,hashJson(serverValidationV323[t]||null))
   }
 }
 async function fetchCloudState(){
