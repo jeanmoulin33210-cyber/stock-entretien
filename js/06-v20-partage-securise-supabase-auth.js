@@ -979,10 +979,10 @@ async function reloadCloudConfig(){if(testerPreviewMode)return;
 
     originalSaveState();
 
-    /* Très important : mémoriser l'état réellement lu au serveur, pas le merge.
-       Si le merge contient une donnée locale plus riche, elle sera renvoyée. */
+    /* V326 — on mémorise l'état serveur sans relancer immédiatement un envoi.
+       Cela évite le ping-pong serveur ↔ appareil. Une vraie sauvegarde locale
+       ou la synchro unique de reconnexion pourra ensuite pousser le merge. */
     lastCloudConfigHash=serverHash;
-    if(hashJson(state.config)!==serverHash)scheduleCloudSync();
   }else{
     const {data,error}=await cloudClient.rpc('test_culinaire_get_public_session',{p_session_id:cloudCfg.sessionId});
     if(error)return;
@@ -1025,6 +1025,33 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
   if(!cloudReady)return;
   if(cloudBusy){cloudSyncPendingV323=true;return;}
   cloudSyncPendingV323=false;
+
+  /* V326 — si aucune configuration et aucune réponse n'a changé, rester
+     simplement sur « Partagé sécurisé » sans faire clignoter le bandeau. */
+  let hasPendingV326=cloudRole==='admin'&&hashJson(state.config)!==lastCloudConfigHash;
+  if(!hasPendingV326){
+    const testersV326=cloudRole==='admin'
+      ?Array.from({length:state.config.testerCount},(_,i)=>i+1)
+      :[cloudTesterNo];
+    outerV326:
+    for(const t of testersV326){
+      if(!t||!state.testers[t])continue;
+      for(const [k,a] of Object.entries(state.testers[t]?.answers||{})){
+        if(lastCloudAnswerHashes.get(`${t}::${k}`)!==hashJson(a)){
+          hasPendingV326=true;break outerV326;
+        }
+      }
+      const v=state.testers[t]?.validatedAt||null;
+      if(lastCloudAnswerHashes.get(`${t}::__validation__`)!==hashJson(v)){
+        hasPendingV326=true;break;
+      }
+    }
+  }
+  if(!hasPendingV326){
+    setCloudStatus('online','● Partagé sécurisé');
+    return;
+  }
+
   cloudBusy=true;setCloudStatus('syncing','● Synchronisation sécurisée…');
   try{
     if(cloudRole==='admin'){
@@ -1140,20 +1167,21 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
   }finally{
     cloudBusy=false;
 
-    /* V323 — rejouer ce qui est arrivé pendant la synchro au lieu de le perdre. */
-    const configStillDirty=cloudRole==='admin'&&hashJson(state.config)!==lastCloudConfigHash;
-    if(cloudSyncPendingV323||configStillDirty){
+    /* V326 — pas de boucle automatique sur une simple différence de hash.
+       On rejoue uniquement une vraie demande de sauvegarde arrivée pendant
+       la synchro en cours. */
+    if(cloudSyncPendingV323){
       cloudSyncPendingV323=false;
       clearTimeout(cloudSyncTimer);
-      cloudSyncTimer=setTimeout(syncDirtyToCloud,90);
+      cloudSyncTimer=setTimeout(syncDirtyToCloud,220);
     }
     if(cloudAnswersReloadPendingV323){
       cloudAnswersReloadPendingV323=false;
-      setTimeout(reloadCloudAnswers,140);
+      setTimeout(reloadCloudAnswers,260);
     }
     if(cloudConfigReloadPendingV323){
       cloudConfigReloadPendingV323=false;
-      setTimeout(reloadCloudConfig,170);
+      setTimeout(reloadCloudConfig,320);
     }
   }
 }
