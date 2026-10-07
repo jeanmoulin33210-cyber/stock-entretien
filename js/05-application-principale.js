@@ -9584,3 +9584,27 @@ $('#configPreviewModal').onclick=e=>{if(e.target.id==='configPreviewModal')close
 $('#testerHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#bottomHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#testerSelect').onchange=e=>{currentTester=Number(e.target.value);renderSample()};$('#productSelect').onchange=e=>{const targetPid=e.target.value;const target=getProduct(targetPid)?.samples?.[0];if(!target){e.target.value=currentProduct;return}if(!goToSample(targetPid,target.id))e.target.value=currentProduct};$('#sampleSelect').onchange=e=>{const target=e.target.value;if(!goToSample(currentProduct,target))e.target.value=currentSample};$('#prevSample').onclick=()=>moveSample(-1);$('#nextSample').onclick=()=>moveSample(1);
 $('#simpleResultsPdfBtn').onclick=()=>openCurrentReport();$('#productSheetsBtn').onclick=()=>openProductSheets();$('#productSheetsBackBtn').onclick=()=>closeProductSheets();$('#productSheetsHomeBtn').onclick=()=>{captureProductSheetForm();saveState();renderHome()};$('#saveProductSheetsBtn').onclick=()=>saveProductSheets();$('#simpleResultsEmailBtn').onclick=()=>emailCurrentReport();$('#simpleResultsMoreBtn').onclick=()=>toggleSimpleResultsDetails();$('#hubResultsBtn').onclick=()=>openSimplifiedResults();$('#hubArchivesBtn').onclick=()=>renderArchives();$('#hubHomeBtn').onclick=()=>renderHome();$('#resultsBackHubBtn').onclick=()=>renderHome();$('#saveReportNoteBtn').onclick=()=>saveReportNote();$('#clearReportNoteBtn').onclick=()=>clearReportNote();$('#reportNoteInput').oninput=()=>{const s=$('#reportNoteState');if(s){s.textContent='À enregistrer';s.classList.add('changed')}};$('#adminHomeBtn').onclick=renderHome;$('#csvBtn').onclick=exportCsv;$('#closureBtn').onclick=renderClosure;$('#minutesBtn').onclick=openCurrentMinutes;$('#dossierBtn').onclick=openCurrentDossier;$('#summaryBtn').onclick=openCurrentSummary;$('#reportBtn').onclick=openCurrentReport;$('#resetAnswersBtn').onclick=openProtectedResetModal;$('#cancelReset').onclick=closeProtectedResetModal;$('#confirmReset').onclick=confirmProtectedReset;$('#resetConfirmWord').oninput=updateProtectedResetButton;$('#resetAdminPin').oninput=updateProtectedResetButton;$('#resetModal').onclick=e=>{if(e.target.id==='resetModal')closeProtectedResetModal()};
 renderHome();
+
+
+/* --- V334 : ne republier le lancement qu'une seule fois par jury/appareil --- */
+const ensureRunningJuryCloudSyncBeforeV334=ensureRunningJuryCloudSync;
+ensureRunningJuryCloudSync=async function(){
+  if(!isJuryOfficiallyOpen()||isJuryClosed())return;
+  if(typeof guestTester!=='undefined'&&guestTester)return;
+
+  const sid=String((typeof cloudCfg!=='undefined'&&cloudCfg?.sessionId)||state.config?._shareSessionId||'').trim();
+  const instance=String(juryInstanceId(state.config)||'').trim();
+  const opened=String(state.config?.juryLaunch?.openedAt||'').trim();
+  const key='jm_tc_launch_republished_v334_'+sid+'_'+instance+'_'+opened;
+  try{
+    if(sessionStorage.getItem(key)==='1')return;
+    sessionStorage.setItem(key,'1');
+  }catch(e){}
+
+  try{
+    await ensureRunningJuryCloudSyncBeforeV334();
+  }catch(e){
+    try{sessionStorage.removeItem(key)}catch(_){}
+    throw e;
+  }
+};
