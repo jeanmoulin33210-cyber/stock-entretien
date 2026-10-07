@@ -1282,16 +1282,64 @@ async function forcePushAdminStateV328(){
     state.config=outgoing;
     originalSaveState();
 
-    /* Envoyer toutes les réponses et surtout les validations 4/4 sans dépendre
-       des hashes de synchronisation automatique. */
+    /* V329 — envoyer toutes les réponses puis chaque validation séparément,
+       avec le marqueur de secours V278 dans une réponse ordinaire. */
     await pushAllAnswers();
+
+    const expectedValidatedV329=[];
+    for(let t=1;t<=Number(state.config?.testerCount||0);t++){
+      const stamp=state.testers?.[t]?.validatedAt||null;
+      if(!stamp)continue;
+      expectedValidatedV329.push(t);
+      try{setTesterValidationFallbackV278(t,stamp)}catch(e){}
+      await pushTesterValidationNowV278(t);
+    }
+
+    /* Relire immédiatement la session pour vérifier combien de validations
+       sont réellement récupérables côté serveur (officiel OU secours). */
+    let verifiedValidatedV329=new Set();
+    try{
+      const {data:checkRows,error:checkError}=await cloudClient
+        .from('test_culinaire_reponses')
+        .select('tester_no,product_id,sample_id,remarks,updated_at')
+        .eq('session_id',cloudCfg.sessionId);
+      if(checkError)throw checkError;
+
+      const official={},fallback={};
+      (checkRows||[]).forEach(row=>{
+        const t=Number(row.tester_no);
+        if(!t)return;
+        if(row.product_id==='__meta__'&&row.sample_id==='__validation__'){
+          const v=Array.isArray(row.remarks)?(row.remarks[0]||null):null;
+          if(v)official[t]=String(v);
+          return;
+        }
+        const fb=validationFallbackFromRemarksV278(row.remarks);
+        if(fb)fallback[t]=String(fb);
+      });
+
+      expectedValidatedV329.forEach(t=>{
+        if(official[t]||fallback[t])verifiedValidatedV329.add(t);
+      });
+    }catch(e){
+      console.warn('Vérification validations V329 impossible',e);
+    }
 
     lastCloudConfigHash=hashJson(outgoing);
     setAnswerHashesFromLocalV328();
 
     setCloudStatus('online','● Partagé sécurisé');
-    adminSyncMessageV328('✓ État de cet appareil envoyé vers '+code+'. Vous pouvez maintenant recharger l’autre appareil depuis la session.','ok');
-    toast('État envoyé vers '+code+' ✓');
+    const totalExpected=expectedValidatedV329.length;
+    const totalVerified=verifiedValidatedV329.size;
+    const validationTxt=totalExpected
+      ?(' · validations serveur '+totalVerified+'/'+totalExpected)
+      :'';
+    adminSyncMessageV328(
+      '✓ État de cet appareil envoyé vers '+code+validationTxt+
+      '. Vous pouvez maintenant recharger l’autre appareil depuis la session.',
+      totalExpected&&totalVerified<totalExpected?'warn':'ok'
+    );
+    toast('État envoyé vers '+code+(totalExpected?' · '+totalVerified+'/'+totalExpected+' validations':'')+' ✓');
   }catch(e){
     console.error(e);
     setCloudStatus('error','● Erreur cloud');
@@ -1307,6 +1355,18 @@ function applyServerAdminSnapshotV328(config,rows){
   if(cfg.juryLaunch?.openedAt){
     cfg.juryLaunch={...(cfg.juryLaunch||{}),sessionId:cloudCfg.sessionId};
   }
+
+  const fallbackValidationV329={};
+  (rows||[]).forEach(r=>{
+    const t=Number(r.tester_no);
+    if(!t)return;
+    if(r.product_id==='__meta__'&&r.sample_id==='__validation__')return;
+    const fb=validationFallbackFromRemarksV278(r.remarks);
+    if(fb){
+      const old=fallbackValidationV329[t];
+      if(!old||String(fb)>String(old))fallbackValidationV329[t]=String(fb);
+    }
+  });
 
   const newState=makeInitialState(cfg);
   (rows||[]).forEach(r=>{
@@ -1340,6 +1400,15 @@ function applyServerAdminSnapshotV328(config,rows){
       choices:Array.isArray(r.choices)?r.choices:Array(QUESTIONS.length).fill(null),
       remarks:Array.isArray(r.remarks)?r.remarks:Array(QUESTIONS.length).fill('')
     };
+  });
+
+  /* V329 — si le marqueur officiel manque, reprendre la preuve V278
+     enregistrée dans une réponse ordinaire. */
+  Object.keys(fallbackValidationV329).forEach(k=>{
+    const t=Number(k);
+    if(newState.testers?.[t]&&!newState.testers[t].validatedAt){
+      newState.testers[t].validatedAt=fallbackValidationV329[t];
+    }
   });
 
   state=newState;
@@ -1388,8 +1457,15 @@ async function forceReloadAdminStateV328(){
 
     applyServerAdminSnapshotV328(session.config,rows||[]);
     setCloudStatus('online','● Partagé sécurisé');
-    adminSyncMessageV328('✓ Cet appareil a été rechargé depuis '+code+'.','ok');
-    toast('Données rechargées depuis '+code+' ✓');
+    const nValidatedV329=Array.from({length:Number(state.config?.testerCount||0)},(_,i)=>i+1)
+      .filter(t=>!!state.testers?.[t]?.validatedAt).length;
+    const totalV329=Number(state.config?.testerCount||0);
+    adminSyncMessageV328(
+      '✓ Cet appareil a été rechargé depuis '+code+
+      (totalV329?' · validations '+nValidatedV329+'/'+totalV329:'')+'.',
+      'ok'
+    );
+    toast('Données rechargées depuis '+code+(totalV329?' · '+nValidatedV329+'/'+totalV329+' validations':'')+' ✓');
 
     if(document.getElementById('adminView')?.classList.contains('active')){
       originalRenderAdmin();
