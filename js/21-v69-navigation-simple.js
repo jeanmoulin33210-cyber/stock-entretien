@@ -141,8 +141,10 @@ function syncSimpleResultsActions(){
     sheetsBtn.classList.toggle('simple-results-complete-v305',sheetsReady);
   }
   if(reportBtn){
-    reportBtn.disabled=!(complete&&closed&&closureReady&&sheetsReady);
-    reportBtn.textContent='📄 3. Rapport final';
+    /* V324 — ne plus bloquer le dossier sur le drapeau technique juryClose.
+       Les étapes visibles de fin de jury sont la référence. */
+    reportBtn.disabled=!(complete&&closureReady&&sheetsReady);
+    reportBtn.textContent='📚 4. Dossier résultats';
   }
   if(archiveBtn){
     archiveBtn.disabled=!(complete&&closed&&closureReady&&sheetsReady);
