@@ -120,7 +120,9 @@ function syncSimpleResultsActions(){
   });
 
   if(closureBtn){
-    closureBtn.disabled=!closed;
+    /* V321 — Clôture reste toujours accessible.
+       Même lorsqu'elle est complète, on peut la rouvrir pour vérifier ou modifier. */
+    closureBtn.disabled=false;
     closureBtn.textContent=closureReady?'✓ 1. Clôture — OK':'✍️ 1. Clôture';
     closureBtn.classList.toggle('simple-results-complete-v305',closureReady);
   }
