@@ -303,8 +303,9 @@
     if(dossier){
       dossier.disabled=!allReady;
       dossier.textContent="📚 4. Dossier résultats";
-      dossier.classList.toggle("btn-primary",allReady);
-      dossier.classList.toggle("simple-results-next-btn",allReady);
+      dossier.classList.remove("btn-primary","simple-results-next-btn","btn-secondary");
+      if(allReady)dossier.classList.add("btn-primary","simple-results-next-btn");
+      else dossier.classList.add("btn-secondary");
     }
 
     if(email){
@@ -378,7 +379,6 @@
 
     var finalReady=updateFinalReportStateV324(m,wf);
     if(finalReady){
-      removeHighlight(report);
       if(title)title.textContent="✓ Tout est prêt — rapport final";
       if(hint)hint.textContent="Toutes les étapes sont terminées. Le rapport final est prêt à être préparé et envoyé par Gmail.";
     }
