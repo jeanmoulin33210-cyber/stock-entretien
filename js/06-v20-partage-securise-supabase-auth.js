@@ -72,6 +72,39 @@ function serverSecurityStatus(title,text,ok=true){
   if(a)a.textContent=title;if(b)b.textContent=text;
   if(box){box.style.background=ok?'#f1faf6':'#fff5e8';box.style.borderColor=ok?'#c6e5d7':'#f0d7aa'}
 }
+function bindAdminSyncButtonsV330(){
+  const push=document.getElementById('forcePushAdminStateV328Btn');
+  const pull=document.getElementById('forceReloadAdminStateV328Btn');
+
+  if(push){
+    push.type='button';
+    push.onclick=async function(e){
+      try{
+        e?.preventDefault?.();
+        e?.stopPropagation?.();
+        await forcePushAdminStateV328();
+      }catch(err){
+        console.error(err);
+        alert('Impossible de lancer l’envoi vers la session. '+(err?.message||err||''));
+      }
+    };
+  }
+
+  if(pull){
+    pull.type='button';
+    pull.onclick=async function(e){
+      try{
+        e?.preventDefault?.();
+        e?.stopPropagation?.();
+        await forceReloadAdminStateV328();
+      }catch(err){
+        console.error(err);
+        alert('Impossible de lancer le rechargement depuis la session. '+(err?.message||err||''));
+      }
+    };
+  }
+}
+
 function renderCloudPage(){
   showView('cloudView');$('#headerTitle').textContent='Partage téléphones';$('#headerSub').textContent='Synchronisation sécurisée des testeurs';
   $('#cloudUrl').value=cloudCfg.url||'';$('#cloudKey').value=cloudCfg.key||'';$('#cloudSession').value=cloudCfg.sessionId||'';
@@ -79,6 +112,7 @@ function renderCloudPage(){
   else serverSecurityStatus('Sécurité serveur V32','Supabase Auth + rôles + RLS. Le script SQL V20 doit avoir été exécuté et les connexions anonymes activées.',true);
   renderShareLinks();
   refreshAdminSyncLabelsV328();
+  bindAdminSyncButtonsV330();
 }
 function currentBaseUrl(){
   const publicStableUrl='https://jeanmoulin33210-cyber.github.io/stock-entretien/tests-culinaires.html';
@@ -637,7 +671,7 @@ async function connectCloud({create=false}={}){
   }
   if(cloudRole==='admin')scheduleCloudSync();
   saveCloudCfg();$('#cloudSession').value=cloudCfg.sessionId;
-  await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');refreshAdminSyncLabelsV328();
+  await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');refreshAdminSyncLabelsV328();bindAdminSyncButtonsV330();
   cloudMsg(`Session sécurisée connectée · ${cloudRole==='admin'?'administrateur':`testeur ${cloudTesterNo}`}.`,'ok');
   serverSecurityStatus('Sécurité serveur active ✓',`Supabase Auth connecté · rôle ${cloudRole==='admin'?'administrateur':`testeur ${cloudTesterNo}`}.`,true);
   renderShareLinks();
@@ -1505,8 +1539,7 @@ async function autoConnectFromUrl(){
   }else setCloudStatus('local','● Local')
 }
 $('#cloudBtn').onclick=renderCloudPage;$('#cloudHomeBtn').onclick=renderHome;
-document.getElementById('forcePushAdminStateV328Btn')?.addEventListener('click',forcePushAdminStateV328);
-document.getElementById('forceReloadAdminStateV328Btn')?.addEventListener('click',forceReloadAdminStateV328);
+bindAdminSyncButtonsV330();
 /* V32 gère la création d'une nouvelle session avec un UUID neuf. */
 $('#connectCloudBtn').onclick=async()=>{try{await connectCloud({create:false})}catch(e){setCloudStatus('error','● Erreur');cloudMsg(e.message||String(e),'bad');serverSecurityStatus('Sécurité serveur non prête',e.message||String(e),false)}};
 $('#disconnectCloudBtn').onclick=disconnectCloud;
