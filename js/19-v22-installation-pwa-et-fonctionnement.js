@@ -54,14 +54,14 @@ if('serviceWorker' in navigator && location.protocol==='https:'){
       if(reloaded)return;
       reloaded=true;
       try{
-        const k='jm_tc_sw_v323a_reloaded';
+        const k='jm_tc_sw_v324a_reloaded';
         if(!sessionStorage.getItem(k)){
           sessionStorage.setItem(k,'1');
           location.reload();
         }
       }catch(e){}
     });
-    navigator.serviceWorker.register('./service-worker.js?v=323a',{updateViaCache:'none'}).then(reg=>{
+    navigator.serviceWorker.register('./service-worker.js?v=324a',{updateViaCache:'none'}).then(reg=>{
       try{reg.update()}catch(e){}
       console.log('Service worker actif',reg.scope)
     }).catch(err=>console.warn('Service worker non installé',err))
