@@ -807,14 +807,16 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
   if(cloudBusy){cloudAnswersReloadPendingV323=true;return;}
   cloudAnswersReloadPendingV323=false;
 
-  /* V277 — un testeur peut cliquer « Valider » juste au moment où le temps réel
-     recharge sa dernière réponse. Dans ce très court intervalle, le marqueur
-     __validation__ n'est pas encore remonté au serveur. On conserve donc la
-     validation locale jusqu'à ce qu'elle ait été effectivement synchronisée. */
+  /* V325 — conserver toute validation locale encore absente du serveur,
+     aussi bien pour un testeur que pour l'écran Propriétaire. */
   const pendingLocalValidation={};
   if(cloudRole==='tester'){
     const pt=Number(cloudTesterNo||guestTester||0);
     if(pt&&state.testers?.[pt]?.validatedAt)pendingLocalValidation[pt]=state.testers[pt].validatedAt;
+  }else if(cloudRole==='admin'){
+    for(let t=1;t<=Number(state.config?.testerCount||0);t++){
+      if(state.testers?.[t]?.validatedAt)pendingLocalValidation[t]=state.testers[t].validatedAt;
+    }
   }
 
   let q=cloudClient.from('test_culinaire_reponses').select('tester_no,product_id,sample_id,choices,remarks,updated_at').eq('session_id',cloudCfg.sessionId);
@@ -891,14 +893,17 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
   });
 
   let pendingValidationNeedsPush=false;
-  if(cloudRole==='tester'){
-    const pt=Number(cloudTesterNo||guestTester||0);
+  const pendingNos=cloudRole==='tester'
+    ?[Number(cloudTesterNo||guestTester||0)]
+    :Object.keys(pendingLocalValidation).map(Number);
+
+  pendingNos.forEach(function(pt){
     const localPending=pendingLocalValidation[pt]||null;
     if(pt&&localPending&&state.testers?.[pt]&&!state.testers[pt].validatedAt){
       state.testers[pt].validatedAt=localPending;
       pendingValidationNeedsPush=true;
     }
-  }
+  });
 
   originalSaveState();lastCloudAnswerHashes=new Map();
   (data||[]).forEach(r=>{
@@ -920,33 +925,88 @@ async function reloadCloudConfig(){if(testerPreviewMode)return;
   if(cloudBusy){cloudConfigReloadPendingV323=true;return;}
   cloudConfigReloadPendingV323=false;
 
-  /* V323 — ne jamais remplacer des modifications administrateur locales
-     qui attendent encore leur envoi par une ancienne version du serveur. */
-  if(cloudRole==='admin' && hashJson(state.config)!==lastCloudConfigHash){
-    scheduleCloudSync();
-    cloudConfigReloadPendingV323=true;
-    return;
-  }
   if(cloudRole==='admin'){
-    const {data,error}=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',cloudCfg.sessionId).maybeSingle();if(error||!data?.config)return;
-    if(hashJson(data.config)===hashJson(state.config))return;
-    const oldAnswers={},oldValidations={};for(let t=1;t<=state.config.testerCount;t++){oldAnswers[t]=deepClone(state.testers[t]?.answers||{});oldValidations[t]=state.testers[t]?.validatedAt||null}
+    const {data,error}=await cloudClient
+      .from('test_culinaire_sessions')
+      .select('config')
+      .eq('session_id',cloudCfg.sessionId)
+      .maybeSingle();
+    if(error||!data?.config)return;
+
+    const serverCfg=deepClone(data.config||{});
+    const serverHash=hashJson(serverCfg);
+    const localHash=hashJson(state.config);
+    if(serverHash===localHash){
+      lastCloudConfigHash=serverHash;
+      return;
+    }
+
     const previousCfg=deepClone(state.config||{});
-    const repairedConfig=restoreAdminShareMetadataV248(deepClone(data.config||{}),previousCfg);
-    const newState=makeInitialState(repairedConfig);for(let t=1;t<=newState.config.testerCount;t++){newState.testers[t].answers=oldAnswers[t]||{};newState.testers[t].validatedAt=oldValidations[t]||null}
+    const localDirty=localHash!==lastCloudConfigHash;
+    let mergedCfg;
+
+    if(localDirty){
+      /* V325 — une modification locale générale reste prioritaire,
+         MAIS les données de fin de jury plus riches présentes sur le serveur
+         (clôture, OCCENA, conclusion, fiches/réceptions) sont fusionnées avant
+         tout renvoi. Un ancien PC ne peut donc plus effacer le travail du S24. */
+      mergedCfg=deepClone(previousCfg);
+      preserveRicherAdminLocalDataV256(mergedCfg,serverCfg);
+      preserveRicherAdminWorkflowV323(mergedCfg,serverCfg);
+      restoreAdminShareMetadataV248(mergedCfg,serverCfg);
+    }else{
+      /* Pas de modification locale en attente : partir du serveur et conserver
+         uniquement une donnée locale réellement plus riche. */
+      mergedCfg=restoreAdminShareMetadataV248(deepClone(serverCfg),previousCfg);
+    }
+
+    const oldAnswers={},oldValidations={};
+    for(let t=1;t<=state.config.testerCount;t++){
+      oldAnswers[t]=deepClone(state.testers[t]?.answers||{});
+      oldValidations[t]=state.testers[t]?.validatedAt||null;
+    }
+
+    const newState=makeInitialState(mergedCfg);
+    for(let t=1;t<=newState.config.testerCount;t++){
+      newState.testers[t].answers=oldAnswers[t]||{};
+      newState.testers[t].validatedAt=oldValidations[t]||null;
+    }
     state=newState;
     restoreAdminShareMetadataV248(state.config,previousCfg);
-    try{if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt)upsertPreparedJury(state)}catch(e){}
-    originalSaveState();lastCloudConfigHash=hashJson(state.config)
+    try{
+      if(typeof upsertPreparedJury==='function'&&!state.config?.juryClose?.closedAt)upsertPreparedJury(state);
+    }catch(e){}
+
+    originalSaveState();
+
+    /* Très important : mémoriser l'état réellement lu au serveur, pas le merge.
+       Si le merge contient une donnée locale plus riche, elle sera renvoyée. */
+    lastCloudConfigHash=serverHash;
+    if(hashJson(state.config)!==serverHash)scheduleCloudSync();
   }else{
-    const {data,error}=await cloudClient.rpc('test_culinaire_get_public_session',{p_session_id:cloudCfg.sessionId});if(error)return;
-    const row=Array.isArray(data)?data[0]:data;if(!row?.public_config)return;
-    const old=deepClone(state.testers[cloudTesterNo]?.answers||{}),val=state.testers[cloudTesterNo]?.validatedAt||null;
-    const ns=makeInitialState(row.public_config);if(ns.testers[cloudTesterNo]){ns.testers[cloudTesterNo].answers=old;ns.testers[cloudTesterNo].validatedAt=val}
-    state=ns;originalSaveState();lastCloudConfigHash=hashJson(state.config)
+    const {data,error}=await cloudClient.rpc('test_culinaire_get_public_session',{p_session_id:cloudCfg.sessionId});
+    if(error)return;
+    const row=Array.isArray(data)?data[0]:data;
+    if(!row?.public_config)return;
+    const old=deepClone(state.testers[cloudTesterNo]?.answers||{});
+    const val=state.testers[cloudTesterNo]?.validatedAt||null;
+    const ns=makeInitialState(row.public_config);
+    if(ns.testers[cloudTesterNo]){
+      ns.testers[cloudTesterNo].answers=old;
+      ns.testers[cloudTesterNo].validatedAt=val;
+    }
+    state=ns;
+    originalSaveState();
+    lastCloudConfigHash=hashJson(state.config);
   }
-  if($('#adminView').classList.contains('active'))originalRenderAdmin();else if($('#launchView')?.classList.contains('active'))renderLaunchView();else if($('#juryView')?.classList.contains('active'))renderJuryView();else if($('#homeView').classList.contains('active'))originalRenderHome();else if($('#testerView').classList.contains('active')){renderTesterSelectors();renderSample()}
+
+  if($('#adminView').classList.contains('active'))originalRenderAdmin();
+  else if($('#launchView')?.classList.contains('active'))renderLaunchView();
+  else if($('#juryView')?.classList.contains('active'))renderJuryView();
+  else if($('#homeView').classList.contains('active'))originalRenderHome();
+  else if($('#testerView').classList.contains('active')){renderTesterSelectors();renderSample();}
 }
+
 function answerRowsForTester(t){
   const rows=[];
   for(const [k,a] of Object.entries(state.testers[t]?.answers||{})){
@@ -971,9 +1031,39 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
       const cfgHash=hashJson(state.config);
       if(cfgHash!==lastCloudConfigHash){
         ensureTesterCodes();
-        const {error}=await cloudClient.from('test_culinaire_sessions').update({config:state.config,public_config:makePublicCloudConfig(state.config),updated_at:new Date().toISOString()}).eq('session_id',cloudCfg.sessionId);
+
+        /* V325 — juste avant d'écrire, relire la configuration serveur et
+           protéger toute donnée finale plus complète qui aurait été enregistrée
+           par un autre appareil. */
+        let outgoing=deepClone(state.config);
+        try{
+          const {data:latest,error:latestError}=await cloudClient
+            .from('test_culinaire_sessions')
+            .select('config')
+            .eq('session_id',cloudCfg.sessionId)
+            .maybeSingle();
+          if(!latestError&&latest?.config){
+            preserveRicherAdminLocalDataV256(outgoing,latest.config);
+            preserveRicherAdminWorkflowV323(outgoing,latest.config);
+            restoreAdminShareMetadataV248(outgoing,latest.config);
+          }
+        }catch(e){}
+
+        state.config=outgoing;
+        originalSaveState();
+
+        const {error}=await cloudClient
+          .from('test_culinaire_sessions')
+          .update({
+            config:outgoing,
+            public_config:makePublicCloudConfig(outgoing),
+            updated_at:new Date().toISOString()
+          })
+          .eq('session_id',cloudCfg.sessionId);
         if(error)throw error;
-        await syncAccessCodes();lastCloudConfigHash=hashJson(state.config)
+
+        await syncAccessCodes();
+        lastCloudConfigHash=hashJson(outgoing);
       }
     }
 
