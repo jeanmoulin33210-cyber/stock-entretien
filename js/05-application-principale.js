@@ -4848,7 +4848,7 @@ async function emailArticleNumbersPdf(){
   }finally{
     if(btn){
       btn.disabled=false;
-      btn.textContent=old;
+      if(btn.dataset.finalReportOpenedV322!=='1')btn.textContent=old;
     }
   }
 }
@@ -9073,6 +9073,12 @@ Cordialement`;
       return;
     }
 
+    if(btn){
+      btn.dataset.finalReportOpenedV322='1';
+      btn.classList.remove('final-report-ready-v322');
+      btn.classList.add('final-report-opened-v322');
+      btn.textContent='✓ Rapport préparé — Gmail ouvert';
+    }
     toast('Rapport final téléchargé · Gmail ouvert ✓');
   }catch(e){
     try{if(gmailWindow&&!gmailWindow.closed)gmailWindow.close();}catch(_){}
