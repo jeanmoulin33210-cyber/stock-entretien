@@ -6945,7 +6945,7 @@ async function saveClosure(){
     try{await syncDirtyToCloud()}catch(e){}
   }
 
-  setClosureSaveIndicator(ready?'✓ Enregistré':'💾 Enregistrer');
+  setClosureSaveIndicator('✓ Enregistré');
   if(typeof syncSimpleResultsActions==='function'){
     try{syncSimpleResultsActions()}catch(e){}
   }
