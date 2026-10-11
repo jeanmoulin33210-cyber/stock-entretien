@@ -16,3 +16,5 @@ gradle -p android-apk assembleDebug
 ```
 
 APK : `android-apk/app/build/outputs/apk/debug/app-debug.apk`.
+
+Construction automatique : GitHub Actions génère un APK installable à chaque modification du projet Android.
