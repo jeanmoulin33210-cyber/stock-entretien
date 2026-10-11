@@ -1,5 +1,5 @@
-/* v337 forced refresh */
-const CACHE_NAME='tc-offline-v337-20261007a';
+/* v338 forced refresh */
+const CACHE_NAME='tc-offline-v338-20261007a';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
@@ -40,7 +40,7 @@ const APP_SHELL=[
   './js/29-v275-correctif-impression-qr.js',
   './js/30-v290-controle-occena.js',
   './js/31-v291-occena-a-faire.js',
-  './js/32-v337-rapport-sensoriel-premium.js'
+  './js/32-v338-rapport-sensoriel-premium.js'
 ];
 
 self.addEventListener('install',event=>{
