@@ -1,0 +1,17 @@
+# Android / Gradle
+android-apk/.gradle/
+android-apk/**/build/
+android-apk/local.properties
+*.apk
+*.aab
+
+# IDE
+.idea/
+*.iml
+.vscode/
+
+# OS / temporary files
+.DS_Store
+Thumbs.db
+*.tmp
+*.log
