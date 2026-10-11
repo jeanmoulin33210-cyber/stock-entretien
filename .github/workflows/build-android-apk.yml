@@ -49,16 +49,3 @@ jobs:
           path: dist/Tests-culinaires-Android.apk
           retention-days: 30
 
-      - name: Upload web source
-        uses: actions/upload-artifact@v4
-        with:
-          name: Tests-culinaires-Web-Source
-          path: |
-            tests-culinaires.html
-            manifest.webmanifest
-            service-worker.js
-            icon-192.png
-            icon-512.png
-            css
-            js
-          retention-days: 1
