@@ -305,3 +305,54 @@ ensureSimpleResultsCompleteStyleV305();
 document.addEventListener('fullscreenchange',()=>{
   document.body.classList.toggle('projection-fullscreen',!!document.fullscreenElement);
 });
+
+/* V348 — choisir le lot avant de consulter ses résultats. */
+function openResultsLotChooserV348(){
+  if(state?.config?._preparedId)saveState();
+  const rows=loadPreparedJurys().filter(r=>r?.state?.config&&!r.state.config._archive?.archivedAt);
+  const currentId=String(state?.config?._preparedId||'');
+  if(state?.config?.products?.length&&!state.config._archive?.archivedAt&&
+     !rows.some(r=>String(r.id)===currentId)){
+    rows.unshift({id:currentId,name:state.config.lotName,state:deepClone(state),current:true});
+  }
+  if(!rows.length){toast('Aucun résultat disponible. Consultez les archives pour les jurys archivés.');return;}
+  let modal=document.getElementById('resultsLotModalV348');
+  if(!modal){
+    modal=document.createElement('div');
+    modal.id='resultsLotModalV348';
+    modal.className='modal';
+    modal.setAttribute('role','dialog');
+    modal.setAttribute('aria-modal','true');
+    modal.setAttribute('aria-labelledby','resultsLotTitleV348');
+    modal.innerHTML='<div class="modal-card" style="width:min(620px,94vw);max-height:85vh;overflow:auto;background:white;color:#173f5c;border-radius:24px;padding:24px"><h2 id="resultsLotTitleV348">Quel lot voulez-vous consulter ?</h2><p>Choisissez le lot pour afficher ses résultats.</p><div id="resultsLotListV348"></div><div style="text-align:right;margin-top:18px"><button type="button" class="btn btn-secondary" data-results-cancel>Annuler</button></div></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('[data-results-cancel]').onclick=()=>modal.classList.remove('show');
+    modal.addEventListener('click',e=>{if(e.target===modal)modal.classList.remove('show')});
+    modal.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('show')});
+  }
+  const list=modal.querySelector('#resultsLotListV348');
+  list.innerHTML=rows.map((r,i)=>{
+    const cfg=r.state.config,meta=preparedJuryMeta(r.state);
+    const status=cfg.juryClose?.closedAt?'Jury terminé':cfg.juryLaunch?.openedAt?'Jury en cours':'Jury préparé';
+    return '<button type="button" class="prepare-jury-choice" data-results-lot="'+i+'"><span><strong>'+escapeHtml(cfg.lotName||r.name||'Jury')+'</strong><span>'+meta.products+' produit(s) · '+meta.samples+' échantillon(s)</span><span class="prepare-jury-status">'+status+'</span></span><b>›</b></button>';
+  }).join('');
+  list.querySelectorAll('[data-results-lot]').forEach(btn=>btn.onclick=()=>{
+    const rec=rows[Number(btn.dataset.resultsLot)];
+    if(String(rec.id)!==String(state?.config?._preparedId||'')){
+      saveState();
+      state=deepClone(rec.state);
+      if(rec.id)state.config._preparedId=rec.id;
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      currentTester=1;
+      currentProduct=state.config.products?.[0]?.id||'';
+      currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';
+    }
+    draftConfig=null;
+    modal.classList.remove('show');
+    openSimplifiedResults();
+  });
+  modal.classList.add('show');
+  list.querySelector('button')?.focus();
+}
+document.getElementById('resultsBtn').onclick=openResultsLotChooserV348;
+document.getElementById('hubResultsBtn')?.addEventListener('click',openResultsLotChooserV348);
