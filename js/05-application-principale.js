@@ -5125,18 +5125,25 @@ async function prepareQrSharePreview(){
   }
 }
 
+let qrShareReturnPosition=null;
 function openQrShareModal(){
   if(!phoneSharePrepared(draftConfig)){
     alert('Préparez d’abord les téléphones.');
     return;
   }
+  qrShareReturnPosition=rememberConfigPhonePosition();
   const modal=$('#qrShareModal');
-  if(modal)modal.classList.add('show');
+  if(modal){modal.classList.add('show');modal.scrollTop=0;}
   prepareQrSharePreview();
 }
 
 function closeQrShareModal(){
   $('#qrShareModal')?.classList.remove('show');
+  if(qrShareReturnPosition){
+    if(!$('#configView')?.classList.contains('active')){showView('configView',false);renderConfig();}
+    window.scrollTo({top:qrShareReturnPosition.scrollY||0,behavior:'instant'});
+    restoreConfigPhonePosition(qrShareReturnPosition);
+  }
 }
 
 function qrImageElement(dataUrl){
