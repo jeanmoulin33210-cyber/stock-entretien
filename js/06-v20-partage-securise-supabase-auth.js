@@ -1027,7 +1027,7 @@ async function reloadCloudConfig(){if(testerPreviewMode)return;
       .select('config')
       .eq('session_id',cloudCfg.sessionId)
       .maybeSingle();
-    if(error||!data?.config)return;
+    if(error||!data?.config)throw new Error(error?.message||'Lecture des lots indisponible.');
 
     const serverCfg=deepClone(data.config||{});
     const serverHash=hashJson(serverCfg);
@@ -2466,6 +2466,13 @@ function ownerWorkspaceHashV352(st){
   return hashJson(sorted(copy));
 }
 function ownerWorkspaceIdV352(st){return String(st?.config?._preparedId||st?.config?._juryInstanceId||st?.config?.juryInstanceId||'');}
+function ownerWorkspaceEvidenceV354(st){
+  const cfg=st?.config||{};
+  let count=(cfg.receptions||[]).filter(r=>r?.validatedAt).length*1000;
+  for(const row of Object.values(cfg.productSheets||{}))count+=Object.values(row||{}).filter(v=>v!==null&&v!==undefined&&String(v).trim()!=='').length;
+  for(const t of Object.values(st?.testers||{}))for(const answer of Object.values(t?.answers||{}))count+=(answer.choices||[]).filter(v=>v!==null&&v!==undefined).length;
+  return count;
+}
 function ownerWorkspaceMergeV352(remote,local,baseline,now){
   const maps={prepared:new Map(),archives:new Map()},nextBase={};
   const tombstones={...(remote?.removedV352||{}),...(baseline?.removedV352||{})};
@@ -2493,7 +2500,13 @@ function ownerWorkspaceMergeV352(remote,local,baseline,now){
       const id=String(rec.id),key=kind+':'+id,hash=ownerWorkspaceHashV352(rec.state),old=baseline?.records?.[key],other=maps[kind].get(id);
       const otherHash=other?ownerWorkspaceHashV352(other.state):'';
       let stamp=Number(rec.syncStampV352||old?.stamp||0);
-      if(hash!==old?.hash&&hash!==otherHash)stamp=now;
+      if(hash!==old?.hash&&hash!==otherHash){
+        // A newly connected tablet must not present its old local snapshot
+        // as a fresh edit and overwrite the richer saved owner record.
+        if(!old&&other&&ownerWorkspaceEvidenceV354(rec.state)<=ownerWorkspaceEvidenceV354(other.state)){
+          stamp=Number(other.syncStampV352||0);
+        }else stamp=now;
+      }
       if(!other||stamp>Number(other.syncStampV352||0))maps[kind].set(id,{...deepClone(rec),syncStampV352:stamp});
     }
   }
@@ -2510,7 +2523,8 @@ function ownerWorkspaceMergeV352(remote,local,baseline,now){
   return {prepared:[...maps.prepared.values()],archives:[...maps.archives.values()],removedV352:tombstones,baseline:{records:nextBase,removedV352:tombstones}};
 }
 async function automaticOwnerWorkspaceV352(){
-  if(ownerWorkspaceBusyV352||!cloudReady||cloudRole!=='admin'||cloudBusy||cloudAdminAccessBlockedV339)return;
+  if(ownerWorkspaceBusyV352||!cloudReady||cloudRole!=='admin'||cloudAdminAccessBlockedV339)return;
+  if(cloudBusy){scheduleOwnerWorkspaceV354(1200);return;}
   const active=document.querySelector('.view.active')?.id;
   if(!['homeView','juryView','launchView'].includes(active))return;
   if(document.querySelector('.modal-backdrop.show')||document.activeElement?.matches('input,textarea,select'))return;
@@ -2557,10 +2571,24 @@ async function automaticOwnerWorkspaceV352(){
     localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
     localStorage.setItem(key,JSON.stringify(merged.baseline));
     if(oldLocal!==newLocal&&active==='homeView')originalRenderHome();
-  }catch(e){console.warn('Synchronisation automatique des lots différée',e);}
+  }catch(e){console.warn('Synchronisation automatique des lots différée',e);scheduleOwnerWorkspaceV354(5000);}
   finally{cloudBusy=false;ownerWorkspaceBusyV352=false;}
 }
 setInterval(()=>{if(!document.hidden)automaticOwnerWorkspaceV352();},8000);
 window.addEventListener('online',()=>setTimeout(automaticOwnerWorkspaceV352,1000));
 document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(automaticOwnerWorkspaceV352,500);});
 setTimeout(automaticOwnerWorkspaceV352,3500);
+
+let ownerWorkspaceTimerV354=null;
+function scheduleOwnerWorkspaceV354(delay=800){
+  clearTimeout(ownerWorkspaceTimerV354);
+  ownerWorkspaceTimerV354=setTimeout(automaticOwnerWorkspaceV352,delay);
+}
+// Reconcile immediately after joining, and retry when a regular upload was busy.
+const saveCloudCfgBeforeV354=saveCloudCfg;
+saveCloudCfg=function(){
+  saveCloudCfgBeforeV354();
+  if(cloudReady&&cloudRole==='admin')scheduleOwnerWorkspaceV354();
+};
+window.addEventListener('pageshow',()=>scheduleOwnerWorkspaceV354(1200));
+scheduleOwnerWorkspaceV354(1500);
