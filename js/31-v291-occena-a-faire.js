@@ -30,18 +30,20 @@
     });
     var bySupplier={};
     rows.forEach(function(r){
-      if(!bySupplier[r.supplier])bySupplier[r.supplier]={supplier:r.supplier,checked:0};
+      if(!bySupplier[r.supplier])bySupplier[r.supplier]={supplier:r.supplier,checked:0,total:0,target:0};
+      bySupplier[r.supplier].total++;
       if(complete(items[r.key]))bySupplier[r.supplier].checked++;
     });
     var suppliers=Object.keys(bySupplier).map(function(k){return bySupplier[k];});
-    var required=suppliers.length*5;
-    var credited=suppliers.reduce(function(n,x){return n+Math.min(x.checked,5);},0);
+    suppliers.forEach(function(x){x.target=Math.ceil(x.total*30/100);});
+    var required=suppliers.reduce(function(n,x){return n+x.target;},0);
+    var credited=suppliers.reduce(function(n,x){return n+Math.min(x.checked,x.target);},0);
     return {
       checked:credited,
       total:rows.length,
       required:required,
       suppliers:suppliers,
-      reached:suppliers.length>0&&suppliers.every(function(x){return x.checked>=5;})
+      reached:suppliers.length>0&&suppliers.every(function(x){return x.checked>=x.target;})
     };
   }
   function highlight(btn){
@@ -357,7 +359,7 @@
       if(wf.closed&&wf.closureReady&&wf.sheetsReady){
         highlight(report);
         if(title)title.textContent="👉 À faire maintenant : dossier résultats";
-        if(hint)hint.textContent="✓ Contrôle OCCENA terminé : 5 fiches validées par fournisseur. Vous pouvez maintenant ouvrir le dossier résultats.";
+        if(hint)hint.textContent="✓ Contrôle OCCENA terminé : au moins 30 % des fiches validées pour chaque fournisseur. Vous pouvez maintenant ouvrir le dossier résultats.";
       }
     }else{
       btn.classList.remove("occena-step-complete-v304");
@@ -372,7 +374,7 @@
         highlight(btn);
         if(title)title.textContent="👉 À faire maintenant : contrôle OCCENA";
         if(hint)hint.textContent=m.required
-          ?"Validez 5 fiches pour chacun des "+m.suppliers.length+" fournisseur"+(m.suppliers.length>1?"s":"")+". Le dossier résultats deviendra ensuite l’étape suivante."
+          ?"Contrôlez au moins 30 % des fiches de chaque fournisseur, arrondis au nombre supérieur ("+m.checked+"/"+m.required+" contrôles requis). Le dossier résultats deviendra ensuite l’étape suivante."
           :"Ajoutez les articles / fournisseurs à contrôler dans OCCENA.";
       }
     }
