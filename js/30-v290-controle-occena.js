@@ -471,6 +471,24 @@
     return rows;
   }
 
+  function returnOccenaToResults(){
+    var modal=document.getElementById("occenaPhoneModalV300");
+    var phoneOpen=!!(modal&&modal.classList.contains("open"));
+    if(phoneOpen)closeOccenaPhoneMode();
+    else capture();
+    occenaScrollLock.token++;
+    if(typeof saveState==="function")saveState();
+    if(typeof syncDirtyToCloud==="function")Promise.resolve(syncDirtyToCloud()).catch(function(){});
+    if(typeof openSimplifiedResults==="function")openSimplifiedResults();
+    else if(typeof renderAdmin==="function")renderAdmin();
+    requestAnimationFrame(function(){
+      setTimeout(function(){
+        var target=document.getElementById("simpleResultsOccenaBtn");
+        if(target)target.scrollIntoView({behavior:"smooth",block:"center"});
+      },80);
+    });
+  }
+  window.returnOccenaToResults=returnOccenaToResults;
   function ensureOccenaPhoneOverlay(){
     var modal=document.getElementById("occenaPhoneModalV300");
     if(modal)return modal;
@@ -490,11 +508,13 @@
         "<div class='occena-phone-nav-v300'>"+
           "<button type='button' id='occenaPhonePrevV300'>← Précédent</button>"+
           "<button type='button' id='occenaPhoneNextV300'>Suivant →</button>"+
+          "<button type='button' id='occenaPhoneResultsReturn' style='grid-column:1/-1;background:#176c50'>✓ Enregistrer et revenir aux résultats</button>"+
         "</div>"+
       "</div>";
     document.body.appendChild(modal);
 
     document.getElementById("occenaPhoneCloseV300").onclick=closeOccenaPhoneMode;
+    document.getElementById("occenaPhoneResultsReturn").onclick=returnOccenaToResults;
     document.getElementById("occenaPhoneAddSheetV301").onclick=addOccenaPhoneSheetV301;
     document.getElementById("occenaPhonePrevV300").onclick=function(){
       saveOccenaPhoneCard();
@@ -757,6 +777,7 @@
   function bind(){
     ensureStyle();
     bindOccenaFinalScoreV310();
+    ["occenaBackBtnV331","occenaBackBtnV308","occenaBottomResultsReturn"].forEach(function(id){var btn=document.getElementById(id);if(btn)btn.onclick=returnOccenaToResults;});
     var b=document.getElementById("saveOccenaControlBtn");
     if(b)b.onclick=function(){persist(true);};
     try{refreshOccenaFinalScoreV310(metrics(state),dataFor(state));}catch(e){}
