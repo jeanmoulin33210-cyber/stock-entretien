@@ -211,18 +211,21 @@
   API.resetTestSnapshot=resetTestSnapshotV365;
   async function resetTestLot55V365(){
     if(busy||cloudBusy)throw new Error('Synchronisation en cours. Réessayez dans quelques secondes.');
-    if(guestTester||cloudRole!=='admin'||String(state?.config?.lotNumber)!=='55'||state.config._archive?.archivedAt)throw new Error('Ouvrez les résultats du lot 55 non archivé.');
+    if(guestTester||cloudRole!=='admin')throw new Error('Connexion propriétaire nécessaire.');
     busy=true;const previousCloudBusy=cloudBusy;cloudBusy=true;
     try{
       const c=await client();if(!c||!descriptor)throw new Error('Connexion propriétaire nécessaire.');
       await compactLocalJuryCopiesV360();
-      const before=clone(state),rid=id(state),key='prepared:'+rid;
-      await verifyRecoveryValueV360('lot55-before-test-reset',JSON.stringify(before));
+      const currentBefore=snapshot(state);
       const read=await c.from('test_culinaire_sessions').select('config,updated_at').eq('session_id',descriptor.sessionId).maybeSingle();
       if(read.error||!read.data?.config||!read.data.updated_at)throw new Error('Le partage ne peut pas être vérifié.');
       const catalog=clone(read.data.config._ownerCatalogV357);
-      const entry=catalog?.records?.[key];
-      if(!entry||!equal(snapshot(entry.state),snapshot(before)))throw new Error('Le lot partagé a changé. Revenez à l’accueil pour le synchroniser avant de recommencer.');
+      const matches=Object.entries(catalog?.records||{}).filter(([k,e])=>k.startsWith('prepared:')&&String(e?.state?.config?.lotNumber)==='55'&&!e.state.config._archive?.archivedAt&&!catalog.removed?.[k]);
+      if(matches.length!==1)throw new Error(matches.length?'Plusieurs lots 55 existent : aucune modification effectuée.':'Le lot 55 est absent du dossier partagé. Aucune modification effectuée.');
+      const [key,entry]=matches[0],before=clone(entry.state),rid=id(before);
+      const local=loadPreparedJurys().find(r=>String(r.id)===rid);
+      if((local&&!equal(snapshot(local.state),snapshot(before)))||(id(state)===rid&&!equal(currentBefore,snapshot(before))))throw new Error('Le lot 55 contient des modifications non synchronisées. Revenez à l’accueil avant de recommencer.');
+      await verifyRecoveryValueV360('lot55-before-test-reset',JSON.stringify(before));
       const sid=crypto.randomUUID(),instance='jury_'+crypto.randomUUID();
       const next=resetTestSnapshotV365(before,sid,instance);
       const adminCode=getRawAdminTokenV20(),codes=next.config.security?.testerCodes;
@@ -232,7 +235,7 @@
         p_admin_code:adminCode,p_tester_codes:codes
       });
       if(created.error)throw created.error;
-      if(!equal(snapshot(state),snapshot(before)))throw new Error('Le lot a changé pendant la préparation. Les anciennes données sont conservées.');
+      if(!equal(snapshot(state),currentBefore))throw new Error('Le lot a changé pendant la préparation. Les anciennes données sont conservées.');
       catalog.records[key]={state:snapshot(next),revision:Number(entry.revision||0)+1};
       const stamp=new Date(Math.max(Date.now(),Date.parse(read.data.updated_at)+1)).toISOString();
       const write=await c.from('test_culinaire_sessions').update({config:{...read.data.config,_ownerCatalogV357:catalog},updated_at:stamp})
