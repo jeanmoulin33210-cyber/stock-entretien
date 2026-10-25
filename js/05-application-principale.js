@@ -2296,6 +2296,22 @@ function receivedReceptionSuppliers(cfg,editingIndex=-1){
 function receptionSupplierAlreadyReceived(cfg,name,editingIndex=-1){
   return receivedReceptionSuppliers(cfg,editingIndex).has(receptionNormV258(name));
 }
+function receptionIsReadOnly(){
+  return receptionEditingIndex>=0 && !!receptionList(receptionConfig())[receptionEditingIndex];
+}
+function lockSavedReceptionForm(){
+  const locked=receptionIsReadOnly();
+  const view=$('#receptionView');
+  view?.querySelectorAll('input,select,textarea').forEach(el=>{el.disabled=locked;});
+  const canvas=$('#receptionSignature');
+  if(canvas){canvas.style.pointerEvents=locked?'none':'';canvas.setAttribute('aria-disabled',String(locked));}
+  ['receptionSaveBtn','clearReceptionSignature','receptionNewBtn','receptionPdfBtn'].forEach(id=>{
+    const el=$('#'+id);if(el){el.hidden=locked;el.style.display=locked?'none':'';}
+  });
+  const print=$('#receptionPrintBtn');if(print)print.textContent=locked?'🖨️ Imprimer cette réception':'🖨️ Imprimer la fiche vierge';
+  const subtitle=$('#receptionLotSubtitle');
+  if(subtitle&&locked)subtitle.textContent=(receptionConfig().lotName||'Lot')+' · Réception enregistrée et signée — lecture seule';
+}
 function renderReceptionForm(){
   const cfg=receptionConfig();
   if(!cfg||!receptionDraft)return;
@@ -2414,8 +2430,10 @@ function renderReceptionForm(){
 
   setupSignatureCanvas('receptionSignature',receptionDraft.driverSignature||'');
   renderReceptionSavedList();
+  lockSavedReceptionForm();
 }
 function captureReceptionForm(){
+  if(receptionIsReadOnly())return receptionDraft;
   const cfg=receptionConfig();
   if(!cfg||!receptionDraft)return null;
   receptionDraft.establishment=$('#receptionEstablishment').value.trim();
@@ -2447,6 +2465,7 @@ function captureReceptionForm(){
   return receptionDraft;
 }
 async function saveReceptionForm(){
+  if(receptionIsReadOnly()){alert('Cette réception signée est en lecture seule.');return;}
   const cfg=receptionConfig(),rec=captureReceptionForm();
   if(!cfg||!rec)return;
   if(!rec.date){alert('Indiquez la date de réception.');$('#receptionDate')?.focus();return}
@@ -2511,24 +2530,14 @@ function renderReceptionSavedList(){
   }
   box.innerHTML=list.map((r,i)=>{
     const received=(r.lines||[]).filter(x=>x.received!==false).length;
-    const refus=(r.lines||[]).filter(x=>x.received!==false&&x.decision==='refus').length;
     return `<div class="reception-saved-item">
-      <div><strong>${escapeHtml(r.supplier||'Fournisseur')} · ${escapeHtml(formatClosureDate(r.date))} ${escapeHtml(r.time||'')}</strong><span>${received} produit${received>1?'s':''} réceptionné${received>1?'s':''}${refus?` · ${refus} refus`:''}${r.driverSignature?' · signature enregistrée':''}</span></div>
-      <div class="reception-saved-actions"><button class="btn btn-secondary btn-small" type="button" data-edit-reception="${i}">Modifier</button><button class="btn btn-danger btn-small" type="button" data-delete-reception="${i}">Supprimer</button></div>
+      <div><strong>${escapeHtml(r.supplier||'Fournisseur')} · ${escapeHtml(formatClosureDate(r.date))} ${escapeHtml(r.time||'')}</strong><span>${received} produits · Réception enregistrée — lecture seule</span></div>
+      <div class="reception-saved-actions"><button class="btn btn-secondary btn-small" type="button" data-view-reception="${i}">Consulter</button></div>
     </div>`;
   }).join('');
-  box.querySelectorAll('[data-edit-reception]').forEach(b=>b.onclick=()=>openReceptionView(Number(b.dataset.editReception)));
-  box.querySelectorAll('[data-delete-reception]').forEach(b=>b.onclick=()=>{
-    const i=Number(b.dataset.deleteReception);
-    if(!confirm('Supprimer cette fiche de réception ?'))return;
-    receptionList(cfg).splice(i,1);
-    receptionEditingIndex=-1;
-    receptionDraft=newReceptionRecord(cfg);
-    renderReceptionForm();
-    renderReceptionConfigStatus();
-    if(cfg===state.config)saveState();
-  });
+  box.querySelectorAll('[data-view-reception]').forEach(b=>b.onclick=()=>openReceptionView(Number(b.dataset.viewReception)));
 }
+
 function newReceptionForm(){
   receptionEditingIndex=-1;
   receptionDraft=newReceptionRecord(receptionConfig());
@@ -2593,11 +2602,18 @@ function receptionPrintableHtml(){
     <div class="note">DLC = Date limite de consommation. DDM = Date de durabilité minimale.</div>
   </body></html>`;
 }
+function savedReceptionPrintableHtml(){
+  const r=receptionList(receptionConfig())[receptionEditingIndex];
+  const e=escapeHtml;
+  const rows=(r.lines||[]).map(x=>`<tr><td>${e(x.productName)}</td><td>${x.received===false?'Non':'Oui'}</td><td>${e(x.productTemp)}</td><td>${e(x.interiorTemp)}</td><td>${e(x.dlc)}</td><td>${e(x.packaging)}</td><td>${e(x.decision)}</td><td>${e(x.observations)}</td></tr>`).join('');
+  const signature=/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(r.driverSignature||'')?`<img alt="Signature du livreur enregistrée" style="max-width:300px;max-height:130px" src="${e(r.driverSignature)}">`:'Signature non disponible';
+  return `<!doctype html><html lang="fr"><meta charset="utf-8"><title>Réception enregistrée</title><style>@page{size:A4 landscape;margin:12mm}body{font:12px Arial;color:#172d3e}table{border-collapse:collapse;width:100%;font-size:10px}th,td{border:1px solid #aaa;padding:6px;text-align:left}tr{break-inside:avoid}h1{font-size:21px}.signature{break-inside:avoid}</style><h1>Réception enregistrée — ${e(r.supplier)}</h1><p>${e(receptionConfig().lotName)} · ${e(r.establishment)}</p><p>Date : ${e(r.date)} · Heure : ${e(r.time)} · T° véhicule : ${e(r.vehicleTemp)} °C</p><p>Livreur : ${e(r.driverName)} · Agent réceptionnaire : ${e(r.receiverName)}</p><table><thead><tr><th>Produit</th><th>Reçu</th><th>T° produit</th><th>T° intérieur</th><th>DLC / DDM</th><th>Emballage</th><th>Décision</th><th>Observations</th></tr></thead><tbody>${rows}</tbody></table><div class="signature"><h2>Signature du livreur</h2>${signature}<p>Validation : ${e(r.validatedAt||'')}</p></div></html>`;
+}
 function printReceptionPaper(){
   const w=window.open('','_blank');
   if(!w){alert('Autorisez les fenêtres pop-up pour imprimer la fiche.');return}
   w.document.open();
-  w.document.write(receptionPrintableHtml());
+  w.document.write(receptionIsReadOnly()?savedReceptionPrintableHtml():receptionPrintableHtml());
   w.document.close();
   setTimeout(()=>{try{w.focus();w.print()}catch(e){console.error(e)}},350);
 }
@@ -7018,6 +7034,7 @@ function setupSignatureCanvas(id,dataUrl){
     return{x:(touch.clientX-r.left)*(canvas.width/r.width),y:(touch.clientY-r.top)*(canvas.height/r.height)}
   };
   const start=e=>{
+    if(isReceptionSignature&&receptionIsReadOnly())return;
     e.preventDefault();
     drawing=true;
     signatureScrollY=window.scrollY||window.pageYOffset||0;
@@ -7064,6 +7081,7 @@ function setupSignatureCanvas(id,dataUrl){
   if(!isReceptionSignature)canvas.addEventListener('pointerleave',end);
 }
 function clearSignature(id){
+  if(id==='receptionSignature'&&receptionIsReadOnly())return;
   const c=document.getElementById(id);if(!c)return;c.getContext('2d').clearRect(0,0,c.width,c.height);c.dataset.hasInk='';
   if(id==='receptionSignature'){
     try{if(receptionDraft)receptionDraft.driverSignature=''}catch(e){}
