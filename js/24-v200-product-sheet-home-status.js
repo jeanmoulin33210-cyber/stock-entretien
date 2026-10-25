@@ -302,7 +302,7 @@
             }
           }catch(e){}
         }
-        if(row && typeof openProductLotV174==='function') openProductLotV174(row);
+        if(row && typeof openProductLotV174==='function'){row.readOnly=mode==='done';openProductLotV174(row);}
       };
     });
     modal.classList.add('show');
