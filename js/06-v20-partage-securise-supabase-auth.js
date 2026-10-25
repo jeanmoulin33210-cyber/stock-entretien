@@ -1099,6 +1099,7 @@ async function pushAllAnswers(){
 }
 async function syncDirtyToCloud(){if(testerPreviewMode)return;
   if(!cloudReady)return;
+  if(isEmptyLocalHomeV340()){await disconnectCloud();return;}
   if(cloudAdminAccessBlockedV339)return;
   if(Date.now()<cloudRetryAfterV339){
     clearTimeout(cloudSyncTimer);
@@ -1607,6 +1608,9 @@ async function forceReloadAdminStateV328(){
 }
 
 async function disconnectCloud(){
+  clearTimeout(cloudSyncTimer);
+  cloudSyncPendingV323=false;cloudConfigReloadPendingV323=false;cloudAnswersReloadPendingV323=false;
+  cloudUploadSucceededV339();
   cloudReady=false;cloudRole=null;cloudTesterNo=null;cloudUserId=null;
   if(cloudChannel&&cloudClient)try{await cloudClient.removeChannel(cloudChannel)}catch(e){}
   if(cloudPresenceChannel&&cloudClient)try{await cloudClient.removeChannel(cloudPresenceChannel)}catch(e){}
@@ -1614,8 +1618,23 @@ async function disconnectCloud(){
   if(cloudClient)try{await cloudClient.auth.signOut({scope:'local'})}catch(e){}
   cloudClient=null;cloudCfg.sessionId='';cloudCfg.accessCode='';saveCloudCfg();setCloudStatus('local','● Local');cloudMsg('Mode local activé.','warn');renderShareLinks()
 }
+function isEmptyLocalHomeV340(){
+  if(guestTester||cloudRole==='tester')return false;
+  const cfg=state?.config||{};
+  return cfg._emptyAfterReset===true &&
+    !(cfg.products||[]).length &&
+    !cfg._preparedId && !cfg.juryLaunch?.openedAt;
+}
 async function autoConnectFromUrl(){
   loadCloudCfg();
+  // An empty post-archive workspace has no current jury to reconnect.
+  if(isEmptyLocalHomeV340()&&!new URLSearchParams(location.search).has('session')){
+    cloudCfg.sessionId='';cloudCfg.accessCode='';
+    saveCloudCfg();
+    cloudUploadSucceededV339();
+    setCloudStatus('local','● Aucun jury en cours');
+    return;
+  }
   if(cloudCfg.url&&cloudCfg.key&&cloudCfg.sessionId){
     try{
       $('#cloudUrl').value=cloudCfg.url;$('#cloudKey').value=cloudCfg.key;$('#cloudSession').value=cloudCfg.sessionId;
