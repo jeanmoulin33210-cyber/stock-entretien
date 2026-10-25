@@ -125,6 +125,18 @@
 
     function activeState(st){
       var cfg=st&&st.config;
+      try{
+        var archived=typeof loadArchives==='function'?loadArchives():[];
+        var finalized=archived.some(function(rec){
+          if(!(rec.finalLocked||rec.state&&rec.state.config&&rec.state.config._archive&&rec.state.config._archive.finalLocked))return false;
+          var old=rec.state&&rec.state.config||{};
+          var ai=String(cfg&& (cfg._juryInstanceId||cfg.juryInstanceId)||'');
+          var bi=String(old._juryInstanceId||old.juryInstanceId||'');
+          var ap=String(cfg&&cfg._preparedId||'');
+          return !!((ai&&bi&&ai===bi)||(ap&&ap===String(old._preparedId||'')));
+        });
+        if(finalized)return false;
+      }catch(e){}
       return !!(cfg&&Array.isArray(cfg.products)&&cfg.products.length&&
         !(cfg.juryClose&&cfg.juryClose.closedAt)&&
         !(cfg._archive&&cfg._archive.archivedAt));
