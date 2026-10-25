@@ -172,6 +172,22 @@
   body #configView{min-width:0!important;max-width:100%!important}
 }
 </style>
+<style id="qrShareVisibleReturn338g">
+/* Retour du partage toujours accessible, même sur un écran court. */
+#qrShareModal{box-sizing:border-box; padding:10px; z-index:1000000;}
+#qrShareModal > .modal{
+  box-sizing:border-box;max-height:calc(100vh - 20px);max-height:calc(100dvh - 20px);
+  overflow-y:auto;overscroll-behavior:contain;padding-top:0;
+}
+#qrShareModal .qr-share-return-bar{
+  position:sticky;top:0;z-index:5;background:#fff;
+  padding:12px 0;border-bottom:1px solid #d9e4eb;margin-bottom:12px;
+}
+#qrShareModal .qr-share-return-bar .btn{
+  display:block;width:100%;white-space:normal;min-height:48px;font-size:14px;
+}
+#qrShareModal .modal-actions .btn{white-space:normal;width:100%;}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
@@ -1953,7 +1969,7 @@
 
 <div class="modal-backdrop" id="qrShareModal">
   <div class="modal" style="max-width:620px">
-    <button class="btn btn-secondary" type="button" onclick="closeQrShareModal()" style="margin-bottom:14px">← Retour à la préparation du jury</button>
+    <div class="qr-share-return-bar"><button class="btn btn-primary" type="button" onclick="closeQrShareModal()">← Retour au bouton « Partager les accès testeurs »</button></div>
     <h3>📤 Partager les accès testeurs</h3>
     <p>Les QR codes sont préparés ici avant d’ouvrir Gmail.</p>
 
@@ -1976,7 +1992,7 @@
       puis ouvrez Gmail et faites <strong>Ctrl + V</strong> dans le message.
       Cette copie se fait sur un clic séparé afin que Chrome l’autorise correctement.
     </p>
-    <div class="modal-actions"><button class="btn btn-ghost" id="qrShareCloseBtn" type="button">Fermer</button></div>
+    <div class="modal-actions"><button class="btn btn-ghost" id="qrShareCloseBtn" type="button">← Retour à la préparation du jury</button></div>
   </div>
 </div>
 
