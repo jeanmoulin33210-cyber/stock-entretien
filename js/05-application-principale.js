@@ -2387,74 +2387,31 @@ function renderReceptionForm(){
   if(receivedSuppliers.has(receptionNormV258(receptionDraft.supplier)))receptionDraft.supplier='';
   const selected=String(receptionDraft.supplier||'').trim();
 
-  if(supplierInput && supplierManual){
-    /* V263 — si aucun fournisseur n'est connu, ne pas afficher un menu vide :
-       on propose directement une saisie texte. */
-    if(!suppliers.length){
-      supplierInput.style.display='none';
-      supplierManual.style.display='';
-      supplierManual.value=selected;
-      supplierManual.onchange=()=>{
-        const clean=addManualReceptionSupplierV263(cfg,supplierManual.value);
-        receptionDraft.supplier=clean||String(supplierManual.value||'').trim();
-      };
-      supplierManual.onblur=()=>{
-        const clean=String(supplierManual.value||'').trim();
-        if(clean){
-          receptionDraft.supplier=addManualReceptionSupplierV263(cfg,clean)||clean;
-        }
-      };
-    }else{
-      supplierInput.style.display='';
-      supplierManual.style.display='none';
-      supplierManual.value='';
-
-      supplierInput.innerHTML=
-        '<option value="">— Choisir le fournisseur —</option>'+
-        suppliers.map(name=>{const done=receivedSuppliers.has(receptionNormV258(name));return `<option value="${escapeHtml(name)}" ${done?'disabled style="color:#8a949b;background:#edf0f2"':''}>${escapeHtml(name)}${done?' — déjà réceptionné ✓':''}</option>`}).join('')+
-        '<option value="__manual_supplier_v260__">✏️ Saisir un fournisseur manuellement…</option>';
-
-      if(selected && !suppliers.includes(selected)){
-        supplierInput.insertAdjacentHTML('beforeend',
-          `<option value="${escapeHtml(selected)}">${escapeHtml(selected)}</option>`);
-      }
-
-      if(selected){
-        supplierInput.value=selected;
-      }else if(availableSuppliers.length===1){
-        supplierInput.value=availableSuppliers[0];
-        receptionDraft.supplier=availableSuppliers[0];
-      }else{
-        supplierInput.value='';
-      }
-
-      supplierInput.onchange=()=>{
-        if(supplierInput.value!=='__manual_supplier_v260__'){
-          if(receivedSuppliers.has(receptionNormV258(supplierInput.value))){supplierInput.value='';receptionDraft.supplier='';return;}
-          receptionDraft.supplier=supplierInput.value||'';
-          return;
-        }
-        const name=prompt('Nom du fournisseur :','');
-        if(!String(name||'').trim()){
-          supplierInput.value=receptionDraft.supplier||'';
-          return;
-        }
-        if(receptionSupplierAlreadyReceived(cfg,name,receptionEditingIndex)){
-          alert('Ce fournisseur a déjà été réceptionné pour ce lot. Choisissez un fournisseur restant.');
-          supplierInput.value=receptionDraft.supplier||'';
-          return;
-        }
-        const clean=addManualReceptionSupplierV263(cfg,name);
-        if(!clean){
-          supplierInput.value=receptionDraft.supplier||'';
-          return;
-        }
-        receptionDraft.supplier=clean;
-        renderReceptionForm();
-        const refreshed=$('#receptionSupplier');
-        if(refreshed)refreshed.value=clean;
-      };
+  if(supplierManual){
+    supplierManual.hidden=true;supplierManual.style.display='none';
+    supplierManual.value='';supplierManual.onchange=null;supplierManual.onblur=null;
+  }
+  if(supplierInput){
+    supplierInput.style.display='';
+    supplierInput.innerHTML=
+      '<option value="">'+(suppliers.length?'— Choisir le fournisseur —':'— Aucun fournisseur : compléter la préparation du jury —')+'</option>'+
+      suppliers.map(name=>{const done=receivedSuppliers.has(receptionNormV258(name));return `<option value="${escapeHtml(name)}" ${done?'disabled':''}>${escapeHtml(name)}${done?' — déjà réceptionné ✓':''}</option>`}).join('');
+    // Keep historical signed receipts readable without adding their supplier to the lot.
+    if(receptionIsReadOnly()&&selected&&!suppliers.includes(selected)){
+      supplierInput.insertAdjacentHTML('beforeend',`<option value="${escapeHtml(selected)}">${escapeHtml(selected)}</option>`);
     }
+    if(selected&&(suppliers.includes(selected)||receptionIsReadOnly())){
+      supplierInput.value=selected;
+    }else if(availableSuppliers.length===1){
+      supplierInput.value=availableSuppliers[0];receptionDraft.supplier=availableSuppliers[0];
+    }else{
+      supplierInput.value='';receptionDraft.supplier='';
+    }
+    supplierInput.onchange=()=>{
+      const value=String(supplierInput.value||'').trim();
+      receptionDraft.supplier=suppliers.includes(value)&&!receivedSuppliers.has(receptionNormV258(value))?value:'';
+      supplierInput.value=receptionDraft.supplier;
+    };
   }
 
   const lines=$('#receptionLines');
@@ -2493,14 +2450,8 @@ function captureReceptionForm(){
   receptionDraft.date=$('#receptionDate').value||'';
   receptionDraft.time=$('#receptionTime').value||'';
   const supplierSelect=$('#receptionSupplier');
-  const supplierManual=$('#receptionSupplierManual');
-  receptionDraft.supplier=(supplierManual&&supplierManual.style.display!=='none')
-    ?String(supplierManual.value||'').trim()
-    :String(supplierSelect?.value||'').trim();
-  if(receptionDraft.supplier==='__manual_supplier_v260__')receptionDraft.supplier='';
-  if(receptionDraft.supplier){
-    try{receptionDraft.supplier=addManualReceptionSupplierV263(cfg,receptionDraft.supplier)||receptionDraft.supplier}catch(e){}
-  }
+  const selectedSupplier=String(supplierSelect?.value||'').trim();
+  receptionDraft.supplier=receptionConfiguredSupplierNames(cfg).includes(selectedSupplier)?selectedSupplier:'';
   receptionDraft.vehicleTemp=String($('#receptionVehicleTemp').value??'').trim();
   receptionDraft.driverName=$('#receptionDriverName').value.trim();
   receptionDraft.receiverName=$('#receptionReceiverName').value.trim();
@@ -2522,7 +2473,7 @@ async function saveReceptionForm(){
   const cfg=receptionConfig(),rec=captureReceptionForm();
   if(!cfg||!rec)return;
   if(!rec.date){alert('Indiquez la date de réception.');$('#receptionDate')?.focus();return}
-  if(!rec.supplier){alert('Choisissez le fournisseur.');$('#receptionSupplier')?.focus();return}
+  if(!rec.supplier||!receptionConfiguredSupplierNames(cfg).includes(rec.supplier)){alert('Choisissez un fournisseur prévu pour ce lot. Pour en ajouter un, revenez à la préparation du jury.');$('#receptionSupplier')?.focus();return}
   if(receptionSupplierAlreadyReceived(cfg,rec.supplier,receptionEditingIndex)){
     alert('Ce fournisseur a déjà une réception enregistrée pour ce lot. Consultez « Réceptions enregistrées » pour la modifier.');
     return;
