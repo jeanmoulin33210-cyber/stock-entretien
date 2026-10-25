@@ -679,6 +679,10 @@ async function fetchCloudState(){
     const {data:a,error:e2}=await cloudClient.from('test_culinaire_reponses').select('tester_no,product_id,sample_id,choices,remarks,updated_at').eq('session_id',cloudCfg.sessionId).eq('tester_no',cloudTesterNo);
     if(e2)throw e2;answers=a||[]
   }
+  if(config?._ownerWorkspaceV351||config?._ownerCatalogV357){
+    await verifyRecoveryValueV360('incoming-cloud-config',JSON.stringify(config));
+    config=compactOwnerEnvelopesV360(config);
+  }
   rebuildLocalFromCloud(config,answers)
 }
 async function createSecureCloudSession(){
@@ -716,6 +720,7 @@ async function connectCloud({create=false}={}){
   let connectionStageV359='01 · préparation';
   try{
   try{await preserveRecoveryCopiesV358();}catch(e){console.warn('Recovery copies retained',e);}
+  await compactLocalJuryCopiesV360();
   cloudCfg.url=$('#cloudUrl')?.value.trim()||cloudCfg.url;cloudCfg.key=$('#cloudKey')?.value.trim()||cloudCfg.key;cloudCfg.sessionId=$('#cloudSession')?.value.trim()||cloudCfg.sessionId;
   if(create&&!cloudCfg.sessionId)cloudCfg.sessionId=crypto.randomUUID();
   if(!cloudCfg.sessionId)throw new Error('Indiquez un identifiant de session ou cliquez sur « Créer une session partagée ».');
@@ -751,7 +756,7 @@ async function connectCloud({create=false}={}){
   }catch(e){
     const detail=String(e?.message||e);
     const name=String(e?.name||'Erreur');
-    throw new Error('V359 · étape '+connectionStageV359+' · '+name+' : '+detail);
+    throw new Error('V360 · étape '+connectionStageV359+' · '+name+' : '+detail);
   }
 }
 async function subscribeCloud(){
@@ -2707,3 +2712,56 @@ async function exportRecoveryCopiesV358(){
   button.onclick=()=>exportRecoveryCopiesV358().catch(e=>alert(e.message||String(e)));
   anchor.parentNode.appendChild(button);
 })();
+
+/* V360: owner transfer/catalogue envelopes are duplicate transport data.
+ * Preserve complete originals in IndexedDB before removing those envelopes
+ * from local jury snapshots. The authoritative catalogue stays on the server. */
+function compactOwnerEnvelopesV360(value){
+  if(Array.isArray(value))return value.map(compactOwnerEnvelopesV360);
+  if(value&&typeof value==='object'){
+    const out={};
+    for(const [key,item]of Object.entries(value)){
+      if(key==='_ownerWorkspaceV351'||key==='_ownerCatalogV357')continue;
+      out[key]=compactOwnerEnvelopesV360(item);
+    }
+    return out;
+  }
+  return value;
+}
+async function verifyRecoveryValueV360(key,value){
+  const db=await new Promise((resolve,reject)=>{
+    const r=indexedDB.open('jm_tc_recovery_v358',1);
+    r.onupgradeneeded=()=>r.result.createObjectStore('copies',{keyPath:'id'});
+    r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);
+    r.onblocked=()=>reject(new Error('Stockage de secours indisponible.'));
+  });
+  try{
+    const digest=await crypto.subtle.digest('SHA-256',new TextEncoder().encode(value));
+    const id=key+':'+Array.from(new Uint8Array(digest),b=>b.toString(16).padStart(2,'0')).join('');
+    await new Promise((resolve,reject)=>{
+      const tx=db.transaction('copies','readwrite');
+      tx.objectStore('copies').put({id,key,value,savedAt:new Date().toISOString()});
+      tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Copie interrompue.'));
+    });
+    const copy=await new Promise((resolve,reject)=>{
+      const r=db.transaction('copies','readonly').objectStore('copies').get(id);
+      r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);
+    });
+    if(copy?.value!==value)throw new Error('Original non vérifié : données conservées.');
+  }finally{db.close();}
+}
+async function compactLocalJuryCopiesV360(){
+  for(const key of [STORAGE_KEY,PREPARED_JURY_STORAGE_KEY,ARCHIVE_STORAGE_KEY]){
+    const raw=localStorage.getItem(key);if(!raw)continue;
+    let parsed;try{parsed=JSON.parse(raw)}catch(e){continue}
+    const compact=JSON.stringify(compactOwnerEnvelopesV360(parsed));
+    if(!raw.includes('"_ownerWorkspaceV351"')&&!raw.includes('"_ownerCatalogV357"'))continue;
+    await verifyRecoveryValueV360(key,raw);
+    if(localStorage.getItem(key)===raw)localStorage.setItem(key,compact);
+  }
+  // Preserve the in-memory original too, before changing the serialization.
+  if(state?.config?._ownerWorkspaceV351||state?.config?._ownerCatalogV357){
+    await verifyRecoveryValueV360('active-memory',JSON.stringify(state));
+    delete state.config._ownerWorkspaceV351;delete state.config._ownerCatalogV357;
+  }
+}
