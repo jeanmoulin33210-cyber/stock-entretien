@@ -4451,7 +4451,8 @@ async function autoCloseJuryIfReady(){
 
 function renderJuryView(){
   updateHeader();
-  showView('juryView');
+  // Refresh live progress in place; only scroll when entering this screen.
+  if(!$('#juryView').classList.contains('active'))showView('juryView');
 
   /* V219 : un jury déjà marqué « en cours » se republie automatiquement
      vers les téléphones. Cela répare aussi les jurys lancés avant la correction V218. */
