@@ -559,6 +559,7 @@ function restoreAdminShareMetadataV248(cfg,previousCfg=null){
 }
 
 function rebuildLocalFromCloud(config,rows=[]){
+  if(localStorage.getItem('jm_tc_lot98_isolated_v341')==='1'&&typeof isLot98RecoveryV341==='function'&&isLot98RecoveryV341(config))throw new Error('Le lot 98 LOP a été mis à l’écart. Sa copie de récupération est conservée.');
   updateTesterActivityFromRows(rows);
   const serverValidationV323={};
   rows.forEach(r=>{
@@ -1626,7 +1627,14 @@ function isEmptyLocalHomeV340(){
     !cfg._preparedId && !cfg.juryLaunch?.openedAt;
 }
 async function autoConnectFromUrl(){
+  const isolated=typeof isolateReturnedLot98V341==='function'&&isolateReturnedLot98V341();
   loadCloudCfg();
+  if(isolated){
+    cloudCfg.sessionId='';cloudCfg.accessCode='';saveCloudCfg();
+    const u=new URL(location.href);['session','accessCode','repairLot'].forEach(k=>u.searchParams.delete(k));history.replaceState(null,'',u.toString());
+    cloudUploadSucceededV339();setCloudStatus('local','● Aucun jury en cours');
+    originalRenderHome();return;
+  }
   // An empty post-archive workspace has no current jury to reconnect.
   if(isEmptyLocalHomeV340()&&!new URLSearchParams(location.search).has('session')){
     cloudCfg.sessionId='';cloudCfg.accessCode='';
