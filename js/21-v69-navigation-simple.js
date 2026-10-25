@@ -355,4 +355,4 @@ function openResultsLotChooserV348(){
   list.querySelector('button')?.focus();
 }
 document.getElementById('resultsBtn').onclick=openResultsLotChooserV348;
-document.getElementById('hubResultsBtn')?.addEventListener('click',openResultsLotChooserV348);
+if(document.getElementById('hubResultsBtn'))document.getElementById('hubResultsBtn').onclick=openResultsLotChooserV348;
