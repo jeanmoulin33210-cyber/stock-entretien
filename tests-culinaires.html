@@ -147,6 +147,31 @@
   .primary-supplier-ranking-v331 #overallCards .supplier-score{padding:5px 7px!important}
 }
 </style>
+<style id="mobilePreparationFix338d">
+/* Mobile : bandeau compact et commandes de préparation dans le flux. */
+@media screen and (max-width:720px){
+  body header.topbar{
+    display:flex!important;flex-wrap:wrap!important;gap:7px!important;
+    position:relative!important;top:auto!important;
+    padding:10px 12px!important;height:auto!important;min-height:0!important;
+    width:100%!important;box-sizing:border-box!important;
+  }
+  body header.topbar .brandmark{flex:0 0 34px!important;width:34px!important;height:34px!important}
+  body header.topbar .topbar-title{flex:1 1 calc(100% - 50px)!important;min-width:0!important;width:auto!important}
+  body header.topbar .topbar-title strong{display:block!important;font-size:15px!important}
+  body header.topbar .topbar-title span{display:none!important}
+  body header.topbar #cloudStatus{flex:1 1 auto!important;max-width:100%!important;white-space:normal!important;border-radius:10px!important;padding:6px 8px!important}
+  body header.topbar .btn{min-width:0!important;padding:7px 9px!important;font-size:12px!important;flex:0 1 auto!important}
+  body #configView .config-summary-bar{
+    position:static!important;bottom:auto!important;left:auto!important;right:auto!important;
+    display:flex!important;flex-direction:column!important;align-items:stretch!important;
+    width:100%!important;box-sizing:border-box!important;margin-top:18px!important;
+  }
+  body #configView .config-summary-bar .right{display:flex!important;flex-wrap:wrap!important;gap:8px!important}
+  body #configView .config-summary-bar .btn{flex:1 1 auto!important;min-width:0!important;white-space:normal!important}
+  body #configView{min-width:0!important;max-width:100%!important}
+}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
@@ -2019,7 +2044,7 @@
 <script src="js/16-v21-qr-codes-individuels-des.js?build=338a"></script>
 
 
-<script src="js/17-v32-diagnostic-securite-supabase-final.js?build=338a"></script>
+<script src="js/17-v32-diagnostic-securite-supabase-final.js?build=338d-reseau"></script>
 
 
 <script src="js/18-v19-protection-administrateur-par-jeton.js?build=338a"></script>
