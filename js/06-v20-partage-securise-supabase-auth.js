@@ -597,7 +597,7 @@ function rebuildLocalFromCloud(config,rows=[]){
   });
   const previousCfg=deepClone(state?.config||{});
   const previous=sameJuryV357(config,previousCfg)?(state?.testers||{}):{};
-  const serverConfigHashV323=hashJson(config||{});
+  const serverConfigHashV323=hashJson(compactOwnerEnvelopesV360(config||{}));
   const incoming=(cloudRole==='admin')
     ?restoreAdminShareMetadataV248(deepClone(config||{}),previousCfg)
     :config;
@@ -661,6 +661,7 @@ function rebuildLocalFromCloud(config,rows=[]){
   }
 }
 async function fetchCloudState(){
+  await compactLocalJuryCopiesV360();
   if(!cloudRole)await joinSecureSession();
   let config=null,answers=[];
   if(cloudRole==='admin'){
@@ -756,7 +757,7 @@ async function connectCloud({create=false}={}){
   }catch(e){
     const detail=String(e?.message||e);
     const name=String(e?.name||'Erreur');
-    throw new Error('V360 · étape '+connectionStageV359+' · '+name+' : '+detail);
+    throw new Error('V361 · étape '+connectionStageV359+' · '+name+' : '+detail);
   }
 }
 async function subscribeCloud(){
@@ -1228,7 +1229,9 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
         }
 
         if(state!==syncStateV357||cloudCfg.sessionId!==syncSidV357)return;
-        state.config=outgoing;
+        await verifyRecoveryValueV360('outgoing-cloud-config',JSON.stringify(outgoing));
+        if(state!==syncStateV357||cloudCfg.sessionId!==syncSidV357)return;
+        state.config=compactOwnerEnvelopesV360(outgoing);
         originalSaveState();
 
         const {data:writtenV357,error}=await syncClientV357
@@ -1246,7 +1249,7 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
 
         if(state!==syncStateV357||cloudCfg.sessionId!==syncSidV357)return;
         await syncAccessCodes();
-        lastCloudConfigHash=hashJson(outgoing);
+        lastCloudConfigHash=hashJson(compactOwnerEnvelopesV360(outgoing));
       }
     }
 
