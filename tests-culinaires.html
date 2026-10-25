@@ -188,6 +188,21 @@
 }
 #qrShareModal .modal-actions .btn{white-space:normal;width:100%;}
 </style>
+<style id="qrShareFixedReturn338h">
+#qrShareModal .qr-share-fixed-return{
+ position:fixed;bottom:0;left:0;right:0;z-index:1000002;
+ display:flex;justify-content:center;background:#fff;
+ padding:10px 14px calc(10px + env(safe-area-inset-bottom));
+ border-top:2px solid #c8dce8;box-shadow:0 -4px 18px rgba(0,0,0,.15);
+}
+#qrShareModal .qr-share-fixed-return .btn{
+ width:100%;max-width:620px;min-height:48px;white-space:normal;font-size:16px;
+}
+#qrShareModal > .modal{
+ max-height:calc(100vh - 105px);max-height:calc(100dvh - 105px);
+ overflow-y:auto;margin-bottom:80px;
+}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#172033;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
@@ -1968,6 +1983,7 @@
 </div>
 
 <div class="modal-backdrop" id="qrShareModal">
+  <div class="qr-share-fixed-return"><button type="button" class="btn btn-primary" onclick="closeQrShareModal()">← Retour aux accès testeurs</button></div>
   <div class="modal" style="max-width:620px">
     <div class="qr-share-return-bar"><button class="btn btn-primary" type="button" onclick="closeQrShareModal()">← Retour au bouton « Partager les accès testeurs »</button></div>
     <h3>📤 Partager les accès testeurs</h3>
