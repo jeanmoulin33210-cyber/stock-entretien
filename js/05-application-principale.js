@@ -4627,7 +4627,85 @@ function renderJuryView(){
     closeBtn.disabled=!ready||isJuryClosed();
   }
 }
-function openConfig(){if(isJuryClosed()){dashboardNewJury();return}try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig()}
+
+let preparationEditKeyV347='';
+function preparationKeyV347(cfg){return String(cfg?._preparedId||cfg?._juryInstanceId||cfg?.juryInstanceId||cfg?._shareSessionId||'');}
+function preparationHasAnswersV347(){
+  return Object.values(state?.testers||{}).some(t=>t?.validatedAt||Object.values(t?.answers||{}).some(a=>(a.choices||[]).some(v=>v!==null&&v!==undefined)||(a.remarks||[]).some(v=>String(v||'').trim())));
+}
+function preparationLockedV347(cfg=draftConfig||state.config){
+  if(!cfg)return false;
+  const same=preparationKeyV347(cfg)===preparationKeyV347(state.config);
+  if(cfg.juryClose?.closedAt||cfg.juryLaunch?.openedAt||(same&&preparationHasAnswersV347()))return true;
+  const prepared=!!(cfg._preparationLockedAt||(cfg._shareSessionId&&cfg._phoneShareSignature));
+  return prepared&&preparationEditKeyV347!==preparationKeyV347(cfg);
+}
+function applyPreparationLockV347(){
+  const view=$('#configView');if(!view||!draftConfig)return;
+  const locked=preparationLockedV347();
+  let banner=$('#preparationLockV347');
+  if(!banner){
+    banner=document.createElement('section');banner.id='preparationLockV347';banner.className='panel';
+    banner.innerHTML='<strong data-lock-title></strong><p data-lock-note></p><button type="button" class="btn btn-secondary" id="unlockPreparationV347">🔐 Modifier le jury</button>';
+    view.prepend(banner);
+    $('#unlockPreparationV347').onclick=requestPreparationEditV347;
+  }
+  banner.hidden=!locked;
+  const final=!!draftConfig.juryLaunch?.openedAt||!!draftConfig.juryClose?.closedAt||preparationHasAnswersV347();
+  const title=final?'Préparation verrouillée — jury lancé ou dégustation commencée':'Préparation verrouillée — accès téléphones générés';
+  const note=final?'Consultation uniquement. Les paramètres du jury ne peuvent plus être modifiés.':'Vous pouvez consulter le jury et retrouver les QR codes. Toute modification nécessite le PIN et une confirmation.';
+  if(banner.querySelector('[data-lock-title]').textContent!==title)banner.querySelector('[data-lock-title]').textContent=title;
+  if(banner.querySelector('[data-lock-note]').textContent!==note)banner.querySelector('[data-lock-note]').textContent=note;
+  $('#unlockPreparationV347').hidden=final;
+  const allowed=new Set(['unlockPreparationV347','configQrBtn','configEmailQrPdfBtn','configPrintArticlesBtn','configReceptionBtn','previewConfigBtn','cancelConfigBtn','cancelConfigTopBtn','configHomeBtn']);
+  view.querySelectorAll('input,select,textarea,button').forEach(el=>{
+    if(allowed.has(el.id))return;
+    if(locked&&!el.disabled){el.dataset.preparationDisabledV347='1';el.disabled=true;}
+    else if(!locked&&el.dataset.preparationDisabledV347==='1'){delete el.dataset.preparationDisabledV347;el.disabled=false;}
+  });
+}
+async function requestPreparationEditV347(){
+  if(state.config.juryLaunch?.openedAt||state.config.juryClose?.closedAt||preparationHasAnswersV347()){
+    alert('La dégustation est lancée ou commencée. La préparation reste verrouillée.');return;
+  }
+  if(typeof securityEnabled!=='function'||!securityEnabled()){
+    alert('Définissez d’abord votre PIN dans « Sécurité », puis revenez sur « Modifier le jury ».');
+    if(typeof openSecurityModal==='function')openSecurityModal();return;
+  }
+  let modal=$('#preparationPinV347');
+  if(!modal){
+    modal=document.createElement('div');modal.id='preparationPinV347';modal.className='modal-backdrop';
+    modal.innerHTML='<div class="modal"><h3>Modifier le jury</h3><p>Entrez votre PIN administrateur.</p><input id="preparationPinInputV347" type="password" inputmode="numeric" autocomplete="off" maxlength="8"><p id="preparationPinErrorV347" role="alert"></p><div class="modal-actions"><button type="button" class="btn btn-ghost" id="preparationPinCancelV347">Annuler</button><button type="button" class="btn btn-primary" id="preparationPinConfirmV347">Déverrouiller</button></div></div>';
+    document.body.appendChild(modal);
+    $('#preparationPinCancelV347').onclick=()=>{modal.classList.remove('show');$('#preparationPinInputV347').value='';};
+    $('#preparationPinConfirmV347').onclick=async()=>{
+      const btn=$('#preparationPinConfirmV347');btn.disabled=true;
+      try{
+        const ok=await verifyPin($('#preparationPinInputV347').value);
+        $('#preparationPinInputV347').value='';
+        if(!ok)throw new Error('Code PIN incorrect.');
+        if(typeof cloudReady!=='undefined'&&state.config._shareSessionId){
+          if(!cloudReady||cloudRole!=='admin'||cloudCfg.sessionId!==state.config._shareSessionId)throw new Error('Reconnectez le jury pour vérifier qu’aucune dégustation n’a commencé.');
+          const sessionCheck=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',cloudCfg.sessionId).maybeSingle();
+          if(sessionCheck.error||!sessionCheck.data?.config)throw new Error('Impossible de vérifier le statut du jury. La préparation reste verrouillée.');
+          if(sessionCheck.data.config.juryLaunch?.openedAt||sessionCheck.data.config.juryClose?.closedAt)throw new Error('Le jury a déjà été lancé. La préparation reste verrouillée.');
+          const {data,error}=await cloudClient.from('test_culinaire_reponses').select('product_id,choices,remarks').eq('session_id',cloudCfg.sessionId);
+          if(error)throw new Error('Impossible de vérifier les réponses des téléphones. La préparation reste verrouillée.');
+          if((data||[]).some(r=>r.product_id!=='__meta__'&&((r.choices||[]).some(v=>v!==null&&v!==undefined)||(r.remarks||[]).some(v=>String(v||'').trim()))))throw new Error('Une dégustation a déjà commencé. La préparation reste verrouillée.');
+        }
+        if(preparationHasAnswersV347()||state.config.juryLaunch?.openedAt||state.config.juryClose?.closedAt)throw new Error('Le jury a commencé. La préparation reste verrouillée.');
+        if(!confirm('Modifier ce jury ? Après les changements, préparez à nouveau les téléphones et vérifiez les QR codes avant de lancer la dégustation.'))return;
+        preparationEditKeyV347=preparationKeyV347(draftConfig);
+        modal.classList.remove('show');renderConfig();
+      }catch(e){$('#preparationPinErrorV347').textContent=e.message||String(e);}
+      finally{btn.disabled=false;}
+    };
+  }
+  $('#preparationPinErrorV347').textContent='';$('#preparationPinInputV347').value='';
+  modal.classList.add('show');$('#preparationPinInputV347').focus();
+}
+
+function openConfig(){preparationEditKeyV347='';try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig()}
 function renderConfig(){
   const c=draftConfig;
   c.criteria=normalizeCriteria(c.criteria);
@@ -4651,6 +4729,7 @@ function renderConfig(){
   renderArticlePrintStatus();
   renderConfigPhoneShare();
   renderReceptionConfigStatus();
+  applyPreparationLockV347();
 }
 
 function renderCriteriaConfig(){
@@ -4984,6 +5063,7 @@ function renderConfigPhoneShare(){
   }
 }
 function commitDraftForPhonePreparation(){
+  if(preparationLockedV347())throw new Error('La préparation du jury est verrouillée.');
   syncTopDraft();
 
   const requestedTesterCount=Math.max(1,Math.min(20,parseInt($('#cfgTesterCount')?.value,10)||1));
@@ -5057,6 +5137,11 @@ async function preparePhonesFromConfig(){
 
     commitDraftForPhonePreparation();
     await quickSharePhones('config');
+    if(phoneSharePrepared(state.config)){
+      state.config._preparationLockedAt=new Date().toISOString();
+      if(draftConfig)draftConfig._preparationLockedAt=state.config._preparationLockedAt;
+      preparationEditKeyV347='';saveState();applyPreparationLockV347();
+    }
   }catch(e){
     console.error(e);
     alert(`Préparation des téléphones impossible : ${e?.message||String(e)}`);
@@ -5893,6 +5978,7 @@ function prepareMarketLot(){
 function titleCaseMarket(v){return String(v||'').toLocaleLowerCase('fr-FR').replace(/(^|[\s—–-])([a-zàâäéèêëîïôöùûüç])/g,(m,a,b)=>a+b.toLocaleUpperCase('fr-FR'))}
 
 function syncTopDraft(){
+  if(preparationLockedV347())return;
   draftConfig.lotName=$('#cfgLotName').value.trim();
   draftConfig.subtitle=$('#cfgSubtitle').value.trim();
 
@@ -6147,6 +6233,7 @@ function closeConfigPreview(){
 }
 
 function applyDraft(){
+  if(preparationLockedV347()){alert('La préparation du jury est verrouillée.');return;}
   syncTopDraft();
 
   const requestedTesterCount=Math.max(1,Math.min(20,parseInt($('#cfgTesterCount')?.value,10)||1));
@@ -9833,3 +9920,6 @@ renderJuryView=function(){
   }
 };
 window.renderJuryView=renderJuryView;
+
+// Keep dynamically rebuilt configuration controls in consultation mode.
+new MutationObserver(()=>{if(document.getElementById('configView')?.classList.contains('active'))applyPreparationLockV347();}).observe(document.getElementById('configView'),{childList:true,subtree:true});
