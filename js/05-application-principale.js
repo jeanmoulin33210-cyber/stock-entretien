@@ -786,11 +786,11 @@ function renderPreparedHome(){
     b=>b.onclick=()=>activatePreparedJury(b.dataset.preparedResume,'resume')
   );
 }
-function showView(id){
+function showView(id,scrollToTop=true){
   if(id!=='projectionView'&&typeof stopProjectionMode==='function')stopProjectionMode(false);
   document.querySelectorAll('.view').forEach(v=>v.classList.remove('active'));
   $('#'+id).classList.add('active');
-  window.scrollTo({top:0,behavior:'smooth'});
+  if(scrollToTop)window.scrollTo({top:0,behavior:'smooth'});
 }
 function escapeHtml(v){return String(v??'').replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]))}
 function fmt(n){return Number(n||0).toLocaleString('fr-FR',{maximumFractionDigits:1})}
@@ -5316,6 +5316,7 @@ function sendQrPdfFromConfig(){
 }
 
 async function openConfigQrCodes(){
+  const returnPosition=rememberConfigPhonePosition();
   if(!phoneSharePrepared(draftConfig)){
     alert('Préparez d’abord les téléphones.');
     return
@@ -5331,7 +5332,7 @@ async function openConfigQrCodes(){
       return
     }
   }
-  renderQrCodes('configView')
+  renderQrCodes('configView',returnPosition)
 }
 
 
