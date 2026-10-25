@@ -92,16 +92,17 @@
     var data=dataFor(st),rows=rowsFor(st),bySupplier={};
     rows.forEach(function(r){
       var supplier=String(r.supplier||"Fournisseur");
-      if(!bySupplier[supplier])bySupplier[supplier]={supplier:supplier,checked:0,total:0,target:5};
+      if(!bySupplier[supplier])bySupplier[supplier]={supplier:supplier,checked:0,total:0,target:0};
       bySupplier[supplier].total++;
       if(complete(data.items[r.key]))bySupplier[supplier].checked++;
     });
     var suppliers=Object.keys(bySupplier).sort(function(a,b){return a.localeCompare(b,"fr");}).map(function(k){return bySupplier[k];});
     var checked=rows.filter(function(r){return complete(data.items[r.key]);}).length;
-    var required=suppliers.length*5;
-    var credited=suppliers.reduce(function(n,x){return n+Math.min(x.checked,5);},0);
+    suppliers.forEach(function(x){x.target=Math.ceil(x.total*30/100);});
+    var required=suppliers.reduce(function(n,x){return n+x.target;},0);
+    var credited=suppliers.reduce(function(n,x){return n+Math.min(x.checked,x.target);},0);
     var pct=required?Math.round(credited/required*1000)/10:0;
-    var reached=suppliers.length>0&&suppliers.every(function(x){return x.checked>=5;});
+    var reached=suppliers.length>0&&suppliers.every(function(x){return x.checked>=x.target;});
     return{checked:checked,total:rows.length,required:required,credited:credited,pct:pct,reached:reached,suppliers:suppliers};
   }
   function limitOccenaGlobalScoreV310(value){
@@ -144,7 +145,7 @@
     input.disabled=!m.reached;
     input.title=m.reached
       ?"Saisie manuelle du score OCCENA — 4 chiffres maximum"
-      :"Le score OCCENA se saisit lorsque chaque fournisseur possède 5 fiches contrôlées.";
+      :"Le score OCCENA se saisit lorsque au moins 30 % des fiches de chaque fournisseur sont contrôlées (arrondi supérieur).";
 
     if(card)card.classList.toggle("ready",m.reached&&!!value);
     if(label){
@@ -268,12 +269,12 @@
     var globalInput=document.getElementById("occenaGlobalScore");
 
     if(badge){
-      badge.textContent=m.reached?"✓ 5 fiches par fournisseur":"Contrôle en cours";
+      badge.textContent=m.reached?"✓ 30 % par fournisseur contrôlés":"Contrôle en cours";
       badge.classList.toggle("done",m.reached);
     }
     if(copy){
       copy.textContent=m.suppliers&&m.suppliers.length
-        ?m.suppliers.map(function(x){return x.supplier+" "+Math.min(x.checked,5)+"/5";}).join(" · ")
+        ?m.suppliers.map(function(x){return x.supplier+" "+Math.min(x.checked,x.target)+"/"+x.target;}).join(" · ")
         :"Aucun fournisseur à contrôler.";
     }
     if(fill)fill.style.width=Math.max(0,Math.min(100,m.pct))+"%";
@@ -337,12 +338,12 @@
     var saveLabel=document.getElementById("occenaSaveState");
 
     if(badge){
-      badge.textContent=m.reached?"✓ 5 fiches par fournisseur":"Contrôle en cours";
+      badge.textContent=m.reached?"✓ 30 % par fournisseur contrôlés":"Contrôle en cours";
       badge.classList.toggle("done",m.reached);
     }
     if(copy){
       copy.textContent=m.suppliers&&m.suppliers.length
-        ?m.suppliers.map(function(x){return x.supplier+" "+Math.min(x.checked,5)+"/5";}).join(" · ")
+        ?m.suppliers.map(function(x){return x.supplier+" "+Math.min(x.checked,x.target)+"/"+x.target;}).join(" · ")
         :"Aucun fournisseur à contrôler.";
     }
     if(fill)fill.style.width=Math.max(0,Math.min(100,m.pct))+"%";
@@ -734,8 +735,8 @@
     var box=document.getElementById("occenaPhoneSummaryV300");
     if(!box)return;
     box.innerHTML=(m.suppliers||[]).map(function(x){
-      var n=Math.min(x.checked,5);
-      return "<span class='"+(n>=5?"done":"")+"'>"+esc(x.supplier)+" <strong>"+n+"/5</strong></span>";
+      var n=x.checked;
+      return "<span class='"+(n>=x.target?"done":"")+"'>"+esc(x.supplier)+" <strong>"+n+"/"+x.target+"</strong></span>";
     }).join("");
   }
 
