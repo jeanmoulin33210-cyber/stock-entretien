@@ -2351,3 +2351,84 @@ window.addEventListener('online',function(){
 
 /* Un premier rapprochement est lancé après l'ouverture de l'application. */
 setTimeout(function(){try{automaticReconcileV335()}catch(e){}},1800);
+
+
+/* Owner-requested transfer of the complete local jury workspace.
+   Private session config only; never included in makePublicCloudConfig. */
+function ownerTransferSnapshotV351(st){
+  if(!st?.config)return null;
+  const copy=deepClone(st);
+  delete copy.config._ownerWorkspaceV351;
+  return copy;
+}
+async function transferOwnerWorkspaceV351(mode){
+  if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg.sessionId)throw new Error('Ouvrez le lien propriétaire de la session, puis réessayez.');
+  if(cloudBusy)throw new Error('Une synchronisation est en cours. Attendez quelques secondes puis réessayez.');
+  cloudBusy=true;
+  try{
+    const {data:row,error}=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',cloudCfg.sessionId).maybeSingle();
+    if(error||!row?.config)throw new Error(error?.message||'Session propriétaire introuvable.');
+    if(mode==='publish'){
+      const bundle={
+        version:1,sessionId:cloudCfg.sessionId,createdAt:new Date().toISOString(),
+        current:ownerTransferSnapshotV351(state),
+        prepared:loadPreparedJurys().map(rec=>({...rec,state:ownerTransferSnapshotV351(rec.state)})),
+        archives:loadArchives().map(rec=>({...rec,state:ownerTransferSnapshotV351(rec.state)}))
+      };
+      if(JSON.stringify(bundle).length>6000000)throw new Error('Le dossier est trop volumineux pour ce transfert. Les données du téléphone sont conservées.');
+      const config={...row.config,_ownerWorkspaceV351:bundle};
+      const result=await cloudClient.from('test_culinaire_sessions').update({config,updated_at:new Date().toISOString()}).eq('session_id',cloudCfg.sessionId);
+      if(result.error)throw result.error;
+      // Read back to confirm that this exact transfer was persisted.
+      const check=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',cloudCfg.sessionId).maybeSingle();
+      if(check.error||check.data?.config?._ownerWorkspaceV351?.createdAt!==bundle.createdAt)throw new Error('Le serveur n’a pas confirmé le transfert. Le téléphone reste inchangé.');
+      state.config._ownerWorkspaceV351=bundle;
+      originalSaveState();
+      alert('Lots et fiches du téléphone envoyés. Ouvrez maintenant le lien de récupération sur l’iPad.');
+    }else if(mode==='receive'){
+      const bundle=row.config._ownerWorkspaceV351;
+      if(bundle?.version!==1||bundle.sessionId!==cloudCfg.sessionId||!bundle.current?.config||!Array.isArray(bundle.prepared)||!Array.isArray(bundle.archives))throw new Error('Le téléphone n’a pas encore envoyé ses lots. Faites d’abord l’envoi depuis le S24.');
+      // Persist a complete recovery copy before any local replacement.
+      localStorage.setItem('jm_tc_before_owner_import_'+Date.now(),JSON.stringify({
+        state,prepared:loadPreparedJurys(),archives:loadArchives(),createdAt:new Date().toISOString()
+      }));
+      const prepared=loadPreparedJurys();
+      for(const rec of bundle.prepared){
+        if(!rec?.id||!rec.state?.config)continue;
+        const i=prepared.findIndex(old=>String(old.id)===String(rec.id));
+        if(i<0)prepared.push(deepClone(rec));else prepared[i]=deepClone(rec);
+      }
+      savePreparedJurys(prepared);
+      const archives=loadArchives();
+      for(const rec of bundle.archives){
+        if(!rec?.id||!rec.state?.config)continue;
+        const i=archives.findIndex(old=>String(old.id)===String(rec.id));
+        if(i<0)archives.push(deepClone(rec));else archives[i]=deepClone(rec);
+      }
+      saveArchives(archives);
+      state=deepClone(bundle.current);
+      state.config._ownerWorkspaceV351=deepClone(bundle);
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      if(state.config._preparedId&&!state.config._archive?.archivedAt)upsertPreparedJury(state);
+      draftConfig=null;receptionDraft=null;receptionEditingIndex=-1;
+      currentTester=1;currentProduct=state.config.products?.[0]?.id||'';currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';adminProduct=currentProduct;selectedAdminSample='';
+      originalRenderHome();
+      alert('Les lots, réceptions, fiches et archives envoyés par le S24 ont été récupérés sur cet appareil.');
+    }
+  }finally{cloudBusy=false;}
+}
+(function ownerTransferLinkV351(){
+  const url=new URL(location.href),mode=url.searchParams.get('ownerTransfer');
+  if(mode!=='publish'&&mode!=='receive')return;
+  url.searchParams.delete('ownerTransfer');history.replaceState(null,'',url.toString());
+  let attempts=0;
+  const timer=setInterval(async()=>{
+    attempts++;
+    if(!cloudReady||cloudBusy){
+      if(attempts>=60){clearInterval(timer);alert('Connexion propriétaire non prête. Les données sont conservées.');}
+      return;
+    }
+    clearInterval(timer);
+    try{await transferOwnerWorkspaceV351(mode);}catch(e){alert('Transfert non effectué : '+(e.message||String(e)));}
+  },500);
+})();
