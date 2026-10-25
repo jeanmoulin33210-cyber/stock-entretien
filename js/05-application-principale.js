@@ -1609,7 +1609,7 @@ function normalizeReceptionRecord(rec,cfg=receptionConfig()){
   base.receiverName=String(incoming.receiverName||'');
   base.driverSignature=String(incoming.driverSignature||'');
   base.validatedAt=incoming.validatedAt||null;
-  base.lines=base.lines.map(line=>{
+  base.lines=base.lines.filter(line=>!incoming.validatedAt||(incoming.lines||[]).some(old=>receptionProductKeyV345(old)===receptionProductKeyV345(line))).map(line=>{
     const old=byId.get(String(line.productId||line.productName||''))||
       (incoming.lines||[]).find(x=>String(x.productName||'')===line.productName);
     return old?{...line,...old,productId:line.productId,productName:line.productName}:line;
@@ -2031,7 +2031,7 @@ function receptionStatusForConfig(cfg){
   const valid=(Array.isArray(cfg?.receptions)?cfg.receptions:[])
     .filter(r=>r&&r.validatedAt&&receptionRecordMatchesConfigV258(r,cfg));
 
-  const received=new Set(valid.map(r=>receptionNormV258(r.supplier)).filter(Boolean));
+  const received=new Set(suppliers.filter(name=>receptionSupplierCompleteV345(cfg,name)).map(receptionNormV258));
 
   /* V289 — le suivi de réception se fait par fournisseur / fiche, et non
      uniquement par lot. Les compteurs peuvent donc afficher 1/5, 2/5, etc. */
@@ -2044,7 +2044,7 @@ function receptionStatusForConfig(cfg){
   const total=suppliers.length;
   const done=suppliers.filter(name=>received.has(receptionNormV258(name))).length;
 
-  if(done<=0)return{key:'pending',label:`À réceptionner · 0/${total}`,done:0,total};
+  if(done<=0&&!valid.length)return{key:'pending',label:`À réceptionner · 0/${total}`,done:0,total};
   if(done>=total)return{key:'done',label:`Réceptions terminées · ${done}/${total}`,done,total};
   return{key:'partial',label:`Réception partielle · ${done}/${total}`,done,total};
 }
@@ -2341,10 +2341,37 @@ function openReceptionView(index=-1){
 
   renderReceptionForm();
 }
+function receptionProductKeyV345(p){
+  return String(p?.productId||p?.id||'')||receptionNormV258(p?.productName||p?.name||'');
+}
+function receptionExpectedProductsV345(cfg,supplier){
+  const products=cfg?.products||[];
+  const named=products.some(p=>(p.samples||[]).some(sm=>String(sm?.supplier||'').trim()));
+  return named?products.filter(p=>(p.samples||[]).some(sm=>receptionNormV258(sm?.supplier)===receptionNormV258(supplier))):products;
+}
+function receptionDeliveredKeysV345(cfg,supplier,editingIndex=-1){
+  const keys=new Set();
+  receptionList(cfg).forEach((rec,index)=>{
+    if(index===editingIndex||!rec?.validatedAt||!receptionRecordMatchesConfigV258(rec,cfg)||receptionNormV258(rec.supplier)!==receptionNormV258(supplier))return;
+    (rec.lines||[]).filter(line=>line.received!==false).forEach(line=>keys.add(receptionProductKeyV345(line)));
+  });
+  return keys;
+}
+function receptionSupplierCompleteV345(cfg,supplier,editingIndex=-1){
+  const expected=receptionExpectedProductsV345(cfg,supplier);
+  const delivered=receptionDeliveredKeysV345(cfg,supplier,editingIndex);
+  return expected.length>0&&expected.every(p=>delivered.has(receptionProductKeyV345(p)));
+}
+function receptionPendingLinesV345(cfg,rec){
+  if(!rec?.supplier||rec.validatedAt)return rec?.lines||[];
+  const expected=new Set(receptionExpectedProductsV345(cfg,rec.supplier).map(receptionProductKeyV345));
+  const delivered=receptionDeliveredKeysV345(cfg,rec.supplier);
+  return (rec.lines||[]).filter(line=>expected.has(receptionProductKeyV345(line))&&!delivered.has(receptionProductKeyV345(line)));
+}
 function receivedReceptionSuppliers(cfg,editingIndex=-1){
-  return new Set(receptionList(cfg)
-    .filter((rec,index)=>index!==editingIndex && rec?.validatedAt && receptionRecordMatchesConfigV258(rec,cfg))
-    .map(rec=>receptionNormV258(rec.supplier)).filter(Boolean));
+  return new Set(receptionConfiguredSupplierNames(cfg)
+    .filter(name=>receptionSupplierCompleteV345(cfg,name,editingIndex))
+    .map(receptionNormV258));
 }
 function receptionSupplierAlreadyReceived(cfg,name,editingIndex=-1){
   return receivedReceptionSuppliers(cfg,editingIndex).has(receptionNormV258(name));
@@ -2384,7 +2411,7 @@ function renderReceptionForm(){
   const suppliers=receptionConfiguredSupplierNames(cfg);
   const receivedSuppliers=receivedReceptionSuppliers(cfg,receptionEditingIndex);
   const availableSuppliers=suppliers.filter(name=>!receivedSuppliers.has(receptionNormV258(name)));
-  if(receivedSuppliers.has(receptionNormV258(receptionDraft.supplier)))receptionDraft.supplier='';
+  if(!receptionIsReadOnly()&&receivedSuppliers.has(receptionNormV258(receptionDraft.supplier)))receptionDraft.supplier='';
   const selected=String(receptionDraft.supplier||'').trim();
 
   if(supplierManual){
@@ -2411,8 +2438,11 @@ function renderReceptionForm(){
       const value=String(supplierInput.value||'').trim();
       receptionDraft.supplier=suppliers.includes(value)&&!receivedSuppliers.has(receptionNormV258(value))?value:'';
       supplierInput.value=receptionDraft.supplier;
+      captureReceptionForm();
+      renderReceptionForm();
     };
   }
+  if(!receptionIsReadOnly())receptionDraft.lines=receptionPendingLinesV345(cfg,receptionDraft);
 
   const lines=$('#receptionLines');
   lines.innerHTML=receptionDraft.lines.map((line,i)=>`
@@ -2475,10 +2505,11 @@ async function saveReceptionForm(){
   if(!rec.date){alert('Indiquez la date de réception.');$('#receptionDate')?.focus();return}
   if(!rec.supplier||!receptionConfiguredSupplierNames(cfg).includes(rec.supplier)){alert('Choisissez un fournisseur prévu pour ce lot. Pour en ajouter un, revenez à la préparation du jury.');$('#receptionSupplier')?.focus();return}
   if(receptionSupplierAlreadyReceived(cfg,rec.supplier,receptionEditingIndex)){
-    alert('Ce fournisseur a déjà une réception enregistrée pour ce lot. Consultez « Réceptions enregistrées » pour la modifier.');
+    alert('Tous les produits prévus pour ce fournisseur ont déjà été réceptionnés.');
     return;
   }
-  if(!rec.lines.some(x=>x.received!==false)){alert('Cochez au moins un produit reçu.');return}
+  rec.lines=receptionPendingLinesV345(cfg,rec);
+  if(!rec.lines.some(x=>x.received!==false)){alert('Cochez au moins un produit reçu restant à livrer.');return}
 
   // V210 : une réception ne peut plus être validée sans DLC / DDM
   // pour chacun des produits réellement reçus.
