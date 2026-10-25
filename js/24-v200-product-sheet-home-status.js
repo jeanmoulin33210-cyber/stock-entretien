@@ -184,7 +184,7 @@
 
     /* 3) Secours très ciblé : la sauvegarde créée juste avant une réparation QR.
        On ne l'utilise que si aucun jury actif normal n'est visible. */
-    if(!candidates.length){
+    if(!candidates.length && !(state&&state.config&&state.config._emptyAfterReset)){
       try{
         var qrBackup=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
         if(activeState(qrBackup&&qrBackup.state)){
@@ -256,8 +256,8 @@
     var a=document.getElementById('homeProductSheetsPendingBadgeV200');
     var b=document.getElementById('homeProductSheetsDoneBadgeV200');
     if(a){
-      a.textContent=doneCount+'/'+totalCount;
-      a.title=doneCount+' fiche(s) complétée(s) sur '+totalCount+' · '+missingCount+' restante(s)';
+      a.textContent=totalCount>0?doneCount+'/'+totalCount:'0';
+      a.title=totalCount>0?doneCount+' fiche(s) complétée(s) sur '+totalCount+' · '+missingCount+' restante(s)':'Aucune fiche à compléter — en attente du prochain jury';
     }
     if(b){
       b.textContent=String(doneCount);
