@@ -713,24 +713,33 @@ async function syncAccessCodes(){
   rememberCloudAccessCodesV339(state.config);
 }
 async function connectCloud({create=false}={}){
+  let connectionStageV359='01 · préparation';
+  try{
   try{await preserveRecoveryCopiesV358();}catch(e){console.warn('Recovery copies retained',e);}
   cloudCfg.url=$('#cloudUrl')?.value.trim()||cloudCfg.url;cloudCfg.key=$('#cloudKey')?.value.trim()||cloudCfg.key;cloudCfg.sessionId=$('#cloudSession')?.value.trim()||cloudCfg.sessionId;
   if(create&&!cloudCfg.sessionId)cloudCfg.sessionId=crypto.randomUUID();
   if(!cloudCfg.sessionId)throw new Error('Indiquez un identifiant de session ou cliquez sur « Créer une session partagée ».');
+  connectionStageV359='02 · enregistrement des paramètres';
   saveCloudCfg();buildCloudClient();setCloudStatus('syncing','● Authentification…');cloudMsg('Connexion sécurisée en cours…','warn');
+  connectionStageV359='03 · authentification';
   await ensureCloudAuth();
   if(create){
+    connectionStageV359='04 · création du partage';
     await createSecureCloudSession();
     cloudReady=true;
     await pushAllAnswers();
     lastCloudConfigHash=hashJson(state.config)
   }else{
+    connectionStageV359='04 · accès au partage';
     await joinSecureSession();
+    connectionStageV359='05 · lecture et sauvegarde des fiches';
     await fetchCloudState();
     cloudReady=true
   }
   if(cloudRole==='admin')scheduleCloudSync();
+  connectionStageV359='06 · mémorisation de la connexion';
   saveCloudCfg();$('#cloudSession').value=cloudCfg.sessionId;
+  connectionStageV359='07 · abonnement aux mises à jour';
   await subscribeCloud();setCloudStatus('online','● Partagé sécurisé');refreshAdminSyncLabelsV328();bindAdminSyncButtonsV330();
   cloudMsg(`Session sécurisée connectée · ${cloudRole==='admin'?'administrateur':`testeur ${cloudTesterNo}`}.`,'ok');
   serverSecurityStatus('Sécurité serveur active ✓',`Supabase Auth connecté · rôle ${cloudRole==='admin'?'administrateur':`testeur ${cloudTesterNo}`}.`,true);
@@ -739,6 +748,11 @@ async function connectCloud({create=false}={}){
     document.body.classList.add('guest-mode');
     guestTester=cloudTesterNo||guestTester||1;currentTester=guestTester;openTester(guestTester);$('#testerSelect').disabled=true
   }else if($('#launchView')?.classList.contains('active'))renderLaunchView();else originalRenderHome()
+  }catch(e){
+    const detail=String(e?.message||e);
+    const name=String(e?.name||'Erreur');
+    throw new Error('V359 · étape '+connectionStageV359+' · '+name+' : '+detail);
+  }
 }
 async function subscribeCloud(){
   if(cloudChannel){try{await cloudClient.removeChannel(cloudChannel)}catch(e){}}
