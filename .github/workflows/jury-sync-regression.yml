@@ -1,0 +1,25 @@
+name: Jury synchronization regression
+on:
+  push:
+    paths:
+      - 'js/**'
+      - 'tests/**'
+      - 'tests-culinaires.html'
+      - '.github/workflows/jury-sync-regression.yml'
+  pull_request:
+    paths:
+      - 'js/**'
+      - 'tests/**'
+      - 'tests-culinaires.html'
+jobs:
+  regression:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Jury identity and closure isolation
+        run: node tests/jury-isolation.test.cjs
+      - name: Two-device synchronization, concurrent saves and offline recovery
+        run: node tests/owner-sync.test.cjs
