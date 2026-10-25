@@ -1154,6 +1154,7 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
             .eq('session_id',cloudCfg.sessionId)
             .maybeSingle();
           if(!latestError&&latest?.config){
+            if(latest.config._ownerWorkspaceV351)outgoing._ownerWorkspaceV351=deepClone(latest.config._ownerWorkspaceV351);
             preserveRicherAdminLocalDataV256(outgoing,latest.config);
             preserveRicherAdminWorkflowV323(outgoing,latest.config);
             restoreAdminShareMetadataV248(outgoing,latest.config);
@@ -2432,3 +2433,113 @@ async function transferOwnerWorkspaceV351(mode){
     try{await transferOwnerWorkspaceV351(mode);}catch(e){alert('Transfert non effectué : '+(e.message||String(e)));}
   },500);
 })();
+
+
+/* V352: automatic owner workspace reconciliation, with per-record revisions.
+   Only saved owner data is shared; tester/public config remains unchanged. */
+let ownerWorkspaceBusyV352=false;
+function ownerWorkspaceHashV352(st){
+  if(!st?.config)return '';
+  const copy=ownerTransferSnapshotV351(st);delete copy.updatedAt;
+  function sorted(v){if(Array.isArray(v))return v.map(sorted);if(v&&typeof v==='object'){const out={};Object.keys(v).sort().forEach(k=>out[k]=sorted(v[k]));return out;}return v;}
+  return hashJson(sorted(copy));
+}
+function ownerWorkspaceIdV352(st){return String(st?.config?._preparedId||st?.config?._juryInstanceId||st?.config?.juryInstanceId||'');}
+function ownerWorkspaceMergeV352(remote,local,baseline,now){
+  const maps={prepared:new Map(),archives:new Map()},nextBase={};
+  const tombstones={...(remote?.removedV352||{}),...(baseline?.removedV352||{})};
+  const remoteLists={prepared:remote?.prepared||[],archives:remote?.archives||[]};
+  // The previous transfer's current jury is also part of the shared workspace.
+  if(remote?.current?.config&&!remote.current.config._archive?.archivedAt){
+    const id=ownerWorkspaceIdV352(remote.current);
+    if(id&&!remoteLists.prepared.some(r=>String(r.id)===id))remoteLists.prepared=[...remoteLists.prepared,{id,state:remote.current,savedAt:remote.createdAt||''}];
+  }
+  for(const kind of ['prepared','archives']){
+    for(const rec of remoteLists[kind]){
+      if(!rec?.id||!rec.state?.config)continue;
+      maps[kind].set(String(rec.id),deepClone(rec));
+    }
+    const localIds=new Set((local[kind]||[]).map(r=>String(r.id)));
+    if(kind==='prepared'){
+      for(const [key,old] of Object.entries(baseline?.records||{})){
+        if(key.startsWith('prepared:')&&!localIds.has(key.slice(9))&&old.present){
+          const id=key.slice(9);tombstones[id]=Math.max(Number(tombstones[id]||0),now);
+        }
+      }
+    }
+    for(const rec of local[kind]||[]){
+      if(!rec?.id||!rec.state?.config)continue;
+      const id=String(rec.id),key=kind+':'+id,hash=ownerWorkspaceHashV352(rec.state),old=baseline?.records?.[key],other=maps[kind].get(id);
+      const otherHash=other?ownerWorkspaceHashV352(other.state):'';
+      let stamp=Number(rec.syncStampV352||old?.stamp||0);
+      if(hash!==old?.hash&&hash!==otherHash)stamp=now;
+      if(!other||stamp>Number(other.syncStampV352||0))maps[kind].set(id,{...deepClone(rec),syncStampV352:stamp});
+    }
+  }
+  // An archived jury must not be resurrected in the prepared list.
+  const archivedPreparedIds=new Set([...maps.archives.values()].map(r=>ownerWorkspaceIdV352(r.state)).filter(Boolean));
+  for(const [id,rec] of maps.prepared){
+    if(archivedPreparedIds.has(id)||rec.state.config._archive?.archivedAt||tombstones[id])maps.prepared.delete(id);
+  }
+  for(const kind of ['prepared','archives']){
+    for(const [id,rec] of maps[kind]){
+      nextBase[kind+':'+id]={hash:ownerWorkspaceHashV352(rec.state),stamp:Number(rec.syncStampV352||0),present:true};
+    }
+  }
+  return {prepared:[...maps.prepared.values()],archives:[...maps.archives.values()],removedV352:tombstones,baseline:{records:nextBase,removedV352:tombstones}};
+}
+async function automaticOwnerWorkspaceV352(){
+  if(ownerWorkspaceBusyV352||!cloudReady||cloudRole!=='admin'||cloudBusy||cloudAdminAccessBlockedV339)return;
+  const active=document.querySelector('.view.active')?.id;
+  if(!['homeView','juryView','launchView'].includes(active))return;
+  if(document.querySelector('.modal-backdrop.show')||document.activeElement?.matches('input,textarea,select'))return;
+  ownerWorkspaceBusyV352=true;cloudBusy=true;
+  try{
+    const sid=String(cloudCfg.sessionId||'');if(!sid)return;
+    const key='jm_tc_owner_workspace_base_v352_'+sid;
+    let baseline={};try{baseline=JSON.parse(localStorage.getItem(key)||'{}')}catch(e){}
+    const {data,error}=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',sid).maybeSingle();
+    if(error||!data?.config)return;
+    const remote=data.config._ownerWorkspaceV351||{version:1,sessionId:sid};
+    if(remote.sessionId&&remote.sessionId!==sid)return;
+    const prepared=loadPreparedJurys().map(r=>({...r,state:ownerTransferSnapshotV351(r.state)}));
+    const currentId=ownerWorkspaceIdV352(state);
+    if(currentId&&state.config.products?.length&&!state.config._archive?.archivedAt&&!state.config._emptyAfterReset){
+      const current={id:currentId,name:state.config.lotName||'Jury',savedAt:state.updatedAt||'',state:ownerTransferSnapshotV351(state)};
+      const idx=prepared.findIndex(r=>String(r.id)===currentId);
+      if(idx<0)prepared.push(current);else prepared[idx]=current;
+    }
+    const local={prepared,archives:loadArchives().map(r=>({...r,state:ownerTransferSnapshotV351(r.state)}))};
+    const merged=ownerWorkspaceMergeV352(remote,local,baseline,Date.now());
+    const bundle={version:1,sessionId:sid,prepared:merged.prepared,archives:merged.archives,removedV352:merged.removedV352};
+    const shape=b=>({prepared:b.prepared||[],archives:b.archives||[],removedV352:b.removedV352||{}});
+    const changed=hashJson(shape(remote))!==hashJson(shape(bundle));
+    if(JSON.stringify(bundle).length>6000000)throw new Error('Synchronisation des lots trop volumineuse. Données locales conservées.');
+    if(changed){
+      bundle.createdAt=new Date().toISOString();
+      const result=await cloudClient.from('test_culinaire_sessions').update({config:{...data.config,_ownerWorkspaceV351:bundle},updated_at:new Date().toISOString()}).eq('session_id',sid);
+      if(result.error)throw result.error;
+    }else bundle.createdAt=remote.createdAt||'';
+    const oldLocal=hashJson(local);
+    const newLocal=hashJson({prepared:merged.prepared,archives:merged.archives});
+    if(oldLocal!==newLocal){
+      // Keep the last complete local workspace as a recoverable copy before merging.
+      localStorage.setItem('jm_tc_before_auto_owner_merge_v352',JSON.stringify({createdAt:new Date().toISOString(),state:ownerTransferSnapshotV351(state),...local}));
+      savePreparedJurys(merged.prepared);saveArchives(merged.archives);
+      const current=merged.prepared.find(r=>String(r.id)===currentId);
+      if(current&&ownerWorkspaceHashV352(current.state)!==ownerWorkspaceHashV352(state)){
+        state=deepClone(current.state);
+        currentProduct=state.config.products?.[0]?.id||'';currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';adminProduct=currentProduct;
+      }
+    }
+    state.config._ownerWorkspaceV351=bundle;
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    localStorage.setItem(key,JSON.stringify(merged.baseline));
+    if(oldLocal!==newLocal&&active==='homeView')originalRenderHome();
+  }catch(e){console.warn('Synchronisation automatique des lots différée',e);}
+  finally{cloudBusy=false;ownerWorkspaceBusyV352=false;}
+}
+setInterval(()=>{if(!document.hidden)automaticOwnerWorkspaceV352();},8000);
+window.addEventListener('online',()=>setTimeout(automaticOwnerWorkspaceV352,1000));
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)setTimeout(automaticOwnerWorkspaceV352,500);});
+setTimeout(automaticOwnerWorkspaceV352,3500);
