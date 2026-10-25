@@ -53,14 +53,26 @@ function cloudSessionShortV327(){
   if(!sid)return '';
   return sid.replace(/[^a-zA-Z0-9]/g,'').slice(-4).toUpperCase();
 }
+// A successful read or redraw cannot certify a failed upload.
+let cloudUploadFailureV339=null;
+let cloudRetryAfterV339=0;
+let cloudRetryCountV339=0;
+function cloudUploadSucceededV339(){
+  cloudUploadFailureV339=null;
+  cloudRetryAfterV339=0;
+  cloudRetryCountV339=0;
+}
 function setCloudStatus(kind='local',text='● Local'){
+  if(cloudUploadFailureV339&&(kind==='online'||kind==='syncing')){
+    kind='error';text='● Synchronisation en attente';
+  }
   const els=[document.getElementById('cloudStatus'),document.getElementById('cloudPageStatus')].filter(Boolean);
   const code=(kind==='online'||kind==='syncing')?cloudSessionShortV327():'';
   const shown=code?text+' · '+code:text;
   els.forEach(el=>{
     el.className='cloud-status'+(kind==='online'?' online':kind==='syncing'?' syncing':kind==='error'?' error':'');
     el.textContent=shown;
-    if(code)el.title='Session sécurisée '+code;
+    el.title=cloudUploadFailureV339?('Envoi non confirmé : '+cloudUploadFailureV339):(code?'Session sécurisée '+code:'');
   });
 }
 function cloudMsg(text,kind='warn'){
@@ -1062,6 +1074,11 @@ async function pushAllAnswers(){
 }
 async function syncDirtyToCloud(){if(testerPreviewMode)return;
   if(!cloudReady)return;
+  if(Date.now()<cloudRetryAfterV339){
+    clearTimeout(cloudSyncTimer);
+    cloudSyncTimer=setTimeout(syncDirtyToCloud,cloudRetryAfterV339-Date.now()+50);
+    return;
+  }
   if(cloudBusy){cloudSyncPendingV323=true;return;}
   cloudSyncPendingV323=false;
 
@@ -1198,9 +1215,14 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
       }
     }
 
+    cloudUploadSucceededV339();
     setCloudStatus('online','● Partagé sécurisé')
   }catch(e){
-    console.error(e);setCloudStatus('error','● Erreur cloud');
+    cloudUploadFailureV339=String(e?.message||e);
+    cloudRetryCountV339++;
+    cloudRetryAfterV339=Date.now()+Math.min(60000,15000*Math.pow(2,Math.min(cloudRetryCountV339-1,2)));
+    cloudSyncPendingV323=true;
+    console.error(e);setCloudStatus('error','● Synchronisation en attente');
     const msg=String(e?.message||e);
     cloudMsg(/row-level security|policy/i.test(msg)?'Sécurité Supabase : cette opération n’est pas autorisée pour ce rôle.':`Synchronisation impossible : ${msg}`,'bad')
   }finally{
@@ -1212,7 +1234,7 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
     if(cloudSyncPendingV323){
       cloudSyncPendingV323=false;
       clearTimeout(cloudSyncTimer);
-      cloudSyncTimer=setTimeout(syncDirtyToCloud,220);
+      cloudSyncTimer=setTimeout(syncDirtyToCloud,Math.max(220,cloudRetryAfterV339-Date.now()));
     }
     if(cloudAnswersReloadPendingV323){
       cloudAnswersReloadPendingV323=false;
@@ -1228,7 +1250,7 @@ function scheduleCloudSync(){
   if(!cloudReady)return;
   cloudSyncPendingV323=true;
   clearTimeout(cloudSyncTimer);
-  cloudSyncTimer=setTimeout(syncDirtyToCloud,300);
+  cloudSyncTimer=setTimeout(syncDirtyToCloud,Math.max(300,cloudRetryAfterV339-Date.now()));
 }
 saveState=function(){if(testerPreviewMode)return;originalSaveState();scheduleCloudSync()};
 renderHome=function(){originalRenderHome();if(cloudReady)setCloudStatus('online','● Partagé sécurisé');renderShareLinks()};
@@ -1765,6 +1787,7 @@ forcePushAdminStateV328=async function(options={}){
     lastCloudConfigHash=hashJson(outgoing);
     setAnswerHashesFromLocalV328();
 
+    cloudUploadSucceededV339();
     setCloudStatus('online','● Partagé sécurisé');
     adminSyncMessageV328(
       '✓ État envoyé vers '+code+' · validations serveur '+verified.length+'/'+expectedValidated.length+'. Vous pouvez recharger l’ordinateur depuis la session.',
