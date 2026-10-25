@@ -19,6 +19,13 @@ const originalRenderHome=renderHome;
 const originalRenderAdmin=renderAdmin;
 const originalClearAnswers=clearAnswers;
 
+function retiredOwnerSessionV353(sid){
+  if(!sid)return false;
+  try{return loadArchives().some(r=>{
+    const cfg=r?.state?.config||{},arch=cfg._archive||{};
+    return !!(arch.archivedAt||r.archivedAt)&&String(r.cloudSessionId||arch.cloudSessionId||cfg._shareSessionId||'')===String(sid);
+  });}catch(e){return false;}
+}
 function loadCloudCfg(){
   try{cloudCfg={...cloudCfg,...JSON.parse(localStorage.getItem(CLOUD_STORAGE_KEY)||'{}')}}catch(e){}
   if(!String(cloudCfg.url||'').trim())cloudCfg.url=DEFAULT_SUPABASE_URL;
@@ -30,7 +37,17 @@ function loadCloudCfg(){
   const q=new URLSearchParams(location.search);
   if(q.get('supabaseUrl')) cloudCfg.url=q.get('supabaseUrl');
   if(q.get('supabaseKey')) cloudCfg.key=q.get('supabaseKey');
-  if(q.get('session')) cloudCfg.sessionId=q.get('session');
+  if(q.get('session')){cloudCfg.sessionId=q.get('session');localStorage.removeItem('jm_tc_owner_disconnected_v353');}
+  // Recover only this workspace's known owner session; authorization is still
+  // verified by joinSecureSession before any cloud data can be read.
+  if(!cloudCfg.sessionId&&!q.get('tester')&&!localStorage.getItem('jm_tc_owner_disconnected_v353')){
+    let saved=null;try{saved=JSON.parse(localStorage.getItem('jm_tc_owner_connection_v353')||'null')}catch(e){}
+    const candidate=String(state?.config?._ownerWorkspaceV351?.sessionId||state?.config?._shareSessionId||saved?.sessionId||'');
+    if(candidate&&!retiredOwnerSessionV353(candidate)){
+      cloudCfg.sessionId=candidate;
+      if(saved?.sessionId===candidate){cloudCfg.url=saved.url||cloudCfg.url;cloudCfg.key=saved.key||cloudCfg.key;}
+    }
+  }
 
   /* V199 — le rôle demandé par le lien gagne TOUJOURS sur un ancien rôle local. */
   const forcedRole=window.__JM_REQUESTED_ROLE_V199||'';
@@ -44,6 +61,8 @@ function loadCloudCfg(){
   }
 }
 function saveCloudCfg(){
+  if(cloudReady&&cloudRole==='admin'&&cloudCfg.sessionId)localStorage.removeItem('jm_tc_owner_disconnected_v353');
+  if(cloudReady&&cloudRole==='admin'&&cloudCfg.sessionId)localStorage.setItem('jm_tc_owner_connection_v353',JSON.stringify({url:cloudCfg.url,key:cloudCfg.key,sessionId:cloudCfg.sessionId}));
   localStorage.setItem(CLOUD_STORAGE_KEY,JSON.stringify({url:cloudCfg.url,key:cloudCfg.key,sessionId:cloudCfg.sessionId}));
   if(cloudCfg.sessionId&&cloudCfg.accessCode)localStorage.setItem(CLOUD_ACCESS_STORAGE_KEY,JSON.stringify({sessionId:cloudCfg.sessionId,accessCode:cloudCfg.accessCode}));
 }
@@ -1100,7 +1119,7 @@ async function pushAllAnswers(){
 }
 async function syncDirtyToCloud(){if(testerPreviewMode)return;
   if(!cloudReady)return;
-  if(isEmptyLocalHomeV340()){await disconnectCloud();return;}
+  if(isEmptyLocalHomeV340()&&retiredOwnerSessionV353(cloudCfg.sessionId)){await disconnectCloud();return;}
   if(cloudAdminAccessBlockedV339)return;
   if(Date.now()<cloudRetryAfterV339){
     clearTimeout(cloudSyncTimer);
@@ -1610,6 +1629,8 @@ async function forceReloadAdminStateV328(){
 }
 
 async function disconnectCloud(){
+  localStorage.removeItem('jm_tc_owner_connection_v353');
+  localStorage.setItem('jm_tc_owner_disconnected_v353','1');
   clearTimeout(cloudSyncTimer);
   cloudSyncPendingV323=false;cloudConfigReloadPendingV323=false;cloudAnswersReloadPendingV323=false;
   cloudUploadSucceededV339();
@@ -1637,7 +1658,7 @@ async function autoConnectFromUrl(){
     originalRenderHome();return;
   }
   // An empty post-archive workspace has no current jury to reconnect.
-  if(isEmptyLocalHomeV340()&&!new URLSearchParams(location.search).has('session')){
+  if(isEmptyLocalHomeV340()&&retiredOwnerSessionV353(cloudCfg.sessionId)&&!new URLSearchParams(location.search).has('session')){
     cloudCfg.sessionId='';cloudCfg.accessCode='';
     saveCloudCfg();
     cloudUploadSucceededV339();
