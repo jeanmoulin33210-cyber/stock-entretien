@@ -71,8 +71,21 @@ function setCloudStatus(kind='local',text='● Local'){
   const shown=code?text+' · '+code:text;
   els.forEach(el=>{
     el.className='cloud-status'+(kind==='online'?' online':kind==='syncing'?' syncing':kind==='error'?' error':'');
-    el.textContent=shown;
+    el.textContent=shown+(cloudUploadFailureV339?' · Voir l’erreur':'');
     el.title=cloudUploadFailureV339?('Envoi non confirmé : '+cloudUploadFailureV339):(code?'Session sécurisée '+code:'');
+    if(cloudUploadFailureV339){
+      el.setAttribute('role','button');
+      el.setAttribute('tabindex','0');
+      el.style.cursor='pointer';
+      el.style.whiteSpace='normal';
+      el.onclick=function(){
+        alert('Synchronisation non confirmée\n\n'+cloudUploadFailureV339+'\n\nLes données locales sont conservées. Transmettez ce message pour identifier la cause.');
+      };
+      el.onkeydown=function(e){if(e.key==='Enter'||e.key===' '){e.preventDefault();el.click();}};
+    }else{
+      el.removeAttribute('role');el.removeAttribute('tabindex');
+      el.style.cursor='';el.onclick=null;el.onkeydown=null;
+    }
   });
 }
 function cloudMsg(text,kind='warn'){
