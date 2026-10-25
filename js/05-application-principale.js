@@ -2353,9 +2353,17 @@ function receptionDeliveredKeysV345(cfg,supplier,editingIndex=-1){
   const keys=new Set();
   receptionList(cfg).forEach((rec,index)=>{
     if(index===editingIndex||!rec?.validatedAt||!receptionRecordMatchesConfigV258(rec,cfg)||receptionNormV258(rec.supplier)!==receptionNormV258(supplier))return;
-    (rec.lines||[]).filter(line=>line.received!==false).forEach(line=>keys.add(receptionProductKeyV345(line)));
+    (rec.lines||[]).filter(line=>line.received!==false&&line.decision!=='refus').forEach(line=>keys.add(receptionProductKeyV345(line)));
   });
   return keys;
+}
+function receptionNeedsRedeliveryV346(cfg,supplier,line){
+  const key=receptionProductKeyV345(line);
+  if(receptionDeliveredKeysV345(cfg,supplier).has(key))return false;
+  return receptionList(cfg).some(rec=>rec?.validatedAt&&
+    receptionRecordMatchesConfigV258(rec,cfg)&&
+    receptionNormV258(rec.supplier)===receptionNormV258(supplier)&&
+    (rec.lines||[]).some(old=>old.received!==false&&old.decision==='refus'&&receptionProductKeyV345(old)===key));
 }
 function receptionSupplierCompleteV345(cfg,supplier,editingIndex=-1){
   const expected=receptionExpectedProductsV345(cfg,supplier);
@@ -2448,7 +2456,7 @@ function renderReceptionForm(){
   lines.innerHTML=receptionDraft.lines.map((line,i)=>`
     <article class="reception-line-card" data-reception-line="${i}">
       <div class="reception-line-head">
-        <strong>${escapeHtml(line.productName||`Produit ${i+1}`)}</strong>
+        <strong>${escapeHtml(line.productName||`Produit ${i+1}`)}${!receptionIsReadOnly()&&receptionNeedsRedeliveryV346(cfg,receptionDraft.supplier,line)?' · À relivrer':''}</strong>
         <label style="display:flex;gap:6px;align-items:center;font-size:10px;font-weight:700">
           <input type="checkbox" data-rec-received="${i}" ${line.received!==false?'checked':''}> Produit reçu
         </label>
@@ -2525,6 +2533,12 @@ async function saveReceptionForm(){
     return;
   }
 
+  const refusalWithoutReason=rec.lines.findIndex(line=>line.received!==false&&line.decision==='refus'&&!String(line.observations||'').trim());
+  if(refusalWithoutReason>=0){
+    alert('Indiquez le motif du refus dans les observations du produit. Il restera à relivrer.');
+    document.querySelector(`[data-rec-observations="${refusalWithoutReason}"]`)?.focus();
+    return;
+  }
   if(!rec.driverSignature){alert('La signature du livreur est nécessaire pour émarger la réception.');return}
 
   rec.validatedAt=new Date().toISOString();
