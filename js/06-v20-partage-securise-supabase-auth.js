@@ -1029,6 +1029,7 @@ async function reloadCloudConfig(){if(testerPreviewMode)return;
       .maybeSingle();
     if(error||!data?.config)throw new Error(error?.message||'Lecture des lots indisponible.');
 
+    if(typeof isRetiredMoulikV356==='function'&&isRetiredMoulikV356(data.config))return;
     const serverCfg=deepClone(data.config||{});
     const serverHash=hashJson(serverCfg);
     const localHash=hashJson(state.config);
@@ -2303,6 +2304,7 @@ async function automaticReconcileV335(){
 /* Au démarrage/reconnexion, la copie de secours 4/4 est appliquée immédiatement. */
 const rebuildLocalFromCloudBeforeV335=rebuildLocalFromCloud;
 rebuildLocalFromCloud=function(config,rows=[]){
+  if(typeof isRetiredMoulikV356==='function'&&isRetiredMoulikV356(config)){removeRetiredMoulikV356();return;}
   rebuildLocalFromCloudBeforeV335(config,rows);
   if(cloudRole==='admin'){
     mergeValidationBackupFromServerV335(config||{});
