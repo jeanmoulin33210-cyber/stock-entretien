@@ -438,11 +438,16 @@ function productSheetRichnessV256(cfg){
 
 function sameJuryV357(a,b){
   if(!a||!b)return false;
-  const ia=String(a._juryInstanceId||a.juryInstanceId||''),ib=String(b._juryInstanceId||b.juryInstanceId||'');
-  if(ia&&ib)return ia===ib;
+  // Prepared-jury identity takes precedence over legacy cloned instance IDs.
   if(a._preparedId&&b._preparedId)return String(a._preparedId)===String(b._preparedId);
   const norm=x=>String(x||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
-  return !!norm(a.lotName)&&norm(a.lotName)===norm(b.lotName);
+  const na=norm(a.lotNumber),nb=norm(b.lotNumber);
+  if(na&&nb&&na!==nb)return false;
+  const la=norm(a.lotName),lb=norm(b.lotName);
+  if(la&&lb&&la!==lb)return false;
+  const ia=String(a._juryInstanceId||a.juryInstanceId||''),ib=String(b._juryInstanceId||b.juryInstanceId||'');
+  if(ia&&ib)return ia===ib;
+  return !!la&&la===lb;
 }
 function preserveRicherAdminLocalDataV256(cfg,prev){
   if(!cfg||!prev||!sameJuryV357(cfg,prev))return cfg;
