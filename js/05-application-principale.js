@@ -41,6 +41,7 @@ function defaultCriteria(){return DEFAULT_CRITERIA_KEYS.map(key=>({key,custom:''
 function normalizeCriteria(list){
   const src=Array.isArray(list)?list:[];
   return Array.from({length:5},(_,i)=>{
+    if(i===4)return{key:'gout',custom:''};
     const raw=src[i];
     if(typeof raw==='string')return CRITERION_LIBRARY[raw]?{key:raw,custom:''}:{key:'autre',custom:raw};
     const key=CRITERION_LIBRARY[raw?.key]?raw.key:DEFAULT_CRITERIA_KEYS[i];
@@ -48,7 +49,7 @@ function normalizeCriteria(list){
   })
 }
 function criterionQuestion(selection,qi){
-  const sel=selection||{key:DEFAULT_CRITERIA_KEYS[qi],custom:''};
+  const sel=qi===4?{key:'gout',custom:''}:(selection||{key:DEFAULT_CRITERIA_KEYS[qi],custom:''});
   const def=CRITERION_LIBRARY[sel.key]||CRITERION_LIBRARY.autre;
   const custom=String(sel.custom||'').trim();
   const short=sel.key==='autre'&&custom?custom:def.short;
@@ -4580,8 +4581,8 @@ function renderCriteriaConfig(){
   box.innerHTML=draftConfig.criteria.map((sel,qi)=>{
     const q=criterionQuestion(sel,qi),isCustom=sel.key==='autre';
     return `<div class="criterion-config-row">
-      <div class="criterion-config-number"><strong>Question ${qi+1}</strong><span>${qi===4?'25 points · critère principal':'10 points'}</span></div>
-      <div class="field"><label>Critère</label><select data-criterion-select="${qi}">${options}</select></div>
+      <div class="criterion-config-number"><strong>Question ${qi+1}</strong><span>${qi===4?'25 points · Goût verrouillé':'10 points'}</span></div>
+      <div class="field"><label>Critère</label><select data-criterion-select="${qi}" ${qi===4?'disabled aria-label="Goût — critère fixe"':''}>${options}</select></div>
       <div class="field criterion-custom-wrap ${isCustom?'visible':''}" data-criterion-custom-wrap="${qi}"><label>Votre question / critère</label><input data-criterion-custom="${qi}" value="${escapeHtml(sel.custom||'')}" placeholder="Ex. Persistance en bouche"></div>
       <div class="criteria-preview" style="grid-column:1/-1"><strong>Aperçu :</strong> ${escapeHtml(q.title)}</div>
     </div>`
@@ -5881,16 +5882,16 @@ function renderProductConfigs(){
     questions.className='product-questions-block';
     questions.innerHTML=`
       <div class="config-section-head product-question-head">
-        <div><h2>2. Choisir les 5 questions pour le produit ${pi+1}</h2><p>Ces cinq questions seront utilisées uniquement pour ce produit. Les 4 premières valent 10 points chacune et la 5e vaut 25 points.</p></div>
+        <div><h2>2. Choisir les 5 questions pour le produit ${pi+1}</h2><p>Ces cinq questions seront utilisées uniquement pour ce produit. Les 4 premières valent 10 points chacune. La 5e reste toujours le Goût, sur 25 points.</p></div>
       </div>
       <section class="panel config-card criteria-config-card product-criteria-card">
-        <div class="criteria-config-note"><strong>Total : 65 points.</strong> Choisissez un critère proposé ou « Autre… » pour écrire votre propre question.</div>
+        <div class="criteria-config-note"><strong>Total : 65 points.</strong> Choisissez les quatre premiers critères. La question 5 est toujours le Goût (25 points), pour tous les produits.</div>
         <div class="criteria-config-grid">
           ${p.criteria.map((sel,qi)=>{
             const q=criterionQuestion(sel,qi),isCustom=sel.key==='autre';
             return `<div class="criterion-config-row">
-              <div class="criterion-config-number"><strong>Question ${qi+1}</strong><span>${qi===4?'25 points · critère principal':'10 points'}</span></div>
-              <div class="field"><label>Critère</label><select data-p-criterion-select="${pi}:${qi}">${options}</select></div>
+              <div class="criterion-config-number"><strong>Question ${qi+1}</strong><span>${qi===4?'25 points · Goût verrouillé':'10 points'}</span></div>
+              <div class="field"><label>Critère</label><select data-p-criterion-select="${pi}:${qi}" ${qi===4?'disabled aria-label="Goût — critère fixe"':''}>${options}</select></div>
               <div class="field criterion-custom-wrap ${isCustom?'visible':''}" data-p-criterion-custom-wrap="${pi}:${qi}"><label>Votre question / critère</label><input data-p-criterion-custom="${pi}:${qi}" value="${escapeHtml(sel.custom||'')}" placeholder="Ex. Persistance en bouche"></div>
               <div class="criteria-preview" style="grid-column:1/-1"><strong>Aperçu :</strong> ${escapeHtml(q.title)}</div>
             </div>`
