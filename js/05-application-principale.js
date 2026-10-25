@@ -434,11 +434,38 @@ function healSupplierNamesV252(cfg){
   return changed;
 }
 
+
+function isLot98RecoveryV341(cfg){
+  if(!cfg)return false;
+  const number=String(cfg.lotNumber||cfg.marketRef?.lot||'').trim();
+  const name=String(cfg.lotName||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  return (number==='98'||/\blot\s*(?:n[°o]?\s*)?98\b/.test(name))&&/\blop\b/.test(name);
+}
+function isolateReturnedLot98V341(){
+  const q=new URLSearchParams(location.search);
+  if(q.get('repairLot')!=='98')return false;
+  const rows=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
+  const affected=(Array.isArray(rows)?rows:[]).filter(r=>isLot98RecoveryV341(r?.state?.config));
+  const active=isLot98RecoveryV341(state?.config);
+  if(!active&&!affected.length)return false;
+  const backup={createdAt:new Date().toISOString(),active:active?deepClone(state):null,prepared:affected};
+  // Save the complete recovery copy before removing anything from active lists.
+  localStorage.setItem('jm_tc_lot98_recovery_'+Date.now(),JSON.stringify(backup));
+  localStorage.setItem(PREPARED_JURY_STORAGE_KEY,JSON.stringify((Array.isArray(rows)?rows:[]).filter(r=>!isLot98RecoveryV341(r?.state?.config))));
+  if(active){
+    state=blankActiveStateV238();
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    currentTester=1;currentProduct='';currentSample='';adminProduct='';selectedAdminSample='';
+  }
+  localStorage.setItem('jm_tc_lot98_isolated_v341','1');
+  return true;
+}
+
 function loadPreparedJurys(){
   try{
     const raw=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
     const rows=Array.isArray(raw)?raw:[];
-    const clean=dedupePreparedJurysV238(rows);
+    const clean=dedupePreparedJurysV238(rows).filter(r=>localStorage.getItem('jm_tc_lot98_isolated_v341')!=='1'||!isLot98RecoveryV341(r?.state?.config));
     let supplierRepair=false;
     for(const rec of clean){
       try{if(healSupplierNamesV252(rec?.state?.config))supplierRepair=true}catch(e){}
@@ -463,6 +490,7 @@ function savePreparedJurys(rows){
 }
 function upsertPreparedJury(st=state){
   if(!st?.config)return null;
+  if(localStorage.getItem('jm_tc_lot98_isolated_v341')==='1'&&isLot98RecoveryV341(st.config))return null;
   let id=st.config._preparedId||uid('prepared');
   st.config._preparedId=id;
   st.config._preparedAt=st.config._preparedAt||new Date().toISOString();
