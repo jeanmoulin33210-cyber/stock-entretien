@@ -194,4 +194,80 @@
   rememberHub();setTimeout(tick,1800);setInterval(tick,5000);
   window.addEventListener('online',()=>{retryAt=0;tick();});
   document.addEventListener('visibilitychange',()=>{if(!document.hidden)tick();});
+
+  // Explicit reset of disposable tasting notes, with a fresh isolated session.
+  function resetTestSnapshotV365(source,sessionId,instanceId){
+    const next=snapshot(source);
+    if(String(next?.config?.lotNumber)!=='55'||next.config._archive?.archivedAt)throw new Error('Sélectionnez le lot 55 non archivé.');
+    delete next.config.juryClose;delete next.config.juryLaunch;
+    delete next.config._validatedTestersV333;delete next.config._validatedTestersV333UpdatedAt;
+    next.config._juryInstanceId=instanceId;next.config.juryInstanceId=instanceId;
+    next.config._shareSessionId=sessionId;
+    next.config._phoneShareSignature=phoneShareSignature(next.config);
+    for(const tester of Object.values(next.testers||{})){tester.answers={};tester.validatedAt=null;}
+    next.updatedAt=new Date().toISOString();
+    return next;
+  }
+  API.resetTestSnapshot=resetTestSnapshotV365;
+  async function resetTestLot55V365(){
+    if(busy||cloudBusy)throw new Error('Synchronisation en cours. Réessayez dans quelques secondes.');
+    if(guestTester||cloudRole!=='admin'||String(state?.config?.lotNumber)!=='55'||state.config._archive?.archivedAt)throw new Error('Ouvrez les résultats du lot 55 non archivé.');
+    busy=true;const previousCloudBusy=cloudBusy;cloudBusy=true;
+    try{
+      const c=await client();if(!c||!descriptor)throw new Error('Connexion propriétaire nécessaire.');
+      await compactLocalJuryCopiesV360();
+      const before=clone(state),rid=id(state),key='prepared:'+rid;
+      await verifyRecoveryValueV360('lot55-before-test-reset',JSON.stringify(before));
+      const read=await c.from('test_culinaire_sessions').select('config,updated_at').eq('session_id',descriptor.sessionId).maybeSingle();
+      if(read.error||!read.data?.config||!read.data.updated_at)throw new Error('Le partage ne peut pas être vérifié.');
+      const catalog=clone(read.data.config._ownerCatalogV357);
+      const entry=catalog?.records?.[key];
+      if(!entry||!equal(snapshot(entry.state),snapshot(before)))throw new Error('Le lot partagé a changé. Revenez à l’accueil pour le synchroniser avant de recommencer.');
+      const sid=crypto.randomUUID(),instance='jury_'+crypto.randomUUID();
+      const next=resetTestSnapshotV365(before,sid,instance);
+      const adminCode=getRawAdminTokenV20(),codes=next.config.security?.testerCodes;
+      if(!adminCode||!codes)throw new Error('Les accès du jury ne sont pas prêts.');
+      const created=await c.rpc('test_culinaire_create_secure_session',{
+        p_session_id:sid,p_admin_config:next.config,p_public_config:makePublicCloudConfig(next.config),
+        p_admin_code:adminCode,p_tester_codes:codes
+      });
+      if(created.error)throw created.error;
+      if(!equal(snapshot(state),snapshot(before)))throw new Error('Le lot a changé pendant la préparation. Les anciennes données sont conservées.');
+      catalog.records[key]={state:snapshot(next),revision:Number(entry.revision||0)+1};
+      const stamp=new Date(Math.max(Date.now(),Date.parse(read.data.updated_at)+1)).toISOString();
+      const write=await c.from('test_culinaire_sessions').update({config:{...read.data.config,_ownerCatalogV357:catalog},updated_at:stamp})
+        .eq('session_id',descriptor.sessionId).eq('updated_at',read.data.updated_at).select('session_id').maybeSingle();
+      if(write.error||!write.data)throw new Error('Le partage a changé : aucune réinitialisation locale effectuée.');
+      applying=true;
+      try{
+        const rows=loadPreparedJurys(),index=rows.findIndex(r=>String(r.id)===rid);
+        const row={...(rows[index]||{}),id:rid,name:next.config.lotName,state:clone(next),savedAt:stamp};
+        if(index<0)rows.push(row);else rows[index]=row;
+        savePreparedJurys(rows);state=next;
+        localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+        const baseline=readBaselineV365();
+        baseline[key]=snapshot(next);
+        localStorage.setItem('jm_tc_owner_baseline_v357_'+descriptor.sessionId,JSON.stringify(baseline));
+      }finally{applying=false;}
+      clearTimeout(cloudSyncTimer);cloudCfg.sessionId=sid;
+      cloudClient=c;cloudReady=true;cloudRole='admin';cloudTesterNo=null;
+      lastCloudConfigHash=hashJson(state.config);lastCloudAnswerHashes=new Map();
+      cloudUploadSucceededV339();saveCloudCfg();await subscribeCloud();
+      setCloudStatus('online','● Partagé sécurisé');
+      currentTester=1;currentProduct=state.config.products?.[0]?.id||'';currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';
+      draftConfig=null;originalRenderHome();
+      alert('Lot 55 prêt pour un nouveau test. Notes et validations remises à zéro. Réceptions et fiches produits conservées. Utilisez les nouveaux liens testeurs.');
+    }finally{cloudBusy=previousCloudBusy;busy=false;}
+  }
+  function readBaselineV365(){return read('jm_tc_owner_baseline_v357_'+descriptor.sessionId,{});}
+  function installResetTestButtonV365(){
+    const tools=document.querySelector('#advancedTools .advanced-tools-body');if(!tools||document.getElementById('resetTestLot55V365'))return;
+    const button=document.createElement('button');button.id='resetTestLot55V365';button.type='button';button.className='btn btn-small';
+    button.textContent='Remettre les notes d’essai du lot 55 à zéro';
+    button.onclick=async()=>{button.disabled=true;try{await resetTestLot55V365()}catch(e){alert(String(e?.message||e))}finally{button.disabled=false}};
+    tools.appendChild(button);
+  }
+  installResetTestButtonV365();
+  document.addEventListener('DOMContentLoaded',installResetTestButtonV365);
+
 })(typeof window==='undefined'?globalThis:window);
