@@ -72,7 +72,7 @@ async function ensurePhoneShareCredentials(){
     if(previousSessionId){
       try{
         if(cloudReady && cloudCfg?.sessionId===previousSessionId && typeof disconnectCloud==='function'){
-          await disconnectCloud();
+          await disconnectCloud({keepOwnerSession:true});
         }
       }catch(e){console.warn('Déconnexion ancienne session non bloquante',e)}
       delete state.config._shareSessionId;
@@ -442,7 +442,7 @@ async function ensurePreparedShareConnected(){
   if(launchShareReady())return true;
 
   if(cloudReady && cloudCfg?.sessionId!==expected){
-    await disconnectCloud();
+    await disconnectCloud({keepOwnerSession:true});
   }
 
   cloudCfg.url=String(cloudCfg.url||DEFAULT_SUPABASE_URL).trim();
@@ -548,7 +548,7 @@ async function quickSharePhones(origin='launch'){
 
     /* Si une autre session est encore connectée, on la quitte sans changer de page. */
     if(cloudReady && (!previousSessionId || cloudCfg.sessionId!==previousSessionId)){
-      await disconnectCloud();
+      await disconnectCloud({keepOwnerSession:true});
     }
 
     cloudCfg.url=String(cloudCfg.url||DEFAULT_SUPABASE_URL).trim();
