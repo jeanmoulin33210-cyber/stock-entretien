@@ -6452,6 +6452,7 @@ function moveSample(delta){
   scrollTesterToFirstQuestion();
 }
 function renderAdmin(){
+  const sentArchiveBtn=$('#confirmReportSentArchiveBtn');if(sentArchiveBtn)sentArchiveBtn.hidden=!state.config?._finalReportPreparedAt||!!state.config?._archive?.finalLocked;
   showView('adminView');
   $('#headerTitle').textContent=`Résultats — ${state.config.lotName}`;
   $('#headerSub').textContent='Administration des tests culinaires';
@@ -9116,6 +9117,7 @@ async function buildReportPdfBlob(st=state){
   return {blob:doc.output('blob'),filename,pages};
 }
 async function emailCurrentReport(){
+  if(state.config?._archive?.finalLocked){alert('Ce jury est archivé et verrouillé.');return;}
   if(!ensureProductSheetsComplete('envoyer le rapport final'))return;
 
   const btn=$('#simpleResultsEmailBtn');
@@ -9176,7 +9178,10 @@ Cordialement`;
       btn.classList.add('final-report-opened-v322');
       btn.textContent='✓ Rapport préparé — Gmail ouvert';
     }
-    toast('Rapport final téléchargé · Gmail ouvert ✓');
+    state.config._finalReportPreparedAt=new Date().toISOString();
+    saveState();
+    const archiveBtn=$('#confirmReportSentArchiveBtn');if(archiveBtn)archiveBtn.hidden=false;
+    toast('Après l’envoi dans Gmail, revenez ici pour archiver le jury.');
   }catch(e){
     try{if(gmailWindow&&!gmailWindow.closed)gmailWindow.close();}catch(_){}
     console.error(e);
@@ -9189,6 +9194,52 @@ Cordialement`;
   }
 }
 
+async function confirmReportSentAndArchive(){
+  if(!state.config?._finalReportPreparedAt){alert('Préparez et envoyez d’abord le rapport final.');return;}
+  if(state.config?._archive?.finalLocked)return;
+  if(!ensureProductSheetsComplete('archiver le rapport envoyé'))return;
+  const m=juryMetrics();
+  if(!(m.max>0&&m.done===m.max&&m.validated===Number(state.config.testerCount))){
+    alert('Tous les testeurs doivent avoir terminé et validé.');return;
+  }
+  if(!closureIsReady()){alert('Complétez d’abord la fiche de clôture.');return;}
+  const btn=$('#confirmReportSentArchiveBtn');
+  if(btn)btn.disabled=true;
+  try{
+    const now=new Date().toISOString();
+    if(!state.config.juryClose?.closedAt)state.config.juryClose={...(state.config.juryClose||{}),closedAt:now};
+    const id=state.config._archive?.archiveId||uid('archive');
+    state.config._archive={...(state.config._archive||{}),archiveId:id,archivedAt:now,reportSentConfirmedAt:now,finalLocked:true,cloudSessionId:typeof cloudCfg!=='undefined'?cloudCfg.sessionId:''};
+    const snapshot=deepClone(state);
+    const archives=loadArchives().filter(r=>String(r.id)!==String(id));
+    archives.unshift({id,archivedAt:now,finalLocked:true,state:snapshot,cloudSessionId:state.config._archive.cloudSessionId});
+    // Sauver l’archive complète avant de retirer quoi que ce soit de l’accueil.
+    saveArchives(archives);
+    saveState();
+    if(typeof syncDirtyToCloud==='function')await syncDirtyToCloud();
+    if(typeof disconnectCloud==='function')await disconnectCloud();
+    const preparedId=state.config._preparedId;
+    const instanceId=juryInstanceId(state.config);
+    savePreparedJurys(loadPreparedJurys().filter(r=>
+      String(r.id)!==String(preparedId||'') &&
+      (!instanceId||juryInstanceId(r.state?.config||{})!==instanceId)
+    ));
+    state=blankActiveStateV238();
+    draftConfig=null;receptionDraft=null;receptionEditingIndex=-1;
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+    currentTester=1;currentProduct='';currentSample='';adminProduct='';selectedAdminSample='';
+    try{
+      const url=new URL(location.href);
+      ['session','accessCode'].forEach(k=>url.searchParams.delete(k));
+      history.replaceState(null,'',url.toString());
+    }catch(e){}
+    renderHome();
+    toast('Rapport envoyé confirmé — jury archivé et verrouillé ✓');
+  }catch(e){
+    console.error(e);
+    alert('La clôture n’a pas pu être entièrement terminée. Les données sont conservées. '+(e?.message||e));
+  }finally{if(btn)btn.disabled=false;}
+}
 function openCurrentReport(){if(!ensureProductSheetsComplete('générer le rapport final'))return;openJuryReport(state,'Jury actif')}
 function openArchiveReport(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;openJuryReport(rec.state,'Archive clôturée')}
 
@@ -9222,7 +9273,7 @@ function archivedRemarks(st){
   return rows;
 }
 function formatArchiveDate(v){try{return new Date(v).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return String(v||'')}}
-function archiveCurrentJury(){if(!ensureProductSheetsComplete('archiver le jury'))return;const m=juryMetrics();if(!(m.max>0&&m.done===m.max&&m.validated===state.config.testerCount)){alert('Le jury ne peut être archivé que lorsque tous les testeurs ont terminé et validé leur test.');return}if(!isJuryClosed()){alert('Fermez d’abord officiellement le jury.');return}if(!closureIsReady()){alert('Complétez d’abord la fiche de clôture : date, lieu et responsable du jury.');renderClosure();return}const previous=state.config?._archive||{};if(previous.archivedAt&&!confirm('Ce jury est déjà archivé. Mettre à jour son archive avec les résultats actuels ?'))return;const now=new Date().toISOString();const id=previous.archiveId||((typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`archive_${Date.now()}`);state.config._archive={archiveId:id,archivedAt:now,cloudSessionId:(typeof cloudCfg!=='undefined'&&cloudCfg.sessionId)?cloudCfg.sessionId:(previous.cloudSessionId||null)};saveState();const rec={id,archivedAt:now,cloudSessionId:state.config._archive.cloudSessionId,state:deepClone(state)};const list=loadArchives();const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=rec;else list.unshift(rec);saveArchives(list.slice(0,100));renderAdmin();toast(previous.archivedAt?'Archive mise à jour ✓':'Jury archivé ✓')}
+function archiveCurrentJury(){if(state.config?._archive?.finalLocked){alert('Cette archive définitive est en lecture seule.');return;}if(!ensureProductSheetsComplete('archiver le jury'))return;const m=juryMetrics();if(!(m.max>0&&m.done===m.max&&m.validated===state.config.testerCount)){alert('Le jury ne peut être archivé que lorsque tous les testeurs ont terminé et validé leur test.');return}if(!isJuryClosed()){alert('Fermez d’abord officiellement le jury.');return}if(!closureIsReady()){alert('Complétez d’abord la fiche de clôture : date, lieu et responsable du jury.');renderClosure();return}const previous=state.config?._archive||{};if(previous.archivedAt&&!confirm('Ce jury est déjà archivé. Mettre à jour son archive avec les résultats actuels ?'))return;const now=new Date().toISOString();const id=previous.archiveId||((typeof crypto!=='undefined'&&crypto.randomUUID)?crypto.randomUUID():`archive_${Date.now()}`);state.config._archive={archiveId:id,archivedAt:now,cloudSessionId:(typeof cloudCfg!=='undefined'&&cloudCfg.sessionId)?cloudCfg.sessionId:(previous.cloudSessionId||null)};saveState();const rec={id,archivedAt:now,cloudSessionId:state.config._archive.cloudSessionId,state:deepClone(state)};const list=loadArchives();const i=list.findIndex(x=>x.id===id);if(i>=0)list[i]=rec;else list.unshift(rec);saveArchives(list.slice(0,100));renderAdmin();toast(previous.archivedAt?'Archive mise à jour ✓':'Jury archivé ✓')}
 
 function statsFilterValues(){
   return{
@@ -9516,7 +9567,7 @@ function renderArchives(){
       <button class="btn btn-secondary btn-small" data-archive-minutes="${rec.id}">📝 Procès-verbal</button>
       <button class="btn btn-ghost btn-small" data-archive-export="${rec.id}">Exporter JSON</button>
       <button class="btn btn-ghost btn-small" data-archive-copy="${rec.id}">Reprendre comme modèle</button>
-      <button class="btn btn-danger btn-small" data-archive-delete="${rec.id}">Supprimer</button>
+      ${(rec.finalLocked||rec.state?.config?._archive?.finalLocked)?'<span class="archive-badge">🔒 Archive définitive — lecture seule</span>':`<button class="btn btn-danger btn-small" data-archive-delete="${rec.id}">Supprimer</button>`}
     </div>
     <div class="archive-detail"><div class="archive-detail-grid"><div class="archive-mini-panel"><h4>Classement global fournisseurs</h4><div class="archive-ranking">${ranking.length?ranking.slice(0,8).map((r,i)=>`<div class="archive-rank-row"><div class="n">${i+1}</div><div><strong>${escapeHtml(r.supplier)}</strong><br><span>${r.count} évaluation(s)</span></div><div class="archive-score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'}/5</div></div>`).join(''):'<span style="font-size:11px;color:var(--muted)">Aucun résultat.</span>'}</div></div><div class="archive-mini-panel"><h4>Remarques du jury</h4><div class="archive-remarks-preview">${remarks.length?remarks.slice(0,8).map(x=>`<div class="archive-remark"><strong>${escapeHtml(x.tester)}</strong> · ${escapeHtml(x.product)} · Éch. ${escapeHtml(x.sample)}<br>${escapeHtml(x.remark)}</div>`).join(''):'<span style="font-size:11px;color:var(--muted)">Aucune remarque.</span>'}${remarks.length>8?`<span style="font-size:10px;color:var(--muted)">+ ${remarks.length-8} autre(s) remarque(s)</span>`:''}</div></div></div></div>`;
     list.appendChild(card)
@@ -9556,7 +9607,7 @@ function exportArchiveListCsv(){
   toast(`${rows.length} archive${rows.length>1?'s':''} exportée${rows.length>1?'s':''} en CSV`)
 }
 function exportArchive(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;download(new Blob([JSON.stringify(rec,null,2)],{type:'application/json'}),`archive-${slug(rec.state?.config?.lotName||'jury')}.json`);toast('Archive exportée')}
-function deleteArchive(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;if(!confirm(`Supprimer définitivement l’archive « ${rec.state?.config?.lotName||'Jury'} » ?`))return;saveArchives(loadArchives().filter(x=>x.id!==id));renderArchives();toast('Archive supprimée')}
+function deleteArchive(id){const rec=loadArchives().find(x=>x.id===id);if(!rec)return;if(rec.finalLocked||rec.state?.config?._archive?.finalLocked){alert('Cette archive définitive est verrouillée et ne peut pas être supprimée.');return;}if(!confirm(`Supprimer définitivement l’archive « ${rec.state?.config?.lotName||'Jury'} » ?`))return;saveArchives(loadArchives().filter(x=>x.id!==id));renderArchives();toast('Archive supprimée')}
 async function duplicateArchive(id){
   const rec=loadArchives().find(x=>x.id===id);
   if(!rec?.state?.config){alert('Archive introuvable.');return}
