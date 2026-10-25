@@ -461,11 +461,35 @@ function isolateReturnedLot98V341(){
   return true;
 }
 
+
+function isRetiredMoulikV356(cfg){
+  return String(cfg?.lotName||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase()==='moulik';
+}
+function removeRetiredMoulikV356(){
+  const raw=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
+  const rows=Array.isArray(raw)?raw:[];
+  const removed=rows.filter(r=>isRetiredMoulikV356(r?.state?.config));
+  const active=isRetiredMoulikV356(state?.config);
+  if(!active&&!removed.length)return false;
+  // Keep a recovery copy before changing any active list or current jury.
+  localStorage.setItem('jm_tc_moulik_recovery_'+Date.now(),JSON.stringify({createdAt:new Date().toISOString(),active:active?deepClone(state):null,prepared:removed}));
+  const keep=rows.filter(r=>!isRetiredMoulikV356(r?.state?.config));
+  localStorage.setItem(PREPARED_JURY_STORAGE_KEY,JSON.stringify(keep));
+  if(active){
+    const next=keep.find(r=>r?.state?.config&&!r.state.config._archive?.archivedAt);
+    state=next?deepClone(next.state):blankActiveStateV238();
+    draftConfig=null;receptionDraft=null;receptionEditingIndex=-1;
+    currentTester=1;currentProduct=state.config.products?.[0]?.id||'';currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';adminProduct=currentProduct;selectedAdminSample='';
+    localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+  }
+  return true;
+}
+
 function loadPreparedJurys(){
   try{
     const raw=JSON.parse(localStorage.getItem(PREPARED_JURY_STORAGE_KEY)||'[]');
     const rows=Array.isArray(raw)?raw:[];
-    const clean=dedupePreparedJurysV238(rows).filter(r=>localStorage.getItem('jm_tc_lot98_isolated_v341')!=='1'||!isLot98RecoveryV341(r?.state?.config));
+    const clean=dedupePreparedJurysV238(rows).filter(r=>!isRetiredMoulikV356(r?.state?.config)).filter(r=>localStorage.getItem('jm_tc_lot98_isolated_v341')!=='1'||!isLot98RecoveryV341(r?.state?.config));
     let supplierRepair=false;
     for(const rec of clean){
       try{if(healSupplierNamesV252(rec?.state?.config))supplierRepair=true}catch(e){}
@@ -489,7 +513,7 @@ function savePreparedJurys(rows){
   localStorage.setItem(PREPARED_JURY_STORAGE_KEY,JSON.stringify(clean));
 }
 function upsertPreparedJury(st=state){
-  if(!st?.config)return null;
+  if(!st?.config||isRetiredMoulikV356(st.config))return null;
   if(localStorage.getItem('jm_tc_lot98_isolated_v341')==='1'&&isLot98RecoveryV341(st.config))return null;
   let id=st.config._preparedId||uid('prepared');
   st.config._preparedId=id;
@@ -3350,7 +3374,7 @@ function renderMyJuriesDashboard(){
   document.querySelectorAll('[data-dash-archive-copy]').forEach(b=>b.onclick=()=>copyArchiveAsNew(b.dataset.dashArchiveCopy));
 }
 
-function renderHome(){if(!$('#homeView').classList.contains('active'))ensureCurrentPrepSaved();updateHeader();showView('homeView');renderHomeReceptionBadge();const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
+function renderHome(){removeRetiredMoulikV356();if(!$('#homeView').classList.contains('active'))ensureCurrentPrepSaved();updateHeader();showView('homeView');renderHomeReceptionBadge();const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
 const preparedCount=loadPreparedJurys().filter(r=>!r?.state?.config?.juryClose?.closedAt).length;
 $('#juryBtnTitle').textContent=preparedCount>1
   ?'Choisir un jury'
