@@ -308,7 +308,8 @@ document.addEventListener('fullscreenchange',()=>{
 
 /* V348 — choisir le lot avant de consulter ses résultats. */
 function openResultsLotChooserV348(){
-  if(state?.config?._preparedId)saveState();
+  // Opening a read-only chooser must not depend on a storage write.
+  // In particular, a browser quota error must not block access to results.
   const rows=loadPreparedJurys().filter(r=>r?.state?.config&&!r.state.config._archive?.archivedAt);
   const currentId=String(state?.config?._preparedId||'');
   if(state?.config?.products?.length&&!state.config._archive?.archivedAt&&
