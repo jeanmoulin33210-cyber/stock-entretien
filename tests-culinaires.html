@@ -1660,10 +1660,10 @@
   <div class="closure-actions">
     <button class="btn btn-ghost" id="closureBackBtn">← Retour aux résultats</button>
     <button class="btn btn-secondary" id="closureMinutesBtn">📝 Voir le procès-verbal</button>
-    <button class="btn btn-secondary" id="closureDossierBtn">📚 Dossier complet</button>
+    <button hidden style="display:none!important" class="btn btn-secondary" id="closureDossierBtn">📚 Dossier complet</button>
     <button class="btn btn-secondary" id="closureSummaryBtn">📋 Synthèse jury</button>
-    <button class="btn btn-primary" id="closureReportBtn">➡️ Continuer vers le rapport final</button>
-    <button class="btn btn-primary" id="saveClosureBtn">💾 Enregistrer</button>
+    <button hidden style="display:none!important" class="btn btn-primary" id="closureReportBtn">➡️ Continuer vers le rapport final</button>
+    <button class="btn btn-primary" id="saveClosureBtn">💾 Enregistrer les résultats</button>
   </div>
 </main>
 
@@ -2052,7 +2052,7 @@
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=338s-lots-archives"></script>
+<script src="js/05-application-principale.js?build=338t-cloture-simple"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
