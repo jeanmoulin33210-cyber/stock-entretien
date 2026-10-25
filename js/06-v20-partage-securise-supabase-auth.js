@@ -713,6 +713,7 @@ async function syncAccessCodes(){
   rememberCloudAccessCodesV339(state.config);
 }
 async function connectCloud({create=false}={}){
+  try{await preserveRecoveryCopiesV358();}catch(e){console.warn('Recovery copies retained',e);}
   cloudCfg.url=$('#cloudUrl')?.value.trim()||cloudCfg.url;cloudCfg.key=$('#cloudKey')?.value.trim()||cloudCfg.key;cloudCfg.sessionId=$('#cloudSession')?.value.trim()||cloudCfg.sessionId;
   if(create&&!cloudCfg.sessionId)cloudCfg.sessionId=crypto.randomUUID();
   if(!cloudCfg.sessionId)throw new Error('Indiquez un identifiant de session ou cliquez sur « Créer une session partagée ».');
@@ -2630,3 +2631,65 @@ saveCloudCfg=function(){
 };
 window.addEventListener('pageshow',()=>scheduleOwnerWorkspaceV354(1200));
 scheduleOwnerWorkspaceV354(1500);
+
+/* V358: move only historical recovery copies out of the small localStorage
+ * budget. A committed, read-back-verified IndexedDB copy is required first.
+ * Live state, prepared juries, archives and authentication are never removed. */
+async function preserveRecoveryCopiesV358(){
+  const keys=[];
+  for(let i=0;i<localStorage.length;i++){
+    const k=localStorage.key(i)||'';
+    if(/^jm_tc_before_owner_import_\d+$/.test(k)||[
+      'jm_tc_before_auto_owner_merge_v352',
+      'jm_tc_stable_owner_recovery_v357'
+    ].includes(k))keys.push(k);
+  }
+  if(!keys.length)return;
+  const db=await new Promise((resolve,reject)=>{
+    const req=indexedDB.open('jm_tc_recovery_v358',1);
+    req.onupgradeneeded=()=>req.result.createObjectStore('copies',{keyPath:'id'});
+    req.onsuccess=()=>resolve(req.result);
+    req.onerror=()=>reject(req.error);
+    req.onblocked=()=>reject(new Error('Stockage de secours indisponible.'));
+  });
+  try{
+    for(const key of keys){
+      const value=localStorage.getItem(key);if(value===null)continue;
+      const id=key+':'+crypto.randomUUID();
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction('copies','readwrite');
+        tx.objectStore('copies').put({id,key,value,savedAt:new Date().toISOString()});
+        tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Copie interrompue.'));
+      });
+      const copy=await new Promise((resolve,reject)=>{
+        const req=db.transaction('copies','readonly').objectStore('copies').get(id);
+        req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+      });
+      if(copy?.value!==value)throw new Error('La copie de secours n’a pas été vérifiée.');
+      if(localStorage.getItem(key)===value)localStorage.removeItem(key);
+    }
+  }finally{db.close();}
+}
+async function exportRecoveryCopiesV358(){
+  const db=await new Promise((resolve,reject)=>{
+    const req=indexedDB.open('jm_tc_recovery_v358',1);
+    req.onupgradeneeded=()=>req.result.createObjectStore('copies',{keyPath:'id'});
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });
+  try{
+    const copies=await new Promise((resolve,reject)=>{
+      const req=db.transaction('copies','readonly').objectStore('copies').getAll();
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+    });
+    const url=URL.createObjectURL(new Blob([JSON.stringify({version:358,copies},null,2)],{type:'application/json'}));
+    const a=document.createElement('a');a.href=url;a.download='tests-culinaires-copies-secours.json';a.click();
+    setTimeout(()=>URL.revokeObjectURL(url),30000);
+  }finally{db.close();}
+}
+(function(){
+  const anchor=document.getElementById('connectCloudBtn');if(!anchor)return;
+  const button=document.createElement('button');button.type='button';
+  button.textContent='Exporter les copies de secours';button.id='exportRecoveryV358';
+  button.onclick=()=>exportRecoveryCopiesV358().catch(e=>alert(e.message||String(e)));
+  anchor.parentNode.appendChild(button);
+})();
