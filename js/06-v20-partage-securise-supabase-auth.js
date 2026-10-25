@@ -282,7 +282,8 @@ function buildCloudClient(){
   const storageKey=cloudAuthStorageKey();
   cloudClient=window.supabase.createClient(cloudCfg.url.trim(),cloudCfg.key.trim(),{
     auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey}
-  })
+  });
+  cloudClient.__jmStorageKeyV357=storageKey;
 }
 async function ensureCloudAuth(){
   let {data:{session},error}=await cloudClient.auth.getSession();if(error)throw error;
@@ -435,8 +436,16 @@ function productSheetRichnessV256(cfg){
   return {filled,nonEmpty,total:vals.length};
 }
 
+function sameJuryV357(a,b){
+  if(!a||!b)return false;
+  const ia=String(a._juryInstanceId||a.juryInstanceId||''),ib=String(b._juryInstanceId||b.juryInstanceId||'');
+  if(ia&&ib)return ia===ib;
+  if(a._preparedId&&b._preparedId)return String(a._preparedId)===String(b._preparedId);
+  const norm=x=>String(x||'').trim().normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase();
+  return !!norm(a.lotName)&&norm(a.lotName)===norm(b.lotName);
+}
 function preserveRicherAdminLocalDataV256(cfg,prev){
-  if(!cfg||!prev)return cfg;
+  if(!cfg||!prev||!sameJuryV357(cfg,prev))return cfg;
 
   try{
     const remote=productSheetRichnessV256(cfg);
@@ -467,7 +476,7 @@ function preserveRicherAdminLocalDataV256(cfg,prev){
 }
 
 function preserveRicherAdminWorkflowV323(cfg,prev){
-  if(!cfg||!prev)return cfg;
+  if(!cfg||!prev||!sameJuryV357(cfg,prev))return cfg;
 
   function newer(localTs,remoteTs){
     localTs=String(localTs||'');remoteTs=String(remoteTs||'');
@@ -545,7 +554,7 @@ function preserveRicherAdminWorkflowV323(cfg,prev){
 function restoreAdminShareMetadataV248(cfg,previousCfg=null){
   if(!cfg||typeof cfg!=='object'||cloudRole!=='admin')return cfg;
 
-  const prev=previousCfg&&typeof previousCfg==='object'?previousCfg:{};
+  const prev=previousCfg&&typeof previousCfg==='object'&&sameJuryV357(cfg,previousCfg)?previousCfg:{};
 
   /* V256 — ne jamais écraser une fiche produit locale plus complète
      par une configuration cloud moins riche. */
@@ -586,8 +595,8 @@ function rebuildLocalFromCloud(config,rows=[]){
       serverValidationV323[Number(r.tester_no)]=Array.isArray(r.remarks)?(r.remarks[0]||null):null;
     }
   });
-  const previous=state?.testers||{};
   const previousCfg=deepClone(state?.config||{});
+  const previous=sameJuryV357(config,previousCfg)?(state?.testers||{}):{};
   const serverConfigHashV323=hashJson(config||{});
   const incoming=(cloudRole==='admin')
     ?restoreAdminShareMetadataV248(deepClone(config||{}),previousCfg)
@@ -898,7 +907,16 @@ unlockTester=function(t){
 };
 window.unlockTester=unlockTester;
 
+async function activeSessionMatchesV357(){
+  if(cloudRole!=='admin')return true;
+  const current=state,sid=cloudCfg.sessionId,c=cloudClient;
+  const expected=String(state.config?._shareSessionId||state.config?.juryLaunch?.sessionId||'');
+  if(expected&&expected!==sid)return false;
+  const {data,error}=await c.from('test_culinaire_sessions').select('config').eq('session_id',sid).maybeSingle();
+  return !error&&!!data?.config&&state===current&&cloudCfg.sessionId===sid&&sameJuryV357(state.config,data.config);
+}
 async function reloadCloudAnswers(){if(testerPreviewMode)return;
+  if(cloudReady&&!(await activeSessionMatchesV357()))return;
   if(!cloudReady)return;
   if(cloudBusy){cloudAnswersReloadPendingV323=true;return;}
   cloudAnswersReloadPendingV323=false;
@@ -1033,6 +1051,7 @@ async function reloadCloudConfig(){if(testerPreviewMode)return;
     const serverCfg=deepClone(data.config||{});
     const serverHash=hashJson(serverCfg);
     const localHash=hashJson(state.config);
+    if(!sameJuryV357(state.config,serverCfg))return;
     if(serverHash===localHash){
       lastCloudConfigHash=serverHash;
       return;
@@ -1120,6 +1139,7 @@ async function pushAllAnswers(){
 }
 async function syncDirtyToCloud(){if(testerPreviewMode)return;
   if(!cloudReady)return;
+  const syncClientV357=cloudClient,syncSidV357=cloudCfg.sessionId,syncStateV357=state;
   if(isEmptyLocalHomeV340()&&retiredOwnerSessionV353(cloudCfg.sessionId)){await disconnectCloud();return;}
   if(cloudAdminAccessBlockedV339)return;
   if(Date.now()<cloudRetryAfterV339){
@@ -1167,33 +1187,44 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
            protéger toute donnée finale plus complète qui aurait été enregistrée
            par un autre appareil. */
         let outgoing=deepClone(state.config);
-        try{
-          const {data:latest,error:latestError}=await cloudClient
+        let expectedUpdatedAtV357=null;
+        {
+          const {data:latest,error:latestError}=await syncClientV357
             .from('test_culinaire_sessions')
-            .select('config')
-            .eq('session_id',cloudCfg.sessionId)
+            .select('config,updated_at')
+            .eq('session_id',syncSidV357)
             .maybeSingle();
-          if(!latestError&&latest?.config){
+          if(latestError||!latest?.config)throw new Error('Configuration serveur non vérifiable. Données locales conservées.');
+          if(!sameJuryV357(outgoing,latest.config))return;
+          expectedUpdatedAtV357=latest.updated_at;
+          if(!expectedUpdatedAtV357)throw new Error('Version serveur absente. Envoi différé.');
+          if(latest.config){
+            if(latest.config._ownerCatalogV357)outgoing._ownerCatalogV357=deepClone(latest.config._ownerCatalogV357);
             if(latest.config._ownerWorkspaceV351)outgoing._ownerWorkspaceV351=deepClone(latest.config._ownerWorkspaceV351);
             preserveRicherAdminLocalDataV256(outgoing,latest.config);
             preserveRicherAdminWorkflowV323(outgoing,latest.config);
             restoreAdminShareMetadataV248(outgoing,latest.config);
           }
-        }catch(e){}
+        }
 
+        if(state!==syncStateV357||cloudCfg.sessionId!==syncSidV357)return;
         state.config=outgoing;
         originalSaveState();
 
-        const {error}=await cloudClient
+        const {data:writtenV357,error}=await syncClientV357
           .from('test_culinaire_sessions')
           .update({
             config:outgoing,
             public_config:makePublicCloudConfig(outgoing),
             updated_at:new Date().toISOString()
           })
-          .eq('session_id',cloudCfg.sessionId);
+          .eq('session_id',syncSidV357)
+          .eq('updated_at',expectedUpdatedAtV357)
+          .select('session_id').maybeSingle();
         if(error)throw error;
+        if(!writtenV357)throw new Error('Un autre appareil vient d’enregistrer. Nouvelle tentative automatique.');
 
+        if(state!==syncStateV357||cloudCfg.sessionId!==syncSidV357)return;
         await syncAccessCodes();
         lastCloudConfigHash=hashJson(outgoing);
       }
@@ -1243,7 +1274,7 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
        envoyées séparément. Un problème sur __validation__ ne peut donc plus
        annuler l'enregistrement du secours. */
     if(answerRows.length){
-      const {error}=await cloudClient
+      const {error}=await syncClientV357
         .from('test_culinaire_reponses')
         .upsert(answerRows,{onConflict:'session_id,tester_no,product_id,sample_id'});
       if(error)throw error;
@@ -1251,7 +1282,7 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
     }
 
     if(validationRows.length){
-      const {error}=await cloudClient
+      const {error}=await syncClientV357
         .from('test_culinaire_reponses')
         .upsert(validationRows,{onConflict:'session_id,tester_no,product_id,sample_id'});
       if(!error){
@@ -1629,7 +1660,7 @@ async function forceReloadAdminStateV328(){
   }
 }
 
-async function disconnectCloud(){
+async function disconnectCloud({keepOwnerSession=false}={}){
   localStorage.removeItem('jm_tc_owner_connection_v353');
   localStorage.setItem('jm_tc_owner_disconnected_v353','1');
   clearTimeout(cloudSyncTimer);
@@ -1639,7 +1670,7 @@ async function disconnectCloud(){
   if(cloudChannel&&cloudClient)try{await cloudClient.removeChannel(cloudChannel)}catch(e){}
   if(cloudPresenceChannel&&cloudClient)try{await cloudClient.removeChannel(cloudPresenceChannel)}catch(e){}
   cloudChannel=null;cloudPresenceChannel=null;cloudPresenceState={};
-  if(cloudClient)try{await cloudClient.auth.signOut({scope:'local'})}catch(e){}
+  if(cloudClient&&!keepOwnerSession)try{await cloudClient.auth.signOut({scope:'local'})}catch(e){}
   cloudClient=null;cloudCfg.sessionId='';cloudCfg.accessCode='';saveCloudCfg();setCloudStatus('local','● Local');cloudMsg('Mode local activé.','warn');renderShareLinks()
 }
 function isEmptyLocalHomeV340(){
@@ -2158,7 +2189,7 @@ function serverValidationBackupV335(cfg){
 }
 
 function mergeValidationBackupFromServerV335(serverCfg){
-  if(cloudRole!=='admin'||!serverCfg||typeof serverCfg!=='object')return false;
+  if(cloudRole!=='admin'||!serverCfg||typeof serverCfg!=='object'||!sameJuryV357(state.config,serverCfg))return false;
   const remote=serverValidationBackupV335(serverCfg);
   if(!Object.keys(remote).length)return false;
 
@@ -2194,6 +2225,7 @@ async function publishValidationBackupV335(){
     if(!session?.config)return false;
 
     const remote=deepClone(session.config||{});
+    if(!sameJuryV357(state.config,remote))return false;
     const current=serverValidationBackupV335(remote);
 
     /* V335 : une validation acquise ne doit jamais disparaître simplement parce
@@ -2271,7 +2303,7 @@ async function automaticReconcileV335(){
 
       /* Récupérer aussi une fermeture effectuée automatiquement sur l'autre
          appareil, sans attendre une intervention manuelle. */
-      if(session.config?.juryClose?.closedAt && !state.config?.juryClose?.closedAt){
+      if(sameJuryV357(state.config,session.config)&&session.config?.juryClose?.closedAt && !state.config?.juryClose?.closedAt){
         try{
           const localCfg=state.config;
           preserveRicherAdminWorkflowV323(localCfg,session.config);
