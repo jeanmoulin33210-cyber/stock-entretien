@@ -634,7 +634,9 @@ async function quickSharePhones(origin='launch'){
     }
     {
       const raw=String(e?.message||e||'');
-      const friendly=/admin_token_mismatch/i.test(raw)
+      const friendly=/failed to fetch|fetch failed|networkerror|network request failed|load failed|abort|timeout/i.test(raw)
+        ?'Le serveur de partage est injoignable. Votre préparation reste enregistrée sur cet appareil. Réessayez avec les données mobiles à la place du Wi-Fi. Si cela persiste sur les deux réseaux, le serveur Supabase doit être vérifié.'
+        :/admin_token_mismatch/i.test(raw)
         ?'L’ancienne autorisation administrateur de ce jury ne correspondait plus à cet appareil. Rechargez la page puis relancez « Préparer les téléphones » : une nouvelle session sécurisée sera créée automatiquement.'
         :raw;
       alert(`Le partage n’a pas pu être préparé. ${friendly}`);
