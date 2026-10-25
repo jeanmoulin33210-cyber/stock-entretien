@@ -4466,7 +4466,7 @@ async function ensureRunningJuryCloudSync(){
   runningJuryCloudSyncBusy=true;
 
   try{
-    if(!cloudReady||cloudRole!=='admin'){
+    if(!cloudReady||cloudRole!=='admin'||cloudCfg.sessionId!==currentJuryShareSessionId()){
       await ensurePreparedShareConnected();
     }
     await publishOfficialLaunchToCloud();
@@ -5115,6 +5115,7 @@ function commitDraftForPhonePreparation(){
 
   savedConfig.testerCount=requestedTesterCount;
   savedConfig.testerNames=savedConfig.testerNames.slice(0,requestedTesterCount);
+  if(!savedConfig._preparedId)savedConfig._catalogCreatedV357=true;
   savedConfig._preparedId=savedConfig._preparedId||uid('prepared');
   savedConfig._preparedAt=savedConfig._preparedAt||new Date().toISOString();
 
@@ -6277,6 +6278,7 @@ function applyDraft(){
   const savedConfig=deepClone(draftConfig);
   savedConfig.testerCount=requestedTesterCount;
   savedConfig.testerNames=savedConfig.testerNames.slice(0,requestedTesterCount);
+  if(!savedConfig._preparedId)savedConfig._catalogCreatedV357=true;
   savedConfig._preparedId=savedConfig._preparedId||uid('prepared');
   savedConfig._preparedAt=savedConfig._preparedAt||new Date().toISOString();
 
