@@ -55,16 +55,18 @@ function cloudSessionShortV327(){
 }
 // A successful read or redraw cannot certify a failed upload.
 let cloudUploadFailureV339=null;
+let cloudAdminAccessBlockedV339=false;
 let cloudRetryAfterV339=0;
 let cloudRetryCountV339=0;
 function cloudUploadSucceededV339(){
   cloudUploadFailureV339=null;
+  cloudAdminAccessBlockedV339=false;
   cloudRetryAfterV339=0;
   cloudRetryCountV339=0;
 }
 function setCloudStatus(kind='local',text='● Local'){
   if(cloudUploadFailureV339&&(kind==='online'||kind==='syncing')){
-    kind='error';text='● Synchronisation en attente';
+    kind='error';text=cloudAdminAccessBlockedV339?'● Accès administrateur à rétablir':'● Synchronisation en attente';
   }
   const els=[document.getElementById('cloudStatus'),document.getElementById('cloudPageStatus')].filter(Boolean);
   const code=(kind==='online'||kind==='syncing')?cloudSessionShortV327():'';
@@ -1097,6 +1099,7 @@ async function pushAllAnswers(){
 }
 async function syncDirtyToCloud(){if(testerPreviewMode)return;
   if(!cloudReady)return;
+  if(cloudAdminAccessBlockedV339)return;
   if(Date.now()<cloudRetryAfterV339){
     clearTimeout(cloudSyncTimer);
     cloudSyncTimer=setTimeout(syncDirtyToCloud,cloudRetryAfterV339-Date.now()+50);
@@ -1244,8 +1247,10 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
     cloudUploadFailureV339=String(e?.message||e);
     cloudRetryCountV339++;
     cloudRetryAfterV339=Date.now()+Math.min(60000,15000*Math.pow(2,Math.min(cloudRetryCountV339-1,2)));
-    cloudSyncPendingV323=true;
-    console.error(e);setCloudStatus('error','● Synchronisation en attente');
+    cloudAdminAccessBlockedV339=/admin_token_mismatch|invalid_admin|invalid_legacy_admin_proof/i.test(cloudUploadFailureV339);
+    cloudSyncPendingV323=!cloudAdminAccessBlockedV339;
+    if(cloudAdminAccessBlockedV339)clearTimeout(cloudSyncTimer);
+    console.error(e);setCloudStatus('error',cloudAdminAccessBlockedV339?'● Accès administrateur à rétablir':'● Synchronisation en attente');
     const msg=String(e?.message||e);
     cloudMsg(/row-level security|policy/i.test(msg)?'Sécurité Supabase : cette opération n’est pas autorisée pour ce rôle.':`Synchronisation impossible : ${msg}`,'bad')
   }finally{
@@ -1270,7 +1275,7 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
   }
 }
 function scheduleCloudSync(){
-  if(!cloudReady)return;
+  if(!cloudReady||cloudAdminAccessBlockedV339)return;
   cloudSyncPendingV323=true;
   clearTimeout(cloudSyncTimer);
   cloudSyncTimer=setTimeout(syncDirtyToCloud,Math.max(300,cloudRetryAfterV339-Date.now()));
@@ -2070,6 +2075,7 @@ function syncValidationBackupIntoConfigV334(){
    la configuration partagée, pas seulement dans la table des réponses. */
 const syncDirtyToCloudBeforeV334=syncDirtyToCloud;
 syncDirtyToCloud=async function(){
+  if(cloudAdminAccessBlockedV339)return;
   try{syncValidationBackupIntoConfigV334()}catch(e){}
   return syncDirtyToCloudBeforeV334();
 };
@@ -2122,6 +2128,7 @@ function mergeValidationBackupFromServerV335(serverCfg){
 }
 
 async function publishValidationBackupV335(){
+  if(cloudAdminAccessBlockedV339)return false;
   if(autoValidationPublishBusyV335)return false;
   if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId)return false;
 
@@ -2193,6 +2200,7 @@ async function publishValidationBackupV335(){
 }
 
 async function automaticReconcileV335(){
+  if(cloudAdminAccessBlockedV339)return;
   if(autoReconcileBusyV335||testerPreviewMode)return;
   if(!cloudReady||cloudRole!=='admin'||!cloudClient||!cloudCfg?.sessionId)return;
   if(cloudBusy)return;
