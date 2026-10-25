@@ -2288,6 +2288,14 @@ function openReceptionView(index=-1){
 
   renderReceptionForm();
 }
+function receivedReceptionSuppliers(cfg,editingIndex=-1){
+  return new Set(receptionList(cfg)
+    .filter((rec,index)=>index!==editingIndex && rec?.validatedAt && receptionRecordMatchesConfigV258(rec,cfg))
+    .map(rec=>receptionNormV258(rec.supplier)).filter(Boolean));
+}
+function receptionSupplierAlreadyReceived(cfg,name,editingIndex=-1){
+  return receivedReceptionSuppliers(cfg,editingIndex).has(receptionNormV258(name));
+}
 function renderReceptionForm(){
   const cfg=receptionConfig();
   if(!cfg||!receptionDraft)return;
@@ -2305,6 +2313,9 @@ function renderReceptionForm(){
   const supplierInput=$('#receptionSupplier');
   const supplierManual=$('#receptionSupplierManual');
   const suppliers=receptionConfiguredSupplierNames(cfg);
+  const receivedSuppliers=receivedReceptionSuppliers(cfg,receptionEditingIndex);
+  const availableSuppliers=suppliers.filter(name=>!receivedSuppliers.has(receptionNormV258(name)));
+  if(receivedSuppliers.has(receptionNormV258(receptionDraft.supplier)))receptionDraft.supplier='';
   const selected=String(receptionDraft.supplier||'').trim();
 
   if(supplierInput && supplierManual){
@@ -2331,7 +2342,7 @@ function renderReceptionForm(){
 
       supplierInput.innerHTML=
         '<option value="">— Choisir le fournisseur —</option>'+
-        suppliers.map(name=>`<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`).join('')+
+        suppliers.map(name=>{const done=receivedSuppliers.has(receptionNormV258(name));return `<option value="${escapeHtml(name)}" ${done?'disabled style="color:#8a949b;background:#edf0f2"':''}>${escapeHtml(name)}${done?' — déjà réceptionné ✓':''}</option>`}).join('')+
         '<option value="__manual_supplier_v260__">✏️ Saisir un fournisseur manuellement…</option>';
 
       if(selected && !suppliers.includes(selected)){
@@ -2341,20 +2352,26 @@ function renderReceptionForm(){
 
       if(selected){
         supplierInput.value=selected;
-      }else if(suppliers.length===1){
-        supplierInput.value=suppliers[0];
-        receptionDraft.supplier=suppliers[0];
+      }else if(availableSuppliers.length===1){
+        supplierInput.value=availableSuppliers[0];
+        receptionDraft.supplier=availableSuppliers[0];
       }else{
         supplierInput.value='';
       }
 
       supplierInput.onchange=()=>{
         if(supplierInput.value!=='__manual_supplier_v260__'){
+          if(receivedSuppliers.has(receptionNormV258(supplierInput.value))){supplierInput.value='';receptionDraft.supplier='';return;}
           receptionDraft.supplier=supplierInput.value||'';
           return;
         }
         const name=prompt('Nom du fournisseur :','');
         if(!String(name||'').trim()){
+          supplierInput.value=receptionDraft.supplier||'';
+          return;
+        }
+        if(receptionSupplierAlreadyReceived(cfg,name,receptionEditingIndex)){
+          alert('Ce fournisseur a déjà été réceptionné pour ce lot. Choisissez un fournisseur restant.');
           supplierInput.value=receptionDraft.supplier||'';
           return;
         }
@@ -2434,6 +2451,10 @@ async function saveReceptionForm(){
   if(!cfg||!rec)return;
   if(!rec.date){alert('Indiquez la date de réception.');$('#receptionDate')?.focus();return}
   if(!rec.supplier){alert('Choisissez le fournisseur.');$('#receptionSupplier')?.focus();return}
+  if(receptionSupplierAlreadyReceived(cfg,rec.supplier,receptionEditingIndex)){
+    alert('Ce fournisseur a déjà une réception enregistrée pour ce lot. Consultez « Réceptions enregistrées » pour la modifier.');
+    return;
+  }
   if(!rec.lines.some(x=>x.received!==false)){alert('Cochez au moins un produit reçu.');return}
 
   // V210 : une réception ne peut plus être validée sans DLC / DDM
