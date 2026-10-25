@@ -1628,7 +1628,7 @@ function openProductLotV174(row){
     /* V252 — ouvrir directement la fiche réellement manquante indiquée
        par l'accueil, sinon la première fiche incomplète. */
     activeProductSheetId=row.firstProductId||firstIncompleteProductSheetId(state);
-    openProductSheets();
+    openProductSheets(!!row.readOnly);
     if(row.firstSampleId){
       setTimeout(()=>{
         const box=$('#productSheetContent');
@@ -1661,7 +1661,7 @@ function openProductLotV174(row){
   selectedAdminSample='';
   /* V252 — même logique pour un lot préparé rechargé depuis l’accueil. */
   activeProductSheetId=row.firstProductId||firstIncompleteProductSheetId(state);
-  openProductSheets();
+  openProductSheets(!!row.readOnly);
   if(row.firstSampleId){
     setTimeout(()=>{
       const box=$('#productSheetContent');
@@ -7348,11 +7348,13 @@ function renderProductSheetStatus(){
   const x=productSheetsProgress(state);
   b.textContent=`📋 Fiches produits${x.total?` (${x.filled}/${x.total})`:''}`;
 }
-function openProductSheets(){
+let productSheetsReadOnlyView=false;
+function openProductSheets(readOnly=false){
+  productSheetsReadOnlyView=readOnly===true;
   if(!state?.config?.products?.length){alert('Aucun produit dans ce jury.');return}
   if(!activeProductSheetId || !state.config.products.some(p=>String(p.id)===String(activeProductSheetId)))activeProductSheetId=state.config.products[0].id;
   showView('productSheetsView');
-  $('#headerTitle').textContent='Fiches produits';
+  $('#headerTitle').textContent=productSheetsReadOnlyView?'Fiches terminées — lecture seule':'Fiches produits';
   $('#headerSub').textContent=state.config.lotName||'Jury Marchés';
   renderProductSheets();
 }
@@ -7369,10 +7371,12 @@ function renderProductSheets(){
   const rows=(p.samples||[]).map(sm=>{
     const r=ensureProductSheetRecord(state,p,sm),st=productSheetStats(state,p,sm);
     const missing=productSheetMissingFields(state,p,sm);
-    return `<article class="product-sheet-sample ${missing.length?'has-missing':''}" data-ps-sample="${escapeHtml(String(sm.id))}">
+    if(productSheetsReadOnlyView&&missing.length)return '';
+    const locked=productSheetsReadOnlyView||missing.length===0;
+    return `<article class="product-sheet-sample ${missing.length?'has-missing':''}" data-ps-sample="${escapeHtml(String(sm.id))}" data-ps-readonly="${locked?'true':'false'}">
       <div class="product-sheet-sample-head">
         <div><strong>${escapeHtml(sm.supplier||'Fournisseur')} · Échantillon ${escapeHtml(sm.id)}</strong><span>Informations reprises dans l’annexe du rapport final</span></div>
-        <span class="product-sheet-status ${missing.length?'':'ready'}">${missing.length?`${missing.length} élément${missing.length>1?'s':''} manquant${missing.length>1?'s':''}`:'Complet ✓'}</span>
+        <span class="product-sheet-status ${missing.length?'':'ready'}">${missing.length?`${missing.length} élément${missing.length>1?'s':''} manquant${missing.length>1?'s':''}`:'Terminée ✓ · lecture seule'}</span>
       </div>
       <div class="product-sheet-grid">
         <div class="field"><label>Marque</label><input data-ps-field="brand" value="${escapeHtml(r.brand||'')}" placeholder="Marque"></div>
@@ -7415,6 +7419,7 @@ function renderProductSheets(){
   for(const sm of p.samples||[]){
     const card=findProductSheetCard(box,sm.id);if(!card)continue;
     const r=ensureProductSheetRecord(state,p,sm);
+    if(card.dataset.psReadonly==='true')card.querySelectorAll('[data-ps-field]').forEach(el=>{el.disabled=true;el.readOnly=true;});
     for(const field of ['labeling','technicalSheet','deliveryTempConformity','packagingConformity']){
       const el=card.querySelector(`[data-ps-field="${field}"]`);if(el)el.value=r[field]||'';
     }
@@ -7450,12 +7455,17 @@ function renderProductSheets(){
       el.addEventListener('change',clearMissing);
     });
   }
+  const saveBtn=$('#saveProductSheetsBtn');
+  const editable=!!box.querySelector('[data-ps-readonly="false"]');
+  if(saveBtn){saveBtn.hidden=productSheetsReadOnlyView||!editable;saveBtn.style.display=saveBtn.hidden?'none':'';}
+
 }
 function captureProductSheetForm(){
+  if(productSheetsReadOnlyView)return;
   const box=$('#productSheetContent');if(!box||!state?.config)return;
   const p=state.config.products.find(x=>String(x.id)===String(activeProductSheetId));if(!p)return;
   for(const sm of p.samples||[]){
-    const card=findProductSheetCard(box,sm.id);if(!card)continue;
+    const card=findProductSheetCard(box,sm.id);if(!card||card.dataset.psReadonly==='true')continue;
     const r=ensureProductSheetRecord(state,p,sm);
     card.querySelectorAll('[data-ps-field]').forEach(el=>{r[el.dataset.psField]=el.value??''});
     /* V252 — Observations : vide = RAS automatiquement avant enregistrement. */
@@ -7467,6 +7477,7 @@ function captureProductSheetForm(){
   }
 }
 async function saveProductSheets(){
+  if(productSheetsReadOnlyView){toast('Fiches terminées — consultation uniquement');return;}
   captureProductSheetForm();saveState();
   if(typeof syncDirtyToCloud==='function'){try{await syncDirtyToCloud()}catch(e){}}
 
@@ -7511,6 +7522,15 @@ async function saveProductSheets(){
 }
 function closeProductSheets(){captureProductSheetForm();saveState();renderAdmin()}
 
+function printCompletedProductSheets(){
+  const st=deepClone(state);
+  st.config.products=(st.config.products||[]).map(p=>({...p,samples:(p.samples||[]).filter(sm=>productSheetMissingFields(st,p,sm).length===0)})).filter(p=>p.samples.length);
+  const w=window.open('','_blank');
+  if(!w){alert('Autorisez les fenêtres pop-up pour imprimer les fiches.');return;}
+  w.document.write('<!doctype html><html lang="fr"><meta charset="utf-8"><title>Fiches terminées</title><style>@page{size:A4 landscape;margin:10mm}body{font:12px Arial}section{break-after:page}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:5px}</style><body>'+productSheetAnnexHtml(st)+'</body></html>');
+  w.document.close();
+  setTimeout(()=>{w.focus();w.print();},350);
+}
 function productSheetAnnexHtml(st){
   const products=st?.config?.products||[];
   if(!products.length)return '';
