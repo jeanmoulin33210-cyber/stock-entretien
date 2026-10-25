@@ -320,7 +320,7 @@ function openResultsLotChooserV348(){
   if(!modal){
     modal=document.createElement('div');
     modal.id='resultsLotModalV348';
-    modal.className='modal';
+    modal.className='modal-backdrop';
     modal.setAttribute('role','dialog');
     modal.setAttribute('aria-modal','true');
     modal.setAttribute('aria-labelledby','resultsLotTitleV348');
