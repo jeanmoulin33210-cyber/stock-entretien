@@ -2523,6 +2523,10 @@ function ownerWorkspaceMergeV352(remote,local,baseline,now){
   return {prepared:[...maps.prepared.values()],archives:[...maps.archives.values()],removedV352:tombstones,baseline:{records:nextBase,removedV352:tombstones}};
 }
 async function automaticOwnerWorkspaceV352(){
+  // Paused: importing unknown local lots can revive obsolete juries.
+  // Keep all device data intact until the intended lot inventory is verified.
+  return;
+
   if(ownerWorkspaceBusyV352||!cloudReady||cloudRole!=='admin'||cloudAdminAccessBlockedV339)return;
   if(cloudBusy){scheduleOwnerWorkspaceV354(1200);return;}
   const active=document.querySelector('.view.active')?.id;
