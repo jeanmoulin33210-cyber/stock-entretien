@@ -239,17 +239,13 @@
     try{repairProductSheetsFromBackupsV256(state);}catch(e){}
     var all=sheetLots(), pending=all.filter(function(x){ return x.sheetStatus!=='done'; }), done=all.filter(function(x){ return x.sheetStatus==='done'; });
     var missingCount=all.reduce(function(sum,row){ return sum+Number(row.sheetMissing||0); },0);
-    var doneCount=all.reduce(function(sum,row){
-      /* V269 : un lot dont toutes les fiches sont terminées ne laisse plus
-         un nombre résiduel sur l'accueil. Les fiches restent consultables
-         depuis le bouton « Fiches terminées ». */
-      return sum+(row.sheetStatus==='done'?0:Number(row.sheetFilled||0));
-    },0);
+    var totalCount=all.reduce(function(sum,row){ return sum+Number(row.sheetTotal||0); },0);
+    var doneCount=all.reduce(function(sum,row){ return sum+Number(row.sheetFilled||0); },0);
     var a=document.getElementById('homeProductSheetsPendingBadgeV200');
     var b=document.getElementById('homeProductSheetsDoneBadgeV200');
     if(a){
-      a.textContent=String(missingCount);
-      a.title=missingCount ? missingCount+' fiche'+(missingCount>1?'s':'')+' produit à compléter' : 'Aucune fiche produit à compléter';
+      a.textContent=doneCount+'/'+totalCount;
+      a.title=doneCount+' fiche(s) complétée(s) sur '+totalCount+' · '+missingCount+' restante(s)';
     }
     if(b){
       b.textContent=String(doneCount);
