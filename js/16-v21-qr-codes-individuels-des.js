@@ -1,10 +1,12 @@
 /* --- V21 : QR codes individuels des testeurs --- */
 let qrReturnView='cloudView';
+let qrConfigReturnPosition=null;
 function qrTesterCount(){return Number(state?.config?.testerCount||0)}
 function qrCanRender(){
   return !!(cloudCfg?.sessionId&&cloudCfg?.url&&cloudCfg?.key&&cloudRole==='admin')
 }
-function renderQrCodes(returnView='cloudView'){
+function renderQrCodes(returnView='cloudView',returnPosition=null){
+  qrConfigReturnPosition=returnView==='configView'?(returnPosition||rememberConfigPhonePosition()):null;
   qrReturnView=returnView||'cloudView';
   showView('qrView');
   $('#headerTitle').textContent='QR codes des testeurs';
@@ -12,7 +14,7 @@ function renderQrCodes(returnView='cloudView'){
   const backBtn=$('#qrBackBtn');
   if(backBtn)backBtn.textContent=
     qrReturnView==='juryView'?'← Retour au jury':
-    qrReturnView==='configView'?'← Retour à la création':
+    qrReturnView==='configView'?'← Retour à la préparation':
     qrReturnView==='launchView'?'← Retour au lancement':
     '← Retour au partage';
   const parts=typeof lotDisplayParts==='function'?lotDisplayParts():{title:state.config?.lotName||'Jury',subtitle:state.config?.subtitle||''};
@@ -105,7 +107,15 @@ function printQrCards(){
 $('#showQrCodesBtn').onclick=()=>renderQrCodes('cloudView');
 $('#qrBackBtn').onclick=()=>{
   if(qrReturnView==='juryView')renderJuryView();
-  else if(qrReturnView==='configView')openConfig();
+  else if(qrReturnView==='configView'){
+    // Conserver le brouillon et revenir au bouton qui a ouvert les QR codes.
+    if(draftConfig){showView('configView',false);renderConfig();}
+    else openConfig();
+    if(qrConfigReturnPosition){
+      window.scrollTo({top:qrConfigReturnPosition.scrollY||0,behavior:'instant'});
+      restoreConfigPhonePosition(qrConfigReturnPosition);
+    }
+  }
   else if(qrReturnView==='launchView')renderLaunchView();
   else renderCloudPage();
 };
