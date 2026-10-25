@@ -636,6 +636,7 @@ async function fetchCloudState(){
     const {data:session,error:e1}=await cloudClient.from('test_culinaire_sessions').select('session_id,config').eq('session_id',cloudCfg.sessionId).maybeSingle();
     if(e1)throw e1;if(!session)throw new Error('Session introuvable.');
     config=session.config;
+    rememberCloudAccessCodesV339(config);
     const {data,error:e2}=await cloudClient.from('test_culinaire_reponses').select('tester_no,product_id,sample_id,choices,remarks,updated_at').eq('session_id',cloudCfg.sessionId);
     if(e2)throw e2;answers=data||[]
   }else{
@@ -662,14 +663,23 @@ async function createSecureCloudSession(){
   });
   if(error){if(rpcsMissing(error))throw new Error('Le script SQL de sécurité V32 n’est pas encore installé dans Supabase.');throw error}
   cloudRole='admin';cloudTesterNo=null;
+  rememberCloudAccessCodesV339(state.config);
   return data
+}
+let lastAccessCodesSessionV339='';
+let lastAccessCodesHashV339='';
+function rememberCloudAccessCodesV339(config){
+  lastAccessCodesSessionV339=String(cloudCfg.sessionId||'');
+  lastAccessCodesHashV339=hashJson(config?.security?.testerCodes||{});
 }
 async function syncAccessCodes(){
   if(cloudRole!=='admin'||!cloudReady)return;
   const adminCode=getRawAdminTokenV20(),codes=ensureTesterCodes();
-  if(!adminCode)return;
+  if(lastAccessCodesSessionV339===String(cloudCfg.sessionId||'')&&lastAccessCodesHashV339===hashJson(codes))return;
+  if(!adminCode)throw new Error('Clé administrateur requise pour modifier les accès testeurs.');
   const {error}=await cloudClient.rpc('test_culinaire_sync_access_codes',{p_session_id:cloudCfg.sessionId,p_admin_code:adminCode,p_tester_codes:codes});
-  if(error)throw error
+  if(error)throw error;
+  rememberCloudAccessCodesV339(state.config);
 }
 async function connectCloud({create=false}={}){
   cloudCfg.url=$('#cloudUrl')?.value.trim()||cloudCfg.url;cloudCfg.key=$('#cloudKey')?.value.trim()||cloudCfg.key;cloudCfg.sessionId=$('#cloudSession')?.value.trim()||cloudCfg.sessionId;
