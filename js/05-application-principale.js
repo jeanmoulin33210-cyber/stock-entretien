@@ -1036,10 +1036,33 @@ function saveSampleProducts(list){
   localStorage.setItem(SAMPLE_PRODUCTS_STORAGE_KEY,JSON.stringify(clean));
   return clean;
 }
+function sampleLotIsFinalArchived(lotName,products,savedAt=''){
+  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const signature=rows=>(Array.isArray(rows)?rows:[]).map(p=>norm(typeof p==='string'?p:p?.name)).filter(Boolean).sort().join('|');
+  const lot=norm(lotName),names=signature(products);
+  if(!lot)return false;
+  return loadArchives().some(rec=>{
+    const cfg=rec.state?.config||{};
+    if(!(rec.finalLocked||cfg._archive?.finalLocked))return false;
+    if(norm(cfg.lotName)!==lot||signature(cfg.products)!==names)return false;
+    const archivedAt=rec.archivedAt||cfg._archive?.archivedAt||'';
+    return !savedAt||!archivedAt||String(savedAt)<=String(archivedAt);
+  });
+}
+function latestSampleLotIsFinalArchived(meta,products){
+  const lot=lotNameFromSampleMeta(meta);
+  const sig=sampleLotSnapshotSignature(meta,products);
+  let savedAt='';
+  try{
+    const rows=JSON.parse(localStorage.getItem(SAMPLE_LOT_HISTORY_STORAGE_KEY)||'[]');
+    savedAt=(Array.isArray(rows)?rows:[]).find(r=>r.signature===sig)?.savedAt||'';
+  }catch(e){}
+  return sampleLotIsFinalArchived(lot,products,savedAt);
+}
 function loadSampleLotHistory(){
   try{
     const rows=JSON.parse(localStorage.getItem(SAMPLE_LOT_HISTORY_STORAGE_KEY)||'[]');
-    return Array.isArray(rows)?rows:[];
+    return (Array.isArray(rows)?rows:[]).filter(rec=>!sampleLotIsFinalArchived(rec.lotName||lotNameFromSampleMeta(rec.meta),rec.products,rec.savedAt||''));
   }catch(e){return[]}
 }
 function saveSampleLotHistory(rows){
@@ -2756,7 +2779,7 @@ function prepareJuryFromHomeV180(event){
       for(const rec of prepared){
         try{
           const cfg=rec?.state?.config;
-          if(!cfg||cfg?.juryClose?.closedAt)continue;
+          if(!cfg||cfg?.juryClose?.closedAt||cfg?._archive?.archivedAt||sampleLotIsFinalArchived(cfg.lotName,cfg.products,rec.savedAt||''))continue;
           const products=Array.isArray(cfg.products)?cfg.products:[];
           if(!products.length)continue;
           const id=String(rec.id||cfg._preparedId||'').trim();
@@ -2823,7 +2846,7 @@ function prepareJuryFromHomeV180(event){
         const meta=loadSampleMasterMeta();
         const lotName=String(lotNameFromSampleMeta(meta)||'').trim();
         const usable=Array.isArray(products)?products.filter(p=>String(p?.name||'').trim()):[];
-        if(lotName&&usable.length){
+        if(lotName&&usable.length&&!latestSampleLotIsFinalArchived(meta,usable)){
           const sig=sampleLotSnapshotSignature(meta,usable);
           const already=items.some(x=>{
             if(x.kind==='prepared')return String(x.lotName).trim().toLowerCase()===lotName.toLowerCase();
@@ -2931,7 +2954,7 @@ function prepareJuryLatestSampleChoice(){
     const lotName=lotNameFromSampleMeta(meta);
     const suppliers=(Array.isArray(meta.supplierNames)?meta.supplierNames:[])
       .map(x=>String(x||'').trim()).filter(Boolean);
-    if(!ready||!String(lotName||'').trim()||!suppliers.length)return null;
+    if(!ready||!String(lotName||'').trim()||!suppliers.length||latestSampleLotIsFinalArchived(meta,usable))return null;
     return{
       id:'__latest_sample_setup__',
       kind:'latest',
@@ -2970,7 +2993,7 @@ function prepareJuryChoices(){
   for(const rec of prepared){
     try{
       const cfg=rec.state.config||{};
-      if(cfg?.juryClose?.closedAt)continue;
+      if(cfg?.juryClose?.closedAt||cfg?._archive?.archivedAt||sampleLotIsFinalArchived(cfg.lotName,cfg.products,rec.savedAt||''))continue;
       try{healSupplierNamesV252(cfg)}catch(e){}
       const products=Array.isArray(cfg.products)?cfg.products:[];
       if(!products.length)continue;
