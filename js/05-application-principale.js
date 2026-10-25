@@ -7016,7 +7016,7 @@ function captureClosureForm(){
 let closureAutosaveTimer=null;
 function setClosureSaveIndicator(text){
   const b=$('#saveClosureBtn');
-  if(b)b.textContent=text;
+  if(b)b.textContent=text==='💾 Enregistrer'?'💾 Enregistrer les résultats':text;
 }
 function scheduleClosureAutosave(preserveScrollY=null){
   clearTimeout(closureAutosaveTimer);
