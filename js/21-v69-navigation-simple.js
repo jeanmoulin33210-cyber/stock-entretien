@@ -357,3 +357,42 @@ function openResultsLotChooserV348(){
 }
 document.getElementById('resultsBtn').onclick=openResultsLotChooserV348;
 if(document.getElementById('hubResultsBtn'))document.getElementById('hubResultsBtn').onclick=openResultsLotChooserV348;
+
+/* V363: recognize a stationary touch on Results without depending on the
+ * browser's synthetic click. Keep scrolling inert and report handler failures. */
+(function(){
+  const button=document.getElementById('resultsBtn');if(!button)return;
+  let touch=null,lastTouch=0;
+  function openResults(){
+    try{
+      if(typeof openResultsLotChooserV348!=='function')throw new Error('Le module de résultats n’est pas chargé.');
+      openResultsLotChooserV348();
+      const modal=document.getElementById('resultsLotModalV348');
+      if(modal?.classList.contains('show'))modal.style.zIndex='10050';
+    }catch(e){
+      console.error('Results V363',e);
+      alert('Résultats V363 : '+String(e?.message||e)+'\nLes données sont conservées.');
+    }
+  }
+  button.onclick=function(e){
+    e.preventDefault();
+    if(Date.now()-lastTouch<700)return;
+    openResults();
+  };
+  button.addEventListener('touchstart',e=>{
+    const p=e.touches[0];touch=p&&e.touches.length===1?{x:p.clientX,y:p.clientY,moved:false}:null;
+  },{passive:true});
+  button.addEventListener('touchmove',e=>{
+    if(!touch)return;
+    const p=e.touches[0];
+    if(!p||Math.hypot(p.clientX-touch.x,p.clientY-touch.y)>10)touch.moved=true;
+  },{passive:true});
+  button.addEventListener('touchcancel',()=>{touch=null;},{passive:true});
+  button.addEventListener('touchend',e=>{
+    const p=e.changedTouches[0],tap=touch&&p&&!touch.moved&&Math.hypot(p.clientX-touch.x,p.clientY-touch.y)<=10;
+    touch=null;
+    if(!tap)return;
+    e.preventDefault();lastTouch=Date.now();openResults();
+  },{passive:false});
+  button.setAttribute('data-results-version','363');
+})();
