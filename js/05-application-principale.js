@@ -833,7 +833,7 @@ function ensureAnswer(t,pid,sid){const tdata=state.testers[t];const k=sampleKey(
 function complete(a){return !!a&&a.choices.length===QUESTIONS.length&&a.choices.every(x=>x!==null&&x!==undefined)}
 function calcScore(a){return a.choices.reduce((sum,idx,q)=>sum+(idx==null?0:QUESTIONS[q].weights[idx]),0)}
 function testerCompleted(t){let n=0;state.config.products.forEach(p=>p.samples.forEach(s=>{const a=state.testers[t]?.answers[sampleKey(p.id,s.id)];if(complete(a))n++}));return n}
-function testerValidated(t){return !!state.testers[t]?.validatedAt}
+function testerValidated(t){const total=totalSamples();return !!state.testers[t]?.validatedAt&&total>0&&testerCompleted(t)===total}
 function validatedCount(){let n=0;for(let t=1;t<=state.config.testerCount;t++)if(testerValidated(t))n++;return n}
 function formatValidationDate(v){if(!v)return '';try{return new Date(v).toLocaleString('fr-FR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
 function firstIncompleteSample(t){for(const p of state.config.products)for(const sm of p.samples){const a=state.testers[t]?.answers[sampleKey(p.id,sm.id)];if(!complete(a))return{pid:p.id,sid:sm.id}}return null}
