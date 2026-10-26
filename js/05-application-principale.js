@@ -4817,7 +4817,8 @@ function renderDraftSummary(){
       const incomplete=!ready;
       const tplCheck=$('#saveAsCustomTemplateCheck');
       const tplOption=$('#saveAsTemplateOption');
-      saveBtn.disabled=incomplete;
+      // Keep validation actionable: a tap explains the missing field.
+      saveBtn.disabled=false;
       saveBtn.title=pending
         ?'Préparez d’abord le lot sélectionné.'
         :incomplete
@@ -9881,7 +9882,7 @@ const syncTesterCountFromField=()=>{
   renderTesterNames();
   renderDraftSummary();
 };
-testerCountInput.onchange=syncTesterCountFromField;$('#cfgLotName').oninput=()=>{syncTopDraft();renderDraftSummary()};$('#cfgSubtitle').oninput=()=>{syncTopDraft();renderDraftSummary()};$('#saveConfigBtn').onclick=applyDraft;$('#cancelConfigBtn').onclick=cancelCreateJury;$('#previewConfigBtn').onclick=openConfigPreview;
+testerCountInput.onchange=syncTesterCountFromField;$('#cfgLotName').oninput=()=>{syncTopDraft();renderDraftSummary()};$('#cfgSubtitle').oninput=()=>{syncTopDraft();renderDraftSummary()};$('#saveConfigBtn').onclick=()=>{try{applyDraft()}catch(e){console.error('Enregistrement jury',e);alert('Le jury n’a pas pu être enregistré. Votre saisie reste ouverte.\n\n'+(e?.message||String(e)))}};$('#cancelConfigBtn').onclick=cancelCreateJury;$('#previewConfigBtn').onclick=openConfigPreview;
 $('#closeConfigPreviewBtn').onclick=closeConfigPreview;
 $('#configPreviewModal').onclick=e=>{if(e.target.id==='configPreviewModal')closeConfigPreview()};
 $('#testerHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#bottomHomeBtn').onclick=()=>testerPreviewMode?exitTesterPreview():renderHome();$('#testerSelect').onchange=e=>{currentTester=Number(e.target.value);renderSample()};$('#productSelect').onchange=e=>{const targetPid=e.target.value;const target=getProduct(targetPid)?.samples?.[0];if(!target){e.target.value=currentProduct;return}if(!goToSample(targetPid,target.id))e.target.value=currentProduct};$('#sampleSelect').onchange=e=>{const target=e.target.value;if(!goToSample(currentProduct,target))e.target.value=currentSample};$('#prevSample').onclick=()=>moveSample(-1);$('#nextSample').onclick=()=>moveSample(1);
