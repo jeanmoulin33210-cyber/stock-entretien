@@ -2818,6 +2818,11 @@ function prepareJuryFromHomeV180(event){
         prepared=Array.isArray(raw)?raw:[];
       }catch(e){prepared=[]}
 
+      prepared.sort((a,b)=>{
+        const rank=r=>{const c=r?.state?.config;return c?.juryLaunch?.openedAt?3:phoneSharePrepared(c)?2:1;};
+        return rank(b)-rank(a)||String(b.savedAt||'').localeCompare(String(a.savedAt||''));
+      });
+      const preparedVariants=new Set();
       for(const rec of prepared){
         try{
           const cfg=rec?.state?.config;
@@ -2831,6 +2836,10 @@ function prepareJuryFromHomeV180(event){
           const phonesRefresh=phoneShareNeedsRefresh(cfg);
           const logicalKey=logicalLotKey(String(cfg.lotName||rec.name||'Jury préparé'),products);
           if(logicalKey)preparedLogicalLots.add(logicalKey);
+          const sampleKey=products.map(p=>normalizeLotText(p.name)+':'+(p.samples||[]).map(s=>normalizeLotText(s.id)+':'+normalizeLotText(s.supplier)).sort().join(',')).sort().join('|');
+          const variantKey=logicalKey+'|'+sampleKey;
+          if(preparedVariants.has(variantKey))continue;
+          preparedVariants.add(variantKey);
           addItem({
             id,
             key:`prepared:${id}`,
