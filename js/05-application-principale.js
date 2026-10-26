@@ -718,13 +718,13 @@ function renderJuryChooser(){
   updateHeader();
   showView('juryChooserView');
   $('#headerTitle').textContent='Choisir un jury';
-  $('#headerSub').textContent='Mes jurys';
+  $('#headerSub').textContent='Mes jurys · correction 384';
 
   const list=$('#juryChooserList');
   if(!list)return;
 
   const rows=loadPreparedJurys()
-    .filter(rec=>rec?.state?.config && !rec.state.config?.juryClose?.closedAt)
+    .filter(rec=>rec?.state?.config && (rec.state.config.products||[]).length>0 && !rec.state.config?.juryClose?.closedAt)
     .sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
 
   if(!rows.length){
@@ -796,7 +796,7 @@ function renderPreparedHome(){
   const section=$('#preparedJuriesHome'),list=$('#preparedHomeList'),count=$('#preparedHomeCount');
   if(!section||!list||!count)return;
 
-  const rows=loadPreparedJurys().filter(rec=>!rec?.state?.config?.juryClose?.closedAt);
+  const rows=loadPreparedJurys().filter(rec=>(rec?.state?.config?.products||[]).length>0&&!rec?.state?.config?.juryClose?.closedAt);
   section.hidden=!rows.length;
   count.textContent=rows.length;
 
@@ -3415,7 +3415,7 @@ function renderMyJuriesDashboard(){
 }
 
 function renderHome(){removeRetiredMoulikV356();if(!$('#homeView').classList.contains('active'))ensureCurrentPrepSaved();updateHeader();showView('homeView');renderHomeReceptionBadge();const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
-const preparedCount=loadPreparedJurys().filter(r=>!r?.state?.config?.juryClose?.closedAt).length;
+const preparedCount=loadPreparedJurys().filter(r=>(r?.state?.config?.products||[]).length>0&&!r?.state?.config?.juryClose?.closedAt).length;
 $('#juryBtnTitle').textContent=preparedCount>1
   ?'Choisir un jury'
   :preparedCount===1
