@@ -145,6 +145,12 @@
     if(!second)return;
 
     try{
+      if(window.JuryOwnerSyncV357?.resetAll){
+        await window.JuryOwnerSyncV357.resetAll();
+        alert('Remise à zéro partagée terminée. Les autres appareils la prendront en compte automatiquement à leur prochaine connexion avec la version actualisée.');
+        return;
+      }
+      throw new Error('Actualisez la page avant de réinitialiser le partage.');
       const security=currentSecurity();
       await detachCurrentJuryCloud();
 
