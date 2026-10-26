@@ -204,7 +204,24 @@
       try{ localStorage.removeItem('jm_tc_lots_clean_mode_v207'); }catch(e){}
     }
 
-    return candidates.map(function(item){
+    // Show one preparation stage per lot; never delete the other stored copy.
+    var groupedV375=new Map();
+    function groupKeyV375(item){
+      var cfg=item.state.config;
+      var products=(cfg.products||[]).map(function(p){return normV256(p.name);}).sort().join('|');
+      var suppliers=(typeof receptionSupplierNames==='function'?receptionSupplierNames(cfg):cfg.supplierNames||[]).map(normV256).sort().join('|');
+      return normV256(cfg.lotName||item.name)+'|'+products+'|'+suppliers;
+    }
+    function stageScoreV375(item){
+      var cfg=item.state.config,sc=sheetScoreV256(cfg);
+      var numbered=(cfg.products||[]).reduce(function(n,p){return n+(p.samples||[]).filter(function(x){return String(x.id||'').trim()&&String(x.supplier||'').trim();}).length;},0);
+      return sc.filled*100000+sc.nonEmpty*1000+numbered*10+(item.current?1:0);
+    }
+    candidates.forEach(function(item){
+      var key=groupKeyV375(item),old=groupedV375.get(key);
+      if(!old||stageScoreV375(item)>stageScoreV375(old))groupedV375.set(key,item);
+    });
+    return Array.from(groupedV375.values()).map(function(item){
       var st=item.state;
       try{repairProductSheetsFromBackupsV256(st);}catch(e){}
       var cfg=st.config||{};
