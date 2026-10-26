@@ -2919,13 +2919,23 @@ function prepareJuryFromHomeV180(event){
         }
       }catch(e){}
 
+      // Group the final visible list, including legacy prepared records.
+      const groupedV374=new Map();
+      const priorityV374=c=>/Jury déjà lancé/.test(c.status||'')?4:/Téléphones prêts/.test(c.status||'')?3:c.kind==='prepared'?2:1;
+      for(const item of items){
+        const k=normalizeLotText(item.lotName).normalize('NFKC').replace(/[–—−]/g,'-')+'|'+item.products+'|'+item.suppliers;
+        const old=groupedV374.get(k);
+        if(!old||priorityV374(item)>priorityV374(old))groupedV374.set(k,item);
+      }
+      items.splice(0,items.length,...groupedV374.values());
+
       if(!items.length){
         if(intro)intro.textContent='Aucun lot enregistré à préparer.';
         list.innerHTML='<div class="prepare-jury-empty-v180">Aucun lot n’est encore disponible.<br>Créez d’abord un lot avec « 1. Choix des échantillons », puis enregistrez-le.</div>';
         return;
       }
 
-      if(intro)intro.textContent=`${items.length} lot${items.length>1?'s':''} / jury${items.length>1?'s':''} disponible${items.length>1?'s':''}. Touchez celui que vous voulez préparer.`;
+      if(intro)intro.textContent=`Liste 374 · ${items.length} lot${items.length>1?'s':''} / jury${items.length>1?'s':''} disponible${items.length>1?'s':''}. Touchez celui que vous voulez préparer.`;
 
       list.innerHTML=items.map((c,i)=>`
         <button type="button" class="prepare-jury-choice ${(c.kind==='sampleLot'||c.kind==='latest')?'latest':''}" data-v180-prepare="${i}">
