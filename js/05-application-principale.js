@@ -326,8 +326,16 @@ function preparedProgressScoreV238(rec){
   score+=Math.min(99999999,Math.floor(at/100000));
   return score;
 }
+function emptyJuryPlaceholderV383(st){
+  const cfg=st?.config;
+  if(!cfg||(Array.isArray(cfg.products)&&cfg.products.length))return false;
+  if((cfg.receptions||[]).length||Object.keys(cfg.productSheets||{}).length)return false;
+  return !Object.values(st.testers||{}).some(t=>t?.validatedAt||Object.values(t?.answers||{}).some(a=>
+    (a?.choices||[]).some(v=>v!==null&&v!==undefined)||(a?.remarks||[]).some(v=>String(v||'').trim())
+  ));
+}
 function dedupePreparedJurysV238(rows){
-  const src=Array.isArray(rows)?rows.filter(r=>r&&r.state&&r.state.config):[];
+  const src=Array.isArray(rows)?rows.filter(r=>r&&r.state&&r.state.config&&!emptyJuryPlaceholderV383(r.state)):[];
   const byKey=new Map(),withoutKey=[];
   for(const rec of src){
     const key=preparedLogicalKeyV238(rec.state);
@@ -513,7 +521,7 @@ function savePreparedJurys(rows){
   localStorage.setItem(PREPARED_JURY_STORAGE_KEY,JSON.stringify(clean));
 }
 function upsertPreparedJury(st=state){
-  if(!st?.config||isRetiredMoulikV356(st.config))return null;
+  if(!st?.config||emptyJuryPlaceholderV383(st)||isRetiredMoulikV356(st.config))return null;
   if(localStorage.getItem('jm_tc_lot98_isolated_v341')==='1'&&isLot98RecoveryV341(st.config))return null;
   let id=st.config._preparedId||uid('prepared');
   st.config._preparedId=id;
