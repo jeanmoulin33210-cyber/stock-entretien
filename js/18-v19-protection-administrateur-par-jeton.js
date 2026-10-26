@@ -64,7 +64,10 @@ function ownerDeviceShareUrl(){
   u.searchParams.delete('appBuild');
 
   u.searchParams.set('appBuild','268');
-  u.searchParams.set('session',cloudCfg.sessionId);
+  let ownerHub=null;
+  try{ownerHub=JSON.parse(localStorage.getItem('jm_tc_owner_hub_v357')||'null')}catch(e){}
+  const sameProject=ownerHub?.url===cloudCfg.url;
+  u.searchParams.set('session',sameProject&&ownerHub.sessionId?ownerHub.sessionId:cloudCfg.sessionId);
   u.searchParams.set('supabaseUrl',cloudCfg.url);
   u.searchParams.set('supabaseKey',cloudCfg.key);
   u.searchParams.set('adminToken',adminToken);
