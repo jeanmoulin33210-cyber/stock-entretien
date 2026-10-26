@@ -153,7 +153,11 @@
           currentProduct=state.config.products?.[0]?.id||'';currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';adminProduct=currentProduct;
         }
       }finally{applying=false;}
-      if(!equal(before,collect()))originalRenderHome();
+      if(!equal(before,collect())){
+        const chooser=document.querySelector('.view.active')?.id==='juryChooserView';
+        originalRenderHome();
+        if(chooser)renderJuryChooser();
+      }
     }
   }
 
@@ -213,7 +217,7 @@
     if(busy||Date.now()<retryAt||guestTester||document.hidden)return;
     const active=document.querySelector('.view.active')?.id;
     if(!active||active==='testerView'||active==='adminGateView'||active==='adminDeniedView')return;
-    const canApply=active==='homeView'&&!document.querySelector('.modal-backdrop.show')&&!document.activeElement?.matches('input,textarea,select');
+    const canApply=(active==='homeView'||active==='juryChooserView')&&!document.querySelector('.modal-backdrop.show')&&!document.activeElement?.matches('input,textarea,select');
     busy=true;
     try{
       const c=await client();if(!c)return;
@@ -238,7 +242,7 @@
       // Recheck after the network request: the owner may have opened a form
       // or saved new data while the request was in flight.
       const currentLocal=collect();
-      const stillSafe=canApply&&equal(local,currentLocal)&&document.querySelector('.view.active')?.id==='homeView'&&!document.querySelector('.modal-backdrop.show')&&!document.activeElement?.matches('input,textarea,select');
+      const stillSafe=canApply&&equal(local,currentLocal)&&['homeView','juryChooserView'].includes(document.querySelector('.view.active')?.id)&&!document.querySelector('.modal-backdrop.show')&&!document.activeElement?.matches('input,textarea,select');
       if(stillSafe)apply(next,initial,local);
       const acknowledged={...bases};for(const [k,v]of Object.entries(next.records))if(stillSafe||equal(currentLocal[k],v.state))acknowledged[k]=v.state;
       localStorage.setItem(key,JSON.stringify(acknowledged));
@@ -252,10 +256,16 @@
   savePreparedJurys=function(rows){
     if(!applying){
       const old=loadPreparedJurys(),ids=new Set(rows.map(r=>String(r.id))),removed=read('jm_tc_owner_removed_v357',{});
-      for(const r of old)if(!ids.has(String(r.id)))removed['prepared:'+r.id]=new Date().toISOString();
+      for(const r of old)if(!ids.has(String(r.id))){
+        const stamp=new Date().toISOString();
+        removed['prepared:'+r.id]=stamp;
+        if(id(r.state))removed['prepared:'+id(r.state)]=stamp;
+      }
       localStorage.setItem('jm_tc_owner_removed_v357',JSON.stringify(removed));
     }
-    return savePrepared(rows);
+    const result=savePrepared(rows);
+    if(!applying)setTimeout(()=>{retryAt=0;tick();},0);
+    return result;
   };
   const saveCloud=saveCloudCfg;
   saveCloudCfg=function(){saveCloud();rememberHub();};
