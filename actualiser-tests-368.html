@@ -1,0 +1,23 @@
+<!doctype html><html lang="fr"><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>Actualisation Tests culinaires</title><style>body{font:18px system-ui;background:#eef7fa;color:#173f5c;padding:8vw;max-width:650px;margin:auto}a{display:block;padding:18px;background:#137fa6;color:white;border-radius:14px;text-decoration:none}p{line-height:1.5}</style><h1>Actualisation de l’application</h1><p id="status">Rechargement des fichiers… Vos données et votre PIN sont conservés.</p><a id="open" hidden>Ouvrir Tests culinaires</a><script>
+(async function(){
+ const status=document.getElementById('status'),link=document.getElementById('open');
+ try{
+  const scope=new URL('./',location.href).href;
+  if('serviceWorker' in navigator){
+   const regs=await navigator.serviceWorker.getRegistrations();
+   await Promise.all(regs.filter(r=>r.scope===scope).map(r=>r.unregister()));
+  }
+  if('caches' in window){
+   const keys=await caches.keys();
+   await Promise.all(keys.filter(k=>k.startsWith('tc-offline-')||k.startsWith('tests-culinaires-')).map(k=>caches.delete(k)));
+  }
+  const target=new URL('./tests-culinaires.html',location.href);target.searchParams.set('maj','368');target.searchParams.set('actualisation',String(Date.now()));
+  const result=await fetch(target.href,{cache:'reload'});
+  if(!result.ok)throw new Error('Le serveur ne répond pas.');
+  const html=await result.text();
+  if(!html.includes('368-shared-reset-button'))throw new Error('La publication est encore en cours. Réouvrez cette page dans une minute.');
+  link.href=target.href;link.hidden=false;
+  status.textContent='Fichiers actualisés. Touchez le bouton ci-dessous pour ouvrir l’application.';
+ }catch(e){status.textContent='Actualisation non terminée : '+e.message;}
+})();
+</script></html>
