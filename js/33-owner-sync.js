@@ -109,8 +109,8 @@
     return n;
   }
   function apply(catalog,bases,local){
-    const before=collect();const prepared=loadPreparedJurys().filter(r=>!retired(r.state));const archives=loadArchives();
-    let changed=false;
+    const before=collect();const prepared=loadPreparedJurys().filter(r=>!retired(r.state));const archives=loadArchives().filter(r=>!catalog.removed['archive:'+r.id]);
+    let changed=archives.length!==loadArchives().length;
     for(const [key,entry]of Object.entries(catalog.records)){
       const st=entry.state;if(retired(st))continue;
       const list=key.startsWith('archive:')?archives:prepared;
@@ -141,6 +141,59 @@
       if(!equal(before,collect()))originalRenderHome();
     }
   }
+
+  const resetSeenKey='jm_tc_shared_reset_seen_v367';
+  async function adoptResetV367(config,c){
+    const epoch=config._ownerCatalogV357?.resetEpoch;
+    if(!epoch||read(resetSeenKey,'')===epoch)return false;
+    await verifyRecoveryValueV360('before-shared-reset-'+epoch,JSON.stringify({state,prepared:loadPreparedJurys(),archives:loadArchives()}));
+    applying=true;
+    try{
+      savePreparedJurys([]);saveArchives([]);
+      const security=state.config.security;
+      state=blankActiveStateV238();state.config.security=security;
+      state.config._emptyAfterReset=true;
+      localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
+      localStorage.setItem('jm_tc_owner_removed_v357',JSON.stringify(config._ownerCatalogV357.removed||{}));
+      localStorage.setItem('jm_tc_owner_baseline_v357_'+descriptor.sessionId,'{}');
+      for(const k of [typeof SAMPLE_LOT_HISTORY_STORAGE_KEY!=='undefined'?SAMPLE_LOT_HISTORY_STORAGE_KEY:null,typeof SAMPLE_MASTER_STORAGE_KEY!=='undefined'?SAMPLE_MASTER_STORAGE_KEY:null,typeof SAMPLE_PRODUCTS_STORAGE_KEY!=='undefined'?SAMPLE_PRODUCTS_STORAGE_KEY:null])if(k)localStorage.removeItem(k);
+      localStorage.setItem(resetSeenKey,JSON.stringify(epoch));
+      clearTimeout(cloudSyncTimer);
+      cloudCfg.sessionId=descriptor.sessionId;cloudClient=c;cloudReady=true;cloudRole='admin';
+      lastCloudConfigHash=hashJson(state.config);lastCloudAnswerHashes=new Map();saveCloudCfg();
+      currentProduct='';currentSample='';draftConfig=null;
+    }finally{applying=false;}
+    originalRenderHome();await subscribeCloud();
+    status('Remise à zéro partagée prise en compte sur cet appareil.');
+    return true;
+  }
+  API.checkReset=async function(){
+    const c=await client();if(!c)return false;
+    const result=await c.from('test_culinaire_sessions').select('config,updated_at').eq('session_id',descriptor.sessionId).maybeSingle();
+    if(result.error||!result.data?.config)throw new Error('Vérification du partage impossible.');
+    return adoptResetV367(result.data.config,c);
+  };
+  API.resetAll=async function(){
+    if(busy||cloudBusy)throw new Error('Synchronisation en cours. Réessayez dans quelques secondes.');
+    busy=true;cloudBusy=true;
+    try{
+      const c=await client();if(!c)throw new Error('Connexion propriétaire nécessaire pour effacer le partage.');
+      const result=await c.from('test_culinaire_sessions').select('config,updated_at').eq('session_id',descriptor.sessionId).maybeSingle();
+      if(result.error||!result.data?.config||!result.data.updated_at)throw new Error('Lecture du partage impossible. Rien n’a été effacé.');
+      const old=result.data.config,previous=old._ownerCatalogV357||seed(old,collect());
+      await verifyRecoveryValueV360('before-reset-all-shared',JSON.stringify({config:old,state,prepared:loadPreparedJurys(),archives:loadArchives()}));
+      const epoch=crypto.randomUUID(),removed={...(previous.removed||{})};
+      for(const k of new Set([...Object.keys(previous.records||{}),...Object.keys(collect())]))removed[k]=new Date().toISOString();
+      const clean=blankActiveStateV238();clean.config.security=old.security||state.config.security;
+      clean.config._emptyAfterReset=true;
+      clean.config._ownerCatalogV357={version:1,records:{},removed,resetEpoch:epoch};
+      const stamp=new Date(Math.max(Date.now(),Date.parse(result.data.updated_at)+1)).toISOString();
+      const write=await c.from('test_culinaire_sessions').update({config:clean.config,updated_at:stamp}).eq('session_id',descriptor.sessionId).eq('updated_at',result.data.updated_at).select('session_id').maybeSingle();
+      if(write.error||!write.data)throw new Error('Le partage a changé. Réessayez : aucun effacement local effectué.');
+      await adoptResetV367(clean.config,c);
+    }finally{busy=false;cloudBusy=false;}
+  };
+
   async function tick(){
     if(busy||Date.now()<retryAt||guestTester||document.hidden)return;
     const active=document.querySelector('.view.active')?.id;
@@ -153,6 +206,7 @@
       const local=collect(),bases=read(key,{}),removed=read('jm_tc_owner_removed_v357',{});
       const result=await c.from('test_culinaire_sessions').select('config,updated_at').eq('session_id',sid).maybeSingle();
       if(result.error||!result.data?.config||!result.data.updated_at)throw new Error('Lecture du partage indisponible.');
+      if(await adoptResetV367(result.data.config,c))return;
       const remote=result.data.config._ownerCatalogV357||seed(result.data.config,local);
       // Only registered catalogue entries or genuinely newly-created lots can be sent.
       const allowed={};for(const [k,v]of Object.entries(local))if(remote.records[k]||bases[k]||v.config._catalogCreatedV357)allowed[k]=v;
