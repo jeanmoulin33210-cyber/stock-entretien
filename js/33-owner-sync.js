@@ -199,7 +199,7 @@
       localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
       localStorage.setItem('jm_tc_owner_removed_v357',JSON.stringify(config._ownerCatalogV357.removed||{}));
       localStorage.setItem('jm_tc_owner_baseline_v357_'+descriptor.sessionId,'{}');
-      for(const k of [typeof SAMPLE_LOT_HISTORY_STORAGE_KEY!=='undefined'?SAMPLE_LOT_HISTORY_STORAGE_KEY:null,typeof SAMPLE_MASTER_STORAGE_KEY!=='undefined'?SAMPLE_MASTER_STORAGE_KEY:null,typeof SAMPLE_PRODUCTS_STORAGE_KEY!=='undefined'?SAMPLE_PRODUCTS_STORAGE_KEY:null])if(k)localStorage.removeItem(k);
+      for(const k of [typeof SAMPLE_LOT_HISTORY_STORAGE_KEY!=='undefined'?SAMPLE_LOT_HISTORY_STORAGE_KEY:null,typeof SAMPLE_MASTER_STORAGE_KEY!=='undefined'?SAMPLE_MASTER_STORAGE_KEY:null,typeof SAMPLE_MASTER_META_STORAGE_KEY!=='undefined'?SAMPLE_MASTER_META_STORAGE_KEY:null,typeof SAMPLE_PRODUCTS_STORAGE_KEY!=='undefined'?SAMPLE_PRODUCTS_STORAGE_KEY:null])if(k)localStorage.removeItem(k);
       localStorage.setItem(resetSeenKey,JSON.stringify(epoch));
       clearTimeout(cloudSyncTimer);
       cloudCfg.sessionId=descriptor.sessionId;cloudClient=c;cloudReady=true;cloudRole='admin';
@@ -214,7 +214,18 @@
     const c=await client();if(!c)return false;
     const result=await c.from('test_culinaire_sessions').select('config,updated_at').eq('session_id',descriptor.sessionId).maybeSingle();
     if(result.error||!result.data?.config)throw new Error('Vérification du partage impossible.');
-    return adoptResetV367(result.data.config,c);
+    const config=result.data.config;
+    if(await adoptResetV367(config,c))return true;
+    // A previously open jury session remains on the server as an isolated
+    // session. Never reload it after the owner's complete reset.
+    const retiredSessions=config._ownerCatalogV357?.resetSessionIds||[];
+    if(cloudCfg.sessionId!==descriptor.sessionId&&retiredSessions.includes(String(cloudCfg.sessionId))){
+      clearTimeout(cloudSyncTimer);
+      cloudCfg.sessionId=descriptor.sessionId;cloudClient=c;cloudReady=true;cloudRole='admin';
+      saveCloudCfg();await subscribeCloud();
+      return true;
+    }
+    return false;
   };
   // A deletion must reach the owner catalogue before the local copy disappears.
   API.publishPreparedRemoval=async function(rec){
@@ -257,7 +268,12 @@
       for(const k of new Set([...Object.keys(previous.records||{}),...Object.keys(collect())]))removed[k]=new Date().toISOString();
       const clean=blankActiveStateV238();clean.config.security=old.security||state.config.security;
       clean.config._emptyAfterReset=true;
-      clean.config._ownerCatalogV357={version:1,records:{},removed,resetEpoch:epoch};
+      const retiredSessions=new Set(previous.resetSessionIds||[]);
+      const recordSession=st=>{for(const sid of [st?.config?._shareSessionId,st?.config?.juryLaunch?.sessionId])if(sid&&sid!==descriptor.sessionId)retiredSessions.add(String(sid));};
+      for(const entry of Object.values(previous.records||{}))recordSession(entry.state);
+      for(const st of Object.values(collect()))recordSession(st);
+      if(cloudCfg.sessionId&&cloudCfg.sessionId!==descriptor.sessionId)retiredSessions.add(String(cloudCfg.sessionId));
+      clean.config._ownerCatalogV357={version:1,records:{},removed,resetEpoch:epoch,resetSessionIds:[...retiredSessions]};
       const stamp=new Date(Math.max(Date.now(),Date.parse(result.data.updated_at)+1)).toISOString();
       const write=await c.from('test_culinaire_sessions').update({config:clean.config,updated_at:stamp}).eq('session_id',descriptor.sessionId).eq('updated_at',result.data.updated_at).select('session_id').maybeSingle();
       if(write.error||!write.data)throw new Error('Le partage a changé. Réessayez : aucun effacement local effectué.');
