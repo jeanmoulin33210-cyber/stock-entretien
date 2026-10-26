@@ -76,14 +76,38 @@
     if(guestTester||cloudRole!=='admin'||!cloudReady||!cloudCfg.sessionId)return;
     if(!descriptor)descriptor=read(hubKey,null);
     if(!descriptor){descriptor={sessionId:cloudCfg.sessionId,url:cloudCfg.url,key:cloudCfg.key,storageKey:cloudClient.__jmStorageKeyV357||cloudAuthStorageKey()};localStorage.setItem(hubKey,JSON.stringify(descriptor));}
-    if(cloudCfg.sessionId===descriptor.sessionId)hub=cloudClient;
+    if(cloudCfg.sessionId===descriptor.sessionId){
+      descriptor={...descriptor,url:cloudCfg.url,key:cloudCfg.key,storageKey:cloudClient.__jmStorageKeyV357||cloudAuthStorageKey()};
+      localStorage.setItem(hubKey,JSON.stringify(descriptor));
+      hub=cloudClient;
+    }
   }
   async function client(){
     rememberHub();if(hub)return hub;
     descriptor=descriptor||read(hubKey,null);if(!descriptor)return null;
-    hub=window.supabase.createClient(descriptor.url,descriptor.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:descriptor.storageKey}});
-    const auth=await hub.auth.getSession();if(auth.error||!auth.data?.session){hub=null;throw new Error('Connexion propriétaire à reprendre.');}
-    return hub;
+    const candidate=window.supabase.createClient(descriptor.url,descriptor.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:descriptor.storageKey}});
+    try{
+      const auth=await candidate.auth.getSession();
+      if(auth.error)throw auth.error;
+      if(!auth.data?.session){
+        if(!cloudReady||cloudRole!=='admin'||guestTester)throw new Error('Connexion propriétaire à reprendre.');
+        const signed=await candidate.auth.signInAnonymously();
+        if(signed.error||!signed.data?.session)throw new Error('Reconnexion du dossier général impossible.');
+      }
+      const membership=await candidate.from('test_culinaire_memberships').select('role').eq('session_id',descriptor.sessionId).maybeSingle();
+      if(membership.error)throw membership.error;
+      if(membership.data?.role!=='admin'){
+        if(!cloudReady||cloudRole!=='admin'||guestTester)throw new Error('Connexion propriétaire à reprendre.');
+        const code=getRawAdminTokenV20();
+        if(!code)throw new Error('Autorisation du dossier général absente.');
+        const joined=await candidate.rpc('test_culinaire_join_session',{p_session_id:descriptor.sessionId,p_code:code,p_tester_no:null});
+        if(joined.error)throw new Error('Le dossier général doit être reconnecté avec son lien propriétaire.');
+        const verified=await candidate.from('test_culinaire_memberships').select('role').eq('session_id',descriptor.sessionId).maybeSingle();
+        if(verified.error||verified.data?.role!=='admin')throw new Error('Accès propriétaire au dossier général non confirmé.');
+      }
+      hub=candidate;
+      return hub;
+    }catch(e){hub=null;throw e;}
   }
   function sampleSelectionSnapshotV370(rec){
     return {version:4,config:{_preparedId:String(rec.id),_catalogCreatedV357:true,lotNumber:rec.meta?.lotNumber,lotName:rec.lotName,products:clone(rec.products),_sampleSelectionV370:clone(rec)},testers:{}};
