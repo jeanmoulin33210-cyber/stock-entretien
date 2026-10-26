@@ -2836,7 +2836,7 @@ function prepareJuryFromHomeV180(event){
           const phonesRefresh=phoneShareNeedsRefresh(cfg);
           const logicalKey=logicalLotKey(String(cfg.lotName||rec.name||'Jury préparé'),products);
           if(logicalKey)preparedLogicalLots.add(logicalKey);
-          const sampleKey=products.map(p=>normalizeLotText(p.name)+':'+(p.samples||[]).map(s=>normalizeLotText(s.id)+':'+normalizeLotText(s.supplier)).sort().join(',')).sort().join('|');
+          const sampleKey=suppliers.map(normalizeLotText).sort().join('|');
           const variantKey=logicalKey+'|'+sampleKey;
           if(preparedVariants.has(variantKey))continue;
           preparedVariants.add(variantKey);
