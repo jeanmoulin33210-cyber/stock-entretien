@@ -2927,15 +2927,19 @@ function prepareJuryFromHomeV180(event){
         const old=groupedV374.get(k);
         if(!old||priorityV374(item)>priorityV374(old))groupedV374.set(k,item);
       }
-      items.splice(0,items.length,...groupedV374.values());
+      // Keep the most advanced copy before hiding ready jurys, so an older
+      // sample-selection copy cannot reappear as a lot awaiting preparation.
+      items.splice(0,items.length,...Array.from(groupedV374.values()).filter(item=>
+        !/Téléphones prêts|Jury déjà lancé/.test(item.status||'')
+      ));
 
       if(!items.length){
         if(intro)intro.textContent='Aucun lot enregistré à préparer.';
-        list.innerHTML='<div class="prepare-jury-empty-v180">Aucun lot n’est encore disponible.<br>Créez d’abord un lot avec « 1. Choix des échantillons », puis enregistrez-le.</div>';
+        list.innerHTML='<div class="prepare-jury-empty-v180">Aucun lot en attente de préparation.<br>Retrouvez les jurys prêts dans « Lancer un jury ».</div>';
         return;
       }
 
-      if(intro)intro.textContent=`Liste 374 · ${items.length} lot${items.length>1?'s':''} / jury${items.length>1?'s':''} disponible${items.length>1?'s':''}. Touchez celui que vous voulez préparer.`;
+      if(intro)intro.textContent=`Liste 377 · ${items.length} lot${items.length>1?'s':''} / jury${items.length>1?'s':''} disponible${items.length>1?'s':''}. Touchez celui que vous voulez préparer.`;
 
       list.innerHTML=items.map((c,i)=>`
         <button type="button" class="prepare-jury-choice ${(c.kind==='sampleLot'||c.kind==='latest')?'latest':''}" data-v180-prepare="${i}">
