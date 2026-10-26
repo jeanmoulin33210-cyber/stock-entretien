@@ -85,8 +85,12 @@
     const auth=await hub.auth.getSession();if(auth.error||!auth.data?.session){hub=null;throw new Error('Connexion propriétaire à reprendre.');}
     return hub;
   }
+  function sampleSelectionSnapshotV370(rec){
+    return {version:4,config:{_preparedId:String(rec.id),_catalogCreatedV357:true,lotNumber:rec.meta?.lotNumber,lotName:rec.lotName,products:clone(rec.products),_sampleSelectionV370:clone(rec)},testers:{}};
+  }
   function collect(){
     const rows={};
+    for(const rec of loadSampleLotHistory())if(rec?.id&&rec.meta&&rec.products?.length)rows['sample:'+rec.id]=sampleSelectionSnapshotV370(rec);
     for(const rec of loadPreparedJurys()){const st=snapshot(rec.state);if(st&&!retired(st)&&id(st)&&!st.config._archive?.archivedAt)rows['prepared:'+id(st)]=st;}
     const saved=read(STORAGE_KEY,state);
     if(saved.config?.products?.length&&!saved.config._emptyAfterReset&&!saved.config._archive?.archivedAt&&!retired(saved)&&id(saved))rows['prepared:'+id(saved)]=snapshot(saved);
@@ -111,8 +115,16 @@
   function apply(catalog,bases,local){
     const before=collect();const prepared=loadPreparedJurys().filter(r=>!retired(r.state));const archives=loadArchives().filter(r=>!catalog.removed['archive:'+r.id]);
     let changed=archives.length!==loadArchives().length;
+    const sampleBefore=loadSampleLotHistory();
+    const samples=sampleBefore.filter(r=>!catalog.removed['sample:'+r.id]);
     for(const [key,entry]of Object.entries(catalog.records)){
       const st=entry.state;if(retired(st))continue;
+      if(key.startsWith('sample:')){
+        const rec=st.config?._sampleSelectionV370;if(!rec)continue;
+        const index=samples.findIndex(r=>String(r.id)===String(rec.id));
+        if(index<0)samples.push(clone(rec));else samples[index]=clone(rec);
+        continue;
+      }
       const list=key.startsWith('archive:')?archives:prepared;
       const rid=key.slice(key.indexOf(':')+1),index=list.findIndex(r=>String(r.id)===rid);
       if(index>=0&&equal(snapshot(list[index].state),st))continue;
@@ -120,6 +132,8 @@
       if(key.startsWith('archive:'))row.archivedAt=st.config._archive?.archivedAt||row.archivedAt;
       if(index<0)list.push(row);else list[index]=row;changed=true;
     }
+    const samplesChanged=!equal(sampleBefore,samples);
+    if(samplesChanged)changed=true;
     const keep=prepared.filter(r=>!catalog.removed['prepared:'+r.id]&&!Object.values(catalog.records).some(e=>e.state.config._archive?.archivedAt&&id(e.state)===String(r.id)));
     if(keep.length!==prepared.length)changed=true;
     const currentKey='prepared:'+id(state),incoming=catalog.records[currentKey]?.state;
@@ -130,6 +144,7 @@
       applying=true;
       try{
         savePreparedJurys(keep);saveArchives(archives);
+        if(samplesChanged)saveSampleLotHistory(samples);
         if(currentChanged){
           // Imported data never overwrites an unsaved form: tick only runs at home.
           const security=state.config.security;state=incoming?clone(incoming):(keep[0]?.state?clone(keep[0].state):blankActiveStateV238());
