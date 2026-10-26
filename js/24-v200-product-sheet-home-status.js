@@ -241,7 +241,12 @@
         else names=(cfg.supplierNames||[]).filter(function(x){return String(x||'').trim();});
       }catch(e){ names=(cfg.supplierNames||[]).filter(function(x){return String(x||'').trim();}); }
 
-      var total=Number(prog.total||0),filled=Number(prog.filled||0);
+      var expected= (Array.isArray(cfg.products)?cfg.products:[]).reduce(function(sum,p){
+        var samples=Array.isArray(p.samples)?p.samples:[];
+        var awaitingNumbers=samples.length===0||samples.some(function(sm){return !String(sm.id||'').trim();});
+        return sum+(awaitingNumbers?Math.max(samples.length,names.length):samples.length);
+      },0);
+      var total=Math.max(Number(prog.total||0),expected),filled=Number(prog.filled||0);
       var key=(total>0&&filled>=total)?'done':(filled>0?'partial':'pending');
 
       return {
