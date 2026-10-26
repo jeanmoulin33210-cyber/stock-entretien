@@ -666,6 +666,7 @@ function rebuildLocalFromCloud(config,rows=[]){
   }
 }
 async function fetchCloudState(){
+  if(!guestTester&&window.JuryOwnerSyncV357?.checkReset&&await window.JuryOwnerSyncV357.checkReset())return;
   await compactLocalJuryCopiesV360();
   if(!cloudRole)await joinSecureSession();
   let config=null,answers=[];
@@ -1164,6 +1165,7 @@ async function pushAllAnswers(){
   if(rows.length){const {error}=await cloudClient.from('test_culinaire_reponses').upsert(rows,{onConflict:'session_id,tester_no,product_id,sample_id'});if(error)throw error}
 }
 async function syncDirtyToCloud(){if(testerPreviewMode)return;
+  if(!guestTester&&window.JuryOwnerSyncV357?.checkReset&&await window.JuryOwnerSyncV357.checkReset())return;
   if(!cloudReady)return;
   const syncClientV357=cloudClient,syncSidV357=cloudCfg.sessionId,syncStateV357=state;
   if(isEmptyLocalHomeV340()&&retiredOwnerSessionV353(cloudCfg.sessionId)){await disconnectCloud();return;}
