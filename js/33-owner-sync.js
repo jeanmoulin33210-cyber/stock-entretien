@@ -327,4 +327,39 @@
   installResetTestButtonV365();
   document.addEventListener('DOMContentLoaded',installResetTestButtonV365);
 
+  // Capture legacy reset clicks before older handlers can perform a local reset.
+  let resetPromptV368=false;
+  async function sharedResetCommandV368(){
+    if(resetPromptV368)return;
+    resetPromptV368=true;
+    try{
+      if(!confirm('Effacer tous les lots d’essai, livraisons, fiches, notes et archives sur tous les appareils connectés à ce partage ? Le PIN est conservé.'))return;
+      if(typeof securityEnabled==='function'&&securityEnabled()){
+        const pin=prompt('Code PIN administrateur :');if(pin===null)return;
+        if(!(await verifyPin(String(pin).trim())))throw new Error('Code PIN incorrect. Rien n’a été effacé.');
+      }
+      await API.resetAll();
+      alert('Remise à zéro PARTAGÉE terminée. Les autres appareils actualisés appliqueront cet effacement automatiquement.');
+    }catch(e){alert(String(e?.message||e));}
+    finally{resetPromptV368=false;}
+  }
+  function installSharedResetV368(){
+    const parent=document.querySelector('#advancedTools .advanced-tools-body');
+    if(!parent)return;
+    for(const id of ['resetLotsBtnV207','restoreLotsBtnV207','resetTestLot55V365']){
+      const el=document.getElementById(id);if(el)el.style.display='none';
+    }
+    if(document.getElementById('sharedResetV368'))return;
+    const button=document.createElement('button');button.type='button';button.id='sharedResetV368';button.className='btn btn-small';
+    button.textContent='🧹 Repartir à zéro sur tous les appareils';
+    button.onclick=sharedResetCommandV368;parent.appendChild(button);
+  }
+  document.addEventListener('click',function(e){
+    if(!e.target.closest?.('#resetLotsBtnV207'))return;
+    e.preventDefault();e.stopImmediatePropagation();sharedResetCommandV368();
+  },true);
+  installSharedResetV368();
+  document.addEventListener('DOMContentLoaded',installSharedResetV368);
+  setTimeout(installSharedResetV368,700);
+
 })(typeof window==='undefined'?globalThis:window);
