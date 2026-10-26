@@ -192,6 +192,34 @@
     if(result.error||!result.data?.config)throw new Error('Vérification du partage impossible.');
     return adoptResetV367(result.data.config,c);
   };
+  // A deletion must reach the owner catalogue before the local copy disappears.
+  API.publishPreparedRemoval=async function(rec){
+    if(busy||cloudBusy)throw new Error('Synchronisation en cours. Réessayez dans quelques secondes.');
+    busy=true;
+    try{
+      const c=await client();
+      if(!c)throw new Error('Connexion propriétaire nécessaire : aucune suppression effectuée.');
+      const keys=new Set(['prepared:'+String(rec.id)]);
+      if(id(rec.state))keys.add('prepared:'+id(rec.state));
+      for(let attempt=0;attempt<3;attempt++){
+        const result=await c.from('test_culinaire_sessions').select('config,updated_at').eq('session_id',descriptor.sessionId).maybeSingle();
+        if(result.error||!result.data?.config||!result.data.updated_at)throw new Error('Partage indisponible : aucune suppression effectuée.');
+        const config=result.data.config;
+        const catalog=clone(config._ownerCatalogV357||seed(config,collect()));
+        catalog.records=catalog.records||{};catalog.removed=catalog.removed||{};
+        const stamp=new Date(Math.max(Date.now(),Date.parse(result.data.updated_at)+1)).toISOString();
+        for(const key of keys){catalog.removed[key]=stamp;delete catalog.records[key];}
+        const write=await c.from('test_culinaire_sessions').update({config:{...config,_ownerCatalogV357:catalog},updated_at:stamp}).eq('session_id',descriptor.sessionId).eq('updated_at',result.data.updated_at).select('session_id').maybeSingle();
+        if(write.error)throw new Error('Suppression non confirmée par le partage. La copie locale est conservée.');
+        if(!write.data)continue;
+        const removed=read('jm_tc_owner_removed_v357',{});
+        for(const key of keys)removed[key]=stamp;
+        localStorage.setItem('jm_tc_owner_removed_v357',JSON.stringify(removed));
+        return;
+      }
+      throw new Error('Le partage a changé. Réessayez : la copie locale est conservée.');
+    }finally{busy=false;}
+  };
   API.resetAll=async function(){
     if(busy||cloudBusy)throw new Error('Synchronisation en cours. Réessayez dans quelques secondes.');
     busy=true;cloudBusy=true;
