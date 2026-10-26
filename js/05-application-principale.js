@@ -4704,9 +4704,12 @@ function applyPreparationLockV347(){
   if(banner.querySelector('[data-lock-title]').textContent!==title)banner.querySelector('[data-lock-title]').textContent=title;
   if(banner.querySelector('[data-lock-note]').textContent!==note)banner.querySelector('[data-lock-note]').textContent=note;
   $('#unlockPreparationV347').hidden=final;
-  const allowed=new Set(['unlockPreparationV347','configQrBtn','configEmailQrPdfBtn','configPrintArticlesBtn','configReceptionBtn','previewConfigBtn','cancelConfigBtn','cancelConfigTopBtn','configHomeBtn']);
+  const allowed=new Set(['unlockPreparationV347','configQrBtn','configEmailQrPdfBtn','configPrintArticlesBtn','configReceptionBtn','previewConfigBtn','cancelConfigBtn','cancelConfigTopBtn','configHomeBtn','saveConfigBtn']);
   view.querySelectorAll('input,select,textarea,button').forEach(el=>{
-    if(allowed.has(el.id))return;
+    if(allowed.has(el.id)){
+      if(el.id==='saveConfigBtn'){el.disabled=false;delete el.dataset.preparationDisabledV347;}
+      return;
+    }
     if(locked&&!el.disabled){el.dataset.preparationDisabledV347='1';el.disabled=true;}
     else if(!locked&&el.dataset.preparationDisabledV347==='1'){delete el.dataset.preparationDisabledV347;el.disabled=false;}
   });
@@ -6282,7 +6285,20 @@ function closeConfigPreview(){
 }
 
 function applyDraft(){
-  if(preparationLockedV347()){alert('La préparation du jury est verrouillée.');return;}
+  if(preparationLockedV347()){
+    // Phone generation has already committed this configuration. Finalize the
+    // saved jury without allowing edits to its locked parameters.
+    if(!state.config?.juryLaunch?.openedAt&&!state.config?.juryClose?.closedAt&&
+       !preparationHasAnswersV347()&&phoneSharePrepared(state.config)&&
+       preparationKeyV347(draftConfig)===preparationKeyV347(state.config)){
+      saveState();
+      upsertPreparedJury(state);
+      renderHome();
+      toast('Jury enregistré — téléphones prêts');
+      return;
+    }
+    alert('La préparation du jury est verrouillée.');return;
+  }
   syncTopDraft();
 
   const requestedTesterCount=Math.max(1,Math.min(20,parseInt($('#cfgTesterCount')?.value,10)||1));
