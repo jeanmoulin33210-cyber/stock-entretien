@@ -38,12 +38,25 @@
     // Preserve both copies rather than silently choosing a conflicting edit.
     throw new Error('La même information a été modifiée sur deux appareils. Les copies sont conservées.');
   }
+  function emptyJuryPlaceholderV383(st){
+  const cfg=st?.config;
+  if(!cfg||(Array.isArray(cfg.products)&&cfg.products.length))return false;
+  if((cfg.receptions||[]).length||Object.keys(cfg.productSheets||{}).length)return false;
+  return !Object.values(st.testers||{}).some(t=>t?.validatedAt||Object.values(t?.answers||{}).some(a=>
+    (a?.choices||[]).some(v=>v!==null&&v!==undefined)||(a?.remarks||[]).some(v=>String(v||'').trim())
+  ));
+}
   function reconcile(catalog,locals,bases,removed){
     const out=clone(catalog||{version:1,records:{},removed:{}});
     out.version=1;out.records=out.records||{};out.removed={...(out.removed||{}),...removed};
-    for(const [key,entry]of Object.entries(out.records))if(retired(entry.state))delete out.records[key];
+    for(const [key,entry]of Object.entries(out.records)){
+      if(key.startsWith('prepared:')&&emptyJuryPlaceholderV383(entry.state)){
+        out.removed[key]=out.removed[key]||new Date().toISOString();
+        delete out.records[key];
+      }else if(retired(entry.state))delete out.records[key];
+    }
     for(const [key,local]of Object.entries(locals)){
-      if(retired(local)||out.removed[key])continue;
+      if(retired(local)||out.removed[key]||(key.startsWith('prepared:')&&emptyJuryPlaceholderV383(local)))continue;
       const remote=out.records[key];const base=bases[key];
       if(!remote){
         if(base)continue; // absent remotely after a previous acknowledgement is not a new jury
@@ -61,7 +74,7 @@
     for(const key of Object.keys(out.records))if(out.removed[key]||(key.startsWith('prepared:')&&archived.has(id(out.records[key].state))))delete out.records[key];
     return out;
   }
-  const API={clone,equal,snapshot,id,retired,merge,reconcile};
+  const API={clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383};
   if(typeof module==='object'&&module.exports){module.exports=API;return;}
   root.JuryOwnerSyncV357=API;
   let hub=null,descriptor=null,busy=false,applying=false,retryAt=0;
