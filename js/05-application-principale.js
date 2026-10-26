@@ -589,17 +589,26 @@ async function deletePreparedJuryV238(id){
   const name=rec?.state?.config?.lotName||rec?.name||'ce jury';
   if(!confirm(`Supprimer « ${name} » des jurys actifs ?\n\nLes archives ne seront pas touchées.`))return;
 
+  try{
+    if(!window.JuryOwnerSyncV357?.publishPreparedRemoval){
+      throw new Error('Rechargez la page pour activer la suppression partagée. Rien n’a été supprimé.');
+    }
+    await window.JuryOwnerSyncV357.publishPreparedRemoval(rec);
+  }catch(e){
+    alert(e?.message||'Suppression non confirmée. Le jury est conservé.');
+    return;
+  }
   const remaining=rows.filter(x=>String(x.id)!==String(id));
   savePreparedJurys(remaining);
 
   if(String(state?.config?._preparedId||'')===String(id)){
     try{
-      if(typeof disconnectCloud==='function')await disconnectCloud();
+      if(typeof disconnectCloud==='function')await disconnectCloud({keepOwnerSession:true});
     }catch(e){}
     setActiveStateAfterPreparedDeleteV238(remaining);
   }
 
-  toast('Jury actif supprimé ✓');
+  toast('Suppression partagée confirmée ✓');
   if(remaining.length)renderJuryChooser();
   else renderHome();
 }
