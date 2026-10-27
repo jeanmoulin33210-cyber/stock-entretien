@@ -1227,7 +1227,17 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
             .eq('session_id',syncSidV357)
             .maybeSingle();
           if(latestError||!latest?.config)throw new Error('Configuration serveur non vérifiable. Données locales conservées.');
-          if(!sameJuryV357(outgoing,latest.config))return;
+          if(!sameJuryV357(outgoing,latest.config)){
+            // V386: a newly signed-in owner can view a saved jury while
+            // connected to the general catalogue. Do not upload that jury
+            // into the hub, and do not leave an abandoned syncing indicator.
+            if(latest.config._ownerCatalogV357?.records){
+              setCloudStatus('online','● Partagé sécurisé');
+            }else{
+              setCloudStatus('error','● Jury différent · envoi suspendu');
+            }
+            return;
+          }
           expectedUpdatedAtV357=latest.updated_at;
           if(!expectedUpdatedAtV357)throw new Error('Version serveur absente. Envoi différé.');
           if(latest.config){
