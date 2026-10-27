@@ -23,3 +23,8 @@ jobs:
         run: node tests/jury-isolation.test.cjs
       - name: Two-device synchronization, concurrent saves and offline recovery
         run: node tests/owner-sync.test.cjs
+
+      - name: Shared results and reviewed recovery
+        run: |
+          node tests/shared-results.test.cjs
+          node tests/lot-d-recovery.test.cjs
