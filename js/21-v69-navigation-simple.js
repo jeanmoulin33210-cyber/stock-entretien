@@ -439,15 +439,29 @@ async function openLotDRecoveryV389(){
       const detail=document.createElement('p');detail.textContent=cfg.products.map(p=>p.name||'Produit').join(' · ')+' — '+cfg.products.length+' produits, '+cfg.products.reduce((n,p)=>n+(p.samples||[]).length,0)+' échantillons, '+answers+' notes renseignées';card.appendChild(detail);
       const date=document.createElement('p');date.textContent=copy.stamp&&Number.isFinite(Date.parse(copy.stamp))?'Copie du '+new Date(copy.stamp).toLocaleString('fr-FR'):copy.source;card.appendChild(date);
       const button=document.createElement('button');button.type='button';button.className='btn btn-primary';button.textContent='Rétablir cette copie du lot D';
+      const feedback=document.createElement('p');feedback.setAttribute('role','status');feedback.style.cssText='font-weight:700;white-space:normal';card.appendChild(feedback);
       button.onclick=async()=>{
-        if(!confirm('Rétablir uniquement cette copie du lot 4 — D dans le partage ?\n\nLes lots E et F seront conservés. Cette copie contient '+answers+' notes renseignées.'))return;
-        if(typeof securityEnabled==='function'&&securityEnabled()){
-          const pin=prompt('Votre PIN propriétaire pour rétablir le lot D :');if(pin===null)return;
-          if(!(await verifyPin(String(pin).trim()))){info.textContent='Code PIN incorrect. Rien n’a été changé.';return;}
+        const update=text=>{feedback.textContent=text;info.textContent=text;};
+        try{
+          if(!confirm('Rétablir uniquement cette copie du lot 4 — D dans le partage ?\\n\\nLes lots E et F seront conservés. Cette copie contient '+answers+' notes renseignées.'))return;
+          list.querySelectorAll('button').forEach(b=>b.disabled=true);
+          if(typeof securityEnabled==='function'&&securityEnabled()){
+            const pin=prompt('Votre PIN propriétaire pour rétablir le lot D :');
+            if(pin===null){update('Restauration annulée.');list.querySelectorAll('button').forEach(b=>b.disabled=false);return;}
+            update('Vérification du PIN…');
+            if(!(await verifyPin(String(pin).trim())))throw new Error('Code PIN incorrect. Rien n’a été changé.');
+          }
+          button.textContent='Restauration en cours…';update('Restauration en cours…');
+          await api.restoreLotDBackup(copy.state,update);
+          update('Lot D rétabli dans le partage. Fermez cette fenêtre, puis rouvrez Résultats.');
+          button.textContent='✓ Lot D rétabli';
+          alert('Lot D rétabli dans le partage avec '+answers+' notes renseignées. Les lots E et F sont conservés.');
+        }catch(e){
+          const message='Restauration non confirmée : '+(e.message||String(e));
+          update(message);button.textContent='Réessayer de rétablir cette copie';
+          list.querySelectorAll('button').forEach(b=>b.disabled=false);
+          alert(message);
         }
-        list.querySelectorAll('button').forEach(b=>b.disabled=true);
-        try{await api.restoreLotDBackup(copy.state);info.textContent='Lot D rétabli dans le partage. Fermez cette fenêtre, puis rouvrez Résultats.';}
-        catch(e){info.textContent=e.message||String(e);list.querySelectorAll('button').forEach(b=>b.disabled=false);}
       };
       card.appendChild(button);list.appendChild(card);
     }
