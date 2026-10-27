@@ -333,7 +333,11 @@
     ids.forEach(function(id,index){
       var button=document.getElementById(id);if(!button)return;
       var label=button.textContent.replace(/^\d+\.\s*/,"").replace(/\b[1-8]\.\s*/,"");
-      if(id==="simpleResultsPdfBtn")label="📚 Vérifier le rapport avant envoi";
+      if(id==="simpleResultsPdfBtn"){
+        var verified=!!(typeof state!=="undefined"&&state&&state.config&&state.config.finalReportVerifiedAt);
+        label=verified?"✓ Rapport vérifié":"📚 Vérifier le rapport avant envoi";
+        button.classList.toggle("occena-step-complete-v304",verified);
+      }
       var text=(index+1)+". "+label;if(button.textContent!==text)button.textContent=text;
       if(box.children[index]!==button)box.insertBefore(button,box.children[index]||null);
     });
