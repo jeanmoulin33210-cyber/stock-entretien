@@ -321,7 +321,7 @@ async function openResultsLotChooserV348(){
     try{rows=await window.JuryOwnerSyncV357.readResultsChoices();}
     catch(e){console.error('Résultats V388',e);toast('Liste partagée indisponible : copies locales affichées.');}
   }
-  if(!rows.length){toast('Aucun résultat disponible. Consultez les archives pour les jurys archivés.');return;}
+  if(!rows.length)toast('Aucun résultat disponible. Vous pouvez rechercher la copie du lot D.');
   let modal=document.getElementById('resultsLotModalV348');
   if(!modal){
     modal=document.createElement('div');
@@ -357,6 +357,9 @@ async function openResultsLotChooserV348(){
     modal.classList.remove('show');
     openSimplifiedResults();
   });
+  let recovery=modal.querySelector('[data-recover-lot-d]');
+  if(!recovery){recovery=document.createElement('button');recovery.type='button';recovery.className='btn btn-secondary';recovery.setAttribute('data-recover-lot-d','');recovery.textContent='Retrouver le lot 4 — D';recovery.onclick=openLotDRecoveryV389;list.after(recovery);}
+  recovery.style.display=rows.some(r=>window.JuryOwnerSyncV357?.isLotDRecoveryV389(r.state?.config))?'none':'inline-flex';
   modal.classList.add('show');
   list.querySelector('button')?.focus();
 }
@@ -401,3 +404,49 @@ if(document.getElementById('hubResultsBtn'))document.getElementById('hubResultsB
   },{passive:false});
   button.setAttribute('data-results-version','363');
 })();
+
+
+/* V389: recovery is a separate, explicit action. Merely opening Results
+ * never restores a deleted jury or publishes a device backup. */
+async function openLotDRecoveryV389(){
+  if(guestTester)return;
+  const api=window.JuryOwnerSyncV357;
+  if(!api?.findLotDBackups){toast('Le module de récupération doit être actualisé.');return;}
+  let modal=document.getElementById('lotDRecoveryV389');
+  if(!modal){
+    modal=document.createElement('div');modal.id='lotDRecoveryV389';modal.className='modal-backdrop';
+    modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','lotDRecoveryTitleV389');
+    modal.innerHTML='<div class="modal-card" style="width:min(680px,94vw);max-height:85vh;overflow:auto;background:white;color:#173f5c;border-radius:24px;padding:24px"><h2 id="lotDRecoveryTitleV389">Retrouver le lot 4 — D</h2><p data-recovery-status role="status"></p><div data-recovery-list></div><button type="button" class="btn btn-secondary" data-recovery-close>Fermer</button></div>';
+    document.body.appendChild(modal);
+    modal.querySelector('[data-recovery-close]').onclick=()=>modal.classList.remove('show');
+    modal.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('show')});
+  }
+  document.getElementById('resultsLotModalV348')?.classList.remove('show');
+  modal.style.zIndex='10060';modal.classList.add('show');
+  const info=modal.querySelector('[data-recovery-status]'),list=modal.querySelector('[data-recovery-list]');
+  list.innerHTML='';info.textContent='Recherche des copies de secours sur cet appareil…';
+  try{
+    const copies=await api.findLotDBackups();
+    if(!copies.length){info.textContent='Aucune copie complète du lot D trouvée sur cet appareil. Essayez ce même bouton sur le S24, puis sur l’iPad et le PC. Ne recréez pas le lot pour l’instant.';return;}
+    info.textContent='Copies trouvées. Vérifiez les produits, la date et le nombre de réponses avant de choisir. Les lots E et F seront conservés.';
+    for(const copy of copies){
+      const cfg=copy.state.config,answers=Object.values(copy.state.testers||{}).reduce((n,t)=>n+Object.values(t.answers||{}).reduce((m,a)=>m+(a.choices||[]).filter(v=>v!==null&&v!==undefined).length,0),0);
+      const card=document.createElement('div');card.style.cssText='border:1px solid #ccdce3;border-radius:16px;padding:16px;margin:12px 0';
+      const title=document.createElement('strong');title.textContent=[cfg.lotName,cfg.lotTitle||cfg.subtitle].filter(Boolean).join(' — ');card.appendChild(title);
+      const detail=document.createElement('p');detail.textContent=cfg.products.map(p=>p.name||'Produit').join(' · ')+' — '+cfg.products.length+' produits, '+cfg.products.reduce((n,p)=>n+(p.samples||[]).length,0)+' échantillons, '+answers+' notes renseignées';card.appendChild(detail);
+      const date=document.createElement('p');date.textContent=copy.stamp&&Number.isFinite(Date.parse(copy.stamp))?'Copie du '+new Date(copy.stamp).toLocaleString('fr-FR'):copy.source;card.appendChild(date);
+      const button=document.createElement('button');button.type='button';button.className='btn btn-primary';button.textContent='Rétablir cette copie du lot D';
+      button.onclick=async()=>{
+        if(!confirm('Rétablir uniquement cette copie du lot 4 — D dans le partage ?\n\nLes lots E et F seront conservés. Cette copie contient '+answers+' notes renseignées.'))return;
+        if(typeof securityEnabled==='function'&&securityEnabled()){
+          const pin=prompt('Votre PIN propriétaire pour rétablir le lot D :');if(pin===null)return;
+          if(!(await verifyPin(String(pin).trim()))){info.textContent='Code PIN incorrect. Rien n’a été changé.';return;}
+        }
+        list.querySelectorAll('button').forEach(b=>b.disabled=true);
+        try{await api.restoreLotDBackup(copy.state);info.textContent='Lot D rétabli dans le partage. Fermez cette fenêtre, puis rouvrez Résultats.';}
+        catch(e){info.textContent=e.message||String(e);list.querySelectorAll('button').forEach(b=>b.disabled=false);}
+      };
+      card.appendChild(button);list.appendChild(card);
+    }
+  }catch(e){info.textContent='Recherche impossible : '+(e.message||String(e))+'. Les copies sont conservées.';}
+}
