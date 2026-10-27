@@ -443,6 +443,14 @@
     return resultsChoicesV388(catalog,local);
   };
   // V389: inspect device recovery copies without changing any jury.
+  API.inspectLotDShare=async function(){
+    if(guestTester||cloudRole!=='admin')throw new Error('Connexion administrateur requise.');
+    const c=await client();if(!c)throw new Error('Connexion au partage absente.');
+    const result=await c.from('test_culinaire_sessions').select('config').eq('session_id',descriptor.sessionId).maybeSingle();
+    if(result.error||!result.data?.config?._ownerCatalogV357?.records)throw new Error('Lecture du partage impossible. Aucun état confirmé.');
+    const catalog=result.data.config._ownerCatalogV357;
+    return Object.entries(catalog.records).some(([key,entry])=>key.startsWith('prepared:')&&!catalog.removed?.[key]&&isLotDRecoveryV389(entry.state?.config));
+  };
   API.findLotDBackups=async function(){
     if(guestTester||cloudRole!=='admin')throw new Error('Connexion administrateur requise.');
     const found=new Map();
