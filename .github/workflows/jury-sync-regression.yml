@@ -40,3 +40,6 @@ jobs:
 
       - name: Live closure validation and chair save
         run: node tests/closure-live-validation.test.cjs
+
+      - name: Automatic OCCENA layout and draft preservation
+        run: node tests/occena-adaptive.test.cjs

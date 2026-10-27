@@ -349,7 +349,7 @@
     if(fill)fill.style.width=Math.max(0,Math.min(100,m.pct))+"%";
     if(globalInput)refreshOccenaFinalScoreV310(m,d);
     if(saveLabel)saveLabel.textContent="Enregistré";
-    ensurePhoneModeButton();
+    scheduleAdaptiveOccenaV401();
 
     if(!rows.length){
       box.innerHTML="<div class='occena-empty'>Aucun article / fournisseur dans ce jury.</div>";
@@ -501,7 +501,6 @@
       "<div class='occena-phone-shell-v300'>"+
         "<div class='occena-phone-head-v300'>"+
           "<div><strong>Contrôle OCCENA</strong><span id='occenaPhoneProgressV300'>Fiche 1/1</span></div>"+
-          "<button type='button' id='occenaPhoneCloseV300'>✕</button>"+
         "</div>"+
         "<div class='occena-phone-summary-v300' id='occenaPhoneSummaryV300'></div>"+
         "<div class='occena-phone-tools-v301'><button type='button' id='occenaPhoneAddSheetV301'>＋ Ajouter une fiche</button></div>"+
@@ -514,7 +513,6 @@
       "</div>";
     document.body.appendChild(modal);
 
-    document.getElementById("occenaPhoneCloseV300").onclick=closeOccenaPhoneMode;
     document.getElementById("occenaPhoneResultsReturn").onclick=returnOccenaToResults;
     document.getElementById("occenaPhoneAddSheetV301").onclick=addOccenaPhoneSheetV301;
     document.getElementById("occenaPhonePrevV300").onclick=function(){
@@ -740,19 +738,30 @@
     }).join("");
   }
 
-  function ensurePhoneModeButton(){
-    var actions=document.querySelector("#occenaControlCard .occena-actions");
-    if(!actions)return;
-    var btn=document.getElementById("occenaPhoneModeBtnV300");
-    if(!btn){
-      btn=document.createElement("button");
-      btn.type="button";
-      btn.id="occenaPhoneModeBtnV300";
-      btn.className="btn btn-primary";
-      btn.textContent="📱 Mode téléphone";
-      actions.insertBefore(btn,actions.firstChild);
+  var adaptiveOccenaTimerV401=null,adaptiveOccenaKeyV401="";
+  function scheduleAdaptiveOccenaV401(){
+    clearTimeout(adaptiveOccenaTimerV401);
+    adaptiveOccenaTimerV401=setTimeout(adaptOccenaV401,0);
+  }
+  function adaptOccenaV401(){
+    var view=document.getElementById("occenaView");
+    var active=!!(view&&view.classList.contains("active"));
+    var narrow=!!(window.matchMedia&&window.matchMedia("(max-width: 700px)").matches);
+    var modal=document.getElementById("occenaPhoneModalV300"),open=!!(modal&&modal.classList.contains("open"));
+    if(active&&narrow&&!open){
+      capture();
+      openOccenaPhoneMode(adaptiveOccenaKeyV401||undefined);
+    }else if(open&&(!active||!narrow)){
+      var card=document.getElementById("occenaPhoneCardV300");
+      adaptiveOccenaKeyV401=card?String(card.getAttribute("data-occena-phone-key")||""):"";
+      closeOccenaPhoneMode();
+      if(active)render();
     }
-    btn.onclick=function(){openOccenaPhoneMode();};
+  }
+  if(window.matchMedia){
+    var adaptiveOccenaMediaV401=window.matchMedia("(max-width: 700px)");
+    if(adaptiveOccenaMediaV401.addEventListener)adaptiveOccenaMediaV401.addEventListener("change",scheduleAdaptiveOccenaV401);
+    else if(adaptiveOccenaMediaV401.addListener)adaptiveOccenaMediaV401.addListener(scheduleAdaptiveOccenaV401);
   }
 
   window.openOccenaPhoneModeV300=openOccenaPhoneMode;

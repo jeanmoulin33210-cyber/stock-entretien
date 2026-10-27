@@ -1,0 +1,24 @@
+const fs=require('node:fs'),vm=require('node:vm'),assert=require('node:assert/strict');
+const source=fs.readFileSync(require('node:path').join(__dirname,'../js/30-v290-controle-occena.js'),'utf8');
+let active=false,narrow=false,open=false,opens=0,closes=0,renders=0,saves=0;
+const data={items:{}},normal={initial:'42',status:'conforme',corrected:'',observation:'Observation bureau'},phone={initial:'',status:'pending',corrected:'',observation:''};
+const group=model=>({getAttribute:()=>model.status});
+const query=(model,selector)=>selector.includes('status')?group(model):{value:model[selector.includes('initial')?'initial':selector.includes('corrected')?'corrected':'observation']};
+const row={getAttribute:()=> 'p__1',querySelector:selector=>query(normal,selector)};
+const card={getAttribute:()=> 'p__1',querySelector:selector=>query(phone,selector)};
+const elements={occenaView:{classList:{contains:()=>active}},occenaPhoneModalV300:{classList:{contains:()=>open}},occenaPhoneCardV300:card};
+const ctx={window:{matchMedia:()=>({matches:narrow,addEventListener(){}})},document:{getElementById:id=>elements[id],querySelectorAll:()=>[row]},state:{},dataFor:()=>data,complete:r=>r.status==='conforme',Date,clearTimeout(){},setTimeout:()=>0,saveState:()=>saves++,console};
+vm.createContext(ctx);
+function load(start,end){vm.runInContext(source.slice(source.indexOf(start),source.indexOf(end,source.indexOf(start))),ctx);}
+load('  function capture(){','  async function persist(');load('  function saveOccenaPhoneCard(){','  function addOccenaPhoneSheetV301(');
+ctx.openOccenaPhoneMode=()=>{open=true;opens++;Object.assign(phone,{initial:data.items['p__1'].initialScore,status:data.items['p__1'].status,corrected:data.items['p__1'].correctedScore,observation:data.items['p__1'].observation})};
+ctx.closeOccenaPhoneMode=()=>{ctx.saveOccenaPhoneCard();open=false;closes++;};
+ctx.render=()=>{renders++;Object.assign(normal,{initial:data.items['p__1'].initialScore,status:data.items['p__1'].status,corrected:data.items['p__1'].correctedScore,observation:data.items['p__1'].observation})};
+load('  var adaptiveOccenaTimerV401=','  window.openOccenaPhoneModeV300=');
+ctx.adaptOccenaV401();assert.equal(opens,0);active=true;ctx.adaptOccenaV401();assert.equal(opens,0,'desktop remains full view');
+narrow=true;ctx.adaptOccenaV401();assert.equal(opens,1);assert.equal(phone.initial,'42');assert.equal(phone.observation,'Observation bureau');
+ctx.adaptOccenaV401();assert.equal(opens,1,'do not reopen or reset an active phone card');
+phone.initial='47';phone.observation='Observation téléphone';narrow=false;ctx.adaptOccenaV401();assert.equal(closes,1);assert.equal(renders,1);assert.equal(normal.initial,'47');assert.equal(data.items['p__1'].observation,'Observation téléphone');assert.equal(saves,1);
+normal.initial='49';narrow=true;ctx.adaptOccenaV401();assert.equal(phone.initial,'49');active=false;ctx.adaptOccenaV401();assert.equal(open,false,'leaving OCCENA releases the phone screen');
+assert.ok(!source.includes('Mode téléphone'));assert.ok(!source.includes('id=\'occenaPhoneCloseV300\''));assert.ok(source.includes('occenaPhoneResultsReturn'));
+console.log('PASS automatic small-screen view, normal desktop view, stable phone card, bidirectional draft preservation and exit');
