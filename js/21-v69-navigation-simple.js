@@ -359,7 +359,8 @@ async function openResultsLotChooserV348(){
   });
   let recovery=modal.querySelector('[data-recover-lot-d]');
   if(!recovery){recovery=document.createElement('button');recovery.type='button';recovery.className='btn btn-secondary';recovery.setAttribute('data-recover-lot-d','');recovery.textContent='Retrouver le lot 4 — D';recovery.onclick=openLotDRecoveryV389;list.after(recovery);}
-  recovery.style.display=rows.some(r=>window.JuryOwnerSyncV357?.isLotDRecoveryV389(r.state?.config))?'none':'inline-flex';
+  recovery.style.display='inline-flex';
+  recovery.textContent=rows.some(r=>window.JuryOwnerSyncV357?.isLotDRecoveryV389(r.state?.config))?'Vérifier le partage du lot 4 — D':'Retrouver le lot 4 — D';
   modal.classList.add('show');
   list.querySelector('button')?.focus();
 }
@@ -426,9 +427,11 @@ async function openLotDRecoveryV389(){
   const info=modal.querySelector('[data-recovery-status]'),list=modal.querySelector('[data-recovery-list]');
   list.innerHTML='';info.textContent='Recherche des copies de secours sur cet appareil…';
   try{
+    const shared=await api.inspectLotDShare();
+    if(shared){info.textContent='Le lot 4 — D est présent dans le partage et accessible avec ce compte. Aucune restauration nécessaire. Si le PC ne le voit pas, envoyez une photo de ce message pour vérifier son chargement des résultats.';return;}
     const copies=await api.findLotDBackups();
     if(!copies.length){info.textContent='Aucune copie complète du lot D trouvée sur cet appareil. Essayez ce même bouton sur le S24, puis sur l’iPad et le PC. Ne recréez pas le lot pour l’instant.';return;}
-    info.textContent='Copies trouvées. Vérifiez les produits, la date et le nombre de réponses avant de choisir. Les lots E et F seront conservés.';
+    info.textContent='Le lot D n’est pas présent dans le catalogue partagé. Des copies existent sur cet appareil : vérifiez les produits, la date et les notes avant de rétablir une copie. Les lots E et F seront conservés.';
     for(const copy of copies){
       const cfg=copy.state.config,answers=Object.values(copy.state.testers||{}).reduce((n,t)=>n+Object.values(t.answers||{}).reduce((m,a)=>m+(a.choices||[]).filter(v=>v!==null&&v!==undefined).length,0),0);
       const card=document.createElement('div');card.style.cssText='border:1px solid #ccdce3;border-radius:16px;padding:16px;margin:12px 0';
