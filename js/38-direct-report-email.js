@@ -1,4 +1,4 @@
-/* Activate by binding emailCurrentReport to openDirectFinalReportV415 after backend setup. */
+/* Direct report email through authenticated server-side Gmail SMTP. */
 async function openDirectFinalReportV415(){
   if(state.config?._archive?.finalLocked)return alert('Ce jury est archivé et verrouillé.');
   if(!ensureProductSheetsComplete('envoyer le rapport final'))return;
@@ -36,6 +36,7 @@ async function openDirectFinalReportV415(){
       jury.config._finalReportPreparedAt=new Date().toISOString();
       jury.config._finalReportSentAt=jury.config._finalReportPreparedAt;
       jury.config._finalReportEmailId=result.data.id;saveState();
+      if(typeof syncSimpleResultsActions==='function')syncSimpleResultsActions();
       status.textContent='Envoi pris en charge ✓';send.textContent='Envoi pris en charge ✓';send.style.background='#23764e';
       form.querySelectorAll('input,textarea').forEach(el=>el.disabled=true);
       const archive=document.getElementById('confirmReportSentArchiveBtn');if(archive)archive.hidden=false;
@@ -43,3 +44,6 @@ async function openDirectFinalReportV415(){
     }catch(error){status.textContent=error.message;busy=false;send.disabled=false;close.disabled=false;}
   };
 }
+
+emailCurrentReport=openDirectFinalReportV415;
+window.emailCurrentReport=openDirectFinalReportV415;
