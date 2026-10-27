@@ -5011,7 +5011,7 @@ async function buildArticleNumbersPdf(){
     throw new Error('Le module PDF n’est pas chargé. Vérifiez la connexion Internet puis réessayez.');
   }
 
-  const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true,putOnlyUsedFonts:true});
   const pageW=210, pageH=297;
   const marginX=12, marginY=12;
   const gapX=6, gapY=6;
@@ -9387,6 +9387,11 @@ async function emailCurrentReport(){
     }
 
     const {blob,filename}=await buildReportPdfBlob(state);
+
+    // V406: check the actual PDF bytes before download or mail preparation.
+    const attachmentLimit=5000000;
+    if(!Number.isFinite(blob?.size)||blob.size<=0)throw new Error('Le fichier PDF généré est vide ou invalide.');
+    if(blob.size>attachmentLimit)throw new Error('Le rapport fait '+(blob.size/1000000).toFixed(2).replace('.',',')+' Mo. La pièce jointe ne doit pas dépasser 5 Mo. Aucun message n’a été préparé et le jury reste disponible.');
 
     /* Télécharger le PDF afin qu'il puisse être joint dans Gmail. */
     const fileUrl=URL.createObjectURL(blob);

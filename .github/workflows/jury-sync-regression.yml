@@ -46,3 +46,6 @@ jobs:
 
       - name: Product sheet lists never revive deleted lots
         run: node tests/product-sheet-active.test.cjs
+
+      - name: Final report attachment limit
+        run: node tests/final-report-size.test.cjs
