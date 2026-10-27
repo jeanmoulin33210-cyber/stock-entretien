@@ -48,7 +48,17 @@
 }
   function reconcile(catalog,locals,bases,removed){
     const out=clone(catalog||{version:1,records:{},removed:{}});
-    out.version=1;out.records=out.records||{};out.removed={...(out.removed||{}),...removed};
+    out.version=1;out.records=out.records||{};
+    const deletions={...(out.removed||{})};
+    for(const [key,stamp]of Object.entries(removed||{})){
+      if(!deletions[key]||String(stamp)>String(deletions[key]))deletions[key]=stamp;
+    }
+    // V391: a reviewed restoration supersedes an older device's deletion.
+    // A later explicit deletion still wins.
+    for(const [key,stamp]of Object.entries(out.restoredV391||{})){
+      if(deletions[key]&&String(deletions[key])<=String(stamp))delete deletions[key];
+    }
+    out.removed=deletions;
     for(const [key,entry]of Object.entries(out.records)){
       if(key.startsWith('prepared:')&&emptyJuryPlaceholderV383(entry.state)){
         out.removed[key]=out.removed[key]||new Date().toISOString();
@@ -102,7 +112,7 @@
     const sid=String(candidate.config._shareSessionId||candidate.config.juryLaunch?.sessionId||'');
     if(sid&&(catalog.resetSessionIds||[]).includes(sid))throw new Error('Cette copie appartient à une ancienne remise à zéro. Choisissez une copie plus récente.');
     const existing=catalog.records?.['prepared:'+id(candidate)]?.state;
-    if(existing?.config?.products?.length)throw new Error('Ce lot existe déjà dans le partage. Rouvrez Résultats pour le consulter.');
+    if(existing?.config?.products?.length&&!catalog.removed?.['prepared:'+id(candidate)])throw new Error('Ce lot existe déjà dans le partage. Rouvrez Résultats pour le consulter.');
     const st=snapshot(candidate);st.config._catalogCreatedV357=true;return st;
   }
   const API={clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383,resultsChoicesV388,isLotDRecoveryV389,validateLotDRestoreV389};
@@ -289,6 +299,8 @@
         catalog.records=catalog.records||{};catalog.removed=catalog.removed||{};
         const stamp=new Date(Math.max(Date.now(),Date.parse(result.data.updated_at)+1)).toISOString();
         for(const key of keys){catalog.removed[key]=stamp;delete catalog.records[key];}
+        catalog.restoredV391={...(catalog.restoredV391||{}),[key]:stamp};
+        onProgress('Envoi du lot D et de ses notes dans le partage…');
         const write=await c.from('test_culinaire_sessions').update({config:{...config,_ownerCatalogV357:catalog},updated_at:stamp}).eq('session_id',descriptor.sessionId).eq('updated_at',result.data.updated_at).select('session_id').maybeSingle();
         if(write.error)throw new Error('Suppression non confirmée par le partage. La copie locale est conservée.');
         if(!write.data)continue;
@@ -490,11 +502,15 @@
     }finally{db.close();}
     return [...found.values()].sort((a,b)=>b.stamp.localeCompare(a.stamp));
   };
-  API.restoreLotDBackup=async function(candidate){
+  API.restoreLotDBackup=async function(candidate,onProgress=()=>{}){
     if(guestTester||cloudRole!=='admin'||!isLotDRecoveryV389(candidate?.config))throw new Error('Copie du lot D invalide.');
-    if(busy||cloudBusy)throw new Error('Synchronisation en cours. Réessayez dans quelques secondes.');
+    onProgress('Attente de la fin de la synchronisation…');
+    const started=Date.now();
+    while((busy||cloudBusy)&&Date.now()-started<8000)await new Promise(resolve=>setTimeout(resolve,100));
+    if(busy||cloudBusy)throw new Error('La synchronisation reste occupée. La copie est conservée ; réessayez dans quelques secondes.');
     busy=true;
     try{
+      onProgress('Vérification du partage…');
       const c=await client();if(!c)throw new Error('Connexion au partage nécessaire.');
       const rid=id(candidate),key='prepared:'+rid;
       for(let attempt=0;attempt<3;attempt++){
@@ -502,6 +518,7 @@
         if(readBack.error||!readBack.data?.config?._ownerCatalogV357||!readBack.data.updated_at)throw new Error('Partage non vérifiable. Rien n’a été remplacé.');
         const config=readBack.data.config,catalog=clone(config._ownerCatalogV357);
         const restored=validateLotDRestoreV389(catalog,candidate);
+        onProgress('Sauvegarde de sécurité avant restauration…');
         await verifyRecoveryValueV360('before-explicit-lot-d-restore',JSON.stringify({config,prepared:loadPreparedJurys(),state}));
         catalog.records[key]={state:restored,revision:Number(catalog.records[key]?.revision||0)+1};
         delete catalog.removed?.[key];
