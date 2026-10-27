@@ -7121,7 +7121,7 @@ function closureMissingFields(st=state){
 function closureIsReady(st=state){
   return closureMissingFields(st).length===0;
 }
-function renderClosureStatus(c=state?.config?.closure||{}){
+function renderClosureStatus(c=state?.config?.closure||{},pending=false){
   const missing=closureMissingFieldsFrom(c);
   const ready=missing.length===0;
   const card=$('#closureStatusCard');
@@ -7139,15 +7139,15 @@ function renderClosureStatus(c=state?.config?.closure||{}){
     document.getElementById(x.id)?.closest('.field')?.classList.add('closure-required-missing');
   });
 
-  if(title)title.textContent=ready?'Fiche prête ✓':'À compléter';
+  if(title)title.textContent=ready?(pending?'À enregistrer':'Fiche prête ✓'):'À compléter';
 
   if(detail){
     if(ready){
-      detail.textContent=isJuryClosed()
+      detail.textContent=pending?'Les informations sont complètes. Appuyez sur « Enregistrer les résultats » pour les conserver.':isJuryClosed()
         ?`Jury fermé le ${fmtCloseDate(juryCloseInfo().closedAt)} · fiche prête pour le rapport et l’archive.`
         :'La fiche est complète et sera reprise dans le rapport final.';
     }else{
-      detail.textContent='La fiche est enregistrée, mais il manque encore au moins un champ obligatoire.';
+      detail.textContent=pending?'Complétez les champs indiqués puis appuyez sur « Enregistrer les résultats ».':'La fiche est enregistrée, mais il manque encore au moins un champ obligatoire.';
     }
   }
 
@@ -7191,7 +7191,7 @@ function renderClosure(){
   let testerSignatures=document.getElementById('closureTesterSignaturesV393');
   if(!testerSignatures){testerSignatures=document.createElement('div');testerSignatures.id='closureTesterSignaturesV393';members.after(testerSignatures);}
   testerSignatures.innerHTML=window.testerSignaturesHtmlV393?window.testerSignaturesHtmlV393(state):'';
-  renderClosureStatus(c);
+  if(!c.date)refreshClosureFormStatusV399();else renderClosureStatus(c);
   setupSignatureCanvas('chairSignature',c.chairSignature||'');
   setupSignatureCanvas('coSignature',c.coSignature||'');
   setClosureSaveIndicator('💾 Enregistrer');
@@ -7220,8 +7220,17 @@ function setClosureSaveIndicator(text){
   const b=$('#saveClosureBtn');
   if(b)b.textContent=text==='💾 Enregistrer'?'💾 Enregistrer les résultats':text;
 }
+function refreshClosureFormStatusV399(){
+  const saved=state?.config?.closure||{};
+  const current={...saved};
+  for(const [key,id] of [['date','closureDate'],['place','closurePlace'],['chair','closureChair']]){
+    const input=document.getElementById(id);if(input)current[key]=input.value.trim();
+  }
+  return renderClosureStatus(current,true);
+}
 function scheduleClosureAutosave(preserveScrollY=null){
   clearTimeout(closureAutosaveTimer);
+  refreshClosureFormStatusV399();
 
   /* V320 — la clôture n'est plus enregistrée automatiquement.
      Toute modification indique seulement qu'il faut appuyer sur Enregistrer. */

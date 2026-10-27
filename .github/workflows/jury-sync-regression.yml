@@ -37,3 +37,6 @@ jobs:
 
       - name: Single tester signature and profile preservation
         run: node tests/tester-profile-signature.test.cjs
+
+      - name: Live closure validation and chair save
+        run: node tests/closure-live-validation.test.cjs
