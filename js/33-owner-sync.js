@@ -96,6 +96,7 @@
     }
   }
   async function client(){
+    if(root.JuryAccountV385?.signedOut)throw new Error('Compte déconnecté.');
     rememberHub();if(hub)return hub;
     descriptor=descriptor||read(hubKey,null);if(!descriptor)return null;
     const candidate=window.supabase.createClient(descriptor.url,descriptor.key,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey:descriptor.storageKey}});
@@ -295,7 +296,7 @@
   };
 
   async function tick(){
-    if(busy||Date.now()<retryAt||guestTester||document.hidden)return;
+    if(busy||Date.now()<retryAt||guestTester||document.hidden||root.JuryAccountV385?.signedOut)return;
     const active=document.querySelector('.view.active')?.id;
     if(!active||active==='testerView'||active==='adminGateView'||active==='adminDeniedView')return;
     const canApply=(active==='homeView'||active==='juryChooserView')&&!document.querySelector('.modal-backdrop.show')&&!document.activeElement?.matches('input,textarea,select');
@@ -350,6 +351,41 @@
   };
   const saveCloud=saveCloudCfg;
   saveCloudCfg=function(){saveCloud();rememberHub();};
+  API.accountContext=async function(){
+    if(guestTester||cloudRole!=='admin'||!cloudReady)throw new Error('Connectez d’abord cet appareil comme propriétaire.');
+    const c=await client();
+    if(!c||!descriptor)throw new Error('Le dossier général doit être reconnecté avant d’activer le compte.');
+    return {client:c,descriptor:clone(descriptor)};
+  };
+  API.bindAccount=async function(c,space){
+    if(guestTester)throw new Error('Accès propriétaire nécessaire.');
+    const result=await c.from('test_culinaire_memberships').select('role').eq('session_id',space.sessionId).maybeSingle();
+    if(result.error||result.data?.role!=='admin')throw new Error('Le compte n’a pas accès au dossier général.');
+    descriptor={sessionId:space.sessionId,url:space.url,key:DEFAULT_SUPABASE_KEY,storageKey:c.__jmStorageKeyV357};
+    hub=c;localStorage.setItem(hubKey,JSON.stringify(descriptor));
+  };
+  API.loadAccount=async function(){
+    const started=Date.now();
+    while(busy&&Date.now()-started<8000)await new Promise(resolve=>setTimeout(resolve,50));
+    if(busy)throw new Error('Synchronisation en cours. Réessayez dans quelques secondes.');
+    busy=true;
+    try{
+      const c=await client();
+      const result=await c.from('test_culinaire_sessions').select('config').eq('session_id',descriptor.sessionId).maybeSingle();
+      if(result.error||!result.data?.config)throw new Error('Le compte est reconnu, mais le dossier partagé ne peut pas être chargé.');
+      const config=result.data.config,catalog=config._ownerCatalogV357;
+      if(!catalog?.records)throw new Error('Le dossier général doit être synchronisé depuis l’appareil propriétaire avant cette première connexion.');
+      await adoptResetV367(config,c);
+      const key='jm_tc_owner_baseline_v357_'+descriptor.sessionId;
+      const baseline=read(key,{});
+      apply(catalog,baseline,collect());
+      const acknowledged={};
+      for(const [k,v]of Object.entries(catalog.records))acknowledged[k]=v.state;
+      localStorage.setItem(key,JSON.stringify(acknowledged));
+      status('Compte connecté · dossier partagé chargé');
+    }finally{busy=false;}
+  };
+  API.pauseAccount=async function(){hub=null;};
   API.run=tick;
   rememberHub();setTimeout(tick,1800);setInterval(tick,5000);
   window.addEventListener('online',()=>{retryAt=0;tick();});
