@@ -274,6 +274,9 @@ function cloudAuthStorageKey(){
   return `jm-tc-auth-${project}-${session}-${role}`;
 }
 function buildCloudClient(){
+  if(!guestTester&&requestedCloudIdentity()?.role!=='tester'&&window.JuryAccountV385?.client&&cloudCfg.url===DEFAULT_SUPABASE_URL){
+    cloudClient=window.JuryAccountV385.client;return;
+  }
   if(!cloudCfg.url||!cloudCfg.key)throw new Error('Renseignez le Project URL et la clé publique Supabase.');
   if(!window.supabase?.createClient)throw new Error('La bibliothèque Supabase n’a pas pu être chargée.');
 
@@ -319,6 +322,7 @@ function requestedCloudIdentity(){
   return null;
 }
 async function rotateAnonymousCloudIdentity(){
+  if(window.JuryAccountV385?.client===cloudClient)throw new Error('Ce compte ne dispose pas du rôle demandé pour ce jury.');
   try{await cloudClient.auth.signOut({scope:'local'})}catch(e){}
   const r=await cloudClient.auth.signInAnonymously();
   if(r.error)throw r.error;
@@ -1691,6 +1695,7 @@ async function forceReloadAdminStateV328(){
 }
 
 async function disconnectCloud({keepOwnerSession=false}={}){
+  if(window.JuryAccountV385?.client&&!keepOwnerSession){await window.JuryAccountV385.signout();return;}
   localStorage.removeItem('jm_tc_owner_connection_v353');
   localStorage.setItem('jm_tc_owner_disconnected_v353','1');
   clearTimeout(cloudSyncTimer);
@@ -1746,7 +1751,12 @@ bindAdminSyncButtonsV330();
 $('#connectCloudBtn').onclick=async()=>{try{await connectCloud({create:false})}catch(e){setCloudStatus('error','● Erreur');cloudMsg(e.message||String(e),'bad');serverSecurityStatus('Sécurité serveur non prête',e.message||String(e),false)}};
 $('#disconnectCloudBtn').onclick=disconnectCloud;
 $('#copyAdminLinkBtn').onclick=()=>{if(!cloudReady)return alert('Connectez d’abord la session partagée.');if(cloudRole!=='admin')return alert('Lien administrateur réservé à l’administrateur.');copyText(shareUrl(null),'Lien administrateur copié')};
-autoConnectFromUrl();
+window.addEventListener('DOMContentLoaded',async()=>{
+  try{
+    if(window.JuryAccountV385&&await window.JuryAccountV385.restore())return;
+    await autoConnectFromUrl();
+  }catch(e){setCloudStatus('error','● Connexion à reprendre');cloudMsg(e?.message||'Connexion indisponible.','bad');}
+},{once:true});
 
 
 /* --- V332 : envoi autoritaire fiable S24 -> session partagée --- */
