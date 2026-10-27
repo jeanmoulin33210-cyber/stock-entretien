@@ -9438,7 +9438,7 @@ async function confirmReportSentAndArchive(){
     saveArchives(archives);
     saveState();
     if(typeof syncDirtyToCloud==='function')await syncDirtyToCloud();
-    if(typeof disconnectCloud==='function')await disconnectCloud();
+    if(typeof disconnectCloud==='function')await disconnectCloud({keepOwnerSession:true});
     const preparedId=state.config._preparedId;
     const instanceId=juryInstanceId(state.config);
     savePreparedJurys(loadPreparedJurys().filter(r=>
