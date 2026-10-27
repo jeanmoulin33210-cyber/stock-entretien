@@ -301,7 +301,7 @@
 
     if(dossier){
       dossier.disabled=!allReady;
-      dossier.textContent="📚 4. Dossier résultats";
+      dossier.textContent="📚 4. Vérifier le rapport avant envoi";
       dossier.classList.remove("btn-primary","simple-results-next-btn","btn-secondary");
       if(allReady)dossier.classList.add("btn-primary","simple-results-next-btn");
       else dossier.classList.add("btn-secondary");
@@ -333,7 +333,7 @@
     ids.forEach(function(id,index){
       var button=document.getElementById(id);if(!button)return;
       var label=button.textContent.replace(/^\d+\.\s*/,"").replace(/\b[1-8]\.\s*/,"");
-      if(id==="simpleResultsPdfBtn")label="📚 Dossier résultats";
+      if(id==="simpleResultsPdfBtn")label="📚 Vérifier le rapport avant envoi";
       var text=(index+1)+". "+label;if(button.textContent!==text)button.textContent=text;
       if(box.children[index]!==button)box.insertBefore(button,box.children[index]||null);
     });
@@ -363,11 +363,11 @@
       removeHighlight(btn);
       btn.classList.add("occena-step-complete-v304");
       btn.textContent="✓ 3. Contrôle OCCENA — OK";
-      if(report)report.textContent="📚 4. Dossier résultats";
+      if(report)report.textContent="📚 4. Vérifier le rapport avant envoi";
       if(wf.closed&&wf.closureReady&&wf.sheetsReady){
         highlight(report);
-        if(title)title.textContent="👉 À faire maintenant : dossier résultats";
-        if(hint)hint.textContent="✓ Contrôle OCCENA terminé : au moins 30 % des fiches validées pour chaque fournisseur. Vous pouvez maintenant ouvrir le dossier résultats.";
+        if(title)title.textContent="👉 À faire maintenant : vérifier le rapport avant envoi";
+        if(hint)hint.textContent="✓ Contrôle OCCENA terminé : au moins 30 % des fiches validées pour chaque fournisseur. Vous pouvez maintenant vérifier le rapport avant envoi.";
       }
     }else{
       btn.classList.remove("occena-step-complete-v304");
@@ -376,7 +376,7 @@
       btn.textContent=m.required
         ?"🔎 3. Contrôle OCCENA ("+m.checked+"/"+m.required+" fiches)"
         :"🔎 3. Contrôle OCCENA";
-      if(report)report.textContent="📚 4. Dossier résultats";
+      if(report)report.textContent="📚 4. Vérifier le rapport avant envoi";
       if(wf.closed&&wf.closureReady&&wf.sheetsReady){
         removeHighlight(report);
         highlight(btn);
