@@ -72,7 +72,7 @@
       // Explicit removal is represented by a tombstone, not by products: [].
       if(key.startsWith('prepared:')&&!local.config?.products?.length&&remote?.state?.config?.products?.length)continue;
       if(!remote){
-        if(base)continue; // absent remotely after a previous acknowledgement is not a new jury
+        if(base&&!out.restoredV391?.[key])continue; // a reviewed restore may repair an older client's deletion
         out.records[key]={state:clone(local),revision:1};continue;
       }
       let next;
