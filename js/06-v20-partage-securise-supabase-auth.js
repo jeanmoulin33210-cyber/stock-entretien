@@ -1179,7 +1179,7 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
   if(!guestTester&&window.JuryOwnerSyncV357?.checkReset&&await window.JuryOwnerSyncV357.checkReset())return;
   if(!cloudReady)return;
   const syncClientV357=cloudClient,syncSidV357=cloudCfg.sessionId,syncStateV357=state;
-  if(isEmptyLocalHomeV340()&&retiredOwnerSessionV353(cloudCfg.sessionId)){await disconnectCloud();return;}
+  if(!window.JuryAccountV385?.client&&isEmptyLocalHomeV340()&&retiredOwnerSessionV353(cloudCfg.sessionId)){await disconnectCloud();return;}
   if(cloudAdminAccessBlockedV339)return;
   if(Date.now()<cloudRetryAfterV339){
     clearTimeout(cloudSyncTimer);
