@@ -333,6 +333,7 @@
     ids.forEach(function(id,index){
       var button=document.getElementById(id);if(!button)return;
       var label=button.textContent.replace(/^\d+\.\s*/,"").replace(/\b[1-8]\.\s*/,"");
+      if(id==="simpleResultsPdfBtn")label="📚 Dossier résultats";
       var text=(index+1)+". "+label;if(button.textContent!==text)button.textContent=text;
       if(box.children[index]!==button)box.insertBefore(button,box.children[index]||null);
     });
