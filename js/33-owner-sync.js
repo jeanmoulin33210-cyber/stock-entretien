@@ -74,7 +74,21 @@
     for(const key of Object.keys(out.records))if(out.removed[key]||(key.startsWith('prepared:')&&archived.has(id(out.records[key].state))))delete out.records[key];
     return out;
   }
-  const API={clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383};
+
+  // V388: Results uses a fresh catalogue, while preserving local-only work.
+  // An incomplete transport record must not hide an existing complete jury.
+  function resultsChoicesV388(catalog,locals=[]){
+    const rows=new Map(),removed=catalog?.removed||{};
+    const valid=r=>!!r?.state?.config?.products?.length&&!r.state.config._archive?.archivedAt&&!retired(r.state);
+    for(const r of locals)if(valid(r)&&!removed['prepared:'+r.id])rows.set(String(r.id),clone(r));
+    for(const [key,entry]of Object.entries(catalog?.records||{})){
+      if(!key.startsWith('prepared:')||removed[key])continue;
+      const rid=key.slice(9),r={id:rid,name:entry.state?.config?.lotName||'Jury',state:entry.state};
+      if(valid(r))rows.set(rid,clone(r));
+    }
+    return [...rows.values()];
+  }
+  const API={clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383,resultsChoicesV388};
   if(typeof module==='object'&&module.exports){module.exports=API;return;}
   root.JuryOwnerSyncV357=API;
   let hub=null,descriptor=null,busy=false,applying=false,retryAt=0;
@@ -384,6 +398,32 @@
       localStorage.setItem(key,JSON.stringify(acknowledged));
       status('Compte connecté · dossier partagé chargé');
     }finally{busy=false;}
+  };
+
+  API.readResultsChoices=async function(){
+    if(guestTester||cloudRole!=='admin')throw new Error('Accès administrateur requis.');
+    const local=loadPreparedJurys().slice();
+    if(state?.config?.products?.length&&!state.config._archive?.archivedAt&&id(state)&&!local.some(r=>String(r.id)===id(state))){
+      local.unshift({id:id(state),name:state.config.lotName,state:snapshot(state),current:true});
+    }
+    const c=await client();
+    if(!c)return resultsChoicesV388(null,local);
+    const result=await c.from('test_culinaire_sessions').select('config').eq('session_id',descriptor.sessionId).maybeSingle();
+    if(result.error||!result.data?.config?._ownerCatalogV357?.records)throw new Error('La liste partagée des résultats ne peut pas être vérifiée.');
+    const catalog=clone(result.data.config._ownerCatalogV357);
+    // Recover incomplete catalogue entries only from their explicitly linked,
+    // authenticated jury session, never from a guessed lot name.
+    for(const [key,entry]of Object.entries(catalog.records)){
+      if(!key.startsWith('prepared:')||catalog.removed?.[key]||entry.state?.config?.products?.length)continue;
+      const cfg=entry.state?.config||{},sid=String(cfg._shareSessionId||cfg.juryLaunch?.sessionId||'');
+      if(!sid||sid===descriptor.sessionId||(catalog.resetSessionIds||[]).includes(sid))continue;
+      try{
+        const live=await c.from('test_culinaire_sessions').select('config').eq('session_id',sid).maybeSingle();
+        if(live.error||!live.data?.config?.products?.length||String(live.data.config._preparedId||'')!==key.slice(9))continue;
+        entry.state={...clone(entry.state),config:clone(live.data.config)};
+      }catch(e){console.warn('Résultat lié non disponible',e);}
+    }
+    return resultsChoicesV388(catalog,local);
   };
   API.pauseAccount=async function(){hub=null;};
   API.run=tick;
