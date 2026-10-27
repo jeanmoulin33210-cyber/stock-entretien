@@ -43,3 +43,6 @@ jobs:
 
       - name: Automatic OCCENA layout and draft preservation
         run: node tests/occena-adaptive.test.cjs
+
+      - name: Product sheet lists never revive deleted lots
+        run: node tests/product-sheet-active.test.cjs

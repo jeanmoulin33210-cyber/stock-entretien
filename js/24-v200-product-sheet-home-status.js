@@ -1,3 +1,4 @@
+/* V405: active lists never restore QR backups; honor deletions and reset sessions. */
 /* v269 : compteurs fiches actifs + remise à 0 du badge quand le lot est entièrement terminé */
 (function(){
   function normV256(v){
@@ -125,6 +126,20 @@
 
     function activeState(st){
       var cfg=st&&st.config;
+      if(!cfg||cfg._emptyAfterReset)return false;
+      var name=normV256(cfg.lotName);
+      if(name==='moulik'||(/\blot\s*98\b/.test(name)&&/\blop\b/.test(name)))return false;
+      try{
+        var catalog=state&&state.config&&state.config._ownerCatalogV357||{};
+        var removed=JSON.parse(localStorage.getItem('jm_tc_owner_removed_v357')||'{}');
+        var rid=String(cfg._preparedId||cfg._juryInstanceId||cfg.juryInstanceId||'');
+        var key='prepared:'+rid;
+        var stamp=String((removed||{})[key]||'');
+        var restored=String((catalog.restoredV391||{})[key]||'');
+        if((catalog.removed||{})[key]||(stamp&&(!restored||stamp>restored)))return false;
+        var sid=String(cfg._shareSessionId||cfg.juryLaunch&&cfg.juryLaunch.sessionId||'');
+        if(sid&&(catalog.resetSessionIds||[]).indexOf(sid)!==-1)return false;
+      }catch(e){}
       try{
         var archived=typeof loadArchives==='function'?loadArchives():[];
         var finalized=archived.some(function(rec){
@@ -182,27 +197,8 @@
       });
     });
 
-    /* 3) Secours très ciblé : la sauvegarde créée juste avant une réparation QR.
-       On ne l'utilise que si aucun jury actif normal n'est visible. */
-    if(!candidates.length && !(state&&state.config&&state.config._emptyAfterReset)){
-      try{
-        var qrBackup=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
-        if(activeState(qrBackup&&qrBackup.state)){
-          addCandidate(qrBackup.state,{
-            id:'__qr_backup_v251__',
-            current:false,
-            source:'qrBackup',
-            name:qrBackup.state.config.lotName||'Jury sauvegardé'
-          });
-        }
-      }catch(e){}
-    }
-
-    /* Un ancien marqueur "lots remis à zéro" ne doit plus masquer un jury
-       effectivement retrouvé ci-dessus. */
-    if(candidates.length){
-      try{ localStorage.removeItem('jm_tc_lots_clean_mode_v207'); }catch(e){}
-    }
+    /* V405: backups are recovery sources, never active juries.
+       Opening a home list must not revive a deleted lot or clear reset markers. */
 
     // Show one preparation stage per lot; never delete the other stored copy.
     var groupedV375=new Map();
@@ -320,18 +316,6 @@
     list.querySelectorAll('[data-product-lot-v200]').forEach(function(btn){
       btn.onclick=function(){
         var row=rows.find(function(r){return String(r.id)===String(btn.dataset.productLotV200);});
-        if(row && row.source==='qrBackup'){
-          try{
-            var b=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
-            if(b&&b.state){
-              state=deepClone(b.state);
-              if(typeof upsertPreparedJury==='function')upsertPreparedJury(state);
-              localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-              row.current=true;
-              row.id=String(state.config&&state.config._preparedId||row.id);
-            }
-          }catch(e){}
-        }
         if(row && typeof openProductLotV174==='function'){row.readOnly=mode==='done';openProductLotV174(row);}
       };
     });
@@ -351,18 +335,6 @@
     /* V256 — s'il ne reste qu'une seule fiche, aller directement dessus. */
     if(missingCount===1){
       var row=rows.find(function(r){ return Number(r.sheetMissing||0)>0; })||rows[0];
-      if(row && row.source==='qrBackup'){
-        try{
-          var b=JSON.parse(localStorage.getItem('jm_tc_qr_repair_backup_v251')||'null');
-          if(b&&b.state){
-            state=deepClone(b.state);
-            if(typeof upsertPreparedJury==='function')upsertPreparedJury(state);
-            localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
-            row.current=true;
-            row.id=String(state.config&&state.config._preparedId||row.id);
-          }
-        }catch(e){}
-      }
       if(row && typeof openProductLotV174==='function'){
         openProductLotV174(row);
         return;
@@ -417,3 +389,4 @@
   setTimeout(function(){bindButtons();renderBadges();},400);
   setTimeout(function(){bindButtons();renderBadges();},1700);
 })();
+
