@@ -7094,10 +7094,11 @@ function normalizeClosureMembers(){
   const old=new Map((c.members||[]).map(x=>[Number(x.testerNo),x]));
   c.members=Array.from({length:count},(_,i)=>{
     const n=i+1,prev=old.get(n)||{};
+    const signed=window.testerSignaturesV393?.(state).find(x=>Number(x.testerNo)===n);
     return{
       testerNo:n,
       name:state.testers?.[n]?.name||state.config.testerNames?.[i]||`Testeur ${n}`,
-      role:prev.role||'',
+      role:prev.role||[signed?.function,signed?.establishment].filter(Boolean).join(' — '),
       present:prev.present!==false
     };
   });
@@ -9184,9 +9185,10 @@ function appendClosurePdfV284(doc,st){
   if(testerSignatures.length){
     doc.addPage();let sy=22;doc.setFontSize(14);doc.text('Signatures des testeurs',14,sy);sy+=12;
     for(const signature of testerSignatures){
-      if(sy+48>280){doc.addPage();sy=22;}
+      if(sy+65>280){doc.addPage();sy=22;}
       doc.setFontSize(10);doc.text(String(signature.name||'Testeur '+signature.testerNo),14,sy);
-      doc.setFontSize(8);doc.text('Signé le '+new Date(signature.signedAt).toLocaleString('fr-FR'),14,sy+6);
+      doc.setFontSize(8);const profile=doc.splitTextToSize([signature.function,signature.establishment].filter(Boolean).join(' — '),180);if(profile.length&&profile[0]){doc.text(profile,14,sy+6);sy+=profile.length*4;}
+      if(signature.signedAt)doc.text('Signé le '+new Date(signature.signedAt).toLocaleString('fr-FR'),14,sy+6);
       doc.addImage(signature.image,'PNG',14,sy+10,80,29);sy+=48;
     }
   }

@@ -34,3 +34,6 @@ jobs:
 
       - name: Reception temperature thresholds, refusals and traceability
         run: node tests/reception-temperature.test.cjs
+
+      - name: Single tester signature and profile preservation
+        run: node tests/tester-profile-signature.test.cjs

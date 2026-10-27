@@ -335,7 +335,10 @@
     var members=Array.isArray(c.members)&&c.members.length?c.members:Array.from({length:Number(st&&st.config&&st.config.testerCount||0)},function(_,i){
       return {testerNo:i+1,name:st.testers&&st.testers[i+1]?st.testers[i+1].name:("Testeur "+(i+1)),role:"",present:true,signature:""};
     });
+    var signatures=window.testerSignaturesV393?window.testerSignaturesV393(st):[];
     var body=members.map(function(m,i){
+      var signed=signatures.find(function(s){return Number(s.testerNo)===Number(m.testerNo||i+1);});
+      m=Object.assign({},m,{signature:signed?signed.image:m.signature,role:m.role||(signed?[signed.function,signed.establishment].filter(Boolean).join(" — "):"")});
       var sig=m.signature?"<img class='member-sign-img' src='"+m.signature+"' alt='Signature'>":"<div class='member-sign-blank'></div>";
       return "<tr><td>"+(i+1)+"</td><td><strong>"+esc(m.name||("Testeur "+(i+1)))+"</strong></td><td>"+esc(m.role||"—")+"</td><td>"+(m.present===false?"Absent":"Présent")+"</td><td class='member-sign-cell'>"+sig+"</td></tr>";
     }).join("");
@@ -514,33 +517,11 @@
   }
 
   function addMemberSignatures(){
-    var box=document.getElementById("closureMembers");
-    if(!box)return;
-    var c=state&&state.config&&state.config.closure||{};
-    var members=Array.isArray(c.members)?c.members:[];
-    if(!document.getElementById("memberSignatureStyleV274")){
-      var style=document.createElement("style");
-      style.id="memberSignatureStyleV274";
-      style.textContent=".closure-member-sign-note-v274{margin:8px 0 12px;padding:9px 11px;border-radius:10px;background:#eef7fb;color:#315b71;font-size:10px}.closure-member-v274{grid-template-columns:auto minmax(120px,1fr) minmax(150px,1fr)!important;align-items:start!important}.member-signature-wrap-v274{grid-column:1/-1;margin-top:7px;padding-top:7px;border-top:1px dashed #d6e2e9}.member-signature-wrap-v274 label{display:block;font-size:9px;font-weight:800;color:#526c7c;margin-bottom:5px}.member-signature-pad-v274{width:100%;height:85px;display:block;border:1px solid #ccd9e1;border-radius:10px;background:#fff;touch-action:none}";
-      document.head.appendChild(style);
-    }
-    if(!box.previousElementSibling||!box.previousElementSibling.classList.contains("closure-member-sign-note-v274")){
-      var note=document.createElement("div");
-      note.className="closure-member-sign-note-v274";
-      note.textContent="Émargement : chaque testeur présent peut signer ici. Les signatures seront reprises automatiquement à la fin du dossier résultats.";
-      box.parentNode.insertBefore(note,box);
-    }
-    Array.from(box.querySelectorAll(".closure-member")).forEach(function(row,i){
-      row.classList.add("closure-member-v274");
-      if(row.querySelector(".member-signature-wrap-v274"))return;
-      var wrap=document.createElement("div");
-      wrap.className="member-signature-wrap-v274";
-      wrap.innerHTML="<label>Signature du testeur</label><canvas id='memberSignatureV274_"+i+"' class='signature-pad member-signature-pad-v274'></canvas>";
-      row.appendChild(wrap);
-      if(typeof setupSignatureCanvas==="function"){
-        setupSignatureCanvas("memberSignatureV274_"+i,(members[i]&&members[i].signature)||"");
-      }
-    });
+    var box=document.getElementById("closureMembers");if(!box)return;
+    document.querySelectorAll(".closure-member-sign-note-v274,.member-signature-wrap-v274").forEach(function(el){el.remove();});
+    var note=document.createElement("div");note.className="closure-member-sign-note-v274";
+    note.textContent="Les testeurs signent sur leur téléphone à la fin du test. Leur signature est reprise ci-dessous ; aucune seconde signature n’est nécessaire ici.";
+    box.parentNode.insertBefore(note,box);
   }
 
   var rawRenderClosure=typeof renderClosure==="function"?renderClosure:null;
