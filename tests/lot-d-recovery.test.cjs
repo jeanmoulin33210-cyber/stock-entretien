@@ -16,7 +16,7 @@ async function restoreCase(mode){
  vm.createContext(ctx);vm.runInContext(source.slice(source.indexOf('  API.restoreLotDBackup='),source.indexOf('  API.pauseAccount=')),ctx);
  if(mode==='ok')await ctx.API.restoreLotDBackup(d);else await assert.rejects(()=>ctx.API.restoreLotDBackup(d));
  assert.equal(ctx.busy,false);
- if(mode==='ok'){assert.equal(updates,1);assert.equal(backups,1);assert.equal(saves,1);assert.deepEqual(storedConfig._ownerCatalogV357.records['prepared:e'],e);assert.deepEqual(storedConfig._ownerCatalogV357.records['prepared:f'],f);assert.ok(!storedConfig._ownerCatalogV357.removed['prepared:d']);assert.ok(storedConfig._ownerCatalogV357.removed['prepared:other']);assert.deepEqual(storedConfig._ownerCatalogV357.records['prepared:d'].state.testers,d.testers);}
+ if(mode==='ok'){assert.equal(updates,1);assert.equal(backups,1);assert.ok(storedConfig._ownerCatalogV357.restoredV391['prepared:d']);const nextDevice=core.reconcile(storedConfig._ownerCatalogV357,{}, {},{'prepared:d':'2026-10-27T09:00:00Z'});assert.ok(nextDevice.records['prepared:d']);assert.deepEqual(nextDevice.records['prepared:d'].state.testers,d.testers);assert.equal(saves,1);assert.deepEqual(storedConfig._ownerCatalogV357.records['prepared:e'],e);assert.deepEqual(storedConfig._ownerCatalogV357.records['prepared:f'],f);assert.ok(!storedConfig._ownerCatalogV357.removed['prepared:d']);assert.ok(storedConfig._ownerCatalogV357.removed['prepared:other']);assert.deepEqual(storedConfig._ownerCatalogV357.records['prepared:d'].state.testers,d.testers);}
  else assert.equal(saves,0);
 }
 async function scanCase(){
