@@ -408,6 +408,8 @@
   function bind(){
     var steps=document.querySelector(".simple-results-action-buttons");
     if(steps&&!steps.__orderedV402){steps.__orderedV402=true;new MutationObserver(orderResultsStepsV402).observe(steps,{childList:true,subtree:true,characterData:true});}
+    var email=document.getElementById("simpleResultsEmailBtn");
+    if(email)email.onclick=function(){return emailCurrentReport();};
     ensureStyle();
     ensureButton();
     ensureJuryButtonV309();

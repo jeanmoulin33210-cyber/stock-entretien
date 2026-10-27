@@ -9209,7 +9209,7 @@ async function buildReportPdfBlob(st=state){
   const JsPDF=window.jspdf?.jsPDF;
   if(!JsPDF)throw new Error('Le module PDF n’est pas chargé. Vérifiez la connexion Internet puis réessayez.');
 
-  const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const doc=new JsPDF({orientation:'portrait',unit:'mm',format:'a4',compress:true,putOnlyUsedFonts:true});
   const products=st.config?.products||[];
   const testerCount=Number(st.config?.testerCount||0);
   const maxPerProduct=testerCount*65;
@@ -9369,83 +9369,49 @@ async function buildReportPdfBlob(st=state){
 async function emailCurrentReport(){
   if(state.config?._archive?.finalLocked){alert('Ce jury est archivé et verrouillé.');return;}
   if(!ensureProductSheetsComplete('envoyer le rapport final'))return;
-
+  if(document.getElementById('finalReportDialogV407'))return;
   const btn=$('#simpleResultsEmailBtn');
   const old=btn?.textContent||'📧 Envoyer le rapport final';
-
-  /* Ouvrir une fenêtre immédiatement pendant le clic utilisateur pour éviter
-     que Chrome bloque Gmail après la génération asynchrone du PDF. */
-  let gmailWindow=null;
+  const modal=document.createElement('div');
+  modal.id='finalReportDialogV407';
+  modal.setAttribute('role','dialog');modal.setAttribute('aria-modal','true');modal.setAttribute('aria-labelledby','finalReportTitleV407');
+  modal.style.cssText='position:fixed;inset:0;z-index:20000;background:rgba(15,40,55,.55);display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box';
+  modal.innerHTML='<section style="background:white;color:#193d50;border-radius:20px;padding:24px;width:100%;max-width:520px;max-height:85vh;overflow:auto;box-sizing:border-box"><h2 id="finalReportTitleV407">Préparer le rapport final</h2><p id="finalReportStatusV407" role="status" aria-live="polite">Création du PDF en cours…</p><div id="finalReportActionsV407" hidden><a id="finalReportDownloadV407" class="btn btn-primary" style="display:block;margin:14px 0">1. Télécharger le PDF</a><a id="finalReportMailV407" class="btn btn-secondary" target="_blank" rel="noopener" style="display:block;margin:14px 0">2. Ouvrir le mail dans Gmail</a><p>Joignez le PDF téléchargé à votre message avant de l’envoyer. Revenez ensuite dans l’application pour confirmer l’envoi et archiver le jury.</p></div><button id="finalReportCloseV407" type="button" class="btn btn-secondary">Fermer</button></section>';
+  document.body.appendChild(modal);
+  const status=document.getElementById('finalReportStatusV407');
+  let fileUrl=null;
+  const close=document.getElementById('finalReportCloseV407');
+  close.onclick=()=>{modal.remove();if(fileUrl)URL.revokeObjectURL(fileUrl);btn?.focus();};
+  close.focus();
   try{
-    gmailWindow=window.open('about:blank','_blank');
-  }catch(e){}
-
-  try{
-    if(btn){
-      btn.disabled=true;
-      btn.textContent='⏳ Création du rapport final…';
-    }
-
+    if(btn){btn.disabled=true;btn.textContent='⏳ Création du rapport final…';}
+    // Let the progress message paint before PDF generation starts.
+    await new Promise(resolve=>setTimeout(resolve,0));
     const {blob,filename}=await buildReportPdfBlob(state);
-
-    // V406: check the actual PDF bytes before download or mail preparation.
-    const attachmentLimit=5000000;
     if(!Number.isFinite(blob?.size)||blob.size<=0)throw new Error('Le fichier PDF généré est vide ou invalide.');
-    if(blob.size>attachmentLimit)throw new Error('Le rapport fait '+(blob.size/1000000).toFixed(2).replace('.',',')+' Mo. La pièce jointe ne doit pas dépasser 5 Mo. Aucun message n’a été préparé et le jury reste disponible.');
-
-    /* Télécharger le PDF afin qu'il puisse être joint dans Gmail. */
-    const fileUrl=URL.createObjectURL(blob);
-    const a=document.createElement('a');
-    a.href=fileUrl;
-    a.download=filename;
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    setTimeout(()=>URL.revokeObjectURL(fileUrl),10000);
-
+    if(blob.size>5000000)throw new Error('Le rapport fait '+(blob.size/1000000).toFixed(2).replace('.',',')+' Mo. La pièce jointe ne doit pas dépasser 5 Mo. Aucun message n’a été préparé.');
+    if(!modal.isConnected)return;
+    fileUrl=URL.createObjectURL(blob);
+    const download=document.getElementById('finalReportDownloadV407');
+    download.href=fileUrl;download.download=filename;
     const lot=state.config?.lotName||'Jury Marchés';
-    const subject=`Rapport final — ${lot}`;
-    const body=`Bonjour,
-
-Veuillez trouver le rapport final du jury « ${lot} ».
-
-Le fichier PDF « ${filename} » vient d’être téléchargé sur cet appareil. Merci de le joindre à ce message avant l’envoi.
-
-Cordialement`;
-
-    const gmailUrl='https://mail.google.com/mail/?view=cm&fs=1&su='+
-      encodeURIComponent(subject)+'&body='+encodeURIComponent(body);
-
-    if(gmailWindow && !gmailWindow.closed){
-      gmailWindow.location.href=gmailUrl;
-    }else{
-      gmailWindow=window.open(gmailUrl,'_blank');
-    }
-
-    if(!gmailWindow){
-      alert('Le rapport final a bien été téléchargé, mais Chrome a bloqué l’ouverture de Gmail. Autorisez les fenêtres pop-up puis réessayez.');
-      return;
-    }
-
-    if(btn){
-      btn.dataset.finalReportOpenedV322='1';
-      btn.classList.remove('final-report-ready-v322');
-      btn.classList.add('final-report-opened-v322');
-      btn.textContent='✓ Rapport préparé — Gmail ouvert';
-    }
-    state.config._finalReportPreparedAt=new Date().toISOString();
-    saveState();
-    const archiveBtn=$('#confirmReportSentArchiveBtn');if(archiveBtn)archiveBtn.hidden=false;
-    toast('Après l’envoi dans Gmail, revenez ici pour archiver le jury.');
+    const body=`Bonjour,\n\nVeuillez trouver le rapport final du jury « ${lot} ».\n\nMerci de joindre le fichier PDF « ${filename} » téléchargé depuis l’application avant l’envoi.\n\nCordialement`;
+    const mail=document.getElementById('finalReportMailV407');
+    mail.href='https://mail.google.com/mail/?view=cm&fs=1&su='+encodeURIComponent('Rapport final — '+lot)+'&body='+encodeURIComponent(body);
+    mail.onclick=()=>{
+      if(btn)btn.dataset.finalReportOpenedV322='1';
+      state.config._finalReportPreparedAt=new Date().toISOString();saveState();
+      const archiveBtn=$('#confirmReportSentArchiveBtn');if(archiveBtn)archiveBtn.hidden=false;
+      status.textContent='Mail ouvert. Ajoutez le PDF en pièce jointe avant de l’envoyer.';
+    };
+    status.textContent='PDF prêt · '+(blob.size/1000000).toFixed(2).replace('.',',')+' Mo sur 5 Mo maximum. Téléchargez-le, puis ouvrez le mail.';
+    document.getElementById('finalReportActionsV407').hidden=false;
   }catch(e){
-    try{if(gmailWindow&&!gmailWindow.closed)gmailWindow.close();}catch(_){}
     console.error(e);
-    alert(`Impossible de préparer le rapport final. ${e?.message||e}`);
+    status.textContent='Impossible de préparer le rapport final. '+(e?.message||e);
+    status.setAttribute('role','alert');
   }finally{
-    if(btn){
-      btn.disabled=false;
-      btn.textContent=old;
-    }
+    if(btn){btn.disabled=false;btn.textContent=old;}
   }
 }
 
@@ -10049,3 +10015,4 @@ window.renderJuryView=renderJuryView;
 
 // Keep dynamically rebuilt configuration controls in consultation mode.
 new MutationObserver(()=>{if(document.getElementById('configView')?.classList.contains('active'))applyPreparationLockV347();}).observe(document.getElementById('configView'),{childList:true,subtree:true});
+
