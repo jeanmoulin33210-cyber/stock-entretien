@@ -1734,6 +1734,12 @@ function isEmptyLocalHomeV340(){
     !cfg._preparedId && !cfg.juryLaunch?.openedAt;
 }
 async function autoConnectFromUrl(){
+  // Account activation already verified and connected the owner workspace.
+  // Do not run legacy post-archive jury cleanup over that live connection.
+  if(window.JuryAccountV385?.client&&cloudReady&&cloudRole==='admin'&&cloudCfg.sessionId){
+    setCloudStatus('online','● Partagé sécurisé');
+    return;
+  }
   const isolated=typeof isolateReturnedLot98V341==='function'&&isolateReturnedLot98V341();
   loadCloudCfg();
   if(isolated){
@@ -1743,7 +1749,7 @@ async function autoConnectFromUrl(){
     originalRenderHome();return;
   }
   // An empty post-archive workspace has no current jury to reconnect.
-  if(isEmptyLocalHomeV340()&&retiredOwnerSessionV353(cloudCfg.sessionId)&&!new URLSearchParams(location.search).has('session')){
+  if(!window.JuryAccountV385?.client&&isEmptyLocalHomeV340()&&retiredOwnerSessionV353(cloudCfg.sessionId)&&!new URLSearchParams(location.search).has('session')){
     cloudCfg.sessionId='';cloudCfg.accessCode='';
     saveCloudCfg();
     cloudUploadSucceededV339();
