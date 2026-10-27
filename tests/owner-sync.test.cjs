@@ -45,6 +45,7 @@ if(!localStorage.getItem(STORAGE_KEY))localStorage.setItem(STORAGE_KEY,JSON.stri
 let guestTester=null,cloudRole='admin',cloudReady=true,cloudCfg={sessionId:'F524',url:'https://mock',key:'public'};
 function loadPreparedJurys(){return JSON.parse(localStorage.getItem('prepared')||'[]')};
 function savePreparedJurys(rows){localStorage.setItem('prepared',JSON.stringify(rows))};
+function loadSampleLotHistory(){return []};function saveSampleLotHistory(){};
 function loadArchives(){return JSON.parse(localStorage.getItem('archives')||'[]')};
 function saveArchives(rows){localStorage.setItem('archives',JSON.stringify(rows))};
 function blankActiveStateV238(){return {config:{products:[],_emptyAfterReset:true},testers:{}}};
