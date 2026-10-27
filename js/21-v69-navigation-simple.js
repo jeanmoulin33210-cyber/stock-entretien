@@ -15,7 +15,7 @@ function loadReportNoteIntoForm(){
   if(!input)return;
   input.value=state.config?.reportNote||'';
   if(stateLabel){
-    stateLabel.textContent='Enregistré';
+    stateLabel.textContent=input.value.trim()?'Enregistré ✓':(input.id==='juryConclusionInput'?'À compléter':'Facultatif');
     stateLabel.classList.remove('changed');
   }
 }
@@ -24,7 +24,27 @@ function loadJuryConclusionIntoForm(){
   const stateLabel=$('#juryConclusionState');
   if(!input)return;
   input.value=state.config?.juryConclusion||'';
-  if(stateLabel){stateLabel.textContent='Enregistré';stateLabel.classList.remove('changed');}
+  if(stateLabel){stateLabel.textContent=input.value.trim()?'Enregistré ✓':(input.id==='juryConclusionInput'?'À compléter':'Facultatif');stateLabel.classList.remove('changed');}
+}
+// Save both report fields before returning to the numbered results menu.
+function saveJuryReportAndReturn(){
+  const conclusion=$('#juryConclusionInput');
+  const note=$('#reportNoteInput');
+  if(!conclusion||!note)return;
+  if(!state.config)state.config={};
+  const updatedAt=new Date().toISOString();
+  state.config.juryConclusion=String(conclusion.value||'').trim();
+  state.config.reportNote=String(note.value||'').trim();
+  state.config.juryConclusionUpdatedAt=updatedAt;
+  state.config.reportNoteUpdatedAt=updatedAt;
+  try{saveState();}
+  catch(error){
+    toast('Enregistrement impossible. Restez sur cette page et réessayez.');
+    return;
+  }
+  openSimplifiedResults();
+  window.scrollTo(0,0);
+  toast('Conclusion et observations enregistrées ✓');
 }
 function saveJuryConclusion(){
   const input=$('#juryConclusionInput');
@@ -46,7 +66,7 @@ function clearJuryConclusion(){
   state.config.juryConclusionUpdatedAt=new Date().toISOString();
   saveState();
   const stateLabel=$('#juryConclusionState');
-  if(stateLabel){stateLabel.textContent='Enregistré';stateLabel.classList.remove('changed');}
+  if(stateLabel){stateLabel.textContent=input.value.trim()?'Enregistré ✓':(input.id==='juryConclusionInput'?'À compléter':'Facultatif');stateLabel.classList.remove('changed');}
   toast('Conclusion supprimée du rapport');
 }
 
@@ -74,7 +94,7 @@ function clearReportNote(){
   saveState();
   const stateLabel=$('#reportNoteState');
   if(stateLabel){
-    stateLabel.textContent='Enregistré';
+    stateLabel.textContent=input.value.trim()?'Enregistré ✓':(input.id==='juryConclusionInput'?'À compléter':'Facultatif');
     stateLabel.classList.remove('changed');
   }
   toast('Note supprimée du rapport');
@@ -261,9 +281,9 @@ ensureSimpleResultsCompleteStyleV305();
   bind('simpleResultsArchiveBtn',()=>archiveCurrentJury());
   bind('simpleResultsMoreBtn',()=>toggleSimpleResultsDetails());
 
-  bind('saveReportNoteBtn',()=>saveReportNote());
+  bind('saveReportNoteBtn',()=>saveJuryReportAndReturn());
   bind('clearReportNoteBtn',()=>clearReportNote());
-  bind('saveJuryConclusionBtn',()=>saveJuryConclusion());
+  bind('saveJuryConclusionBtn',()=>saveJuryReportAndReturn());
   bind('clearJuryConclusionBtn',()=>clearJuryConclusion());
   bind('archiveMoreFiltersBtn',()=>toggleArchiveFilters());
 
