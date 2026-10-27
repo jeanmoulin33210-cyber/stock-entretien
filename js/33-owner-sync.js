@@ -299,8 +299,6 @@
         catalog.records=catalog.records||{};catalog.removed=catalog.removed||{};
         const stamp=new Date(Math.max(Date.now(),Date.parse(result.data.updated_at)+1)).toISOString();
         for(const key of keys){catalog.removed[key]=stamp;delete catalog.records[key];}
-        catalog.restoredV391={...(catalog.restoredV391||{}),[key]:stamp};
-        onProgress('Envoi du lot D et de ses notes dans le partage…');
         const write=await c.from('test_culinaire_sessions').update({config:{...config,_ownerCatalogV357:catalog},updated_at:stamp}).eq('session_id',descriptor.sessionId).eq('updated_at',result.data.updated_at).select('session_id').maybeSingle();
         if(write.error)throw new Error('Suppression non confirmée par le partage. La copie locale est conservée.');
         if(!write.data)continue;
@@ -379,15 +377,9 @@
   }
   const savePrepared=savePreparedJurys;
   savePreparedJurys=function(rows){
-    if(!applying){
-      const old=loadPreparedJurys(),ids=new Set(rows.map(r=>String(r.id))),removed=read('jm_tc_owner_removed_v357',{});
-      for(const r of old)if(!ids.has(String(r.id))){
-        const stamp=new Date().toISOString();
-        removed['prepared:'+r.id]=stamp;
-        if(id(r.state))removed['prepared:'+id(r.state)]=stamp;
-      }
-      localStorage.setItem('jm_tc_owner_removed_v357',JSON.stringify(removed));
-    }
+    // V392: a list rewrite/deduplication is not an explicit deletion.
+    // User deletions are published and acknowledged by publishPreparedRemoval;
+    // archive and reset flows have their own shared operations.
     const result=savePrepared(rows);
     if(!applying)setTimeout(()=>{retryAt=0;tick();},0);
     return result;
@@ -523,6 +515,8 @@
         catalog.records[key]={state:restored,revision:Number(catalog.records[key]?.revision||0)+1};
         delete catalog.removed?.[key];
         const stamp=new Date(Math.max(Date.now(),Date.parse(readBack.data.updated_at)+1)).toISOString();
+        catalog.restoredV391={...(catalog.restoredV391||{}),[key]:stamp};
+        onProgress('Envoi du lot D et de ses notes dans le partage…');
         const write=await c.from('test_culinaire_sessions').update({config:{...config,_ownerCatalogV357:catalog},updated_at:stamp}).eq('session_id',descriptor.sessionId).eq('updated_at',readBack.data.updated_at).select('session_id').maybeSingle();
         if(write.error)throw write.error;if(!write.data)continue;
         const removed=read('jm_tc_owner_removed_v357',{});delete removed[key];localStorage.setItem('jm_tc_owner_removed_v357',JSON.stringify(removed));
