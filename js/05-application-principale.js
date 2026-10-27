@@ -1599,10 +1599,12 @@ function blankReceptionRecordAfterSave(cfg=receptionConfig()){
 function receptionTemperatureOptions(selected=''){
   const values=[];
   for(let t=8;t>=-20;t--)values.push(t);
+  const current=Number(String(selected).replace(',','.'));
+  if(String(selected).trim()!==''&&Number.isFinite(current)&&!values.includes(current))values.push(current);
   return '<option value="">— Choisir —</option>'+
     values.map(t=>{
       const label=t>0?`+${t} °C`:`${t} °C`;
-      return `<option value="${t}" ${String(selected)===String(t)?'selected':''}>${label}</option>`;
+      return `<option value="${t}" ${String(selected).trim()!==''&&current===t?'selected':''}>${label}</option>`;
     }).join('');
 }
 
