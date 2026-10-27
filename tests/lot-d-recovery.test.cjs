@@ -9,7 +9,7 @@ const initial={records:{'prepared:e':e,'prepared:f':f},removed:{'prepared:d':'re
 const recovered=core.validateLotDRestoreV389(initial,d);assert.deepEqual(recovered.testers,d.testers);assert.equal(recovered.config._preparedId,'d');assert.ok(initial.removed['prepared:d']);
 async function restoreCase(mode){
  let updates=0,saves=0,backups=0,storedConfig;
- const data=new Map();const catalog=structuredClone(initial);if(mode==='existing')catalog.records['prepared:d']={state:d};
+ const data=new Map();const catalog=structuredClone(initial);if(mode==='existing'){catalog.records['prepared:d']={state:d};delete catalog.removed['prepared:d'];}
  const cfg={_ownerCatalogV357:catalog,other:'preserve'};
  const query={select(){return this},eq(){return this},update(value){updates++;storedConfig=value.config;return this},async maybeSingle(){if(storedConfig)return mode==='writeFail'?{error:Error('offline')}:{data:{session_id:'hub'}};return mode==='readFail'?{error:Error('offline')}:{data:{config:cfg,updated_at:'2026-10-27T10:00:00Z'}}}};
  const ctx={API:{},guestTester:null,cloudRole:'admin',busy:false,cloudBusy:false,isLotDRecoveryV389:core.isLotDRecoveryV389,validateLotDRestoreV389:core.validateLotDRestoreV389,id:core.id,clone:core.clone,client:async()=>({from:()=>query}),descriptor:{sessionId:'hub'},loadPreparedJurys:()=>[],verifyRecoveryValueV360:async()=>{backups++},state:{config:{lotName:'F'}},localStorage:{setItem:(k,v)=>data.set(k,v)},read:(k,v)=>data.has(k)?JSON.parse(data.get(k)):v,savePreparedJurys(){saves++},applying:false,status(){}};
@@ -26,3 +26,8 @@ async function scanCase(){
  const copies=await ctx.API.findLotDBackups();assert.ok(copies.some(r=>r.state.testers[1]?.answers?.p__22));assert.ok(!accessed.includes('account-secret'));
 }
 (async()=>{for(const mode of ['ok','existing','readFail','writeFail'])await restoreCase(mode);await scanCase();console.log('PASS: read-only backup search, credentials excluded, explicit D-only restore preserves E/F and notes, stale/reset copies blocked, failed writes do not alter local lots');})().catch(e=>{console.error(e);process.exitCode=1});
+
+const restoredCatalogue={records:{'prepared:d':{state:d,revision:2}},removed:{},restoredV391:{'prepared:d':'2026-10-27T14:00:00Z'}};
+assert.ok(core.reconcile(restoredCatalogue,{}, {},{'prepared:d':'2026-10-27T13:00:00Z'}).records['prepared:d']);
+assert.ok(!core.reconcile(restoredCatalogue,{}, {},{'prepared:d':'2026-10-27T15:00:00Z'}).records['prepared:d']);
+assert.ok(core.reconcile({records:{},removed:{'prepared:d':'2026-10-27T13:00:00Z'},restoredV391:restoredCatalogue.restoredV391},{'prepared:d':d},{'prepared:d':d},{}).records['prepared:d']);
