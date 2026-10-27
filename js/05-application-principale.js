@@ -7069,6 +7069,7 @@ function saveArchives(a){localStorage.setItem(ARCHIVE_STORAGE_KEY,JSON.stringify
 function ensureClosure(st=state){
   if(!st.config.closure)st.config.closure={};
   const c=st.config.closure;
+  if(!String(c.place||'').trim())c.place=String(st.config.receptionEstablishment||'').trim();
   if(!c.members||!Array.isArray(c.members)){
     c.members=Array.from({length:Number(st.config.testerCount||0)},(_,i)=>({
       testerNo:i+1,
