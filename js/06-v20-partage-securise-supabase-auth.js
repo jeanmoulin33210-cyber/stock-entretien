@@ -678,6 +678,13 @@ async function fetchCloudState(){
     const {data:session,error:e1}=await cloudClient.from('test_culinaire_sessions').select('session_id,config').eq('session_id',cloudCfg.sessionId).maybeSingle();
     if(e1)throw e1;if(!session)throw new Error('Session introuvable.');
     config=session.config;
+    // V388: the stable owner hub is a catalogue, not a tasting jury.
+    // Rebuilding it as a jury created empty entries and could replace the
+    // currently selected lot when a second device signed in.
+    if(config?._ownerCatalogV357?.records&&window.JuryOwnerSyncV357?.loadAccount){
+      await window.JuryOwnerSyncV357.loadAccount();
+      return;
+    }
     rememberCloudAccessCodesV339(config);
     const {data,error:e2}=await cloudClient.from('test_culinaire_reponses').select('tester_no,product_id,sample_id,choices,remarks,updated_at').eq('session_id',cloudCfg.sessionId);
     if(e2)throw e2;answers=data||[]
