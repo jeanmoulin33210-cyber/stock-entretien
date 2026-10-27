@@ -7261,6 +7261,8 @@ async function saveClosure(){
   }
 
   if(ready){
+    renderAdmin();
+    window.scrollTo(0,0);
     toast('Fiche de clôture complète et enregistrée ✓');
   }else{
     const missing=closureMissingFieldsFrom(c);

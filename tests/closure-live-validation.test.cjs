@@ -12,10 +12,10 @@ fields.closureChair.value='Cédric Charlot';state.config.closure.chair=fields.cl
 console.log('PASS chair validation follows live input, accepts names, catches blank values and distinguishes unsaved edits from saved closure');
 async function checkSave(){
   for(const id of ['closureChairRole','closureCoSigner','closureCoSignerRole','closureNotes'])fields[id]={value:''};
-  state.config.testerCount=0;state.testers={};ctx.signatureCanvasData=()=>'';ctx.toast=()=>{};let saved;
+  state.config.testerCount=0;state.testers={};ctx.signatureCanvasData=()=>'';ctx.toast=()=>{};let saved,returns=0;ctx.renderAdmin=()=>returns++;ctx.window.scrollTo=()=>{};
   ctx.saveState=()=>{saved=JSON.parse(JSON.stringify(state))};ctx.document.querySelector=()=>null;
   load('function ensureClosure(','function closureHasUsefulData(');load('function captureClosureForm(','let closureAutosaveTimer=');load('async function saveClosure(','function signatureCanvasData(');
-  fields.closureChair.value='Marie Dupont';await ctx.saveClosure();assert.equal(saved.config.closure.chair,'Marie Dupont');assert.equal(fields.closureStatusTitle.textContent,'Fiche prête ✓');assert.equal(fields.closureChair.classes.has('closure-required-missing'),false);
+  fields.closureChair.value='Marie Dupont';await ctx.saveClosure();assert.equal(saved.config.closure.chair,'Marie Dupont');assert.equal(returns,1);assert.equal(fields.closureStatusTitle.textContent,'Fiche prête ✓');assert.equal(fields.closureChair.classes.has('closure-required-missing'),false);
   console.log('PASS real save handler stores the entered chair name and validates the complete closure');
 }
 checkSave().catch(e=>{console.error(e);process.exitCode=1});
