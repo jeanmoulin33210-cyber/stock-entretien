@@ -2517,6 +2517,7 @@ function renderReceptionForm(){
     const d=document.querySelector(`[data-rec-decision="${i}"]`);if(d)d.value=line.decision||'acceptation';
   });
 
+  window.ReceptionTemperatureV395?.render(cfg,receptionDraft,receptionIsReadOnly());
   setupSignatureCanvas('receptionSignature',receptionDraft.driverSignature||'');
   renderReceptionSavedList();
   lockSavedReceptionForm();
@@ -2542,7 +2543,8 @@ function captureReceptionForm(){
     dlc:document.querySelector(`[data-rec-dlc="${i}"]`)?.value||'',
     packaging:document.querySelector(`[data-rec-packaging="${i}"]`)?.value||'',
     decision:document.querySelector(`[data-rec-decision="${i}"]`)?.value||'',
-    observations:document.querySelector(`[data-rec-observations="${i}"]`)?.value.trim()||''
+    observations:document.querySelector(`[data-rec-observations="${i}"]`)?.value.trim()||'',
+    ...(window.ReceptionTemperatureV395?.capture(i)||{})
   }));
   receptionDraft.driverSignature=signatureCanvasData('receptionSignature');
   return receptionDraft;
@@ -2559,6 +2561,10 @@ async function saveReceptionForm(){
   }
   rec.lines=receptionPendingLinesV345(cfg,rec);
   if(!rec.lines.some(x=>x.received!==false)){alert('Cochez au moins un produit reçu restant à livrer.');return}
+
+  if(!window.ReceptionTemperatureV395){alert('Le contrôle des températures n’est pas chargé. Actualisez la page avant de valider la réception.');return;}
+  const temperatureError=window.ReceptionTemperatureV395.validate(rec,cfg);
+  if(temperatureError){alert('Impossible d’accepter le produit '+(rec.lines[temperatureError.index]?.productName||'')+' :\n\n'+temperatureError.message);document.querySelector(`[data-rec-temperature-category="${temperatureError.index}"]`)?.focus();return;}
 
   // V210 : une réception ne peut plus être validée sans DLC / DDM
   // pour chacun des produits réellement reçus.
@@ -2687,7 +2693,7 @@ function receptionPrintableHtml(){
 function savedReceptionPrintableHtml(){
   const r=receptionList(receptionConfig())[receptionEditingIndex];
   const e=escapeHtml;
-  const rows=(r.lines||[]).map(x=>`<tr><td>${e(x.productName)}</td><td>${x.received===false?'Non':'Oui'}</td><td>${e(x.productTemp)}</td><td>${e(x.interiorTemp)}</td><td>${e(x.dlc)}</td><td>${e(x.packaging)}</td><td>${e(x.decision)}</td><td>${e(x.observations)}</td></tr>`).join('');
+  const rows=(r.lines||[]).map(x=>`<tr><td>${e(x.productName)}</td><td>${x.received===false?'Non':'Oui'}</td><td>${e(x.productTemp)}</td><td>${e(x.interiorTemp)}</td><td>${e(x.dlc)}</td><td>${e(x.packaging)}</td><td>${e(x.decision)}</td><td>${e([x.observations,window.ReceptionTemperatureV395?.notes(x)].filter(Boolean).join(' · '))}</td></tr>`).join('');
   const signature=/^data:image\/(png|jpeg|webp);base64,[a-z0-9+/=]+$/i.test(r.driverSignature||'')?`<img alt="Signature du livreur enregistrée" style="max-width:300px;max-height:130px" src="${e(r.driverSignature)}">`:'Signature non disponible';
   return `<!doctype html><html lang="fr"><meta charset="utf-8"><title>Réception enregistrée</title><style>@page{size:A4 landscape;margin:12mm}body{font:12px Arial;color:#172d3e}table{border-collapse:collapse;width:100%;font-size:10px}th,td{border:1px solid #aaa;padding:6px;text-align:left}tr{break-inside:avoid}h1{font-size:21px}.signature{break-inside:avoid}</style><h1>Réception enregistrée — ${e(r.supplier)}</h1><p>${e(receptionConfig().lotName)} · ${e(r.establishment)}</p><p>Date : ${e(r.date)} · Heure : ${e(r.time)} · T° véhicule : ${e(r.vehicleTemp)} °C</p><p>Livreur : ${e(r.driverName)} · Agent réceptionnaire : ${e(r.receiverName)}</p><table><thead><tr><th>Produit</th><th>Reçu</th><th>T° produit</th><th>T° intérieur</th><th>DLC / DDM</th><th>Emballage</th><th>Décision</th><th>Observations</th></tr></thead><tbody>${rows}</tbody></table><div class="signature"><h2>Signature du livreur</h2>${signature}<p>Validation : ${e(r.validatedAt||'')}</p></div></html>`;
 }
@@ -7978,7 +7984,7 @@ function reportReceptionAnnex(st){
         <td>${reportEsc(line.packaging==='non-conforme'?'NON CONFORME':'Conforme')}</td>
         <td>${line.decision==='refus'?'':'X'}</td>
         <td>${line.decision==='refus'?'X':''}</td>
-        <td>${reportEsc(line.observations||'')}</td>
+        <td>${reportEsc([line.observations,window.ReceptionTemperatureV395?.notes(line)].filter(Boolean).join(' · '))}</td>
       </tr>`).join('');
 
       return `<article class="reception-annex-card">
@@ -9328,6 +9334,7 @@ async function buildReportPdfBlob(st=state){
 
   // Annexes de réception signées
   appendReceptionAnnexPdf(doc,st);
+  window.ReceptionTemperatureV395?.appendPdf(doc,st);
 
   // Fiches d'évaluation produit
   appendProductSheetsPdf(doc,st);

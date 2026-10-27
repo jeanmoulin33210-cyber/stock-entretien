@@ -31,3 +31,6 @@ jobs:
 
       - name: Tester signature transport and jury isolation
         run: node tests/tester-signature.test.cjs
+
+      - name: Reception temperature thresholds, refusals and traceability
+        run: node tests/reception-temperature.test.cjs
