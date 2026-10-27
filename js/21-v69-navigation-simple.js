@@ -307,14 +307,19 @@ document.addEventListener('fullscreenchange',()=>{
 });
 
 /* V348 — choisir le lot avant de consulter ses résultats. */
-function openResultsLotChooserV348(){
+async function openResultsLotChooserV348(){
   // Opening a read-only chooser must not depend on a storage write.
   // In particular, a browser quota error must not block access to results.
-  const rows=loadPreparedJurys().filter(r=>r?.state?.config&&!r.state.config._archive?.archivedAt);
+  let rows=loadPreparedJurys().filter(r=>r?.state?.config?.products?.length&&!r.state.config._archive?.archivedAt);
   const currentId=String(state?.config?._preparedId||'');
   if(state?.config?.products?.length&&!state.config._archive?.archivedAt&&
      !rows.some(r=>String(r.id)===currentId)){
     rows.unshift({id:currentId,name:state.config.lotName,state:deepClone(state),current:true});
+  }
+  if(cloudReady&&window.JuryOwnerSyncV357?.readResultsChoices){
+    toast('Chargement des lots partagés…');
+    try{rows=await window.JuryOwnerSyncV357.readResultsChoices();}
+    catch(e){console.error('Résultats V388',e);toast('Liste partagée indisponible : copies locales affichées.');}
   }
   if(!rows.length){toast('Aucun résultat disponible. Consultez les archives pour les jurys archivés.');return;}
   let modal=document.getElementById('resultsLotModalV348');
@@ -339,7 +344,7 @@ function openResultsLotChooserV348(){
   }).join('');
   list.querySelectorAll('[data-results-lot]').forEach(btn=>btn.onclick=()=>{
     const rec=rows[Number(btn.dataset.resultsLot)];
-    if(String(rec.id)!==String(state?.config?._preparedId||'')){
+    if(String(rec.id)!==String(state?.config?._preparedId||'')||hashJson(rec.state)!==hashJson(state)){
       saveState();
       state=deepClone(rec.state);
       if(rec.id)state.config._preparedId=rec.id;
