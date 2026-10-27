@@ -7178,6 +7178,9 @@ function renderClosure(){
     row.innerHTML=`<input type="checkbox" data-cl-pres="${i}" ${m.present!==false?'checked':''}><div class="name">${escapeHtml(m.name)}</div><input type="text" data-cl-role="${i}" value="${escapeHtml(m.role||'')}" placeholder="Fonction / établissement">`;
     members.appendChild(row);
   });
+  let testerSignatures=document.getElementById('closureTesterSignaturesV393');
+  if(!testerSignatures){testerSignatures=document.createElement('div');testerSignatures.id='closureTesterSignaturesV393';members.after(testerSignatures);}
+  testerSignatures.innerHTML=window.testerSignaturesHtmlV393?window.testerSignaturesHtmlV393(state):'';
   renderClosureStatus(c);
   setupSignatureCanvas('chairSignature',c.chairSignature||'');
   setupSignatureCanvas('coSignature',c.coSignature||'');
@@ -8229,6 +8232,7 @@ function openJuryMinutes(st,sourceLabel='Jury'){
       <div class="observations">${observations}</div>
     </section>
 
+    ${window.testerSignaturesHtmlV393?window.testerSignaturesHtmlV393(st):''}
     <section class="signatures">
       <div class="sig"><strong>Responsable / président du jury</strong><span>${reportEsc(c.chair||'Nom non renseigné')}</span>${c.chairSignature?`<img src="${c.chairSignature}" alt="Signature du responsable">`:''}</div>
       <div class="sig"><strong>Second signataire</strong><span>${reportEsc(c.coSigner||'Nom non renseigné')}</span>${c.coSignature?`<img src="${c.coSignature}" alt="Signature du second signataire">`:''}</div>
@@ -8683,6 +8687,7 @@ function openJuryReport(st,sourceLabel='Jury en cours'){
       <tr><th>Membres présents</th><td colspan="3">${closureMembers.length?closureMembers.map(x=>`${reportEsc(x.name)}${x.role?` — ${reportEsc(x.role)}`:''}`).join('<br>'):'—'}</td></tr>
       <tr><th>Observations générales</th><td colspan="3">${closure.notes?reportEsc(closure.notes).replace(/\n/g,'<br>'):'Aucune observation générale.'}</td></tr>
     </tbody></table>
+    ${window.testerSignaturesHtmlV393?window.testerSignaturesHtmlV393(st):''}
     ${closure.chairSignature||closure.coSignature?`<div class="closure-report-signatures">
       <div><strong>Responsable du jury</strong>${closure.chairSignature?`<img src="${closure.chairSignature}" alt="Signature responsable">`:'<span>Signature non renseignée</span>'}</div>
       <div><strong>Second signataire</strong>${closure.coSignature?`<img src="${closure.coSignature}" alt="Signature second signataire">`:'<span>Signature non renseignée</span>'}</div>
@@ -9165,6 +9170,16 @@ function appendClosurePdfV284(doc,st){
     doc.text('Second signataire',108,y);
     try{if(c.chairSignature)doc.addImage(c.chairSignature,'PNG',14,y+3,70,24);}catch(e){}
     try{if(c.coSignature)doc.addImage(c.coSignature,'PNG',108,y+3,70,24);}catch(e){}
+  }
+  const testerSignatures=window.testerSignaturesV393?window.testerSignaturesV393(st):[];
+  if(testerSignatures.length){
+    doc.addPage();let sy=22;doc.setFontSize(14);doc.text('Signatures des testeurs',14,sy);sy+=12;
+    for(const signature of testerSignatures){
+      if(sy+48>280){doc.addPage();sy=22;}
+      doc.setFontSize(10);doc.text(String(signature.name||'Testeur '+signature.testerNo),14,sy);
+      doc.setFontSize(8);doc.text('Signé le '+new Date(signature.signedAt).toLocaleString('fr-FR'),14,sy+6);
+      doc.addImage(signature.image,'PNG',14,sy+10,80,29);sy+=48;
+    }
   }
 }
 
