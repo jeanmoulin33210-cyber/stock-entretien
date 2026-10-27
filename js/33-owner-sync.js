@@ -58,6 +58,9 @@
     for(const [key,local]of Object.entries(locals)){
       if(retired(local)||out.removed[key]||(key.startsWith('prepared:')&&emptyJuryPlaceholderV383(local)))continue;
       const remote=out.records[key];const base=bases[key];
+      // An empty transport snapshot is never a valid edit of a real jury.
+      // Explicit removal is represented by a tombstone, not by products: [].
+      if(key.startsWith('prepared:')&&!local.config?.products?.length&&remote?.state?.config?.products?.length)continue;
       if(!remote){
         if(base)continue; // absent remotely after a previous acknowledgement is not a new jury
         out.records[key]={state:clone(local),revision:1};continue;
@@ -88,7 +91,21 @@
     }
     return [...rows.values()];
   }
-  const API={clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383,resultsChoicesV388};
+
+  function isLotDRecoveryV389(cfg){
+    if(!cfg?._preparedId||!Array.isArray(cfg.products)||!cfg.products.length||cfg._archive?.archivedAt)return false;
+    const number=String(cfg.lotNumber||'').trim();
+    return /^0*4$/.test(number)||/^lot\\s*0*4(?:\\b|\\s*[—-])/i.test(String(cfg.lotName||'').trim());
+  }
+  function validateLotDRestoreV389(catalog,candidate){
+    if(!isLotDRecoveryV389(candidate?.config))throw new Error('Copie du lot D invalide.');
+    const sid=String(candidate.config._shareSessionId||candidate.config.juryLaunch?.sessionId||'');
+    if(sid&&(catalog.resetSessionIds||[]).includes(sid))throw new Error('Cette copie appartient à une ancienne remise à zéro. Choisissez une copie plus récente.');
+    const existing=catalog.records?.['prepared:'+id(candidate)]?.state;
+    if(existing?.config?.products?.length)throw new Error('Ce lot existe déjà dans le partage. Rouvrez Résultats pour le consulter.');
+    const st=snapshot(candidate);st.config._catalogCreatedV357=true;return st;
+  }
+  const API={clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383,resultsChoicesV388,isLotDRecoveryV389,validateLotDRestoreV389};
   if(typeof module==='object'&&module.exports){module.exports=API;return;}
   root.JuryOwnerSyncV357=API;
   let hub=null,descriptor=null,busy=false,applying=false,retryAt=0;
@@ -425,6 +442,74 @@
     }
     return resultsChoicesV388(catalog,local);
   };
+  // V389: inspect device recovery copies without changing any jury.
+  API.findLotDBackups=async function(){
+    if(guestTester||cloudRole!=='admin')throw new Error('Connexion administrateur requise.');
+    const found=new Map();
+    function scan(value,source,stamp='',depth=0){
+      if(!value||typeof value!=='object'||depth>18)return;
+      const cfg=value.config||((value.products&&value._preparedId)?value:null);
+      if(isLotDRecoveryV389(cfg)){
+        const st=value.config?snapshot(value):makeInitialState(clone(cfg));
+        const sig=JSON.stringify(canonical(st));
+        if(!found.has(sig))found.set(sig,{state:st,source,stamp:String(value.updatedAt||stamp||'')});
+      }
+      if(Array.isArray(value)){for(const item of value)scan(item,source,stamp,depth+1);return;}
+      const when=value.savedAt||value.createdAt||value.at||stamp;
+      for(const [key,item]of Object.entries(value)){
+        if(key==='security'||key==='testers'||key==='products'||key==='answers')continue;
+        if(item&&typeof item==='object')scan(item,source,when,depth+1);
+        else if((key==='value'||key==='items')&&typeof item==='string'){try{scan(JSON.parse(item),source,when,depth+1)}catch(e){}}
+      }
+    }
+    // Explicit allowlist: never inspect account, credential or auth storage.
+    for(let i=0;i<localStorage.length;i++){
+      const key=localStorage.key(i)||'';
+      if(!(/^(jm_tc_before_|jm_tc_owner_baseline_v357_|jm_tc_stable_owner_recovery_)/.test(key)||[STORAGE_KEY,PREPARED_JURY_STORAGE_KEY,ARCHIVE_STORAGE_KEY,typeof PREPARED_DEDUPE_BACKUP_V238!=='undefined'?PREPARED_DEDUPE_BACKUP_V238:''].includes(key)))continue;
+      try{scan(JSON.parse(localStorage.getItem(key)||'null'),'Copie conservée sur cet appareil');}catch(e){}
+    }
+    const db=await new Promise((resolve,reject)=>{
+      const req=indexedDB.open('jm_tc_recovery_v358',1);
+      req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains('copies'))req.result.createObjectStore('copies',{keyPath:'id'});};
+      req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+    });
+    try{
+      await new Promise((resolve,reject)=>{
+        const tx=db.transaction('copies','readonly'),req=tx.objectStore('copies').openCursor();
+        req.onsuccess=()=>{const cursor=req.result;if(!cursor)return;const rec=cursor.value;try{scan(JSON.parse(rec.value),'Copie de secours',rec.savedAt||'')}catch(e){}cursor.continue();};
+        tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error);
+      });
+    }finally{db.close();}
+    return [...found.values()].sort((a,b)=>b.stamp.localeCompare(a.stamp));
+  };
+  API.restoreLotDBackup=async function(candidate){
+    if(guestTester||cloudRole!=='admin'||!isLotDRecoveryV389(candidate?.config))throw new Error('Copie du lot D invalide.');
+    if(busy||cloudBusy)throw new Error('Synchronisation en cours. Réessayez dans quelques secondes.');
+    busy=true;
+    try{
+      const c=await client();if(!c)throw new Error('Connexion au partage nécessaire.');
+      const rid=id(candidate),key='prepared:'+rid;
+      for(let attempt=0;attempt<3;attempt++){
+        const readBack=await c.from('test_culinaire_sessions').select('config,updated_at').eq('session_id',descriptor.sessionId).maybeSingle();
+        if(readBack.error||!readBack.data?.config?._ownerCatalogV357||!readBack.data.updated_at)throw new Error('Partage non vérifiable. Rien n’a été remplacé.');
+        const config=readBack.data.config,catalog=clone(config._ownerCatalogV357);
+        const restored=validateLotDRestoreV389(catalog,candidate);
+        await verifyRecoveryValueV360('before-explicit-lot-d-restore',JSON.stringify({config,prepared:loadPreparedJurys(),state}));
+        catalog.records[key]={state:restored,revision:Number(catalog.records[key]?.revision||0)+1};
+        delete catalog.removed?.[key];
+        const stamp=new Date(Math.max(Date.now(),Date.parse(readBack.data.updated_at)+1)).toISOString();
+        const write=await c.from('test_culinaire_sessions').update({config:{...config,_ownerCatalogV357:catalog},updated_at:stamp}).eq('session_id',descriptor.sessionId).eq('updated_at',readBack.data.updated_at).select('session_id').maybeSingle();
+        if(write.error)throw write.error;if(!write.data)continue;
+        const removed=read('jm_tc_owner_removed_v357',{});delete removed[key];localStorage.setItem('jm_tc_owner_removed_v357',JSON.stringify(removed));
+        const baseKey='jm_tc_owner_baseline_v357_'+descriptor.sessionId,baseline=read(baseKey,{});baseline[key]=restored;localStorage.setItem(baseKey,JSON.stringify(baseline));
+        const rows=loadPreparedJurys().filter(r=>String(r.id)!==rid);rows.push({id:rid,name:restored.config.lotName,state:restored,savedAt:stamp});
+        applying=true;try{savePreparedJurys(rows);}finally{applying=false;}
+        status('Lot 4 — D rétabli dans le partage.');return;
+      }
+      throw new Error('Le partage a changé. Réessayez : les copies sont conservées.');
+    }finally{busy=false;}
+  };
+
   API.pauseAccount=async function(){hub=null;};
   API.run=tick;
   rememberHub();setTimeout(tick,1800);setInterval(tick,5000);
