@@ -1761,6 +1761,10 @@ bindAdminSyncButtonsV330();
 $('#connectCloudBtn').onclick=async()=>{try{await connectCloud({create:false})}catch(e){setCloudStatus('error','● Erreur');cloudMsg(e.message||String(e),'bad');serverSecurityStatus('Sécurité serveur non prête',e.message||String(e),false)}};
 $('#disconnectCloudBtn').onclick=disconnectCloud;
 $('#copyAdminLinkBtn').onclick=()=>{if(!cloudReady)return alert('Connectez d’abord la session partagée.');if(cloudRole!=='admin')return alert('Lien administrateur réservé à l’administrateur.');copyText(shareUrl(null),'Lien administrateur copié')};
+/* V387: resolve the QR's tester role synchronously, before the later
+ * administrator guards initialize. Network/account restore still waits for
+ * DOMContentLoaded, but a tester must never start an administrator gate timer. */
+loadCloudCfg();
 window.addEventListener('DOMContentLoaded',async()=>{
   try{
     if(window.JuryAccountV385&&await window.JuryAccountV385.restore())return;
