@@ -56,6 +56,7 @@
   function setMode(next){
     mode=next;pending=false;
     el('accountConfirmWrapV385').hidden=next!=='setup';
+    el('accountPinWrapV385').hidden=next!=='setup';
     el('accountSubmitV385').textContent=next==='setup'?(API.client?'Mettre à jour mon mot de passe':'Créer mon accès à cet espace'):'Se connecter';
     el('accountPasswordV385').autocomplete=next==='setup'?'new-password':'current-password';
     el('accountIntroV385').textContent=next==='setup'
@@ -76,6 +77,7 @@
     if(working)return;
     el('accountModalV385').classList.remove('show');
     el('accountPasswordV385').value='';el('accountConfirmV385').value='';
+    el('accountPinV385').value='';
   }
   async function verifiedConfig(c,value){
     validWorkspace(value,DEFAULT_SUPABASE_URL);
@@ -167,15 +169,15 @@
       if(mode==='setup'&&!pending){
         if(password.length<12)throw new Error('Choisissez un mot de passe d’au moins 12 caractères.');
         if(password!==el('accountConfirmV385').value)throw new Error('Les deux mots de passe sont différents.');
+        const pin=el('accountPinV385').value.trim();
+        if(!pin||!(await verifyPin(pin)))throw new Error('Saisissez votre PIN propriétaire actuel pour autoriser ce compte.');
+        el('accountPinV385').value='';
         const value=await setupValue();
         const encrypted=await seal(value,password);
         let result;
         if(API.client===c){
           const current=await c.auth.getUser();if(current.error)throw current.error;
           if(current.data?.user?.email?.toLowerCase()!==email.toLowerCase())throw new Error('Conservez l’adresse de votre compte pour modifier son mot de passe.');
-          const pin=prompt('Code PIN propriétaire pour confirmer le changement de mot de passe :');
-          if(pin===null)return;
-          if(!(await verifyPin(String(pin).trim())))throw new Error('Code PIN incorrect. Le mot de passe est conservé.');
           result=await c.auth.updateUser({password,data:{[FIELD]:encrypted}});
           if(result.error)throw result.error;
           await finish(c,password,remember);return;
@@ -252,7 +254,7 @@
     const button=document.createElement('button');button.type='button';button.id='ownerAccountBtnV385';button.className='btn btn-secondary btn-small';button.textContent='👤 Se connecter';button.onclick=()=>open();
     document.querySelector('header.topbar')?.insertBefore(button,el('homeBtn'));
     const box=document.createElement('div');box.className='modal-backdrop';box.id='accountModalV385';
-    box.innerHTML=`<section class="modal" role="dialog" aria-modal="true" aria-labelledby="accountTitleV385" style="max-width:560px;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 id="accountTitleV385">Mon espace propriétaire</h2><button type="button" class="btn btn-ghost btn-small" id="accountCloseV385" aria-label="Fermer">✕</button></div><p id="accountIntroV385"></p><div style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0"><button type="button" class="btn btn-secondary" id="accountLoginTabV385">Se connecter</button><button type="button" class="btn btn-ghost" id="accountSetupTabV385">Première activation</button></div><form id="accountFormV385"><div class="field"><label for="accountEmailV385">Adresse e-mail</label><input id="accountEmailV385" type="email" autocomplete="username" required autocapitalize="none" spellcheck="false"></div><div class="field"><label for="accountPasswordV385">Mot de passe</label><input id="accountPasswordV385" type="password" autocomplete="current-password" required></div><div class="field" id="accountConfirmWrapV385" hidden><label for="accountConfirmV385">Confirmer le mot de passe</label><input id="accountConfirmV385" type="password" autocomplete="new-password"></div><label style="display:flex;align-items:center;gap:10px;margin:18px 0"><input id="accountRememberV385" type="checkbox" checked style="width:20px;height:20px"> Rester connecté sur cet appareil</label><div id="accountConfirmationV385" hidden><p>Confirmez votre adresse dans votre messagerie, puis revenez terminer ici. Si le lien ne s’ouvre pas correctement, vous pouvez le copier ci-dessous.</p><div class="field"><label for="accountEmailProofV385">Code ou lien de confirmation reçu (facultatif)</label><input id="accountEmailProofV385" type="text" autocomplete="one-time-code" spellcheck="false"></div></div><p id="accountMessageV385" role="status" aria-live="polite" style="min-height:1.5em;line-height:1.5"></p><button class="btn btn-primary" id="accountSubmitV385" type="submit" style="width:100%">Se connecter</button></form><button id="accountSignoutV385" class="btn btn-ghost" type="button" hidden style="margin-top:16px">Se déconnecter de cet appareil</button><p style="font-size:13px;line-height:1.5;color:#607684">Le compte retrouve votre espace partagé. Le PIN reste demandé pour les actions protégées. En cas de mot de passe oublié, conservez un appareil déjà propriétaire pour rétablir l’accès.</p></section>`;
+    box.innerHTML=`<section class="modal" role="dialog" aria-modal="true" aria-labelledby="accountTitleV385" style="max-width:560px;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 id="accountTitleV385">Mon espace propriétaire</h2><button type="button" class="btn btn-ghost btn-small" id="accountCloseV385" aria-label="Fermer">✕</button></div><p id="accountIntroV385"></p><div style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0"><button type="button" class="btn btn-secondary" id="accountLoginTabV385">Se connecter</button><button type="button" class="btn btn-ghost" id="accountSetupTabV385">Première activation</button></div><form id="accountFormV385"><div class="field"><label for="accountEmailV385">Adresse e-mail</label><input id="accountEmailV385" type="email" autocomplete="username" required autocapitalize="none" spellcheck="false"></div><div class="field"><label for="accountPasswordV385">Mot de passe</label><input id="accountPasswordV385" type="password" autocomplete="current-password" required></div><div class="field" id="accountConfirmWrapV385" hidden><label for="accountConfirmV385">Confirmer le mot de passe</label><input id="accountConfirmV385" type="password" autocomplete="new-password"></div><div class="field" id="accountPinWrapV385" hidden><label for="accountPinV385">PIN propriétaire actuel</label><input id="accountPinV385" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></div><label style="display:flex;align-items:center;gap:10px;margin:18px 0"><input id="accountRememberV385" type="checkbox" checked style="width:20px;height:20px"> Rester connecté sur cet appareil</label><div id="accountConfirmationV385" hidden><p>Confirmez votre adresse dans votre messagerie, puis revenez terminer ici. Si le lien ne s’ouvre pas correctement, vous pouvez le copier ci-dessous.</p><div class="field"><label for="accountEmailProofV385">Code ou lien de confirmation reçu (facultatif)</label><input id="accountEmailProofV385" type="text" autocomplete="one-time-code" spellcheck="false"></div></div><p id="accountMessageV385" role="status" aria-live="polite" style="min-height:1.5em;line-height:1.5"></p><button class="btn btn-primary" id="accountSubmitV385" type="submit" style="width:100%">Se connecter</button></form><button id="accountSignoutV385" class="btn btn-ghost" type="button" hidden style="margin-top:16px">Se déconnecter de cet appareil</button><p style="font-size:13px;line-height:1.5;color:#607684">Le compte retrouve votre espace partagé. Le PIN reste demandé pour les actions protégées. En cas de mot de passe oublié, conservez un appareil déjà propriétaire pour rétablir l’accès.</p></section>`;
     document.body.appendChild(box);
     el('accountLoginTabV385').onclick=()=>setMode('login');el('accountSetupTabV385').onclick=()=>setMode('setup');
     el('accountCloseV385').onclick=close;el('accountFormV385').onsubmit=submit;el('accountSignoutV385').onclick=signout;
