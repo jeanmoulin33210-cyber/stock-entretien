@@ -1711,7 +1711,8 @@ async function forceReloadAdminStateV328(){
   }
 }
 
-async function disconnectCloud({keepOwnerSession=false}={}){
+// Automatic jury cleanup must preserve the owner account; only the explicit disconnect button signs out.
+async function disconnectCloud({keepOwnerSession=true}={}){
   if(window.JuryAccountV385?.client&&!keepOwnerSession){await window.JuryAccountV385.signout();return;}
   localStorage.removeItem('jm_tc_owner_connection_v353');
   localStorage.setItem('jm_tc_owner_disconnected_v353','1');
@@ -1766,7 +1767,7 @@ $('#cloudBtn').onclick=renderCloudPage;$('#cloudHomeBtn').onclick=renderHome;
 bindAdminSyncButtonsV330();
 /* V32 gère la création d'une nouvelle session avec un UUID neuf. */
 $('#connectCloudBtn').onclick=async()=>{try{await connectCloud({create:false})}catch(e){setCloudStatus('error','● Erreur');cloudMsg(e.message||String(e),'bad');serverSecurityStatus('Sécurité serveur non prête',e.message||String(e),false)}};
-$('#disconnectCloudBtn').onclick=disconnectCloud;
+$('#disconnectCloudBtn').onclick=()=>disconnectCloud({keepOwnerSession:false});
 $('#copyAdminLinkBtn').onclick=()=>{if(!cloudReady)return alert('Connectez d’abord la session partagée.');if(cloudRole!=='admin')return alert('Lien administrateur réservé à l’administrateur.');copyText(shareUrl(null),'Lien administrateur copié')};
 /* V387: resolve the QR's tester role synchronously, before the later
  * administrator guards initialize. Network/account restore still waits for
