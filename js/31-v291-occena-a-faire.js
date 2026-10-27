@@ -313,7 +313,10 @@
       email.disabled=!allReady;
       email.classList.remove("final-report-ready-v322","final-report-opened-v322","btn-primary","simple-results-next-btn");
 
-      if(opened&&allReady){
+      if(state.config._finalReportSentAt&&allReady){
+        email.classList.add("final-report-opened-v322");
+        email.textContent="✓ Rapport envoyé";
+      }else if(opened&&allReady){
         email.classList.add("final-report-opened-v322");
         email.textContent="✓ Rapport préparé — Gmail ouvert";
       }else if(allReady){
