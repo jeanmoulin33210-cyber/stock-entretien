@@ -377,10 +377,7 @@ async function openResultsLotChooserV348(){
     modal.classList.remove('show');
     openSimplifiedResults();
   });
-  let recovery=modal.querySelector('[data-recover-lot-d]');
-  if(!recovery){recovery=document.createElement('button');recovery.type='button';recovery.className='btn btn-secondary';recovery.setAttribute('data-recover-lot-d','');recovery.textContent='Retrouver le lot 4 — D';recovery.onclick=openLotDRecoveryV389;list.after(recovery);}
-  recovery.style.display='inline-flex';
-  recovery.textContent=rows.some(r=>window.JuryOwnerSyncV357?.isLotDRecoveryV389(r.state?.config))?'Vérifier le partage du lot 4 — D':'Retrouver le lot 4 — D';
+  modal.querySelector('[data-recover-lot-d]')?.remove();
   modal.classList.add('show');
   list.querySelector('button')?.focus();
 }
