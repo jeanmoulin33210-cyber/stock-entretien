@@ -327,6 +327,16 @@
     return allReady;
   }
 
+  function orderResultsStepsV402(){
+    var box=document.querySelector(".simple-results-action-buttons");if(!box)return;
+    var ids=["simpleResultsJuryBtn","simpleResultsClosureBtn","simpleResultsReceptionBtn","productSheetsBtn","simpleResultsOccenaBtn","simpleResultsConclusionBtn","simpleResultsPdfBtn","simpleResultsEmailBtn"];
+    ids.forEach(function(id,index){
+      var button=document.getElementById(id);if(!button)return;
+      var label=button.textContent.replace(/^\\d+\\.\\s*/,"").replace(/\\b[1-8]\\.\\s*/,"");
+      var text=(index+1)+". "+label;if(button.textContent!==text)button.textContent=text;
+      if(box.children[index]!==button)box.insertBefore(button,box.children[index]||null);
+    });
+  }
   function apply(){
     if(typeof state==="undefined"||!state||!state.config)return;
     ensureStyle();
@@ -377,6 +387,7 @@
     }
 
     var finalReady=updateFinalReportStateV324(m,wf);
+    orderResultsStepsV402();
     if(finalReady){
       if(title)title.textContent="✓ Tout est prêt — rapport final";
       if(hint)hint.textContent="Toutes les étapes sont terminées. Le rapport final est prêt à être préparé et envoyé par Gmail.";
@@ -394,6 +405,8 @@
   }
 
   function bind(){
+    var steps=document.querySelector(".simple-results-action-buttons");
+    if(steps&&!steps.__orderedV402){steps.__orderedV402=true;new MutationObserver(orderResultsStepsV402).observe(steps,{childList:true,subtree:true,characterData:true});}
     ensureStyle();
     ensureButton();
     ensureJuryButtonV309();
