@@ -1,7 +1,7 @@
 const fs=require('fs'),vm=require('node:vm'),assert=require('node:assert/strict');
 const src=fs.readFileSync(__dirname+'/../js/06-v20-partage-securise-supabase-auth.js','utf8');
 const cut=(name,next)=>src.slice(src.indexOf('function '+name),src.indexOf('function '+next));
-const code=cut('sameJuryV357','preserveRicherAdminLocalDataV256')+cut('preserveRicherAdminLocalDataV256','preserveRicherAdminWorkflowV323')+cut('preserveRicherAdminWorkflowV323','restoreAdminShareMetadataV248')+cut('restoreAdminShareMetadataV248','rebuildLocalFromCloud')+src.slice(src.indexOf('function rebuildLocalFromCloud('),src.indexOf('async function fetchCloudState'));
+const code=src.slice(src.indexOf('function compactOwnerEnvelopesV360('),src.indexOf('async function verifyRecoveryValueV360('))+cut('sameJuryV357','preserveRicherAdminLocalDataV256')+cut('preserveRicherAdminLocalDataV256','preserveRicherAdminWorkflowV323')+cut('preserveRicherAdminWorkflowV323','restoreAdminShareMetadataV248')+cut('restoreAdminShareMetadataV248','rebuildLocalFromCloud')+src.slice(src.indexOf('function rebuildLocalFromCloud('),src.indexOf('async function fetchCloudState'));
 const clone=x=>JSON.parse(JSON.stringify(x));
 const initial=config=>({config:clone(config),testers:{1:{name:'Testeur 1',answers:{},validatedAt:null}}});
 const lot=n=>({_preparedId:String(n),_juryInstanceId:'instance-'+n,lotName:'Lot '+n,testerCount:1,products:[{id:'p',samples:[{id:'1'}]}]});
@@ -16,5 +16,5 @@ ctx.rebuildLocalFromCloud(lot(55),[]);assert.equal(ctx.state.testers[1].validate
 console.log('PASS same sample numbers in different juries do not inherit answers or validation');
 const same=lot(55);same.juryClose={closedAt:'actual-close'};ctx.preserveRicherAdminWorkflowV323(ctx.state.config,same);assert.equal(ctx.state.config.juryClose.closedAt,'actual-close');
 console.log('PASS genuine closure of the same jury retained');
-const retired=lot(55);retired._juryInstanceId='new-attempt';assert.equal(ctx.sameJuryV357(ctx.state.config,retired),false);
+const retired=lot(55);retired._preparedId='new-prepared-attempt';retired._juryInstanceId='new-attempt';assert.equal(ctx.sameJuryV357(ctx.state.config,retired),false);
 console.log('PASS repeated lot number with a new jury instance stays independent');
