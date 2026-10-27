@@ -9454,6 +9454,8 @@ async function confirmReportSentAndArchive(){
       ['session','accessCode'].forEach(k=>url.searchParams.delete(k));
       history.replaceState(null,'',url.toString());
     }catch(e){}
+    // Rejoin the verified owner workspace after clearing the archived active jury.
+    if(window.JuryAccountV385?.client&&typeof window.JuryAccountV385.restore==='function')await window.JuryAccountV385.restore();
     renderHome();
     toast('Rapport envoyé confirmé — jury archivé et verrouillé ✓');
   }catch(e){
