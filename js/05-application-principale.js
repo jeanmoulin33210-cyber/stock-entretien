@@ -7651,8 +7651,10 @@ function renderProductSheetStatus(){
   b.textContent=`📋 Fiches produits${x.total?` (${x.filled}/${x.total})`:''}`;
 }
 let productSheetsReadOnlyView=false;
+let productSheetsShowMissing=false;
 function openProductSheets(readOnly=false){
   productSheetsReadOnlyView=readOnly===true;
+  productSheetsShowMissing=false;
   if(!state?.config?.products?.length){alert('Aucun produit dans ce jury.');return}
   if(!activeProductSheetId || !state.config.products.some(p=>String(p.id)===String(activeProductSheetId)))activeProductSheetId=state.config.products[0].id;
   showView('productSheetsView');
@@ -7675,10 +7677,10 @@ function renderProductSheets(){
     const missing=productSheetMissingFields(state,p,sm);
     if(productSheetsReadOnlyView&&missing.length)return '';
     const locked=productSheetsReadOnlyView||missing.length===0;
-    return `<article class="product-sheet-sample ${missing.length?'has-missing':''}" data-ps-sample="${escapeHtml(String(sm.id))}" data-ps-readonly="${locked?'true':'false'}">
+    return `<article class="product-sheet-sample ${missing.length&&productSheetsShowMissing?'has-missing':''}" data-ps-sample="${escapeHtml(String(sm.id))}" data-ps-readonly="${locked?'true':'false'}">
       <div class="product-sheet-sample-head">
         <div><strong>${escapeHtml(sm.supplier||'Fournisseur')} · Échantillon ${escapeHtml(sm.id)}</strong><span>Informations reprises dans l’annexe du rapport final</span></div>
-        <span class="product-sheet-status ${missing.length?'':'ready'}">${missing.length?`${missing.length} élément${missing.length>1?'s':''} manquant${missing.length>1?'s':''}`:'Terminée ✓ · lecture seule'}</span>
+        <span class="product-sheet-status ${missing.length?'':'ready'}">${missing.length?`${missing.length} élément${missing.length>1?'s':''} à compléter`:'Terminée ✓ · lecture seule'}</span>
       </div>
       <div class="product-sheet-grid">
         <div class="field"><label>Marque</label><input data-ps-field="brand" value="${escapeHtml(r.brand||'')}" placeholder="Marque"></div>
@@ -7731,7 +7733,7 @@ function renderProductSheets(){
     card.querySelectorAll('.field.missing-field').forEach(el=>el.classList.remove('missing-field'));
     card.querySelector('.product-sheet-auto')?.classList.remove('missing-auto');
 
-    for(const item of missing){
+    for(const item of (productSheetsShowMissing?missing:[])){
       if(item.key==='traceabilityDate'){
         for(const key of ['ddm','dlc']){
           card.querySelector(`[data-ps-field="${key}"]`)?.closest('.field')?.classList.add('missing-field');
@@ -7780,6 +7782,7 @@ function captureProductSheetForm(){
 }
 async function saveProductSheets(){
   if(productSheetsReadOnlyView){toast('Fiches terminées — consultation uniquement');return;}
+  productSheetsShowMissing=true;
   captureProductSheetForm();saveState();
   if(typeof syncDirtyToCloud==='function'){try{await syncDirtyToCloud()}catch(e){}}
 
@@ -7797,6 +7800,7 @@ async function saveProductSheets(){
   if(currentComplete && currentIndex>=0 && currentIndex<products.length-1){
     const next=products[currentIndex+1];
     activeProductSheetId=next.id;
+    productSheetsShowMissing=false;
     renderProductSheets();
     requestAnimationFrame(()=>{
       const tabs=$('#productSheetTabs');
