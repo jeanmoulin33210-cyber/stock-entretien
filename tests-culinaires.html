@@ -747,6 +747,19 @@
           </select>
           <input id="receptionSupplierManual" autocomplete="off" placeholder="Nom du fournisseur" style="display:none;margin-top:8px">
         </div>
+        <div class="field wide">
+          <label for="receptionProductFamily">Quel produit réceptionnes-tu ?</label>
+          <select id="receptionProductFamily">
+            <option value="">— Choisir le produit —</option>
+            <option value="surgele">Surgelés</option>
+            <option value="viande">Viande découpée réfrigérée</option>
+            <option value="volaille">Volaille réfrigérée</option>
+            <option value="poisson">Poisson frais</option>
+            <option value="laitier">Produits laitiers réfrigérés</option>
+            <option value="autre-refrigere">Autres produits réfrigérés</option>
+            <option value="ambiant">Produits ambiants / épicerie sèche</option>
+          </select>
+        </div>
         <div class="field">
           <label>T° véhicule (°C)</label>
           <select id="receptionVehicleTemp"></select>
@@ -2047,7 +2060,7 @@
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=420-archive-restore-workspace"></script>
+<script src="js/05-application-principale.js?build=425-reception-product-family"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
