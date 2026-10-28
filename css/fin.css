@@ -13,31 +13,14 @@
 
 
 
-/* V242 — Fiches produits : champs manquants en rouge */
-#productSheetsView .product-sheet-sample.has-missing{
-  border-color:#dc2626!important;
-  background:#fff7f7!important;
-  box-shadow:0 0 0 1px rgba(220,38,38,.12)!important;
-}
-#productSheetsView .product-sheet-status:not(.ready){
-  background:#fee2e2!important;
-  color:#b91c1c!important;
-}
-#productSheetsView .product-sheet-sample .field.missing-field label{
-  color:#b91c1c!important;
-  font-weight:900!important;
-}
+/* Missing fields are routine progress, not red anomalies. */
+#productSheetsView .product-sheet-sample.has-missing{border-color:#d89b2b!important;background:#fffdf7!important;box-shadow:none!important}
+#productSheetsView .product-sheet-status:not(.ready){background:#e8f2fa!important;color:#235a7e!important}
+#productSheetsView .product-sheet-sample .field.missing-field label{color:#8a590e!important;font-weight:700!important}
 #productSheetsView .product-sheet-sample .field.missing-field input,
 #productSheetsView .product-sheet-sample .field.missing-field select,
-#productSheetsView .product-sheet-sample .field.missing-field textarea{
-  border:2px solid #dc2626!important;
-  background:#fff5f5!important;
-  box-shadow:0 0 0 3px rgba(220,38,38,.12)!important;
-}
-#productSheetsView .product-sheet-auto.missing-auto{
-  border:2px solid #dc2626!important;
-  background:#fff5f5!important;
-}
+#productSheetsView .product-sheet-sample .field.missing-field textarea{border:2px solid #d89b2b!important;background:#fffaf0!important;box-shadow:none!important}
+#productSheetsView .product-sheet-auto.missing-auto{border:1px solid #d89b2b!important;background:#fffaf0!important}
 
 /* V398 — keep native iPad date controls within the closure card. */
 #closureView .closure-layout{grid-template-columns:repeat(2,minmax(0,1fr))}
