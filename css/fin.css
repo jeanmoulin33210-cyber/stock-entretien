@@ -41,3 +41,6 @@
 /* V445 — remove the oversized introductory card above tester QR codes. */
 #qrView .qr-hero-main{display:none!important}
 #qrView .qr-hero{grid-template-columns:minmax(0,1fr)}
+
+/* V447 — completed testers see the thank-you page without the last sample score. */
+#testerView.tester-final #sampleHero{display:none!important}
