@@ -68,7 +68,7 @@
   function measurementAlert(family,value,label){
     if(family==='autre')return {level:'neutral',message:'Température à vérifier selon l’étiquette ou le PMS. Aucun seuil automatique : ce choix ne valide pas la conformité.'};
     const measured=number(value),category=familyRules[family],rule=rules[category];
-    if(!rule)return {level:'neutral',message:'Choisissez le type de produit sous le fournisseur.'};
+    if(!rule)return {level:'neutral',message:''};
     if(category==='ambiant')return {level:'neutral',message:'Produit ambiant : vérifier les conditions de conservation de l’étiquette.'};
     if(measured===null)return {level:'neutral',message:'Choisissez la température mesurée.'};
     const labelled=number(label);
