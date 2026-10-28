@@ -56,7 +56,20 @@
     };
   };window.validateTesterFinal=validateTesterFinal;
   const renderFinal=renderValidatedTesterFinal;
-  renderValidatedTesterFinal=function(){const result=renderFinal.apply(this,arguments);const panel=document.getElementById('validationPanel');if(panel&&!panel.querySelector('[data-tester-signature]')){const s=read(state,currentTester);if(s){const box=document.createElement('div');box.dataset.testerSignature='1';box.innerHTML=html({config:state.config,testers:{[currentTester]:state.testers[currentTester]}});panel.appendChild(box);}}return result;};
+  renderValidatedTesterFinal=function(){
+    const entering=!document.getElementById('testerThankYou');
+    const result=renderFinal.apply(this,arguments);
+    const panel=document.getElementById('validationPanel');
+    const signed=read(state,currentTester);
+    if(panel){
+      panel.className='panel tester-thank-you';
+      panel.innerHTML='<div id="testerThankYou" role="status" style="text-align:center;padding:36px 18px;line-height:1.6"><div aria-hidden="true" style="font-size:54px">👏</div><h2 style="font-size:30px;line-height:1.25;color:#176b48">Merci pour votre participation !</h2><p>'+ (signed?'Votre évaluation a bien été enregistrée et signée.':'Votre évaluation a bien été enregistrée.') +'</p><p>Votre avis contribue au choix des produits proposés au restaurant scolaire.</p><p><strong>Le jury vous remercie.</strong><br>Vous pouvez fermer cette page.</p></div>';
+    }
+    const hero=document.getElementById('sampleHero');if(hero)hero.style.display='none';
+    if(entering)requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
+    return result;
+  };
+  scrollTesterToFinalScore=function(){requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));};
   const unlock=unlockTester;unlockTester=function(no){const before=testerValidated(no),result=unlock.apply(this,arguments);if(before&&!testerValidated(no)){clear(state,no);saveState();}return result;};
 })();
 
