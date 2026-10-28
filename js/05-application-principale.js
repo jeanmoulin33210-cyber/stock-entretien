@@ -7486,6 +7486,7 @@ function receptionDefaultsForSample(st,p,sm){
       receptionDriverName:r?.driverName||'',
       receptionReceiverName:r?.receiverName||'',
       deliveryTemp:line.productTemp??'',
+      deliveryTempConformity:line.temperatureControl?.level==='ok'?'oui':['danger','warning'].includes(line.temperatureControl?.level)?'non':'',
       receptionInteriorTemp:line.interiorTemp??'',
       packagingConformity:line.packaging==='non-conforme'?'non':'oui',
       receptionPackaging:line.packaging||'',
@@ -7513,6 +7514,7 @@ function syncReceptionIntoProductSheet(rec,d={}){
     rec.deliveryTemp=String(d.deliveryTemp);
   }
   if(d.packagingConformity)rec.packagingConformity=d.packagingConformity;
+  if(d.deliveryTempConformity&&!String(rec.deliveryTempConformity||'').trim())rec.deliveryTempConformity=d.deliveryTempConformity;
   if(d.dlc)rec.dlc=d.dlc;
   /* Une observation de réception reste visible séparément pour ne pas écraser
      une observation complémentaire saisie dans la fiche produit. */
