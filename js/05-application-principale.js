@@ -2415,7 +2415,8 @@ function receptionSupplierCompleteV345(cfg,supplier,editingIndex=-1){
   return expected.length>0&&expected.every(p=>delivered.has(receptionProductKeyV345(p)));
 }
 function receptionPendingLinesV345(cfg,rec){
-  if(!rec?.supplier||rec.validatedAt)return rec?.lines||[];
+  if(rec?.validatedAt)return rec.lines||[];
+  if(!rec?.supplier)return [];
   const expected=new Set(receptionExpectedProductsV345(cfg,rec.supplier).map(receptionProductKeyV345));
   const delivered=receptionDeliveredKeysV345(cfg,rec.supplier);
   return (rec.lines||[]).filter(line=>expected.has(receptionProductKeyV345(line))&&!delivered.has(receptionProductKeyV345(line)));
@@ -2499,7 +2500,9 @@ function renderReceptionForm(){
   if(!receptionIsReadOnly())receptionDraft.lines=receptionPendingLinesV345(cfg,receptionDraft);
 
   const lines=$('#receptionLines');
-  lines.innerHTML=receptionDraft.lines.map((line,i)=>`
+  if(!receptionDraft.supplier&&!receptionIsReadOnly()){
+    lines.innerHTML='<div class="empty-note">Choisissez le fournisseur pour afficher uniquement ses produits restant à livrer.</div>';
+  }else lines.innerHTML=receptionDraft.lines.map((line,i)=>`
     <article class="reception-line-card" data-reception-line="${i}">
       <div class="reception-line-head">
         <strong>${escapeHtml(line.productName||`Produit ${i+1}`)}${!receptionIsReadOnly()&&receptionNeedsRedeliveryV346(cfg,receptionDraft.supplier,line)?' · À relivrer':''}</strong>
@@ -2646,6 +2649,7 @@ async function saveReceptionForm(){
      modification involontaire d'une fiche déjà signée. */
   receptionEditingIndex=-1;
   receptionDraft=blankReceptionRecordAfterSave(cfg);
+  if(!receptionSupplierCompleteV345(cfg,rec.supplier))receptionDraft.supplier=rec.supplier;
   renderHome();
   toast('Réception émargée et enregistrée ✓');
 }
