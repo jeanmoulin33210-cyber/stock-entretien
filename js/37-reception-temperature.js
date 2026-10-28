@@ -32,7 +32,7 @@
     if(values.some(v=>v!==null&&(!Number.isFinite(v)||v< -60||v>100)))return {level:'missing',message:'Température mesurée invalide : saisir un nombre entre −60 et +100 °C.'};
     const measured=values.filter(v=>v!==null);
     if(!measured.length)return {level:'missing',message:'Renseignez au moins une température mesurée du produit.'};
-    if(!['sonde-contact','sonde-coeur','infrarouge'].includes(line.temperatureMethod))return {level:'missing',message:'Précisez la méthode de mesure du produit.'};
+
     const warmest=Math.max(...measured),air=number(vehicleTemp);
     if(air===null||!Number.isFinite(air)||air< -60||air>100)return {level:'missing',message:'Renseignez une température valide de l’air du compartiment du camion.'};
     const base={limit,warmest,air};
@@ -119,12 +119,16 @@
         select.innerHTML=vehicleOptions(value);select.value=value;
       });
       const category=line.temperatureCategory||(locked?'':infer(cfg,line));
-      const box=document.createElement('div');box.style.cssText='margin:12px 0;padding:12px;border:1px solid #cadae2;border-radius:12px;background:#f3f8fb;font-size:14px';
-      box.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:12px"><input type="hidden" data-rec-temperature-category="${i}"><label style="flex:1;min-width:180px">Maximum de l’étiquette (°C), si précisé<input type="number" step="0.1" min="-40" max="10" data-rec-temperature-label="${i}" value="${esc(line.temperatureLabelMax??'')}" placeholder="Obligatoire pour laitier / autre réfrigéré"></label><label style="flex:1;min-width:180px">Méthode de mesure<select data-rec-temperature-method="${i}"><option value="">— Choisir —</option><option value="sonde-contact">Sonde entre emballages</option><option value="sonde-coeur">Sonde à cœur</option><option value="infrarouge">Infrarouge (dépistage)</option></select></label></div><p data-rec-temperature-help="${i}" style="margin:8px 0"></p><p role="status" aria-live="polite" data-rec-temperature-status="${i}" style="padding:8px;border-radius:8px"></p><div data-rec-temperature-deviation="${i}"><label><input type="checkbox" data-rec-temperature-verified="${i}"> J’ai vérifié les mesures et les conditions du transport ; le PMS et le marché permettent cette acceptation.</label><label>Responsable de la décision<input data-rec-temperature-responsible="${i}" value="${esc(line.temperatureResponsible||'')}"></label><label>Justification / action corrective<input data-rec-temperature-reason="${i}" value="${esc(line.temperatureJustification||'')}" placeholder="Durée de l’écart, contrôle à la sonde, vérification du transport…"></label></div><details><summary>Repères de température et sources</summary><p>Surgelés : maximum −18 °C ; une brève variation de transport jusqu’à −15 °C n’est pas une acceptation automatique. Réfrigérés : seuil selon la catégorie et l’étiquette. Une étiquette plus stricte reste prioritaire. −20 °C est plus froid que −18 °C.</p><p>Une mesure infrarouge sert au dépistage : confirmer tout écart à la sonde. Ne pas percer un emballage sans appliquer la procédure d’hygiène adaptée.</p><a href="https://agriculture.gouv.fr/securite-sanitaire-des-aliments-tout-sur-la-chaine-du-froid" target="_blank" rel="noopener">Tableau du ministère de l’Agriculture</a> · <a href="https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000676143" target="_blank" rel="noopener">Règles des surgelés</a></details>`;
-      card.querySelector('.reception-line-grid').after(box);field(i,'category').value=category;field(i,'method').value=line.temperatureMethod||'';field(i,'verified').checked=!!line.temperatureDeviationVerified;
+      const box=document.createElement('div');
+      box.style.cssText='margin:12px 0';
+      box.innerHTML=`<input type="hidden" data-rec-temperature-category="${i}"><input type="hidden" data-rec-temperature-method="${i}" value="${esc(line.temperatureMethod||'')}"><label data-label-limit>Maximum indiqué sur l’étiquette (°C)<input type="number" step="0.1" min="-40" max="10" data-rec-temperature-label="${i}" value="${esc(line.temperatureLabelMax??'')}" placeholder="Ex. : 4 ou 6"></label>`;
+      card.querySelector('.reception-line-grid').after(box);
+      field(i,'category').value=category;
       function refresh(){
         const selectedFamily=family?.value||rec.productFamily||'';
         if(!locked)field(i,'category').value=familyRules[selectedFamily]||'';
+        box.querySelector('[data-label-limit]').hidden=!['laitier','autre-refrigere'].includes(selectedFamily);
+        box.hidden=box.querySelector('[data-label-limit]').hidden;
         card.querySelectorAll('[data-rec-product-temp],[data-rec-interior-temp]').forEach(input=>{
           let hint=input.nextElementSibling;
           if(!hint?.hasAttribute('data-measured-temperature-alert')){
@@ -136,12 +140,10 @@
           hint.textContent=alert.message;hint.style.cssText='padding:8px 0;font-size:13px;color:'+palette[1];
         });
         const data={...line,...capture(i),productTemp:card.querySelector('[data-rec-product-temp]')?.value||'',interiorTemp:card.querySelector('[data-rec-interior-temp]')?.value||''};
-        const r=evaluate(data,v?.value,cfg),status=field(i,'status');field(i,'help').textContent=rules[data.temperatureCategory]?.help||'Choisir la catégorie d’après le produit et son étiquette.';
-        status.textContent=locked&&!line.temperatureControl?'Réception historique : aucun contrôle automatique enregistré à cette date.':r.message;
-        status.style.background=({ok:'#e3f5e9',warning:'#fff0cd',danger:'#fde7e7',missing:'#fff0cd'})[r.level]||'#eaf0f4';
-        field(i,'deviation').hidden=r.level!=='warning'&&!(locked&&line.temperatureJustification);
-        const decision=card.querySelector('[data-rec-decision]'),accept=decision?.querySelector('option[value="acceptation"]');if(accept&&!locked)accept.disabled=!allowed({...data,decision:'acceptation'},r);
-        if(!locked)status.textContent+=(r.level==='danger'?' Choisir « Refus » permet de conserver la température constatée.':r.level==='warning'&&!allowed({...data,decision:'acceptation'},r)?' Vérification, responsable et justification obligatoires pour accepter.':'');
+        const r=evaluate(data,v?.value,cfg);
+        const decision=card.querySelector('[data-rec-decision]'),accept=decision?.querySelector('option[value="acceptation"]');
+        if(accept&&!locked)accept.disabled=!allowed({...data,decision:'acceptation'},r);
+
       }
       card.addEventListener('input',refresh);card.addEventListener('change',refresh);refreshers.push(refresh);refresh();
     });
