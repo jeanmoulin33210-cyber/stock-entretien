@@ -1726,13 +1726,8 @@ function openProductLotV174(row){
        par l'accueil, sinon la première fiche incomplète. */
     activeProductSheetId=row.firstProductId||firstIncompleteProductSheetId(state);
     openProductSheets(!!row.readOnly);
-    if(row.firstSampleId){
-      setTimeout(()=>{
-        const box=$('#productSheetContent');
-        const card=box?findProductSheetCard(box,row.firstSampleId):null;
-        if(card)card.scrollIntoView({behavior:'smooth',block:'center'});
-      },120);
-    }
+    window.scrollTo({top:0,left:0,behavior:'instant'});
+    requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
     return;
   }
 
@@ -1759,13 +1754,8 @@ function openProductLotV174(row){
   /* V252 — même logique pour un lot préparé rechargé depuis l’accueil. */
   activeProductSheetId=row.firstProductId||firstIncompleteProductSheetId(state);
   openProductSheets(!!row.readOnly);
-  if(row.firstSampleId){
-    setTimeout(()=>{
-      const box=$('#productSheetContent');
-      const card=box?findProductSheetCard(box,row.firstSampleId):null;
-      if(card)card.scrollIntoView({behavior:'smooth',block:'center'});
-    },120);
-  }
+  window.scrollTo({top:0,left:0,behavior:'instant'});
+  requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
 }
 function openProductSheetsFromHomeV174(){
   const rows=productLotsV174();
