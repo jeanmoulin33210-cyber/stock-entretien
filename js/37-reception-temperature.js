@@ -70,7 +70,10 @@
     if(measured===null)return {level:'neutral',message:'Choisissez la température mesurée.'};
     const labelled=number(label);
     if(labelled!==null&&(!Number.isFinite(labelled)||labelled< -40||labelled>10))return {level:'neutral',message:'Vérifiez la limite de température de l’étiquette.'};
-    if(category==='etiquette'&&labelled===null)return {level:'neutral',message:'Renseignez le maximum indiqué sur l’étiquette pour contrôler ce produit.'};
+    if(category==='etiquette'&&labelled===null){
+      if(family==='laitier'&&Number.isFinite(measured)&&measured>8)return {level:'danger',message:'Température supérieure au repère de +8 °C pour les produits laitiers frais. Vérifiez la mesure et la limite de l’étiquette, qui peut être plus stricte.'};
+      return {level:'neutral',message:family==='laitier'?'Vérifier l’étiquette : le repère de +8 °C ne confirme pas la conformité. Saisissez sa limite pour contrôler ce produit.':'Renseignez le maximum indiqué sur l’étiquette pour contrôler ce produit.'};
+    }
     const limit=labelled===null?rule.max:rule.max===null?labelled:Math.min(rule.max,labelled);
     const fmt=n=>(n>0?'+':'')+String(n).replace('.',',')+' °C';
     if(!Number.isFinite(measured))return {level:'neutral',message:'Température invalide.'};
