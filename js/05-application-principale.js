@@ -7285,7 +7285,7 @@ function scheduleClosureAutosave(preserveScrollY=null){
      Toute modification indique seulement qu'il faut appuyer sur Enregistrer. */
   setClosureSaveIndicator('💾 Enregistrer');
 
-  const keepY=Number.isFinite(Number(preserveScrollY))?Number(preserveScrollY):null;
+  const keepY=typeof preserveScrollY==='number'&&Number.isFinite(preserveScrollY)?preserveScrollY:null;
   if(keepY!==null){
     requestAnimationFrame(()=>{
       const current=window.scrollY||window.pageYOffset||0;
@@ -7313,13 +7313,7 @@ async function saveClosure(){
   }else{
     const missing=closureMissingFieldsFrom(c);
     toast(`Fiche enregistrée — il manque : ${missing.map(x=>x.label).join(', ')}`);
-    const first=missing[0]?.id&&document.getElementById(missing[0].id);
-    if(first){
-      setTimeout(()=>{
-        first.scrollIntoView({behavior:'smooth',block:'center'});
-        first.focus();
-      },120);
-    }
+    /* Keep the saved form in place; its status card already lists missing fields. */
   }
 
   if(typeof syncDirtyToCloud==='function'){
@@ -9924,6 +9918,10 @@ function copyArchiveAsNew(id){return duplicateArchive(id)}
 $('#homeBtn').onclick=renderHome;$('#archivesBtn').onclick=renderArchives;$('#archivesHomeBtn').onclick=renderHome;$('#archivesBackHubBtn').onclick=()=>renderHome();$('#archiveMoreFiltersBtn').onclick=()=>toggleArchiveFilters();
 $('#closureBackBtn').onclick=()=>{renderAdmin()};
 $('#saveClosureBtn').onclick=saveClosure;
+/* Keep an edited field from blurring and moving this button before its click. */
+$('#saveClosureBtn').addEventListener('pointerdown',e=>{
+  if(e.isPrimary!==false&&e.button===0)e.preventDefault();
+});
 ['closureDate','closurePlace','closureChair','closureChairRole','closureCoSigner','closureCoSignerRole','closureNotes'].forEach(id=>{
   const el=$('#'+id);
   if(el){
