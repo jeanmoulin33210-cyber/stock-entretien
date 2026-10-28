@@ -68,9 +68,18 @@
   const field=(i,key)=>document.querySelector('[data-rec-temperature-'+key+'="'+i+'"]');
   function capture(i){const val=k=>field(i,k)?.value||'';return {temperatureCategory:val('category'),temperatureLabelMax:val('label'),temperatureMethod:val('method'),temperatureDeviationVerified:!!field(i,'verified')?.checked,temperatureResponsible:val('responsible').trim(),temperatureJustification:val('reason').trim()};}
   function numeric(el){if(!el)return;const input=document.createElement('input');for(const a of el.attributes)if(a.name!=='type')input.setAttribute(a.name,a.value);input.type='number';input.step='0.1';input.min='-60';input.max='100';input.inputMode='decimal';input.value=el.value;el.replaceWith(input);}
+  function vehicleOptions(value){
+    const current=String(value??''),values=Array.from({length:69},(_,i)=>String((-44+i)/2));
+    if(current&&!values.includes(current))values.push(current);
+    return '<option value="">— Choisir —</option>'+values.map(v=>'<option value="'+esc(v)+'">'+esc((Number(v)>0?'+':'')+v.replace('.',','))+' °C</option>').join('');
+  }
   function render(cfg,rec,locked){
     const refreshers=[];
-    const vehicle=document.getElementById('receptionVehicleTemp');if(vehicle?.tagName==='SELECT')numeric(vehicle);
+    const vehicle=document.getElementById('receptionVehicleTemp');
+    if(vehicle?.tagName==='SELECT'){
+      const selected=String(rec.vehicleTemp??vehicle.value??'');
+      vehicle.innerHTML=vehicleOptions(selected);vehicle.value=selected;
+    }
     const v=document.getElementById('receptionVehicleTemp');
     let guide=document.getElementById('receptionVehicleGuideV395');
     if(v&&!guide){guide=document.createElement('div');guide.id='receptionVehicleGuideV395';guide.style.cssText='font-size:13px;background:#eef6fa;border:1px solid #cadae2;border-radius:10px;padding:10px;margin-top:8px';guide.textContent='Air du compartiment transportant ces denrées. Pour les surgelés : cible interne −20 °C ou plus froid, pas une obligation réglementaire générale. La mesure du camion ne remplace pas celle du produit. Camion multi-températures : relever le compartiment concerné.';v.after(guide);}
