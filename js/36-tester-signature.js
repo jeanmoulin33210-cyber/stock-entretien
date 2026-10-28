@@ -63,8 +63,14 @@
     const signed=read(state,currentTester);
     if(panel){
       panel.className='panel tester-thank-you';
-      panel.innerHTML='<div id="testerThankYou" role="status" style="text-align:center;padding:36px 18px;line-height:1.6"><div aria-hidden="true" style="font-size:54px">👏</div><h2 style="font-size:30px;line-height:1.25;color:#176b48">Merci pour votre participation !</h2><p>'+ (signed?'Votre évaluation a bien été enregistrée et signée.':'Votre évaluation a bien été enregistrée.') +'</p><p>Votre avis contribue au choix des produits proposés au restaurant scolaire.</p><p><strong>Le jury vous remercie.</strong><br>Vous pouvez fermer cette page.</p></div>';
+      panel.innerHTML='<div id="testerThankYou" role="status" style="text-align:center;padding:36px 18px;line-height:1.6"><div aria-hidden="true" style="font-size:54px">👏</div><h2 style="font-size:30px;line-height:1.25;color:#176b48">Merci pour votre participation !</h2><p>'+ (signed?'Votre évaluation a bien été enregistrée et signée.':'Votre évaluation a bien été enregistrée.') +'</p><p>Votre avis contribue au choix des produits proposés au restaurant scolaire.</p><p><strong>Le jury vous remercie.</strong><br>Vous pouvez fermer cette page.</p><button type="button" class="btn btn-primary" id="closeTesterPageBtn" style="margin-top:18px;min-height:54px;padding:14px 28px">Fermer cette page</button><p id="closeTesterPageHelp" hidden style="font-size:16px"></p></div>';
     }
+    const closeButton=document.getElementById('closeTesterPageBtn');
+    if(closeButton)closeButton.onclick=()=>{
+      try{window.close();}catch(e){}
+      const help=document.getElementById('closeTesterPageHelp');
+      if(help){help.hidden=false;help.textContent='Si cette page reste ouverte, fermez cet onglet dans votre navigateur. Votre évaluation reste enregistrée.';}
+    };
     const hero=document.getElementById('sampleHero');if(hero)hero.style.display='none';
     if(entering)requestAnimationFrame(()=>window.scrollTo({top:0,left:0,behavior:'instant'}));
     return result;
