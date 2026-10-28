@@ -2522,6 +2522,8 @@ function renderReceptionForm(){
     const d=document.querySelector(`[data-rec-decision="${i}"]`);if(d)d.value=line.decision||'acceptation';
   });
 
+  document.querySelectorAll('#receptionDate,[data-rec-dlc],[data-rec-received],[data-rec-decision]').forEach(input=>{input.addEventListener('change',updateReceptionDateAlerts);input.addEventListener('input',updateReceptionDateAlerts);});
+  updateReceptionDateAlerts();
   window.ReceptionTemperatureV395?.render(cfg,receptionDraft,receptionIsReadOnly());
   setupSignatureCanvas('receptionSignature',receptionDraft.driverSignature||'');
   renderReceptionSavedList();
@@ -2555,6 +2557,27 @@ function captureReceptionForm(){
   receptionDraft.driverSignature=signatureCanvasData('receptionSignature');
   return receptionDraft;
 }
+function receptionDateExpired(line,date){
+  return line.received!==false&&!!date&&/^\d{4}-\d{2}-\d{2}$/.test(String(line.dlc||''))&&String(line.dlc)<date;
+}
+function updateReceptionDateAlerts(){
+  if(receptionIsReadOnly())return;
+  const date=document.getElementById('receptionDate')?.value||'';
+  document.querySelectorAll('[data-rec-dlc]').forEach(input=>{
+    const index=input.getAttribute('data-rec-dlc');
+    const received=document.querySelector('[data-rec-received="'+index+'"]')?.checked!==false;
+    const refused=document.querySelector('[data-rec-decision="'+index+'"]')?.value==='refus';
+    const expired=receptionDateExpired({dlc:input.value,received},date);
+    input.setCustomValidity(expired&&!refused?'La DLC / DDM est antérieure à la date de réception.':'');
+    input.style.borderColor=expired?'#c23934':'';
+    input.style.backgroundColor=expired?'#fde7e7':'';
+    let message=input.nextElementSibling;
+    if(!message?.hasAttribute('data-rec-date-alert')){
+      message=document.createElement('div');message.setAttribute('data-rec-date-alert','');message.setAttribute('role','status');message.style.cssText='color:#a12b27;font-size:13px;margin-top:6px';input.after(message);
+    }
+    message.textContent=expired?'DLC / DDM antérieure à la réception : acceptation impossible. Un refus peut être enregistré avec son motif.':'';
+  });
+}
 async function saveReceptionForm(){
   if(receptionIsReadOnly()){alert('Cette réception signée est en lecture seule.');return;}
   const cfg=receptionConfig(),rec=captureReceptionForm();
@@ -2586,6 +2609,11 @@ async function saveReceptionForm(){
     return;
   }
 
+  const expiredIndex=rec.lines.findIndex(line=>line.decision!=='refus'&&receptionDateExpired(line,rec.date));
+  if(expiredIndex>=0){
+    alert('Acceptation impossible : la DLC / DDM du produit '+(rec.lines[expiredIndex].productName||'')+' est antérieure à la date de réception.');
+    document.querySelector('[data-rec-dlc="'+expiredIndex+'"]')?.focus();return;
+  }
   const refusalWithoutReason=rec.lines.findIndex(line=>line.received!==false&&line.decision==='refus'&&!String(line.observations||'').trim());
   if(refusalWithoutReason>=0){
     alert('Indiquez le motif du refus dans les observations du produit. Il restera à relivrer.');
