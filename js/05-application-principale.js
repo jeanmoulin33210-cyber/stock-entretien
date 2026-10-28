@@ -4015,6 +4015,24 @@ function renderLaunchView(){
       :'Le lancement se débloquera dès que les téléphones seront préparés.';
   }
 }
+async function openQrCodesFromLaunch(){
+  const btn=$('#launchQrBtn');
+  const oldText=btn?.textContent;
+  try{
+    if(!phoneSharePrepared(state.config)){
+      alert('Préparez d’abord les téléphones.');
+      return;
+    }
+    if(btn){btn.disabled=true;btn.textContent='⏳ QR codes…';}
+    if(!launchShareReady())await ensurePreparedShareConnected();
+    renderQrCodes('launchView');
+  }catch(e){
+    alert(`Impossible d’ouvrir les QR codes. ${e?.message||e}`);
+  }finally{
+    if(btn){btn.disabled=!phoneSharePrepared(state.config);btn.textContent=oldText;}
+  }
+}
+
 function renderLaunchLinks(){
   const box=$('#launchLinks'),note=$('#launchLinksNote'),qrBtn=$('#launchQrBtn');if(!box||!note)return;
   const testerCount=Math.max(1,Number(state.config?.testerCount||0));
@@ -4024,7 +4042,8 @@ function renderLaunchLinks(){
   if(!shared){
     box.innerHTML='<div class="empty" style="grid-column:1/-1">La session partagée n’est pas connectée sur cet appareil.</div>';
     note.textContent=`Préparez d’abord les accès pour ${testerCount} téléphone${testerCount>1?'s':''}.`;
-    if(qrBtn)qrBtn.disabled=true;
+    if(qrBtn)qrBtn.disabled=!phoneSharePrepared(state.config);
+    if(phoneSharePrepared(state.config))note.textContent='Les accès sont enregistrés. Ouvrez les QR codes pour reconnecter ce jury.';
     return;
   }
   if(qrBtn)qrBtn.disabled=false;
@@ -9971,7 +9990,7 @@ $('#archiveCurrentFromArchivesBtn').onclick=archiveCurrentJury;$('#samplesSetupB
     }
     return prepareJuryFromHomeV181(e);
   };
-})();$('#prepareJuryCancelBtn').onclick=closePrepareJuryChooser;$('#juryBtn').onclick=openJuryFlow;$('#statsBtn').onclick=renderStats;$('#dashboardNewJuryBtn').onclick=prepareJuryFromHomeV181;$('#dashboardAllArchivesBtn').onclick=renderArchives;$('#launchHomeBtn').onclick=renderHome;$('#launchEditBtn').onclick=openConfig;$('#officialLaunchBtn').onclick=officialLaunch;$('#launchQrBtn').onclick=()=>renderQrCodes('launchView');$('#launchCloudBtn').onclick=()=>typeof quickSharePhones==='function'?quickSharePhones():null;$('#configPrintArticlesBtn').onclick=printArticleNumbers;$('#configEmailArticlesBtn').onclick=emailArticleNumbersPdf;$('#configPreparePhonesBtn').onclick=preparePhonesFromConfig;$('#configQrBtn').onclick=openConfigQrCodes;$('#configEmailQrPdfBtn').onclick=sendQrPdfFromConfig;$('#juryChooserBackBtn').onclick=renderHome;$('#projectionBackBtn').onclick=returnFromProjection;$('#projectionPrevBtn').onclick=()=>setProjectionSlide(projectionSlideIndex-1);$('#projectionNextBtn').onclick=()=>setProjectionSlide(projectionSlideIndex+1);$('#projectionPauseBtn').onclick=toggleProjectionRotation;$('#projectionFullscreenBtn').onclick=toggleProjectionFullscreen;$('#exitTesterPreviewBtn').onclick=exitTesterPreview;
+})();$('#prepareJuryCancelBtn').onclick=closePrepareJuryChooser;$('#juryBtn').onclick=openJuryFlow;$('#statsBtn').onclick=renderStats;$('#dashboardNewJuryBtn').onclick=prepareJuryFromHomeV181;$('#dashboardAllArchivesBtn').onclick=renderArchives;$('#launchHomeBtn').onclick=renderHome;$('#launchEditBtn').onclick=openConfig;$('#officialLaunchBtn').onclick=officialLaunch;$('#launchQrBtn').onclick=openQrCodesFromLaunch;$('#launchCloudBtn').onclick=()=>typeof quickSharePhones==='function'?quickSharePhones():null;$('#configPrintArticlesBtn').onclick=printArticleNumbers;$('#configEmailArticlesBtn').onclick=emailArticleNumbersPdf;$('#configPreparePhonesBtn').onclick=preparePhonesFromConfig;$('#configQrBtn').onclick=openConfigQrCodes;$('#configEmailQrPdfBtn').onclick=sendQrPdfFromConfig;$('#juryChooserBackBtn').onclick=renderHome;$('#projectionBackBtn').onclick=returnFromProjection;$('#projectionPrevBtn').onclick=()=>setProjectionSlide(projectionSlideIndex-1);$('#projectionNextBtn').onclick=()=>setProjectionSlide(projectionSlideIndex+1);$('#projectionPauseBtn').onclick=toggleProjectionRotation;$('#projectionFullscreenBtn').onclick=toggleProjectionFullscreen;$('#exitTesterPreviewBtn').onclick=exitTesterPreview;
 $('#closeJuryBtn').onclick=closeJuryOfficially;$('#resultsCloseJuryBtn').onclick=closeJuryOfficially;
 $('#juryHomeBtn').onclick=renderHome;$('#juryQrBtn').onclick=openQrCodesFromJury;$('#juryProjectionBtn').onclick=openProjectionView;$('#juryTesterPreviewBtn').onclick=startTesterPreview;$('#juryResultsBtn').onclick=()=>openSimplifiedResults();$('#juryShareBtn').onclick=()=>typeof renderCloudPage==='function'?renderCloudPage():null;$('#resultsBtn').onclick=()=>openSimplifiedResults();$('#homeArchivesMiniBtn').onclick=()=>renderArchives();$('#backupBtn').onclick=backup;$('#restoreBtn').onclick=()=>$('#restoreFile').click();$('#restoreFile').onchange=e=>{if(e.target.files[0])restore(e.target.files[0]);e.target.value=''};
 $('#sampleAddProductBtn')?.addEventListener('click',addSetupProduct);$('#sampleAddSupplierBtn')?.addEventListener('click',addSetupSupplier);$('#sampleSetupBackBtn').onclick=renderHome;$('#homeReceptionBtn').onclick=openReceptionFromHome;$('#homeReceptionHistoryBtn').onclick=openReceptionHistoryFromHome;$('#homeProductSheetsBtnV174').onclick=openProductSheetsFromHomeV174;$('#productLotCancelV174').onclick=closeProductLotModalV174;$('#receptionLotCancelBtn').onclick=closeReceptionLotPicker;$('#receptionHistoryCancelBtn').onclick=closeReceptionHistoryPicker;$('#configReceptionBtn')?.addEventListener('click',()=>openReceptionView(-1));$('#receptionBackBtn').onclick=closeReceptionView;$('#receptionPrintBtn').onclick=printReceptionPaper;$('#receptionPdfBtn').onclick=downloadReceptionPaperPdf;$('#receptionSaveBtn').onclick=saveReceptionForm;$('#clearReceptionSignature').onclick=()=>clearSignature('receptionSignature');$('#sampleSetupContinueBtn').onclick=()=>commitSampleMaster({continueToJury:false});$('#cancelConfigTopBtn').onclick=cancelCreateJury;$('#addProductBtn').onclick=addProduct;$('#blankTestBtn').onclick=showBlankLotEntry;$('#blankLotConfirmBtn').onclick=createBlankDraftFromName;$('#blankLotName').addEventListener('keydown',e=>{if(e.key==='Enter')createBlankDraftFromName()});$('#marketLotSelect').onchange=updateMarketLotInfo;$('#useMarketLotBtn').onclick=()=>flashCreateButton($('#useMarketLotBtn'),'✓ CRÉATION EN COURS…',prepareMarketLot);$('#customTemplateSelect').onchange=updateCustomTemplateButtons;$('#useCustomTemplateBtn').onclick=useCustomTemplate;$('#addCustomToMarketBtn').onclick=addSelectedCustomTemplateToMarket;$('#saveCustomTemplateBtn').onclick=saveCurrentDraftAsCustomTemplate;$('#deleteCustomTemplateBtn').onclick=deleteCustomTemplate;$('#useArchiveTemplateBtn').onclick=useArchiveTemplate;const testerCountInput=$('#cfgTesterCount');
