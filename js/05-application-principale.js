@@ -7684,7 +7684,7 @@ function renderProductSheets(){
       </div>
       <div class="product-sheet-grid">
         <div class="field"><label>Marque</label><input data-ps-field="brand" value="${escapeHtml(r.brand||'')}" placeholder="Marque"></div>
-        <div class="field wide"><label>Caractéristiques</label><input data-ps-field="characteristics" value="${escapeHtml(r.characteristics||'')}" placeholder="Calibre, origine, nature…"></div>
+        <div class="field wide"><label>Description du produit</label><input data-ps-field="characteristics" value="${escapeHtml(r.characteristics||'')}" placeholder="Ex. : extra-fin, origine France, sachet de 2,5 kg…"></div>
         <div class="field"><label>Étiquetage</label><select data-ps-field="labeling"><option value="">—</option><option value="conforme">Conforme</option><option value="non-conforme">Non conforme</option></select></div>
         <div class="field"><label>Poids / grammage</label><input data-ps-field="weight" value="${escapeHtml(r.weight||'')}" placeholder="Ex. 2,5 kg"></div>
         <div class="field"><label>Conforme à la fiche technique</label><select data-ps-field="technicalSheet"><option value="">—</option><option value="oui">Oui</option><option value="non">Non</option></select></div>
