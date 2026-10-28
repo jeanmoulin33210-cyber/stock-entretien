@@ -20,6 +20,7 @@
   function number(value){if(value==null||String(value).trim()==='')return null;const s=String(value).trim().replace(',','.');return /^[-+]?\d+(?:\.\d+)?$/.test(s)&&Number.isFinite(Number(s))?Number(s):NaN;}
   function evaluate(line,vehicleTemp,cfg={}){
     const category=String(line.temperatureCategory||''),rule=rules[category];
+    if(line.temperatureManualReview===true)return {level:'manual',message:'Autre produit : température à vérifier selon l’étiquette ou le PMS. Aucun contrôle automatique de conformité.'};
     if(!rule)return {level:'missing',message:'Choisissez la catégorie de conservation du produit.'};
     if(category==='ambiant')return infer(cfg,line)==='surgele'?{level:'danger',message:'Le lot ou le produit est indiqué surgelé : choisir une catégorie à −18 °C ou plus froid.'}:{level:'neutral',message:rule.help};
     const labelLimit=number(line.temperatureLabelMax);
@@ -46,6 +47,7 @@
   function allowed(line,result){
     if(line.received===false||line.decision==='refus')return true;
     if(!['acceptation'].includes(line.decision))return false;
+    if(result.level==='manual')return true;
     if(['ok','neutral'].includes(result.level))return true;
     return result.level==='warning'&&line.temperatureDeviationVerified===true&&['sonde-contact','sonde-coeur'].includes(line.temperatureMethod)&&String(line.temperatureResponsible||'').trim().length>=2&&String(line.temperatureJustification||'').trim().length>=10;
   }
@@ -64,6 +66,7 @@
   }
   const familyRules={surgele:'surgele',viande:'refrigere4',volaille:'refrigere4',poisson:'refrigere2',laitier:'etiquette','autre-refrigere':'etiquette',ambiant:'ambiant'};
   function measurementAlert(family,value,label){
+    if(family==='autre')return {level:'neutral',message:'Température à vérifier selon l’étiquette ou le PMS. Aucun seuil automatique : ce choix ne valide pas la conformité.'};
     const measured=number(value),category=familyRules[family],rule=rules[category];
     if(!rule)return {level:'neutral',message:'Choisissez le type de produit sous le fournisseur.'};
     if(category==='ambiant')return {level:'neutral',message:'Produit ambiant : vérifier les conditions de conservation de l’étiquette.'};
@@ -85,7 +88,7 @@
   if(typeof module!=='undefined'&&module.exports){module.exports=core;return;}
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const field=(i,key)=>document.querySelector('[data-rec-temperature-'+key+'="'+i+'"]');
-  function capture(i){const val=k=>field(i,k)?.value||'';return {temperatureCategory:val('category'),temperatureLabelMax:val('label'),temperatureMethod:val('method'),temperatureDeviationVerified:!!field(i,'verified')?.checked,temperatureResponsible:val('responsible').trim(),temperatureJustification:val('reason').trim()};}
+  function capture(i){const val=k=>field(i,k)?.value||'';return {temperatureManualReview:document.getElementById('receptionProductFamily')?.value==='autre',temperatureCategory:val('category'),temperatureLabelMax:val('label'),temperatureMethod:val('method'),temperatureDeviationVerified:!!field(i,'verified')?.checked,temperatureResponsible:val('responsible').trim(),temperatureJustification:val('reason').trim()};}
   function numeric(el){if(!el)return;const input=document.createElement('input');for(const a of el.attributes)if(a.name!=='type')input.setAttribute(a.name,a.value);input.type='number';input.step='0.1';input.min='-60';input.max='100';input.inputMode='decimal';input.value=el.value;el.replaceWith(input);}
   function vehicleOptions(value){
     const current=String(value??''),values=Array.from({length:69},(_,i)=>String((-44+i)/2));
