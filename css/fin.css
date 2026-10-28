@@ -30,3 +30,6 @@
 #closureView .closure-card input:not([type="checkbox"]),#closureView .closure-card textarea,#closureView .closure-card select{box-sizing:border-box;min-width:0;min-inline-size:0;max-width:100%;width:100%}
 #closureDate::-webkit-date-and-time-value{min-width:0;text-align:left}
 @media(max-width:760px){#closureView .closure-layout,#closureView .closure-card .form-grid{grid-template-columns:minmax(0,1fr)}}
+
+/* V439 — remove the redundant tester navigation panel on every tester screen. */
+#testerView .tester-toolbar{display:none!important}
