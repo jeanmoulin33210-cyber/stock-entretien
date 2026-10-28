@@ -7239,7 +7239,7 @@ function renderClosure(){
   if(!c.date)refreshClosureFormStatusV399();else renderClosureStatus(c);
   setupSignatureCanvas('chairSignature',c.chairSignature||'');
   setupSignatureCanvas('coSignature',c.coSignature||'');
-  setClosureSaveIndicator('💾 Enregistrer');
+  setClosureSaveIndicator(c.updatedAt&&c.date?'✓ Enregistré':'💾 Enregistrer');
 }
 function captureClosureForm(){
   const c=normalizeClosureMembers();
@@ -7296,10 +7296,7 @@ async function saveClosure(){
 
   const ready=renderClosureStatus(c);
 
-  if(typeof syncDirtyToCloud==='function'){
-    try{await syncDirtyToCloud()}catch(e){}
-  }
-
+  /* Confirm the local save immediately; network latency must not require a second click. */
   setClosureSaveIndicator('✓ Enregistré');
   if(typeof syncSimpleResultsActions==='function'){
     try{syncSimpleResultsActions()}catch(e){}
@@ -7319,6 +7316,10 @@ async function saveClosure(){
         first.focus();
       },120);
     }
+  }
+
+  if(typeof syncDirtyToCloud==='function'){
+    Promise.resolve().then(()=>syncDirtyToCloud()).catch(e=>console.warn('Synchronisation de la clôture différée',e));
   }
 }
 function signatureCanvasData(id){
