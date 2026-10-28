@@ -1647,6 +1647,7 @@ function normalizeReceptionRecord(rec,cfg=receptionConfig()){
   base.date=String(incoming.date||base.date);
   base.time=String(incoming.time||base.time);
   base.supplier=String(incoming.supplier||'');
+  base.productFamily=String(incoming.productFamily||'');
   base.vehicleTemp=String(incoming.vehicleTemp??'');
   base.driverName=String(incoming.driverName||'');
   base.receiverName=String(incoming.receiverName||'');
@@ -2452,6 +2453,8 @@ function renderReceptionForm(){
   $('#receptionEstablishment').value=receptionDraft.establishment||'';
   $('#receptionDate').value=receptionDraft.date||todayIsoLocal();
   $('#receptionTime').value=receptionDraft.time||receptionNowTime();
+  const productFamilySelect=document.getElementById('receptionProductFamily');
+  if(productFamilySelect){productFamilySelect.value=receptionDraft.productFamily||'';productFamilySelect.disabled=receptionIsReadOnly();}
   $('#receptionVehicleTemp').innerHTML=receptionTemperatureOptions(receptionDraft.vehicleTemp??'');
   $('#receptionVehicleTemp').value=String(receptionDraft.vehicleTemp??'');
   $('#receptionDriverName').value=receptionDraft.driverName||'';
@@ -2534,6 +2537,7 @@ function captureReceptionForm(){
   const supplierSelect=$('#receptionSupplier');
   const selectedSupplier=String(supplierSelect?.value||'').trim();
   receptionDraft.supplier=receptionConfiguredSupplierNames(cfg).includes(selectedSupplier)?selectedSupplier:'';
+  receptionDraft.productFamily=String(document.getElementById('receptionProductFamily')?.value||'');
   receptionDraft.vehicleTemp=String($('#receptionVehicleTemp').value??'').trim();
   receptionDraft.driverName=$('#receptionDriverName').value.trim();
   receptionDraft.receiverName=$('#receptionReceiverName').value.trim();
