@@ -62,7 +62,23 @@
       paragraph(notes(line));paragraph('Décision : '+(line.decision||'')+'. '+(line.temperatureControl.message||''));y+=7;
     }
   }
-  const core={rules,infer,number,evaluate,allowed,notes};
+  const familyRules={surgele:'surgele',viande:'refrigere4',volaille:'refrigere4',poisson:'refrigere2',laitier:'etiquette','autre-refrigere':'etiquette',ambiant:'ambiant'};
+  function measurementAlert(family,value,label){
+    const measured=number(value),category=familyRules[family],rule=rules[category];
+    if(!rule)return {level:'neutral',message:'Choisissez le type de produit sous le fournisseur.'};
+    if(category==='ambiant')return {level:'neutral',message:'Produit ambiant : vérifier les conditions de conservation de l’étiquette.'};
+    if(measured===null)return {level:'neutral',message:'Choisissez la température mesurée.'};
+    const labelled=number(label);
+    if(labelled!==null&&(!Number.isFinite(labelled)||labelled< -40||labelled>10))return {level:'neutral',message:'Vérifiez la limite de température de l’étiquette.'};
+    if(category==='etiquette'&&labelled===null)return {level:'neutral',message:'Renseignez le maximum indiqué sur l’étiquette pour contrôler ce produit.'};
+    const limit=labelled===null?rule.max:rule.max===null?labelled:Math.min(rule.max,labelled);
+    const fmt=n=>(n>0?'+':'')+String(n).replace('.',',')+' °C';
+    if(!Number.isFinite(measured))return {level:'neutral',message:'Température invalide.'};
+    if(measured>limit)return {level:'danger',message:'Température au-dessus du seuil : '+fmt(measured)+' relevés — maximum '+fmt(limit)+'. Contrôlez la mesure avant de décider de la réception.'};
+    if(category!=='surgele'&&measured<0)return {level:'warning',message:'Température négative pour un produit réfrigéré : vérifier un éventuel début de congélation.'};
+    return {level:'ok',message:'Température dans le seuil : '+fmt(measured)+' relevés — maximum '+fmt(limit)+'.'};
+  }
+  const core={rules,infer,number,evaluate,allowed,notes,measurementAlert};
   if(typeof module!=='undefined'&&module.exports){module.exports=core;return;}
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
   const field=(i,key)=>document.querySelector('[data-rec-temperature-'+key+'="'+i+'"]');
@@ -75,6 +91,7 @@
   }
   function render(cfg,rec,locked){
     const refreshers=[];
+    const family=document.getElementById('receptionProductFamily');
     const vehicle=document.getElementById('receptionVehicleTemp');
     if(vehicle?.tagName==='SELECT'){
       const selected=String(rec.vehicleTemp??vehicle.value??'');
@@ -100,6 +117,18 @@
       box.innerHTML=`<div style="display:flex;flex-wrap:wrap;gap:12px"><label style="flex:1;min-width:200px">Conservation du produit <select data-rec-temperature-category="${i}"><option value="">— Choisir —</option>${Object.entries(rules).map(([key,r])=>`<option value="${key}">${esc(r.label)}</option>`).join('')}</select></label><label style="flex:1;min-width:180px">Maximum de l’étiquette (°C), si précisé<input type="number" step="0.1" min="-40" max="10" data-rec-temperature-label="${i}" value="${esc(line.temperatureLabelMax??'')}" placeholder="Facultatif, sauf catégorie étiquette"></label><label style="flex:1;min-width:180px">Méthode de mesure<select data-rec-temperature-method="${i}"><option value="">— Choisir —</option><option value="sonde-contact">Sonde entre emballages</option><option value="sonde-coeur">Sonde à cœur</option><option value="infrarouge">Infrarouge (dépistage)</option></select></label></div><p data-rec-temperature-help="${i}" style="margin:8px 0"></p><p role="status" aria-live="polite" data-rec-temperature-status="${i}" style="padding:8px;border-radius:8px"></p><div data-rec-temperature-deviation="${i}"><label><input type="checkbox" data-rec-temperature-verified="${i}"> J’ai vérifié les mesures et les conditions du transport ; le PMS et le marché permettent cette acceptation.</label><label>Responsable de la décision<input data-rec-temperature-responsible="${i}" value="${esc(line.temperatureResponsible||'')}"></label><label>Justification / action corrective<input data-rec-temperature-reason="${i}" value="${esc(line.temperatureJustification||'')}" placeholder="Durée de l’écart, contrôle à la sonde, vérification du transport…"></label></div><details><summary>Repères de température et sources</summary><p>Surgelés : maximum −18 °C ; une brève variation de transport jusqu’à −15 °C n’est pas une acceptation automatique. Réfrigérés : seuil selon la catégorie et l’étiquette. Une étiquette plus stricte reste prioritaire. −20 °C est plus froid que −18 °C.</p><p>Une mesure infrarouge sert au dépistage : confirmer tout écart à la sonde. Ne pas percer un emballage sans appliquer la procédure d’hygiène adaptée.</p><a href="https://agriculture.gouv.fr/securite-sanitaire-des-aliments-tout-sur-la-chaine-du-froid" target="_blank" rel="noopener">Tableau du ministère de l’Agriculture</a> · <a href="https://www.legifrance.gouv.fr/loda/id/JORFTEXT000000676143" target="_blank" rel="noopener">Règles des surgelés</a></details>`;
       card.querySelector('.reception-line-grid').after(box);field(i,'category').value=category;field(i,'method').value=line.temperatureMethod||'';field(i,'verified').checked=!!line.temperatureDeviationVerified;
       function refresh(){
+        const selectedFamily=family?.value||rec.productFamily||'';
+        if(!locked&&familyRules[selectedFamily])field(i,'category').value=familyRules[selectedFamily];
+        card.querySelectorAll('[data-rec-product-temp],[data-rec-interior-temp]').forEach(input=>{
+          let hint=input.nextElementSibling;
+          if(!hint?.hasAttribute('data-measured-temperature-alert')){
+            hint=document.createElement('div');hint.setAttribute('data-measured-temperature-alert','');hint.setAttribute('role','status');hint.setAttribute('aria-live','polite');input.after(hint);
+          }
+          const alert=measurementAlert(selectedFamily,input.value,field(i,'label')?.value);
+          const colors={danger:['#fde7e7','#952d29'],ok:['#e3f5e9','#216340'],warning:['#fff0cd','#785812'],neutral:['','#536b78']};
+          const palette=colors[alert.level];input.style.backgroundColor=palette[0];input.style.borderColor=alert.level==='danger'?'#c23934':alert.level==='ok'?'#33845a':'';
+          hint.textContent=alert.message;hint.style.cssText='padding:8px 0;font-size:13px;color:'+palette[1];
+        });
         const data={...line,...capture(i),productTemp:card.querySelector('[data-rec-product-temp]')?.value||'',interiorTemp:card.querySelector('[data-rec-interior-temp]')?.value||''};
         const r=evaluate(data,v?.value,cfg),status=field(i,'status');field(i,'help').textContent=rules[data.temperatureCategory]?.help||'Choisir la catégorie d’après le produit et son étiquette.';
         status.textContent=locked&&!line.temperatureControl?'Réception historique : aucun contrôle automatique enregistré à cette date.':r.message;
@@ -111,6 +140,7 @@
       card.addEventListener('input',refresh);card.addEventListener('change',refresh);refreshers.push(refresh);refresh();
     });
     if(v)v.oninput=()=>refreshers.forEach(refresh=>refresh());
+    if(family)family.onchange=()=>{if(!locked)rec.productFamily=family.value;refreshers.forEach(refresh=>refresh());};
   }
   function validate(rec,cfg={}){
     for(let i=0;i<rec.lines.length;i++){
