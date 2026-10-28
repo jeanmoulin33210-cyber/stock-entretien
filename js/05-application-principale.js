@@ -2835,6 +2835,9 @@ function prepareJuryFromHomeV180(event){
 
   // La fenêtre s'ouvre D'ABORD. Ainsi le bouton répond toujours.
   modal.classList.add('show');
+  modal.scrollTop=0;
+  const panel=modal.querySelector('.modal');if(panel)panel.scrollTop=0;
+  list.scrollTop=0;
   if(intro)intro.textContent='Choisissez le lot ou le jury que vous voulez préparer.';
   list.innerHTML='<div class="prepare-jury-empty-v180">Chargement des lots enregistrés…</div>';
 
@@ -4825,7 +4828,7 @@ async function requestPreparationEditV347(){
   modal.classList.add('show');$('#preparationPinInputV347').focus();
 }
 
-function openConfig(){preparationEditKeyV347='';try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig()}
+function openConfig(){preparationEditKeyV347='';try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig();window.scrollTo({top:0,left:0,behavior:'instant'});requestAnimationFrame(()=>{if($('#configView')?.classList.contains('active'))window.scrollTo({top:0,left:0,behavior:'instant'});})}
 function renderConfig(){
   const c=draftConfig;
   c.criteria=normalizeCriteria(c.criteria);
