@@ -33,3 +33,7 @@
 
 /* V439 — remove the redundant tester navigation panel on every tester screen. */
 #testerView .tester-toolbar{display:none!important}
+
+/* V444 — a gentle cue only on empty editable blind sample numbers. */
+#configView #productsConfig input[data-s-id]:placeholder-shown:not(:disabled):not([readonly]){background:#fff4df!important;border:2px solid #dc982b!important;box-shadow:none!important}
+#configView #productsConfig input[data-s-id]:placeholder-shown:not(:disabled):not([readonly])::placeholder{color:#916019;opacity:1}
