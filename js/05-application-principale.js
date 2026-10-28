@@ -1389,7 +1389,8 @@ function startBlankJuryFromMaster(){
   if(heroTitle)heroTitle.textContent='Préparer le jury';
   $('#headerTitle').textContent='Préparer le jury';
   $('#headerSub').textContent='Produits et fournisseurs déjà repris · Saisissez les numéros d’échantillons, puis réglez les questions et les testeurs';
-  requestAnimationFrame(()=>document.querySelector('#productsConfig')?.scrollIntoView({behavior:'smooth',block:'start'}));
+  window.scrollTo({top:0,left:0,behavior:'instant'});
+  requestAnimationFrame(()=>{if($('#configView')?.classList.contains('active'))window.scrollTo({top:0,left:0,behavior:'instant'});});
 }
 
 
