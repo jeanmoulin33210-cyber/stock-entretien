@@ -1,0 +1,28 @@
+const assert=require('node:assert/strict'),fs=require('fs'),vm=require('vm');
+const core=require('../js/39-establishment-demo.js'),{memoryStorage}=require('../js/00-establishment-demo-sandbox.js');
+const a=core.seed('A'),b=core.seed('B'),before=JSON.stringify(b);
+assert(core.validPayload(a));assert(core.validPayload(b));
+assert.deepEqual(core.summary(a).map(x=>x.name),['Lot 101 — Essai du lycée A']);
+assert.deepEqual(core.summary(b).map(x=>x.name),['Lot 202 — Essai du lycée B']);
+assert(!core.validPayload({...a,'jm_tc_account_v385':'secret'}));assert(!core.validPayload([]));assert.throws(()=>core.seed('C'));
+let events=0;const sa=memoryStorage(a,()=>events++),sb=memoryStorage(b,()=>{});
+sa.setItem('demo-field','A only');assert.equal(sb.getItem('demo-field'),null);assert(events>0);
+sa.clear();assert.equal(sa.length,0);assert.equal(JSON.stringify(b),before);assert.equal(sb.getItem('jm_test_culinaire_sample_master_meta_v1'),b.jm_test_culinaire_sample_master_meta_v1);
+sa.setItem('x','1');sa.y='2';assert.deepEqual(Object.keys(sa),['x','y']);assert.equal(sa.y,'2');assert.equal(sa.getItem('y'),'2');
+const calls=[],storage=new Map(),elements=new Map();let conflict=false;
+const db={from:table=>{assert.equal(table,'jury_demo_workspaces');const q={table,filters:[]};calls.push(q);return {update(value){q.value=value;return this},eq(k,v){q.filters.push([k,v]);return this},select(){return this},maybeSingle:async()=>({data:conflict?null:{school:'A',revision:2}})};}};
+const ctx={console,crypto:require('crypto').webcrypto,setTimeout:()=>1,clearTimeout(){},location:{origin:'https://demo.example'},localStorage:{getItem:k=>storage.get(k)||null,setItem:(k,v)=>storage.set(k,v),removeItem:k=>storage.delete(k)},document:{readyState:'loading',addEventListener(){},getElementById:id=>{if(!elements.has(id))elements.set(id,{style:{}});return elements.get(id)}},addEventListener(){},JuryAccountV385:{client:db,signedOut:false}};ctx.window=ctx;
+let source=fs.readFileSync(require('node:path').join(__dirname,'../js/39-establishment-demo.js'),'utf8');
+source=source.replace('  API.open=open;API.close=close;','  API.open=open;API.close=close;API.test={queue,saveNow,setRows:value=>rows=value};');
+vm.createContext(ctx);vm.runInContext(source,ctx);
+(async()=>{
+ const api=ctx.JuryEstablishmentDemoV451.test;
+ api.setRows([{school:'A',revision:1,payload:{}},{school:'B',revision:1,payload:b}]);
+ api.queue('A',a);await api.saveNow();
+ assert.deepEqual(calls[0].filters,[['school','A'],['revision',1]]);
+ assert.equal(storage.size,0);
+ conflict=true;api.queue('A',{...a,jm_test_culinaire_archives_v1:'[] '});
+ await assert.rejects(api.saveNow(),/autre appareil/);
+ assert(storage.has('jm_tc_demo_pending_v451:A'));assert(!storage.has('jm_tc_demo_pending_v451:B'));
+ console.log('PASS school A/B snapshots, storage separation, root credentials excluded, per-school CAS and conflict recovery');
+})().catch(e=>{console.error(e);process.exitCode=1});
