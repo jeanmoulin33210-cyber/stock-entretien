@@ -3,20 +3,32 @@ import { Buffer } from 'node:buffer';
 // Supabase Edge Function. Deploy only after configuring the server-side secrets.
 const origin='https://jeanmoulin33210-cyber.github.io';
 const headers={'Access-Control-Allow-Origin':origin,'Access-Control-Allow-Headers':'authorization, apikey, content-type, x-client-info','Access-Control-Allow-Methods':'POST, OPTIONS'};
+// A verified second administrator must belong to the existing general workspace.
+// Memberships in an individual jury do not grant this permission.
+export async function canSendReport(user:{id?:string;email_confirmed_at?:string;is_anonymous?:boolean},authorization:string):Promise<boolean>{
+  if(!user?.id||!user.email_confirmed_at||user.is_anonymous)return false;
+  if(user.id==='1ea24b40-a93d-418d-a363-4d55d1bd8feb')return true;
+  try{
+    const url=Deno.env.get('SUPABASE_URL')+'/rest/v1/test_culinaire_memberships?select=role&session_id=eq.675ee51b-915e-416a-ac45-349d6a69f524&user_id=eq.'+encodeURIComponent(user.id)+'&role=eq.admin';
+    const result=await fetch(url,{headers:{Authorization:authorization,apikey:Deno.env.get('SUPABASE_ANON_KEY')!}});
+    if(!result.ok)return false;
+    const rows=await result.json();
+    return Array.isArray(rows)&&rows.length===1&&rows[0]?.role==='admin';
+  }catch{return false;}
+}
 export async function handler(req:Request):Promise<Response>{
   const reply=(body:unknown,status=200)=>Response.json(body,{status,headers});
   if(req.method==='OPTIONS')return new Response(null,{headers});
   if(req.method!=='POST')return reply({error:'Method not allowed'},405);
   if(req.headers.get('origin')&&req.headers.get('origin')!==origin)return reply({error:'Forbidden'},403);
   const from='jeanmoulin33210@gmail.com',password=(Deno.env.get('SMTP_PASSWORD')||'').replace(/\s/g,'');
-  const allowed=['1ea24b40-a93d-418d-a363-4d55d1bd8feb'];
   if(!password)return reply({error:'Service non configuré'},503);
   const transport=nodemailer.createTransport({host:'smtp.gmail.com',port:465,secure:true,auth:{user:from,pass:password},connectionTimeout:15000,greetingTimeout:15000,socketTimeout:30000,disableFileAccess:true,disableUrlAccess:true});
   const auth=req.headers.get('authorization')||'';
   if(!auth.startsWith('Bearer '))return reply({error:'Unauthorized'},401);
   const userResponse=await fetch(Deno.env.get('SUPABASE_URL')+'/auth/v1/user',{headers:{Authorization:auth,apikey:Deno.env.get('SUPABASE_ANON_KEY')!}});
   const user=await userResponse.json();
-  if(!userResponse.ok||!user.id||!allowed.includes(user.id))return reply({error:'Forbidden'},403);
+  if(!userResponse.ok||!user.id||!await canSendReport(user,auth))return reply({error:'Forbidden'},403);
   if(Number(req.headers.get('content-length')||0)>5100000)return reply({error:'PDF trop volumineux'},413);
   try{
     const form=await req.formData(),file=form.get('report');
