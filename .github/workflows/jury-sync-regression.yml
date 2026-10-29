@@ -55,3 +55,6 @@ jobs:
           node tests/owner-account.test.cjs
           node tests/second-admin.test.cjs
           node tests/report-admin-access.test.cjs
+
+      - name: Fictitious establishment exercise isolation
+        run: node tests/establishment-demo.test.cjs
