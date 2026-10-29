@@ -61,3 +61,6 @@ jobs:
 
       - name: Authenticated school trial isolation
         run: node --test tests/school-trials.test.cjs
+
+      - name: School phone preparation and tester-only QR links
+        run: node --test tests/school-phones.test.cjs
