@@ -58,3 +58,6 @@ jobs:
 
       - name: Fictitious establishment exercise isolation
         run: node tests/establishment-demo.test.cjs
+
+      - name: Authenticated school trial isolation
+        run: node --test tests/school-trials.test.cjs
