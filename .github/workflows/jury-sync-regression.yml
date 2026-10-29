@@ -49,3 +49,9 @@ jobs:
 
       - name: Final report attachment limit
         run: node tests/final-report-size.test.cjs
+
+      - name: Owner and second administrator account access
+        run: |
+          node tests/owner-account.test.cjs
+          node tests/second-admin.test.cjs
+          node tests/report-admin-access.test.cjs
