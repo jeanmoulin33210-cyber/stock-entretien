@@ -115,7 +115,17 @@
     if(existing?.config?.products?.length&&!catalog.removed?.['prepared:'+id(candidate)])throw new Error('Ce lot existe déjà dans le partage. Rouvrez Résultats pour le consulter.');
     const st=snapshot(candidate);st.config._catalogCreatedV357=true;return st;
   }
-  const API={clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383,resultsChoicesV388,isLotDRecoveryV389,validateLotDRestoreV389};
+  // Keep verified recovery copies in IndexedDB, outside localStorage's small budget.
+  async function preserveImportRecoveryV453(value,storage,verify){
+    const key='jm_tc_stable_owner_recovery_v357';
+    await verify(key,value);
+    const old=storage.getItem(key);
+    if(old!==null){
+      if(old!==value)await verify(key,old);
+      if(storage.getItem(key)===old)storage.removeItem(key);
+    }
+  }
+  const API={preserveImportRecoveryV453,clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383,resultsChoicesV388,isLotDRecoveryV389,validateLotDRestoreV389};
   if(typeof module==='object'&&module.exports){module.exports=API;return;}
   root.JuryOwnerSyncV357=API;
   let hub=null,descriptor=null,busy=false,applying=false,retryAt=0;
@@ -191,7 +201,7 @@
     for(const row of Object.values(cfg.productSheets||{}))n+=Object.values(row||{}).filter(v=>v!==null&&v!==undefined&&String(v).trim()).length;
     return n;
   }
-  function apply(catalog,bases,local){
+  async function apply(catalog,bases,local){
     const before=collect();const prepared=loadPreparedJurys().filter(r=>!retired(r.state));const archives=loadArchives().filter(r=>!catalog.removed['archive:'+r.id]);
     let changed=archives.length!==loadArchives().length;
     const sampleBefore=loadSampleLotHistory();
@@ -219,7 +229,8 @@
     const currentRemoved=!!catalog.removed[currentKey];
     const currentChanged=(incoming&&!equal(snapshot(state),incoming))||currentRemoved;
     if(changed||currentChanged){
-      localStorage.setItem('jm_tc_stable_owner_recovery_v357',JSON.stringify({at:new Date().toISOString(),state:snapshot(state),prepared:loadPreparedJurys(),archives:loadArchives()}));
+      await preserveImportRecoveryV453(JSON.stringify({at:new Date().toISOString(),state:snapshot(state),prepared:loadPreparedJurys(),archives:loadArchives()}),localStorage,verifyRecoveryValueV360);
+      if(!equal(before,collect()))throw new Error('Une fiche a été enregistrée pendant la préparation de la sauvegarde. Réessayez : vos données sont conservées.');
       applying=true;
       try{
         savePreparedJurys(keep);saveArchives(archives);
@@ -366,7 +377,7 @@
       // or saved new data while the request was in flight.
       const currentLocal=collect();
       const stillSafe=canApply&&equal(local,currentLocal)&&['homeView','juryChooserView'].includes(document.querySelector('.view.active')?.id)&&!document.querySelector('.modal-backdrop.show')&&!document.activeElement?.matches('input,textarea,select');
-      if(stillSafe)apply(next,initial,local);
+      if(stillSafe)await apply(next,initial,local);
       const acknowledged={...bases};for(const [k,v]of Object.entries(next.records))if(stillSafe||equal(currentLocal[k],v.state))acknowledged[k]=v.state;
       localStorage.setItem(key,JSON.stringify(acknowledged));
       status('Données partagées vérifiées · '+new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'}));
@@ -413,7 +424,7 @@
       await adoptResetV367(config,c);
       const key='jm_tc_owner_baseline_v357_'+descriptor.sessionId;
       const baseline=read(key,{});
-      apply(catalog,baseline,collect());
+      await apply(catalog,baseline,collect());
       const acknowledged={};
       for(const [k,v]of Object.entries(catalog.records))acknowledged[k]=v.state;
       localStorage.setItem(key,JSON.stringify(acknowledged));
