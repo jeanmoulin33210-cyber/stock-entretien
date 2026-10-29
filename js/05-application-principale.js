@@ -6430,7 +6430,7 @@ function applyDraft(){
 
   const phonesReady=phoneSharePrepared(state.config);
 
-  if(!phonesReady){
+  if(!phonesReady&&!window.__JURY_SCHOOL_TRIAL_ACTIVE){
     /* Le jury est bien enregistré, mais on ne renvoie pas l'utilisateur
        à l'accueil avec un jury impossible à lancer sans explication. */
     draftConfig=deepClone(state.config);
