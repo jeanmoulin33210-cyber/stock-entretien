@@ -33,3 +33,25 @@ test('all snapshot reads and writes use the isolated account table',()=>{
  assert.equal((source.match(/from\('jury_school_trials'\)/g)||[]).length,2);
  assert.ok(source.includes(".eq('revision',row.revision)"));
 });
+
+test('school trial saves and returns home without claiming phones are ready; real jury still requires phones',()=>{
+ const source=fs.readFileSync(path.join(dir,'05-application-principale.js'),'utf8');
+ const body=source.slice(source.indexOf('function applyDraft(){'),source.indexOf('\nfunction startTesterPreview()'));
+ for(const trial of [true,false]){
+  const cfg={testerNames:['Testeur 1'],testerCount:1,products:[{id:'p1',samples:[{id:'1',supplier:'A'}]}]};
+  const calls={save:0,upsert:0,home:0,config:0,alerts:[]};
+  const ctx={window:{__JURY_SCHOOL_TRIAL_ACTIVE:trial},state:{config:cfg,testers:{}},draftConfig:structuredClone(cfg),
+   preparationLockedV347:()=>false,syncTopDraft:()=>{},$:()=>({value:'1',scrollIntoView(){}}),validateDraft:()=>null,
+   deepClone:structuredClone,validKeys:()=>new Set(),uid:()=> 'prepared-1',
+   makeInitialState:config=>({config,testers:{1:{answers:{}}}}),
+   saveState:()=>calls.save++,upsertPreparedJury:()=>calls.upsert++,
+   localStorage:{setItem(){}},STORAGE_KEY:'state',phoneSharePrepared:()=>false,
+   renderHome:()=>calls.home++,renderConfig:()=>calls.config++,toast:()=>{},
+   setTimeout:f=>f(),alert:m=>calls.alerts.push(m)};
+  vm.createContext(ctx);vm.runInContext(body+';applyDraft();',ctx);
+  assert.equal(calls.save,1);assert.equal(calls.upsert,1);
+  assert.equal(calls.home,trial?1:0);assert.equal(calls.config,trial?0:1);
+  assert.equal(calls.alerts.length,trial?0:1);
+  assert.equal(ctx.state.config._shareSessionId,undefined);
+ }
+});
