@@ -31,6 +31,7 @@
   Object.defineProperty(root,'localStorage',{value:local,configurable:false});
   Object.defineProperty(root,'sessionStorage',{value:session,configurable:false});
   root.__JURY_DEMO_ACTIVE=boot.school;
+  root.__JURY_SCHOOL_TRIAL_ACTIVE=true;
   root.fetch=()=>Promise.reject(new Error('Cet essai ne contacte pas les services des vrais jurys.'));
   root.WebSocket=function(){throw new Error('Partage en ligne désactivé dans cet essai.');};
   root.XMLHttpRequest=function(){throw new Error('Service en ligne désactivé dans cet essai.');};
