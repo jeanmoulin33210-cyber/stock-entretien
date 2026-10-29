@@ -1,7 +1,7 @@
 /* Authenticated establishment trial. Server RLS isolates school snapshots. */
 (function(root){
   'use strict';
-  const KEYS=['jm_test_culinaire_param_v2','jm_test_culinaire_archives_v1','jm_test_culinaire_custom_templates_v1','jm_test_culinaire_market2026_personal_v1','jm_tc_prepared_jurys_v97','jm_test_culinaire_prepared_v97','jm_test_culinaire_sample_master_v1','jm_test_culinaire_sample_master_meta_v1','jm_test_culinaire_sample_products_v1','jm_test_culinaire_sample_lot_history_v178'];
+  const KEYS=['jm_test_culinaire_admin_token_v1','jm_test_culinaire_owner_token_v1','jm_test_culinaire_param_v2','jm_test_culinaire_archives_v1','jm_test_culinaire_custom_templates_v1','jm_test_culinaire_market2026_personal_v1','jm_tc_prepared_jurys_v97','jm_test_culinaire_prepared_v97','jm_test_culinaire_sample_master_v1','jm_test_culinaire_sample_master_meta_v1','jm_test_culinaire_sample_products_v1','jm_test_culinaire_sample_lot_history_v178'];
   const parse=(x,f)=>{try{return JSON.parse(x)||f;}catch(e){return f;}};
   const copy=x=>JSON.parse(JSON.stringify(x));
   function validPayload(payload){
@@ -42,7 +42,7 @@
     }
     return Array.from(rows.values());
   }
-  const API={KEYS,seed,summary,validPayload};
+  const API={KEYS,seed,summary,validPayload,schoolClient};
   if(typeof module==='object'&&module.exports){module.exports=API;return;}
   if(root.__JURY_DEMO_ACTIVE)return;
   root.JurySchoolTrialV452=API;
@@ -134,13 +134,17 @@
       school=next;mounted=false;nonce=crypto.randomUUID();
       let text=await fetch(new URL('tests-culinaires.html',location.href),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Écran d’essai indisponible.');return r.text();});
       const doc=new DOMParser().parseFromString(text,'text/html');
-      doc.querySelectorAll('script[src*="39-establishment-demo"],script[src*="40-school-trial"],script[src*="19-v22-installation"],link[rel="manifest"]').forEach(n=>n.remove());
+      doc.querySelectorAll('script[src*="39-establishment-demo"],script[src*="40-school-trial"],script[src*="33-owner-sync"],script[src*="35-owner-account"],script[src*="19-v22-installation"],link[rel="manifest"]').forEach(n=>n.remove());
+      const cloudScript=doc.querySelector('script[src*="06-v20-partage"]');
+      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=455';
+      if(!cloudScript)throw new Error('Connexion du jury indisponible.');
+      cloudScript.after(bridge);
       const base=doc.createElement('base');base.href=new URL('./',location.href).href;doc.head.prepend(base);
       const csp=doc.createElement('meta');csp.httpEquiv='Content-Security-Policy';csp.content="connect-src 'none'; form-action 'none'; object-src 'none'";base.after(csp);
       const boot=doc.createElement('script');
       boot.textContent='window.__JURY_DEMO_BOOT='+JSON.stringify({school:next,label:row.label,origin:location.origin,nonce,payload:payloadFor(row)}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029')+';';
       csp.after(boot);
-      const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=454';boot.after(isolate);
+      const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=455';boot.after(isolate);
       frame=document.createElement('iframe');frame.title='Logiciel — '+row.label+' — essai';frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-modals allow-downloads');
       frame.style.cssText='width:100%;height:calc(100dvh - 200px);min-height:400px;border:1px solid #bfd2de;border-radius:12px;background:#edf5f8';
       el('demoContentV452').replaceChildren(frame);
@@ -160,7 +164,7 @@
     if(overlay)return;
     client();
     overlay=document.createElement('section');overlay.id='establishmentDemoV452';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Établissements — essai');
-    overlay.innerHTML='<div class="demo-header"><h2>Établissements — comptes de test</h2><p>Connexion personnelle et dossiers séparés. Utilisez uniquement des données fictives.</p><div class="demo-nav"><button type="button" id="demoOverviewV452">Mes établissements / Vue générale</button><button type="button" id="demoCloseV452">Fermer</button></div><strong id="demoRoleV452"></strong><p id="demoSaveV452" role="status" aria-live="polite"></p><p class="demo-limit">Premier essai : choix des échantillons, préparation, réception et fiches. Les QR codes, le jury partagé sur téléphones et l’envoi de rapports seront raccordés dans une étape suivante et sont désactivés ici.</p></div><div id="demoContentV452"></div>';
+    overlay.innerHTML='<div class="demo-header"><h2>Établissements — comptes de test</h2><p>Connexion personnelle et dossiers séparés. Utilisez uniquement des données fictives.</p><div class="demo-nav"><button type="button" id="demoOverviewV452">Mes établissements / Vue générale</button><button type="button" id="demoCloseV452">Fermer</button></div><strong id="demoRoleV452"></strong><p id="demoSaveV452" role="status" aria-live="polite"></p><p class="demo-limit">Premier essai : choix des échantillons, préparation, réception et fiches. La préparation des téléphones, les QR codes et les réponses des testeurs sont disponibles. Utilisez des données fictives. L’envoi de rapports par email reste désactivé dans cet essai.</p></div><div id="demoContentV452"></div>';
     document.body.appendChild(overlay);
     el('demoOverviewV452').onclick=overview;el('demoCloseV452').onclick=close;
     await overview();
@@ -181,7 +185,24 @@
     const refresh=()=>{b.hidden=!root.JuryAccountV385?.client||root.JuryAccountV385?.signedOut||!!root.__JURY_DEMO_ACTIVE;};
     refresh();setInterval(refresh,1000);
   }
+  function schoolClient(c,schoolId){
+    return new Proxy(c,{get(target,key){
+      if(key==='rpc')return (name,args,options)=>name==='test_culinaire_create_secure_session'
+        ?target.rpc('school_trial_create_secure_session',{...args,p_school:schoolId},options)
+        :target.rpc(name,args,options);
+      if(key==='auth')return new Proxy(target.auth,{get(auth,k){
+        if(['signOut','signInAnonymously','signInWithPassword','signUp','updateUser'].includes(k))return async()=>{throw new Error('Utilisez la connexion de l’établissement hors du jury.');};
+        const v=auth[k];return typeof v==='function'?v.bind(auth):v;
+      }});
+      const value=target[key];return typeof value==='function'?value.bind(target):value;
+    }});
+  }
+  API.clientForSchool=(s,n)=>{
+    if(!frame||s!==school||n!==nonce)throw new Error('Établissement non ouvert.');
+    return schoolClient(client(),s);
+  };
   API.open=open;API.close=close;API.flush=flushChild;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })(typeof window==='undefined'?globalThis:window);
+
 
