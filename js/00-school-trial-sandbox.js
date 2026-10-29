@@ -19,7 +19,7 @@
       getOwnPropertyDescriptor:(t,k)=>values.has(k)?{enumerable:true,configurable:true,value:values.get(k)}:Reflect.getOwnPropertyDescriptor(t,k)
     });
   }
-  const KEYS=['jm_test_culinaire_param_v2','jm_test_culinaire_archives_v1','jm_test_culinaire_custom_templates_v1','jm_test_culinaire_market2026_personal_v1','jm_tc_prepared_jurys_v97','jm_test_culinaire_prepared_v97','jm_test_culinaire_sample_master_v1','jm_test_culinaire_sample_master_meta_v1','jm_test_culinaire_sample_products_v1','jm_test_culinaire_sample_lot_history_v178'];
+  const KEYS=['jm_test_culinaire_admin_token_v1','jm_test_culinaire_owner_token_v1','jm_test_culinaire_param_v2','jm_test_culinaire_archives_v1','jm_test_culinaire_custom_templates_v1','jm_test_culinaire_market2026_personal_v1','jm_tc_prepared_jurys_v97','jm_test_culinaire_prepared_v97','jm_test_culinaire_sample_master_v1','jm_test_culinaire_sample_master_meta_v1','jm_test_culinaire_sample_products_v1','jm_test_culinaire_sample_lot_history_v178'];
   if(typeof module==='object'&&module.exports){module.exports={memoryStorage,KEYS};return;}
   const boot=root.__JURY_DEMO_BOOT;
   if(!boot||!/^S(?:[1-9]|1[0-2])$/.test(boot.school)||root.parent===root)return;
@@ -32,6 +32,7 @@
   Object.defineProperty(root,'sessionStorage',{value:session,configurable:false});
   root.__JURY_DEMO_ACTIVE=boot.school;
   root.__JURY_SCHOOL_TRIAL_ACTIVE=true;
+  root.__JURY_SCHOOL_PHONES_READY=true;
   root.fetch=()=>Promise.reject(new Error('Cet essai ne contacte pas les services des vrais jurys.'));
   root.WebSocket=function(){throw new Error('Partage en ligne désactivé dans cet essai.');};
   root.XMLHttpRequest=function(){throw new Error('Service en ligne désactivé dans cet essai.');};
@@ -55,17 +56,18 @@
   },true);
   document.addEventListener('DOMContentLoaded',()=>{
     const style=document.createElement('style');
-    style.textContent='html body{padding-top:42px!important}#schoolExerciseBanner{position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#fff1d6;color:#62430c;padding:10px;text-align:center;font:700 14px system-ui}#ownerAccountBtnV385,#cloudBtn,#securityBtn,#installAppBtn{display:none!important}';
+    style.textContent='html body{padding-top:42px!important}#schoolExerciseBanner{position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#fff1d6;color:#62430c;padding:10px;text-align:center;font:700 14px system-ui}#ownerAccountBtnV385,#cloudBtn,#securityBtn,#adminLockBtn,#adminSecurityBtn,#installAppBtn{display:none!important}';
     document.head.appendChild(style);
     const banner=document.createElement('div');banner.id='schoolExerciseBanner';
     banner.textContent='ESSAI — '+boot.label+' · données fictives';document.body.prepend(banner);
     const disable=()=>{
-      for(const id of ['configPreparePhonesBtn','configQrBtn','configEmailQrPdfBtn','configEmailArticlesBtn','simpleResultsEmailBtn','officialLaunchBtn','launchCloudBtn','reportReadySendBtn']){
-        const b=document.getElementById(id);if(b){b.disabled=true;b.title='Les QR codes, les envois et le lancement partagé ne font pas partie de cet essai.';}
+      for(const id of ['configEmailArticlesBtn','simpleResultsEmailBtn','reportReadySendBtn']){
+        const b=document.getElementById(id);if(b){b.disabled=true;b.title='L’envoi de rapports par email reste désactivé dans cet essai.';}
       }
     };
     disable();setInterval(disable,800);
     root.parent.postMessage({kind:'jury-demo-mounted',school:boot.school,nonce:boot.nonce},boot.origin);
   });
 })(typeof window==='undefined'?globalThis:window);
+
 
