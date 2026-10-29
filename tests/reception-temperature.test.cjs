@@ -11,7 +11,7 @@ assert.equal(result({productTemp:'-18',interiorTemp:'-12'}).level,'danger','both
 assert.equal(result({temperatureLabelMax:'-20',productTemp:'-18'}).level,'danger','stricter label wins');
 assert.equal(result({},'-19').level,'ok','-20 vehicle target is not a legal refusal threshold');
 assert.equal(result({},'-10').level,'warning');
-assert.equal(result({},'').level,'missing');assert.equal(result({productTemp:''}).level,'missing');assert.equal(result({productTemp:'garbage'}).level,'missing');assert.equal(result({temperatureMethod:''}).level,'missing');
+assert.equal(result({},'').level,'missing');assert.equal(result({productTemp:''}).level,'missing');assert.equal(result({productTemp:'garbage'}).level,'missing');assert.equal(result({temperatureMethod:''}).level,'ok','the removed method field does not block a valid measured temperature');
 assert.equal(core.number('-17,5'),-17.5);assert.equal(core.number(''),null);assert.ok(Number.isNaN(core.number('NaN')));
 for(const [category,max] of [['refrigere2',2],['refrigere3',3],['refrigere4',4],['refrigere7',7],['refrigere8',8],['congele12',-12],['glace',-18],['poissonCongele',-18],['viandeCongelee',-18]]){
   const line={...base,productName:'Produit',temperatureCategory:category,productTemp:String(max)};assert.equal(core.evaluate(line,category.startsWith('refrigere')?'2':'-20').level,'ok');assert.equal(core.evaluate({...line,productTemp:String(max+0.1)},'-20').level,'danger');
@@ -31,7 +31,7 @@ let pages=0;const text=[];const doc=new Proxy({addPage(){pages++},splitTextToSiz
 console.log('PASS temperature boundaries, labels, category guard, missing measures, justified deviations, vehicle distinction, refusals and PDF audit');
 async function testSave(){
   const source=fs.readFileSync(require('node:path').join(__dirname,'../js/05-application-principale.js'),'utf8');const options=source.slice(source.indexOf('function receptionTemperatureOptions('),source.indexOf('function receptionNowTime('));vm.runInContext(options,ctx);assert.ok(ctx.receptionTemperatureOptions('-18.5').includes('value="-18.5" selected'));assert.ok(ctx.receptionTemperatureOptions('-25').includes('value="-25" selected'));const start=source.indexOf('async function saveReceptionForm('),end=source.indexOf('function renderReceptionSavedList(',start);let saved=0;
-  Object.assign(ctx,{state:{config:cfg},receptionEditingIndex:-1,receptionDraft:rec,receptionIsReadOnly:()=>false,receptionConfig:()=>cfg,captureReceptionForm:()=>rec,receptionConfiguredSupplierNames:()=>['A'],receptionSupplierAlreadyReceived:()=>false,receptionPendingLinesV345:(c,r)=>r.lines,alert:()=>{},document:{querySelector:()=>null},receptionJuryKey:()=> 'D',receptionList:()=>cfg.receptions??=[],deepClone:o=>JSON.parse(JSON.stringify(o)),saveState:()=>saved++,renderReceptionConfigStatus(){},blankReceptionRecordAfterSave:()=>({}),renderHome(){},toast(){}});
+  Object.assign(ctx,{state:{config:cfg},receptionEditingIndex:-1,receptionDraft:rec,receptionIsReadOnly:()=>false,receptionConfig:()=>cfg,captureReceptionForm:()=>rec,receptionConfiguredSupplierNames:()=>['A'],receptionSupplierAlreadyReceived:()=>false,receptionSupplierCompleteV345:()=>false,receptionPendingLinesV345:(c,r)=>r.lines,alert:()=>{},document:{querySelector:()=>null},receptionJuryKey:()=> 'D',receptionList:()=>cfg.receptions??=[],deepClone:o=>JSON.parse(JSON.stringify(o)),saveState:()=>saved++,renderReceptionConfigStatus(){},blankReceptionRecordAfterSave:()=>({}),renderHome(){},toast(){}});
   vm.runInContext(source.slice(start,end),ctx);rec.lines[0].decision='acceptation';await ctx.saveReceptionForm();assert.equal(saved,0);assert.equal(cfg.receptions,undefined);
   rec.lines[0].decision='refus';await ctx.saveReceptionForm();assert.equal(saved,1);assert.equal(cfg.receptions[0].lines[0].productTemp,'-12');assert.equal(cfg.receptions[0].lines[0].temperatureControl.level,'danger');
   const historical=JSON.parse(JSON.stringify(cfg.receptions));vm.runInContext(source.slice(source.indexOf('function normalizeReceptionRecord('),source.indexOf('function renderReceptionConfigStatus(')),ctx);
@@ -40,3 +40,4 @@ async function testSave(){
   console.log('PASS real save handler blocks hot acceptance, saves refusal, and preserves temperature controls on reload');
 }
 testSave().catch(e=>{console.error(e);process.exitCode=1;});
+
