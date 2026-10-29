@@ -12,7 +12,7 @@ class SimulatedPage{
  async goto(){let body;await this.handler({fulfill:async x=>{body=x.body}});this.html=body;this.reset();}
  reset(){const page=this;const element=id=>{if(!page.elements.has(id))page.elements.set(id,{id,textContent:'',style:{},setAttribute(){},classList:{remove(){if(page.active===id)page.active=null},add(){page.active=id}}});return page.elements.get(id)};
  const document={hidden:false,activeElement:{matches:()=>false},getElementById:element,createElement:()=>({id:'',textContent:'',style:{},setAttribute(){}}),querySelector:q=>q==='.view.active'?{id:page.active}:q==='header.topbar'?{after:el=>page.elements.set(el.id,el)}:null,addEventListener:(k,f)=>{(page.listeners[k]??=[]).push(f)}};
- const sandbox={backend:this.backend,console,document,localStorage:{getItem:k=>page.mem.get(k)||null,setItem:(k,v)=>page.mem.set(k,String(v)),removeItem:k=>page.mem.delete(k)},setTimeout:(f,n)=>{const t=setTimeout(f,n);timers.push(t);return t},setInterval:()=>0,clearTimeout,Date,Event:class{constructor(type){this.type=type}}};
+ const sandbox={backend:this.backend,console,document,localStorage:{getItem:k=>page.mem.get(k)||null,setItem:(k,v)=>{if(k==='jm_tc_stable_owner_recovery_v357')throw new Error('QuotaExceededError');page.mem.set(k,String(v))},removeItem:k=>page.mem.delete(k)},setTimeout:(f,n)=>{const t=setTimeout(f,n);timers.push(t);return t},setInterval:()=>0,clearTimeout,Date,Event:class{constructor(type){this.type=type}}};
  sandbox.window=sandbox;sandbox.addEventListener=(k,f)=>{(page.listeners[k]??=[]).push(f)};sandbox.dispatchEvent=e=>{for(const f of page.listeners[e.type]||[])f(e);return true};
  this.ctx=vm.createContext(sandbox);vm.runInContext(this.html.match(/<script>([\s\S]*)<\/script>/)[1],this.ctx);}
  async addScriptTag({path}){vm.runInContext(fs.readFileSync(path,'utf8'),this.ctx);}
@@ -49,7 +49,7 @@ function loadSampleLotHistory(){return []};function saveSampleLotHistory(){};
 function loadArchives(){return JSON.parse(localStorage.getItem('archives')||'[]')};
 function saveArchives(rows){localStorage.setItem('archives',JSON.stringify(rows))};
 function blankActiveStateV238(){return {config:{products:[],_emptyAfterReset:true},testers:{}}};
-function originalRenderHome(){};function saveCloudCfg(){};function cloudAuthStorageKey(){return 'original-auth'};
+async function verifyRecoveryValueV360(key,value){window.recoveryCopies=window.recoveryCopies||{};window.recoveryCopies[key]=value};\nfunction originalRenderHome(){};function saveCloudCfg(){};function cloudAuthStorageKey(){return 'original-auth'};
 function builder(type,payload){const filters={};return {eq(k,v){filters[k]=v;return this},select(){return this},maybeSingle(){return window.backend({type,payload,sid:filters.session_id,stamp:filters.updated_at})}}};
 const cloudClient={__jmStorageKeyV357:'original-auth',from(){return {select(){return builder('read')},update(p){return builder('write',p)}}},auth:{getSession:async()=>({data:{session:{user:{id:'owner'}}}})}};
 window.supabase={createClient:()=>cloudClient};
@@ -58,6 +58,21 @@ window.openLot=(id)=>{state=JSON.parse(JSON.stringify(loadPreparedJurys().find(r
 window.inspect=()=>({state:JSON.parse(JSON.stringify(state)),prepared:loadPreparedJurys(),status:document.getElementById('ownerSyncStateV357')?.textContent});
 </script>`;}
 (async()=>{
+
+ const recoveryKey='jm_tc_stable_owner_recovery_v357';
+ const copies=new Map(),values=new Map([[recoveryKey,'old backup'],['archives','signed archives']]);
+ const storage={getItem:k=>values.get(k)??null,removeItem:k=>values.delete(k),setItem(){throw new Error('QuotaExceededError')}};
+ await api.preserveImportRecoveryV453('new backup',storage,async(k,v)=>copies.set(v,k));
+ assert.equal(values.has(recoveryKey),false);assert.ok(copies.has('old backup'));assert.ok(copies.has('new backup'));assert.equal(values.get('archives'),'signed archives');
+ values.set(recoveryKey,'unverified backup');
+ await assert.rejects(api.preserveImportRecoveryV453('next',storage,async()=>{throw new Error('IDB full')}),/IDB full/);
+ assert.equal(values.get(recoveryKey),'unverified backup');
+ await assert.rejects(api.preserveImportRecoveryV453('next',storage,async(k,v)=>{if(v==='unverified backup')throw new Error('readback failed')}),/readback failed/);
+ assert.equal(values.get(recoveryKey),'unverified backup');
+ await api.preserveImportRecoveryV453('next',storage,async(k,v)=>{if(v==='unverified backup')values.set(k,'concurrent backup')});
+ assert.equal(values.get(recoveryKey),'concurrent backup');
+ console.log('PASS quota recovery: no localStorage backup write; verified copies preserved; failed or concurrent copies retained');
+
  const browser=await chromium.launch({headless:true});
  try{
  const ca=await browser.newContext(),cb=await browser.newContext();
