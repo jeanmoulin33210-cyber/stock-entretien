@@ -25,8 +25,9 @@
   if(!boot||!/^S(?:[1-9]|1[0-2])$/.test(boot.school)||root.parent===root)return;
   let timer,dirty=false;
   const snapshot=()=>Object.fromEntries(KEYS.map(k=>[k,local.getItem(k)]).filter(([,v])=>v!==null));
-  const send=()=>root.parent.postMessage({kind:'jury-demo-state',school:boot.school,nonce:boot.nonce,payload:snapshot()},boot.origin);
-  const changed=()=>{clearTimeout(timer);timer=setTimeout(send,120);};
+  const send=()=>{clearTimeout(timer);timer=null;root.parent.postMessage({kind:'jury-demo-state',school:boot.school,nonce:boot.nonce,payload:snapshot()},boot.origin);};
+  // A busy app must not postpone its saved snapshot indefinitely.
+  const changed=()=>{if(timer==null)timer=setTimeout(send,120);};
   const local=memoryStorage(boot.payload,changed),session=memoryStorage({},()=>{});
   Object.defineProperty(root,'localStorage',{value:local,configurable:false});
   Object.defineProperty(root,'sessionStorage',{value:session,configurable:false});
@@ -66,6 +67,9 @@
       }
     };
     disable();setInterval(disable,800);
+    // Retry saved snapshots after a missed message or a temporary network failure.
+    setInterval(()=>{if(!document.hidden)send();},5000);
+    document.addEventListener('visibilitychange',()=>{if(!document.hidden)send();});
     root.parent.postMessage({kind:'jury-demo-mounted',school:boot.school,nonce:boot.nonce},boot.origin);
     send();
   });
