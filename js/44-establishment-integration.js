@@ -6,7 +6,7 @@
  const parse=(s,f)=>{try{return JSON.parse(s)||f}catch(e){return f}};
  const schoolEmail=email=>/^jury-test(?:[1-9]|1[0-2])@mailo\.com$/.test(String(email||'').toLowerCase());
  const logical=(name,products)=>String(name||'').trim().toLowerCase()+'|'+(products||[]).map(p=>String(p.name||'').trim().toLowerCase()).sort().join('|');
- function entries(rows,view){
+ function entries(rows,view,receptionStatus){
   const out=[];
   for(const row of rows||[]){
    if(!row.enabled)continue;
@@ -21,6 +21,12 @@
    for(const rec of byId.values()){
     const c=rec.state.config,key=logical(c.lotName,c.products);occupied.add(key);
     if((view==='prepare'||view==='launch')&&(rec.kind==='archive'||c._archive?.archivedAt||c.juryClose?.closedAt))continue;
+    if(view==='reception'||view==='receptionHistory'){
+     if(rec.kind==='archive'||c._archive?.archivedAt)continue;
+     const rs=typeof receptionStatus==='function'?receptionStatus(c):null;
+     if(view==='reception'&&rs?.key==='done')continue;
+     if(view==='receptionHistory'&&!(c.receptions||[]).some(r=>r.validatedAt))continue;
+    }
     out.push({school:row.school,label:row.label,id:String(rec.id),kind:rec.kind,lotName:c.lotName||rec.name||'Jury',products:c.products.length,status:rec.kind==='archive'||c._archive?.archivedAt?'Archivé':c.juryClose?.closedAt?'Jury terminé':c.juryLaunch?.openedAt?'Jury en cours':'Jury préparé'});
    }
    if(view==='prepare')for(const rec of parse(p.jm_test_culinaire_sample_lot_history_v178,[])){
@@ -54,7 +60,7 @@
  async function appendSchools(listId,view){
   try{
    const rows=await refresh(),list=el(listId);if(!list)return;
-   const records=entries(rows,view);list.querySelector('[data-school-jurys]')?.remove();
+   const records=entries(rows,view,typeof receptionStatusForConfig==='function'?receptionStatusForConfig:null);list.querySelector('[data-school-jurys]')?.remove();
    if(!records.length)return;
    const section=document.createElement('section');section.dataset.schoolJurys='1';
    const heading=document.createElement('h3');heading.textContent='Jurys des établissements';section.appendChild(heading);
@@ -62,10 +68,15 @@
     const b=document.createElement('button');b.type='button';b.className='prepare-jury-choice';
     const span=document.createElement('span'),title=document.createElement('strong'),label=document.createElement('span'),status=document.createElement('span');
     title.textContent=rec.lotName;label.textContent=rec.label+' · '+rec.products+' produit(s)';status.textContent=rec.status;status.className='prepare-jury-status';
-    span.append(title,label,status);b.appendChild(span);b.onclick=()=>{if(view!=='launch')el(view==='prepare'?'prepareJuryModal':'resultsLotModalV348')?.classList.remove('show');openEntry(rec,view)};section.appendChild(b);
+    span.append(title,label,status);b.appendChild(span);b.onclick=()=>{const modal={prepare:'prepareJuryModal',results:'resultsLotModalV348',reception:'receptionLotModal',receptionHistory:'receptionHistoryModal'}[view];if(modal)el(modal)?.classList.remove('show');openEntry(rec,view)};section.appendChild(b);
    }
    list.appendChild(section);
    if(view==='launch')list.querySelector('.empty')?.remove();
+   if(view==='reception'||view==='receptionHistory'){
+    list.querySelector('.reception-lot-empty')?.remove();
+    const intro=el(view==='reception'?'receptionLotModal':'receptionHistoryModal')?.querySelector('p');
+    if(intro)intro.textContent=view==='reception'?'Choisissez le lot de votre espace ou d’un établissement.':'Choisissez un lot pour consulter ses réceptions enregistrées.';
+   }
    if(view==='prepare'){
     list.querySelector('.prepare-jury-empty-v180')?.remove();
     const intro=el('prepareJuryModalText');if(intro)intro.textContent='Choisissez votre jury ou celui d’un établissement.';
@@ -142,6 +153,20 @@
    }catch(e){notice('Impossible de charger les jurys des établissements. Réessayez avec une connexion Internet.');console.warn(e);}
   };
   if(el('juryBtn'))el('juryBtn').onclick=openJuryFlow;
+
+
+  openReceptionFromHome=async function(){
+   draftConfig=null;
+   showReceptionLotPicker(availableReceptionLots());
+   await appendSchools('receptionLotList','reception');
+  };
+  openReceptionHistoryFromHome=async function(){
+   draftConfig=null;
+   showReceptionHistoryPicker(receptionHistoryLots());
+   await appendSchools('receptionHistoryList','receptionHistory');
+  };
+  if(el('homeReceptionBtn'))el('homeReceptionBtn').onclick=openReceptionFromHome;
+  if(el('homeReceptionHistoryBtn'))el('homeReceptionHistoryBtn').onclick=openReceptionHistoryFromHome;
 
   const results=openResultsLotChooserV348;
   openResultsLotChooserV348=async function(){await results();await appendSchools('resultsLotListV348','results')};
