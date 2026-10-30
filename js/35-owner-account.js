@@ -66,7 +66,7 @@
     mode=next;pending=false;
     const setup=next==='setup'||next==='extra';
     el('accountConfirmWrapV385').hidden=!setup;
-    el('accountPinWrapV385').hidden=!setup;
+    el('accountPinWrapV385').hidden=!setup||(next==='setup'&&!!root.JuryEstablishmentsV456?.isSchoolEmail(el('accountEmailV385').value.trim()));
     el('accountRememberWrapV449').hidden=next==='extra';
     el('accountSubmitV385').textContent=next==='extra'?'Créer le second accès administrateur':
       next==='setup'?(API.client?'Mettre à jour mon mot de passe':'Créer mon accès à cet espace'):'Se connecter';
@@ -86,7 +86,7 @@
     el('accountModalV385').classList.add('show');
     el('accountRememberV385').checked=preference().remember!==false;
     el('accountSignoutV385').hidden=!API.client;
-    el('accountExtraTabV449').hidden=!API.client;
+    el('accountExtraTabV449').hidden=!API.client||!!API.schoolMode;
     el('accountEmailV385').value=API.email||read(PREF,{email:''}).email||'';
     setTimeout(()=>el('accountEmailV385').focus(),50);
   }
@@ -117,6 +117,7 @@
   async function activate(c,user,value,remember){
     if(tester())throw new Error('Un accès testeur ne peut pas ouvrir un compte propriétaire.');
     await verifiedConfig(c,value);
+    API.schoolMode=false;document.body.classList.remove('establishment-account-v456');
     const old=read('jm_tc_owner_hub_v357');
     if(old&&old.sessionId!==value.hub.sessionId&&(loadPreparedJurys().length||loadSampleLotHistory().length||loadArchives().length)){
       throw new Error('Cet appareil contient un autre espace. Ses données sont conservées ; utilisez un autre profil de navigateur pour ouvrir ce compte.');
@@ -131,7 +132,7 @@
       root.__JM_REQUESTED_ROLE_V199='admin';
       localStorage.setItem('jm_tc_last_requested_role_v199','admin');
       const u=new URL(location.href);
-      for(const k of ['session','adminToken','ownerToken','accessCode','supabaseUrl','supabaseKey'])u.searchParams.delete(k);
+      for(const k of ['session','adminToken','ownerToken','accessCode','supabaseUrl','supabaseKey','schoolLogin'])u.searchParams.delete(k);
       history.replaceState(null,'',u.toString());
       cloudCfg={url:DEFAULT_SUPABASE_URL,key:DEFAULT_SUPABASE_KEY,sessionId:value.hub.sessionId,accessCode:''};
       for(const [id,val]of [['cloudUrl',cloudCfg.url],['cloudKey',cloudCfg.key],['cloudSession',cloudCfg.sessionId]])if(el(id))el(id).value=val;
@@ -153,6 +154,10 @@
   async function finish(c,password,remember){
     const verified=await c.auth.getUser();
     if(verified.error||!verified.data?.user||!verified.data.user.email_confirmed_at)throw new Error('Confirmez d’abord votre adresse avec l’e-mail reçu, puis réessayez.');
+    if(!verified.data.user.user_metadata?.[FIELD]&&root.JuryEstablishmentsV456){
+      await root.JuryEstablishmentsV456.activate(c,verified.data.user,remember);
+      return;
+    }
     const value=await unseal(verified.data.user.user_metadata?.[FIELD],password);
     await activate(c,verified.data.user,value,remember);
     message('Connexion établie. Votre espace est disponible.');
@@ -202,6 +207,17 @@
         if(mode==='extra'&&(!API.client||email.toLowerCase()===String(API.email||'').toLowerCase()))throw new Error('Utilisez une autre adresse e-mail pour le second accès.');
         if(!validAccountPassword(password))throw new Error('Choisissez un mot de passe d’au moins 8 caractères, avec une majuscule et un chiffre.');
         if(password!==el('accountConfirmV385').value)throw new Error('Les deux mots de passe sont différents.');
+        if(mode==='setup'&&root.JuryEstablishmentsV456?.isSchoolEmail(email)){
+          if(!/^jury-test[12]@mailo\\.com$/i.test(email))throw new Error('Les comptes 1 et 2 sont ouverts pour ce premier essai.');
+          const r=await c.auth.signUp({email,password});if(r.error)throw r.error;
+          if(!r.data?.session){
+            pending=true;el('accountConfirmationV385').hidden=false;
+            el('accountSubmitV385').textContent='J’ai confirmé mon adresse — terminer';
+            message('Confirmez votre adresse dans votre messagerie, puis revenez ici pour vous connecter.');
+            return;
+          }
+          await finish(c,password,remember);return;
+        }
         const pin=el('accountPinV385').value.trim();
         if(!pin||!(await verifyPin(pin)))throw new Error('Saisissez votre PIN propriétaire actuel pour autoriser ce compte.');
         el('accountPinV385').value='';
@@ -247,8 +263,15 @@
   }
   API.restore=async function(){
     if(tester())return false;
+    if(new URLSearchParams(location.search).has('schoolLogin')){
+      API.schoolMode=true;document.body.classList.add('establishment-account-v456');
+      open();
+      const hint=sessionStorage.getItem('jm-school-login-hint-v456');if(hint)el('accountEmailV385').value=hint;
+      message('Connectez-vous avec le compte de votre établissement.');
+      return true;
+    }
     const pref=preference();if(!pref.enabled)return false;
-    if(pref.signedOut){API.signedOut=true;open();return true;}
+    if(pref.signedOut){API.signedOut=true;API.schoolMode=!!pref.schoolMode;open();return true;}
     const c=accountClient(pref.remember!==false);
     try{
       const auth=await c.auth.getSession();
@@ -257,6 +280,9 @@
       const verified=await c.auth.getUser();if(verified.error)throw verified.error;
       const user=verified.data?.user;
       if(!user?.email_confirmed_at)throw new Error('Confirmez votre adresse e-mail pour continuer.');
+      if(pref.schoolMode&&root.JuryEstablishmentsV456){
+        await root.JuryEstablishmentsV456.activate(c,user,pref.remember!==false);return true;
+      }
       const pointer=JSON.parse((pref.remember===false?sessionStorage:localStorage).getItem(SPACE)||'null');
       if(!pointer||!storedAdminToken()||!storedOwnerToken()){open();message('Saisissez votre mot de passe pour retrouver votre espace.');return true;}
       await activate(c,user,{...pointer,adminToken:storedAdminToken(),ownerToken:storedOwnerToken()},pref.remember!==false);
@@ -268,6 +294,7 @@
     if(!confirm('Déconnecter ce compte sur cet appareil ? Les données partagées ne seront pas supprimées.'))return;
     busy(true);
     try{
+      if(API.schoolMode){await root.JuryEstablishmentsV456.signout();return;}
       const result=await API.client.auth.signOut({scope:'local'});if(result.error)throw result.error;
       API.client=null;API.signedOut=true;candidate=null;
       const pref=preference();localStorage.setItem(PREF,JSON.stringify({...pref,signedOut:true}));
@@ -288,7 +315,7 @@
     const button=document.createElement('button');button.type='button';button.id='ownerAccountBtnV385';button.className='btn btn-secondary btn-small';button.textContent='👤 Se connecter';button.onclick=()=>open();
     document.querySelector('header.topbar')?.insertBefore(button,el('homeBtn'));
     const box=document.createElement('div');box.className='modal-backdrop';box.id='accountModalV385';
-    box.innerHTML=`<section class="modal" role="dialog" aria-modal="true" aria-labelledby="accountTitleV385" style="max-width:560px;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 id="accountTitleV385">Mon espace propriétaire</h2><button type="button" class="btn btn-ghost btn-small" id="accountCloseV385" aria-label="Fermer">✕</button></div><p id="accountIntroV385"></p><div style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0"><button type="button" class="btn btn-secondary" id="accountLoginTabV385">Se connecter</button><button type="button" class="btn btn-ghost" id="accountSetupTabV385">Première activation</button><button type="button" class="btn btn-secondary" id="accountExtraTabV449" hidden>Ajouter un second administrateur</button></div><form id="accountFormV385"><div class="field"><label for="accountEmailV385">Adresse e-mail</label><input id="accountEmailV385" type="email" autocomplete="username" required autocapitalize="none" spellcheck="false"></div><div class="field"><label for="accountPasswordV385">Mot de passe</label><input id="accountPasswordV385" type="password" autocomplete="current-password" aria-describedby="accountPasswordHelpV450" required><p id="accountPasswordHelpV450" hidden style="font-size:13px;margin:6px 0 0">8 caractères minimum, dont une majuscule et un chiffre.</p></div><div class="field" id="accountConfirmWrapV385" hidden><label for="accountConfirmV385">Confirmer le mot de passe</label><input id="accountConfirmV385" type="password" autocomplete="new-password"></div><div class="field" id="accountPinWrapV385" hidden><label for="accountPinV385">PIN propriétaire actuel</label><input id="accountPinV385" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></div><label id="accountRememberWrapV449" style="display:flex;align-items:center;gap:10px;margin:18px 0"><input id="accountRememberV385" type="checkbox" checked style="width:20px;height:20px"> Rester connecté sur cet appareil</label><div id="accountConfirmationV385" hidden><p>Confirmez votre adresse dans votre messagerie, puis revenez terminer ici. Si le lien ne s’ouvre pas correctement, vous pouvez le copier ci-dessous.</p><div class="field"><label for="accountEmailProofV385">Code ou lien de confirmation reçu (facultatif)</label><input id="accountEmailProofV385" type="text" autocomplete="one-time-code" spellcheck="false"></div></div><p id="accountMessageV385" role="status" aria-live="polite" style="min-height:1.5em;line-height:1.5"></p><button class="btn btn-primary" id="accountSubmitV385" type="submit" style="width:100%">Se connecter</button></form><button id="accountSignoutV385" class="btn btn-ghost" type="button" hidden style="margin-top:16px">Se déconnecter de cet appareil</button><p style="font-size:13px;line-height:1.5;color:#607684">Le compte retrouve votre espace partagé. Le PIN reste demandé pour les actions protégées. En cas de mot de passe oublié, conservez un appareil déjà propriétaire pour rétablir l’accès.</p></section>`;
+    box.innerHTML=`<section class="modal" role="dialog" aria-modal="true" aria-labelledby="accountTitleV385" style="max-width:560px;max-height:90vh;overflow:auto"><div style="display:flex;justify-content:space-between;gap:12px;align-items:center"><h2 id="accountTitleV385">Mon compte</h2><button type="button" class="btn btn-ghost btn-small" id="accountCloseV385" aria-label="Fermer">✕</button></div><p id="accountIntroV385"></p><div style="display:flex;gap:10px;flex-wrap:wrap;margin:16px 0"><button type="button" class="btn btn-secondary" id="accountLoginTabV385">Se connecter</button><button type="button" class="btn btn-ghost" id="accountSetupTabV385">Première activation</button><button type="button" class="btn btn-secondary" id="accountExtraTabV449" hidden>Ajouter un second administrateur</button></div><form id="accountFormV385"><div class="field"><label for="accountEmailV385">Adresse e-mail</label><input id="accountEmailV385" type="email" autocomplete="username" required autocapitalize="none" spellcheck="false"></div><div class="field"><label for="accountPasswordV385">Mot de passe</label><input id="accountPasswordV385" type="password" autocomplete="current-password" aria-describedby="accountPasswordHelpV450" required><p id="accountPasswordHelpV450" hidden style="font-size:13px;margin:6px 0 0">8 caractères minimum, dont une majuscule et un chiffre.</p></div><div class="field" id="accountConfirmWrapV385" hidden><label for="accountConfirmV385">Confirmer le mot de passe</label><input id="accountConfirmV385" type="password" autocomplete="new-password"></div><div class="field" id="accountPinWrapV385" hidden><label for="accountPinV385">PIN propriétaire actuel</label><input id="accountPinV385" type="password" inputmode="numeric" autocomplete="off" maxlength="8"></div><label id="accountRememberWrapV449" style="display:flex;align-items:center;gap:10px;margin:18px 0"><input id="accountRememberV385" type="checkbox" checked style="width:20px;height:20px"> Rester connecté sur cet appareil</label><div id="accountConfirmationV385" hidden><p>Confirmez votre adresse dans votre messagerie, puis revenez terminer ici. Si le lien ne s’ouvre pas correctement, vous pouvez le copier ci-dessous.</p><div class="field"><label for="accountEmailProofV385">Code ou lien de confirmation reçu (facultatif)</label><input id="accountEmailProofV385" type="text" autocomplete="one-time-code" spellcheck="false"></div></div><p id="accountMessageV385" role="status" aria-live="polite" style="min-height:1.5em;line-height:1.5"></p><button class="btn btn-primary" id="accountSubmitV385" type="submit" style="width:100%">Se connecter</button></form><button id="accountSignoutV385" class="btn btn-ghost" type="button" hidden style="margin-top:16px">Se déconnecter de cet appareil</button><p style="font-size:13px;line-height:1.5;color:#607684">Le compte retrouve votre espace partagé. Le PIN reste demandé pour les actions protégées. En cas de mot de passe oublié, conservez un appareil déjà propriétaire pour rétablir l’accès.</p></section>`;
     document.body.appendChild(box);
     el('accountLoginTabV385').onclick=()=>setMode('login');el('accountSetupTabV385').onclick=()=>setMode('setup');
     el('accountExtraTabV449').onclick=()=>{
@@ -306,8 +333,10 @@
         else if(!e.shiftKey&&document.activeElement===last){e.preventDefault();first?.focus();}
       }
     });
+    el('accountEmailV385').addEventListener('input',()=>{if(mode==='setup')el('accountPinWrapV385').hidden=!!root.JuryEstablishmentsV456?.isSchoolEmail(el('accountEmailV385').value.trim());});
     setMode('login');
   }
   API.open=open;API.signout=signout;API.verifiedConfig=verifiedConfig;
   mount();
 })(typeof window==='undefined'?globalThis:window);
+
