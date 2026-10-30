@@ -36,6 +36,7 @@
    }
    if(selected){
     if(target.view==='results')openSimplifiedResults();
+    else if(target.view==='launch'&&!state.config.juryLaunch?.openedAt)renderLaunchView();
     else if(state.config.juryLaunch?.openedAt)renderJuryView();
     else openConfig();
    }
