@@ -243,7 +243,7 @@
           currentProduct=state.config.products?.[0]?.id||'';currentSample=state.config.products?.[0]?.samples?.[0]?.id||'';adminProduct=currentProduct;
         }
       }finally{applying=false;}
-      if(!equal(before,collect())){
+      if(!equal(before,collect())&&!document.getElementById('prepareJuryModal')?.classList.contains?.('show')){
         const chooser=document.querySelector('.view.active')?.id==='juryChooserView';
         originalRenderHome();
         if(chooser)renderJuryChooser();
@@ -347,12 +347,15 @@
     }finally{busy=false;cloudBusy=false;}
   };
 
-  async function tick(){
+  async function tick(options={}){
+    if(options.prepareChooser){const until=Date.now()+8000;while(busy&&Date.now()<until)await new Promise(resolve=>setTimeout(resolve,50));}
     if(root.JuryAccountV385?.schoolMode||root.JuryLoginGateV457?.locked)return;
     if(busy||Date.now()<retryAt||guestTester||document.hidden||root.JuryAccountV385?.signedOut)return;
     const active=document.querySelector('.view.active')?.id;
     if(!active||active==='testerView'||active==='adminGateView'||active==='adminDeniedView')return;
-    const canApply=(active==='homeView'||active==='juryChooserView')&&!document.querySelector('.modal-backdrop.show')&&!document.activeElement?.matches('input,textarea,select');
+    const chooserSafe=()=>options.prepareChooser===true&&!!document.getElementById('prepareJuryModal')?.classList.contains?.('show')&&![...document.querySelectorAll('.modal-backdrop.show')].some(n=>n.id!=='prepareJuryModal');
+    const safeModals=()=>!document.querySelector('.modal-backdrop.show')||chooserSafe();
+    const canApply=(active==='homeView'||active==='juryChooserView')&&safeModals()&&!document.activeElement?.matches('input,textarea,select');
     busy=true;
     try{
       const c=await client();if(!c)return;
@@ -377,7 +380,7 @@
       // Recheck after the network request: the owner may have opened a form
       // or saved new data while the request was in flight.
       const currentLocal=collect();
-      const stillSafe=canApply&&equal(local,currentLocal)&&['homeView','juryChooserView'].includes(document.querySelector('.view.active')?.id)&&!document.querySelector('.modal-backdrop.show')&&!document.activeElement?.matches('input,textarea,select');
+      const stillSafe=canApply&&equal(local,currentLocal)&&['homeView','juryChooserView'].includes(document.querySelector('.view.active')?.id)&&safeModals()&&!document.activeElement?.matches('input,textarea,select');
       if(stillSafe)await apply(next,initial,local);
       const acknowledged={...bases};for(const [k,v]of Object.entries(next.records))if(stillSafe||equal(currentLocal[k],v.state))acknowledged[k]=v.state;
       localStorage.setItem(key,JSON.stringify(acknowledged));
