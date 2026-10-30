@@ -46,30 +46,54 @@
   if(typeof module==='object'&&module.exports){module.exports=API;return;}
   if(root.__JURY_DEMO_ACTIVE)return;
   root.JurySchoolTrialV452=API;
+  let integrated=false,schoolAccount=false,target=null;
   let overlay=null,frame=null,school=null,nonce='',rows=[],pending=null,saving=null,flushWaiter=null,saveTimer=null,switching=false,mounted=false;
   const pendingKey=s=>'jm_tc_school_pending_v452:'+s+':'+(root.JuryAccountV385?.email||'');
+  const pendingCopies=new Map();let backupTask=Promise.resolve();
+  async function pendingDB(key,value,remove=false){
+    const db=await new Promise((resolve,reject)=>{const r=indexedDB.open('jm_tc_school_pending_v456',1);r.onupgradeneeded=()=>r.result.createObjectStore('copies',{keyPath:'id'});r.onsuccess=()=>resolve(r.result);r.onerror=()=>reject(r.error);});
+    const get=()=>new Promise((resolve,reject)=>{const r=db.transaction('copies','readonly').objectStore('copies').get(key);r.onsuccess=()=>resolve(r.result?.value||null);r.onerror=()=>reject(r.error);});
+    try{
+      if(value===undefined&&!remove)return await get();
+      await new Promise((resolve,reject)=>{const tx=db.transaction('copies','readwrite'),st=tx.objectStore('copies');if(remove)st.delete(key);else st.put({id:key,value});tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Copie interrompue.'));});
+      if(!remove&&JSON.stringify(await get())!==JSON.stringify(value))throw new Error('Copie de secours non vérifiée.');
+    }finally{db.close();}
+  }
+  function backup(s,record){
+    const key=pendingKey(s);if(record)pendingCopies.set(key,record);else pendingCopies.delete(key);
+    backupTask=backupTask.catch(()=>{}).then(async()=>{
+      if(!record){localStorage.removeItem(key);try{await pendingDB(key,undefined,true)}catch(e){};return;}
+      try{localStorage.setItem(key,JSON.stringify(record));}
+      catch(e){await pendingDB(key,record);localStorage.removeItem(key);}
+    }).catch(e=>{console.warn('Copie locale différée ; envoi serveur maintenu',e);});
+    return backupTask;
+  }
   const el=id=>document.getElementById(id);
   function status(text,bad=false){const n=el('demoSaveV452');if(n){n.textContent=text;n.style.color=bad?'#a53131':'#285e53';}}
   function client(){const c=root.JuryAccountV385?.client;if(!c||root.JuryAccountV385?.signedOut)throw new Error('Connectez-vous avec votre compte de test.');return c;}
   function payloadFor(row){
-    const queued=parse(localStorage.getItem(pendingKey(row.school)),null);
+    const queued=pendingCopies.get(pendingKey(row.school))||parse(localStorage.getItem(pendingKey(row.school)),null);
     if(queued&&queued.revision===row.revision&&validPayload(queued.payload))return queued.payload;
-    return validPayload(row.payload)&&Object.keys(row.payload).length?row.payload:seed(row.school);
+    if(validPayload(row.payload)&&Object.keys(row.payload).length)return row.payload;
+    const initial=seed(row.school);
+    if(integrated){initial.jm_test_culinaire_sample_lot_history_v178='[]';initial.jm_test_culinaire_sample_products_v1='[]';initial.jm_test_culinaire_sample_master_v1='[]';initial.jm_test_culinaire_sample_master_meta_v1=JSON.stringify({lotNumber:'',lotTitle:'',supplierNames:[],productName:''});}
+    return initial;
   }
   async function loadRows(){
     const result=await client().from('jury_school_trials').select('school,label,payload,revision,enabled').order('school');
     if(result.error)throw result.error;
     if(!result.data?.length)throw new Error('Aucun établissement de test accessible pour ce compte.');
     rows=result.data;
+    for(const row of rows){const key=pendingKey(row.school);try{const local=parse(localStorage.getItem(key),null),saved=local||await pendingDB(key);if(saved)pendingCopies.set(key,saved)}catch(e){}}
   }
-  function queue(s,payload){
+  async function queue(s,payload){
     if(!validPayload(payload))throw new Error('Copie de démonstration invalide.');
     const row=rows.find(r=>r.school===s);if(!row)throw new Error('Établissement inconnu.');
     if(JSON.stringify(payload)===JSON.stringify(row.payload)&&!pending)return;
     pending={school:s,payload:copy(payload)};
-    localStorage.setItem(pendingKey(s),JSON.stringify({revision:row.revision,payload}));
-    status('Modifications de l’essai à enregistrer…');
+    status('Enregistrement des dossiers en cours…');
     clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveNow().catch(showError),450);
+    await backup(s,{revision:row.revision,payload});
   }
   async function saveNow(){
     if(saving)return saving;
@@ -80,10 +104,10 @@
         if(result.error)throw result.error;
         if(!result.data)throw new Error('Cet essai a été modifié sur un autre appareil. Votre copie reste conservée sur cet appareil ; ne fermez pas cette fenêtre.');
         row.payload=attempt.payload;row.revision=result.data.revision;
-        if(pending===attempt){pending=null;localStorage.removeItem(pendingKey(row.school));}
-        else localStorage.setItem(pendingKey(row.school),JSON.stringify({revision:row.revision,payload:pending.payload}));
+        if(pending===attempt){pending=null;await backup(row.school,null);}
+        else await backup(row.school,{revision:row.revision,payload:pending.payload});
       }
-      status('Dossiers de test enregistrés sur le serveur.');
+      status(integrated?'Dossiers enregistrés sur le serveur.':'Dossiers de test enregistrés sur le serveur.');
     })();
     try{await saving;}finally{saving=null;}
   }
@@ -126,30 +150,31 @@
       status('Chaque compte d’établissement dispose de ses propres dossiers. Les administrateurs généraux peuvent suivre l’ensemble.');
     }catch(e){showError(e);}finally{switching=false;}
   }
-  async function openSchool(next){
+  async function openSchool(next,request=null){
     if(switching)return;switching=true;
     try{
       await flushChild();if(frame){frame.remove();frame=null;}
       const row=rows.find(r=>r.school===next);if(!row?.enabled)throw new Error('Établissement inconnu.');
-      school=next;mounted=false;nonce=crypto.randomUUID();
+      school=next;target=request;mounted=false;nonce=crypto.randomUUID();
       let text=await fetch(new URL('tests-culinaires.html',location.href),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Écran d’essai indisponible.');return r.text();});
       const doc=new DOMParser().parseFromString(text,'text/html');
-      doc.querySelectorAll('script[src*="39-establishment-demo"],script[src*="40-school-trial"],script[src*="33-owner-sync"],script[src*="35-owner-account"],script[src*="19-v22-installation"],link[rel="manifest"]').forEach(n=>n.remove());
+      doc.querySelectorAll('script[src*="39-establishment-demo"],script[src*="40-school-trial"],script[src*="33-owner-sync"],script[src*="35-owner-account"],script[src*="44-establishment-integration"],script[src*="19-v22-installation"],link[rel="manifest"]').forEach(n=>n.remove());
       const cloudScript=doc.querySelector('script[src*="06-v20-partage"]');
-      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=455';
+      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=456';
       if(!cloudScript)throw new Error('Connexion du jury indisponible.');
       cloudScript.after(bridge);
       const base=doc.createElement('base');base.href=new URL('./',location.href).href;doc.head.prepend(base);
       const csp=doc.createElement('meta');csp.httpEquiv='Content-Security-Policy';csp.content="connect-src 'none'; form-action 'none'; object-src 'none'";base.after(csp);
       const boot=doc.createElement('script');
-      boot.textContent='window.__JURY_DEMO_BOOT='+JSON.stringify({school:next,label:row.label,origin:location.origin,nonce,payload:payloadFor(row)}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029')+';';
+      boot.textContent='window.__JURY_DEMO_BOOT='+JSON.stringify({school:next,label:row.label,origin:location.origin,nonce,payload:payloadFor(row),target,integrated}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029')+';';
       csp.after(boot);
-      const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=455';boot.after(isolate);
+      const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=456';boot.after(isolate);
       frame=document.createElement('iframe');frame.title='Logiciel — '+row.label+' — essai';frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-modals allow-downloads');
       frame.style.cssText='width:100%;height:calc(100dvh - 200px);min-height:400px;border:1px solid #bfd2de;border-radius:12px;background:#edf5f8';
       el('demoContentV452').replaceChildren(frame);
       frame.srcdoc='<!DOCTYPE html>'+doc.documentElement.outerHTML;
-      el('demoRoleV452').textContent='Vous jouez le rôle du responsable du '+row.label.toLowerCase();
+      el('demoRoleV452').textContent=row.label;
+      if(integrated)el('schoolHeaderV456').textContent='Tests culinaires · '+row.label;
       status('Chargement du logiciel pour '+row.label+'…');
     }finally{switching=false;}
   }
@@ -157,24 +182,31 @@
     if(switching)return;switching=true;
     try{
       await flushChild();
-      frame?.remove();frame=null;overlay?.remove();overlay=null;school=null;
-    }catch(e){showError(e);}finally{switching=false;}
+      frame?.remove();frame=null;overlay?.remove();overlay=null;school=null;return true;
+    }catch(e){showError(e);return false;}finally{switching=false;}
   }
-  async function open(){
+  async function open(options={}){
     if(overlay)return;
-    client();
+    client();integrated=!!options.integrated;schoolAccount=!!options.schoolAccount;
     overlay=document.createElement('section');overlay.id='establishmentDemoV452';overlay.setAttribute('role','dialog');overlay.setAttribute('aria-modal','true');overlay.setAttribute('aria-label','Établissements — essai');
     overlay.innerHTML='<div class="demo-header"><h2>Établissements — comptes de test</h2><p>Connexion personnelle et dossiers séparés. Utilisez uniquement des données fictives.</p><div class="demo-nav"><button type="button" id="demoOverviewV452">Mes établissements / Vue générale</button><button type="button" id="demoCloseV452">Fermer</button></div><strong id="demoRoleV452"></strong><p id="demoSaveV452" role="status" aria-live="polite"></p><p class="demo-limit">Premier essai : choix des échantillons, préparation, réception et fiches. La préparation des téléphones, les QR codes et les réponses des testeurs sont disponibles. Utilisez des données fictives. L’envoi de rapports par email reste désactivé dans cet essai.</p></div><div id="demoContentV452"></div>';
+    if(integrated){
+      overlay.classList.add('school-integrated-v456');
+      overlay.innerHTML='<div class="demo-header"><h2 id="schoolHeaderV456">Tests culinaires</h2><div class="demo-nav"><button type="button" id="demoOverviewV452" hidden>Vue générale</button><button type="button" id="demoCloseV452"></button></div><strong id="demoRoleV452"></strong><p id="demoSaveV452" role="status" aria-live="polite"></p></div><div id="demoContentV452"></div>';
+    }
     document.body.appendChild(overlay);
-    el('demoOverviewV452').onclick=overview;el('demoCloseV452').onclick=close;
-    await overview();
+    el('demoOverviewV452').onclick=overview;el('demoCloseV452').onclick=schoolAccount?()=>root.JuryAccountV385.open():close;
+    if(integrated){
+      el('demoCloseV452').textContent=schoolAccount?'Mon compte':'← Retour à la vue générale';
+      await loadRows();
+    }else await overview();
   }
   root.addEventListener('message',event=>{
     if(!frame||event.source!==frame.contentWindow||event.origin!==location.origin||event.data?.nonce!==nonce||event.data.school!==school)return;
-    if(event.data.kind==='jury-demo-mounted'){mounted=true;status('Mode essai — seuls les dossiers du lycée '+school+' sont affichés.');return;}
+    if(event.data.kind==='jury-demo-mounted'){mounted=true;status(integrated?'Dossiers de l’établissement ouverts.':'Mode essai — seuls les dossiers du lycée '+school+' sont affichés.');return;}
     if(event.data.kind==='jury-demo-unsaved'){flushWaiter?.(new Error('Enregistrez d’abord la fiche dans le logiciel, puis changez de rôle.'));return;}
     if(event.data.kind!=='jury-demo-state')return;
-    try{queue(school,event.data.payload);flushWaiter?.();}catch(e){showError(e);}
+    Promise.resolve(queue(school,event.data.payload)).then(()=>flushWaiter?.()).catch(e=>{showError(e);flushWaiter?.(e);});
   });
   function mount(){
     const style=document.createElement('style');
@@ -201,8 +233,14 @@
     if(!frame||s!==school||n!==nonce)throw new Error('Établissement non ouvert.');
     return schoolClient(client(),s);
   };
+  API.openTarget=async(s,request,single)=>{
+    if(overlay&&await close()===false)throw new Error('Enregistrez la fiche avant de changer de jury.');
+    await open({integrated:true,schoolAccount:single});
+    await openSchool(s,request);
+  };
   API.open=open;API.close=close;API.flush=flushChild;
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mount);else mount();
 })(typeof window==='undefined'?globalThis:window);
+
 
 
