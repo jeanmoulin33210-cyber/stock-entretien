@@ -87,13 +87,13 @@
   const url=new URL(location.href);url.searchParams.delete('schoolLogin');history.replaceState(null,'',url.toString());
   el('accountModalV385')?.classList.remove('show');
   el('accountPasswordV385').value='';el('accountConfirmV385').value='';
-  try{await root.JurySchoolTrialV452.openTarget(row.school,{view:'home',label:row.label},true)}catch(e){el('accountModalV385')?.classList.add('show');throw e;}
+  try{await root.JurySchoolTrialV452.openTarget(row.school,{view:'home',label:row.label},true);root.JuryLoginGateV457?.release()}catch(e){el('accountModalV385')?.classList.add('show');throw e;}
  };
  API.signout=async()=>{
   const a=root.JuryAccountV385;
   await root.JurySchoolTrialV452.flush();await root.JurySchoolTrialV452.close();
   const r=await a.client.auth.signOut({scope:'local'});if(r.error)throw r.error;
-  a.client=null;a.signedOut=true;
+  a.client=null;a.signedOut=true;root.JuryLoginGateV457?.lock();
   const pref=parse(localStorage.getItem(PREF),{});localStorage.setItem(PREF,JSON.stringify({...pref,signedOut:true}));
   a.open();
  };
@@ -111,3 +111,4 @@
  API.refresh=refresh;
  mount();
 })(typeof window==='undefined'?globalThis:window);
+
