@@ -153,7 +153,6 @@
         if(finalized)return false;
       }catch(e){}
       return !!(cfg&&Array.isArray(cfg.products)&&cfg.products.length&&
-        !(cfg.juryClose&&cfg.juryClose.closedAt)&&
         !(cfg._archive&&cfg._archive.archivedAt));
     }
     function stateKey(st,fallback){
