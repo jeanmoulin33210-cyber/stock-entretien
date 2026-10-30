@@ -55,3 +55,22 @@ test('school saved snapshots are sent during continuous storage updates and retr
  assert.equal(JSON.parse(sent.at(-1).payload.jm_test_culinaire_sample_lot_history_v178)[0].id,'lot19');
  listeners.DOMContentLoaded();const before=sent.length;intervals.at(-1)();assert.equal(sent.length,before+1);
 });
+
+test('administrator launch chooser includes prepared school jurys, excluding samples, closed jurys and archives',()=>{
+ const row=school('S1',state('ready','Lot 13'));
+ const sampleOnly={school:'S2',label:'Établissement S2',enabled:true,payload:{jm_test_culinaire_sample_lot_history_v178:JSON.stringify([{id:'sample',lotName:'Lot non préparé',products}])}};
+ const closed=school('S3',state('done','Lot terminé',{juryClose:{closedAt:'2026-10-31'}}));
+ const list=entries([row,sampleOnly,closed],'launch');
+ assert.equal(list.length,1);assert.equal(list[0].id,'ready');assert.equal(list[0].school,'S1');
+});
+test('opening a school jury from administrator launch goes to launch rather than preparation',async()=>{
+ const st=state('ready','Lot 13'),calls=[];
+ const root={__JURY_DEMO_BOOT:{school:'S1',nonce:'nonce',target:{id:'ready',kind:'prepared',view:'launch'}},__JURY_SCHOOL_TRIAL_ACTIVE:true,parent:{JurySchoolTrialV452:{clientForSchool:()=>({})}}};
+ const ctx={window:root,state:st,draftConfig:null,currentTester:1,currentProduct:'',currentSample:'',adminProduct:'',STORAGE_KEY:'state',
+  loadPreparedJurys:()=>[{id:'ready',state:st}],loadSampleLotHistory:()=>[],loadArchives:()=>[],deepClone:x=>JSON.parse(JSON.stringify(x)),
+  localStorage:{setItem(){}},phoneSharePrepared:()=>false,currentJuryShareSessionId:()=>'',renderLaunchView:()=>calls.push('launch'),openConfig:()=>calls.push('prepare'),renderJuryView:()=>calls.push('running'),
+  ownerWorkspaceBusyV352:false,automaticOwnerWorkspaceV352:()=>{},cloudCfg:{},DEFAULT_SUPABASE_URL:'https://project.test',DEFAULT_SUPABASE_KEY:'public',setCloudStatus:()=>{},
+  document:{getElementById:()=>null}};
+ vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/43-school-phone-bridge.js'),'utf8'),ctx);
+ await root.JuryAccountV385.restore();assert.deepEqual(calls,['launch']);
+});
