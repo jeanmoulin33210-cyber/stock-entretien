@@ -8,6 +8,47 @@
     return !!payload&&typeof payload==='object'&&!Array.isArray(payload)&&
       Object.entries(payload).every(([k,v])=>KEYS.includes(k)&&typeof v==='string')&&JSON.stringify(payload).length<=10000000;
   }
+
+  const same=(a,b)=>JSON.stringify(a)===JSON.stringify(b);
+  function mergeSchoolPayload(base,local,remote){
+    if(!validPayload(local)||!validPayload(remote)||(base!=null&&!validPayload(base)))throw new Error('Copie de sauvegarde invalide.');
+    function merge(b,l,r,path){
+      if(same(l,r))return l;
+      if(base!=null&&same(l,b))return r;
+      if(base!=null&&same(r,b))return l;
+      if(l&&r&&typeof l==='object'&&typeof r==='object'&&!Array.isArray(l)&&!Array.isArray(r)){
+        const out={};
+        for(const key of new Set([...Object.keys(b||{}),...Object.keys(l),...Object.keys(r)])){
+          const value=merge(b?.[key],l[key],r[key],path+'.'+key);if(value!==undefined)out[key]=value;
+        }
+        return out;
+      }
+      if(Array.isArray(l)&&Array.isArray(r)){
+        const lists=[l,r,...(Array.isArray(b)?[b]:[])];
+        if(lists.every(a=>a.every(x=>x&&typeof x==='object'&&x.id)&&new Set(a.map(x=>String(x.id))).size===a.length)){
+          const bm=new Map((b||[]).map(x=>[String(x.id),x])),lm=new Map(l.map(x=>[String(x.id),x])),rm=new Map(r.map(x=>[String(x.id),x]));
+          const out=[];
+          for(const id of new Set([...rm.keys(),...lm.keys(),...bm.keys()])){
+            const value=merge(bm.get(id),lm.get(id),rm.get(id),path+'['+id+']');if(value!==undefined)out.push(value);
+          }
+          return out;
+        }
+      }
+      if(base==null&&l===undefined)return r;
+      if(base==null&&r===undefined)return l;
+      if(/\.(updatedAt|savedAt)$/.test(path)&&typeof l==='string'&&typeof r==='string'&&Number.isFinite(Date.parse(l))&&Number.isFinite(Date.parse(r)))return Date.parse(l)>Date.parse(r)?l:r;
+      throw new Error('Modifications différentes sur la même information : '+path);
+    }
+    const out={};
+    for(const key of new Set([...Object.keys(base||{}),...Object.keys(local),...Object.keys(remote)])){
+      const decode=v=>{try{return JSON.parse(v)}catch(e){return v}};
+      const value=merge(decode(base?.[key]),decode(local[key]),decode(remote[key]),key);
+      if(value!==undefined)out[key]=typeof value==='string'&&key.endsWith('_token_v1')?value:JSON.stringify(value);
+    }
+    if(!validPayload(out))throw new Error('Sauvegarde fusionnée invalide.');
+    return out;
+  }
+
   function seed(school){
     if(!/^S(?:[1-9]|1[0-2])$/.test(school))throw new Error('Établissement inconnu.');
     const number=String(100+Number(school.slice(1))),name='Produit fictif '+school.slice(1);
@@ -42,7 +83,7 @@
     }
     return Array.from(rows.values());
   }
-  const API={KEYS,seed,summary,validPayload,schoolClient};
+  const API={KEYS,seed,summary,validPayload,schoolClient,mergeSchoolPayload};
   if(typeof module==='object'&&module.exports){module.exports=API;return;}
   if(root.__JURY_DEMO_ACTIVE)return;
   root.JurySchoolTrialV452=API;
@@ -73,7 +114,11 @@
   function client(){const c=root.JuryAccountV385?.client;if(!c||root.JuryAccountV385?.signedOut)throw new Error('Connectez-vous avec votre compte de test.');return c;}
   function payloadFor(row){
     const queued=pendingCopies.get(pendingKey(row.school))||parse(localStorage.getItem(pendingKey(row.school)),null);
-    if(queued&&queued.revision===row.revision&&validPayload(queued.payload))return queued.payload;
+    if(queued&&validPayload(queued.payload)){
+      if(queued.revision===row.revision)return queued.payload;
+      try{return mergeSchoolPayload(queued.base??null,queued.payload,row.payload);}
+      catch(e){row.recovery=queued;return queued.payload;}
+    }
     if(validPayload(row.payload)&&Object.keys(row.payload).length)return row.payload;
     const initial=seed(row.school);
     if(integrated){initial.jm_test_culinaire_sample_lot_history_v178='[]';initial.jm_test_culinaire_sample_products_v1='[]';initial.jm_test_culinaire_sample_master_v1='[]';initial.jm_test_culinaire_sample_master_meta_v1=JSON.stringify({lotNumber:'',lotTitle:'',supplierNames:[],productName:''});}
@@ -89,23 +134,49 @@
   async function queue(s,payload){
     if(!validPayload(payload))throw new Error('Copie de démonstration invalide.');
     const row=rows.find(r=>r.school===s);if(!row)throw new Error('Établissement inconnu.');
-    if(JSON.stringify(payload)===JSON.stringify(row.payload)&&!pending)return;
-    pending={school:s,payload:copy(payload)};
+    if(same(payload,row.frameLast)&&!pending)return;
+    const rawPayload=copy(payload);
+    try{payload=mergeSchoolPayload(row.frameBase??row.payload,rawPayload,row.payload);}
+    catch(e){await backup(s,{revision:row.revision,payload:rawPayload,base:row.frameBase??row.payload});throw e;}
+    row.frameLast=rawPayload;
+    if(same(payload,row.payload)&&!pending)return;
+    pending={school:s,payload:copy(payload),rawPayload,base:pending?.base??copy(row.payload),baseRevision:pending?.baseRevision??row.revision};
     status('Enregistrement des dossiers en cours…');
     clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveNow().catch(showError),450);
-    await backup(s,{revision:row.revision,payload});
+    await backup(s,{revision:row.revision,payload,base:pending.base,baseRevision:pending.baseRevision});
   }
   async function saveNow(){
     if(saving)return saving;
     saving=(async()=>{
       while(pending){
         const attempt=pending,row=rows.find(r=>r.school===attempt.school);
-        const result=await client().from('jury_school_trials').update({payload:attempt.payload,revision:row.revision+1,updated_at:new Date().toISOString()}).eq('school',row.school).eq('revision',row.revision).select('school,revision').maybeSingle();
-        if(result.error)throw result.error;
-        if(!result.data)throw new Error('Cet essai a été modifié sur un autre appareil. Votre copie reste conservée sur cet appareil ; ne fermez pas cette fenêtre.');
-        row.payload=attempt.payload;row.revision=result.data.revision;
+        let expected=row.revision,candidate=attempt.payload,base=attempt.base,committed=false;
+        for(let tries=0;tries<4;tries++){
+          const result=await client().from('jury_school_trials').update({payload:candidate,revision:expected+1,updated_at:new Date().toISOString()}).eq('school',row.school).eq('revision',expected).select('school,revision').maybeSingle();
+          if(result.error)throw result.error;
+          if(result.data){
+            row.payload=candidate;row.revision=result.data.revision;row.frameBase=copy(attempt.rawPayload??attempt.payload);committed=true;break;
+          }
+          const fresh=await client().from('jury_school_trials').select('school,payload,revision,enabled').eq('school',row.school).maybeSingle();
+          if(fresh.error)throw fresh.error;
+          if(!fresh.data?.enabled)throw new Error('Établissement indisponible. Votre copie est conservée.');
+          try{candidate=mergeSchoolPayload(base,attempt.payload,fresh.data.payload);}
+          catch(e){
+            await backup(row.school,{revision:row.revision,payload:pending.payload,base:pending.base,baseRevision:pending.baseRevision});
+            throw new Error('Deux appareils ont modifié la même information. Votre copie reste conservée ; ne fermez pas cette fenêtre.');
+          }
+          expected=fresh.data.revision;
+        }
+        if(!committed)throw new Error('Enregistrement différé : un autre appareil travaille sur ce dossier. Votre copie est conservée.');
         if(pending===attempt){pending=null;await backup(row.school,null);}
-        else await backup(row.school,{revision:row.revision,payload:pending.payload});
+        else {
+          // New local saves arrived during the network request: rebase them on
+          // the committed union, rather than erasing the other device's fields.
+          const latest=pending;
+          latest.payload=mergeSchoolPayload(attempt.payload,latest.payload,candidate);
+          latest.base=copy(candidate);latest.baseRevision=row.revision;
+          await backup(row.school,{revision:row.revision,payload:latest.payload,base:latest.base,baseRevision:latest.baseRevision});
+        }
       }
       status(integrated?'Dossiers enregistrés sur le serveur.':'Dossiers de test enregistrés sur le serveur.');
     })();
@@ -150,11 +221,46 @@
       status('Chaque compte d’établissement dispose de ses propres dossiers. Les administrateurs généraux peuvent suivre l’ensemble.');
     }catch(e){showError(e);}finally{switching=false;}
   }
+
+  async function showRecovery(row,next,request){
+    const saved=row.recovery,box=el('demoContentV452');box.replaceChildren();
+    const card=document.createElement('section');card.className='demo-school-card';
+    const title=document.createElement('h3');title.textContent='Retrouver votre préparation';card.appendChild(title);
+    const note=document.createElement('p');note.textContent='Une préparation non envoyée a été retrouvée sur cet appareil. Elle diffère de la version partagée. Les deux copies seront sauvegardées avant votre choix. La copie choisie remplacera la version partagée de cet établissement ; l’autre restera dans une sauvegarde de récupération sur cet appareil.';card.appendChild(note);
+    for(const [label,payload]of [['Sur cet appareil',saved.payload],['Sur le serveur',row.payload]]){
+      const heading=document.createElement('h4');heading.textContent=label;card.appendChild(heading);
+      for(const lot of summary(payload)){const line=document.createElement('p');line.textContent=lot.name+' · '+lot.status+' · '+lot.products+' produit(s)';card.appendChild(line);}
+    }
+    const choose=async(local)=>{
+      const buttons=[...card.querySelectorAll('button')];buttons.forEach(b=>b.disabled=true);
+      try{
+        const fresh=await client().from('jury_school_trials').select('school,payload,revision,enabled').eq('school',row.school).maybeSingle();
+        if(fresh.error)throw fresh.error;if(!fresh.data?.enabled)throw new Error('Établissement indisponible.');
+        if(fresh.data.revision!==row.revision){row.payload=fresh.data.payload;row.revision=fresh.data.revision;await showRecovery(row,next,request);return;}
+        // Verified durable recovery is mandatory before either choice.
+        await pendingDB(pendingKey(row.school)+':recovery:'+Date.now(),{school:row.school,at:new Date().toISOString(),local:saved,server:copy(row)});
+        if(local){
+          pending={school:row.school,payload:copy(saved.payload),rawPayload:copy(saved.payload),base:copy(row.payload),baseRevision:row.revision};
+          await backup(row.school,{revision:row.revision,payload:pending.payload,base:pending.base});
+          await saveNow();
+        }else await backup(row.school,null);
+        delete row.recovery;
+        await openSchool(next,request);
+      }catch(e){showError(e);}finally{buttons.forEach(b=>b.disabled=false);}
+    };
+    card.appendChild(makeButton('Reprendre la copie de cet appareil',()=>choose(true)));
+    card.appendChild(makeButton('Utiliser la version du serveur',()=>choose(false)));
+    box.appendChild(card);status('Deux copies conservées : choisissez la préparation à poursuivre.',true);
+  }
+
   async function openSchool(next,request=null){
     if(switching)return;switching=true;
     try{
       await flushChild();if(frame){frame.remove();frame=null;}
       const row=rows.find(r=>r.school===next);if(!row?.enabled)throw new Error('Établissement inconnu.');
+      const initialPayload=payloadFor(row);
+      if(row.recovery){await showRecovery(row,next,request);return;}
+      row.frameBase=copy(row.payload);row.frameLast=null;
       school=next;target=request;mounted=false;nonce=crypto.randomUUID();
       let text=await fetch(new URL('tests-culinaires.html',location.href),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Écran d’essai indisponible.');return r.text();});
       const doc=new DOMParser().parseFromString(text,'text/html');
@@ -166,7 +272,7 @@
       const base=doc.createElement('base');base.href=new URL('./',location.href).href;doc.head.prepend(base);
       const csp=doc.createElement('meta');csp.httpEquiv='Content-Security-Policy';csp.content="connect-src 'none'; form-action 'none'; object-src 'none'";base.after(csp);
       const boot=doc.createElement('script');
-      boot.textContent='window.__JURY_DEMO_BOOT='+JSON.stringify({school:next,label:row.label,origin:location.origin,nonce,payload:payloadFor(row),target,integrated}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029')+';';
+      boot.textContent='window.__JURY_DEMO_BOOT='+JSON.stringify({school:next,label:row.label,origin:location.origin,nonce,payload:initialPayload,target,integrated}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029')+';';
       csp.after(boot);
       const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=460-live-preparation';boot.after(isolate);
       frame=document.createElement('iframe');frame.title='Logiciel — '+row.label+' — essai';frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-modals allow-downloads');
