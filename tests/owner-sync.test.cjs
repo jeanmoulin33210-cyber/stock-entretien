@@ -45,7 +45,7 @@ if(!localStorage.getItem(STORAGE_KEY))localStorage.setItem(STORAGE_KEY,JSON.stri
 let guestTester=null,cloudRole='admin',cloudReady=true,cloudCfg={sessionId:'F524',url:'https://mock',key:'public'};
 function loadPreparedJurys(){return JSON.parse(localStorage.getItem('prepared')||'[]')};
 function savePreparedJurys(rows){localStorage.setItem('prepared',JSON.stringify(rows))};
-function loadSampleLotHistory(){return []};function saveSampleLotHistory(){};
+function loadSampleLotHistory(){return JSON.parse(localStorage.getItem('sample-test-history')||'[]')};function saveSampleLotHistory(rows){localStorage.setItem('sample-test-history',JSON.stringify(rows))};
 function loadArchives(){return JSON.parse(localStorage.getItem('archives')||'[]')};
 function saveArchives(rows){localStorage.setItem('archives',JSON.stringify(rows))};
 function blankActiveStateV238(){return {config:{products:[],_emptyAfterReset:true},testers:{}}};
@@ -103,6 +103,20 @@ window.inspect=()=>({state:JSON.parse(JSON.stringify(state)),prepared:loadPrepar
  await pb.evaluate(()=>{document.getElementById('productSheetsView').classList.remove('active');document.getElementById('homeView').classList.add('active')});await run(pb);x=await pb.evaluate(()=>inspect());assert.equal(x.state.config.productSheets['p-55'].origin,'Nouvelle origine');console.log('PASS incoming data deferred during form editing, applied at home');
  await pb.evaluate(()=>openLot('66'));await run(pb);x=await pb.evaluate(()=>inspect());assert.equal(x.state.config.lotName,'Lot 66 — Légumes');assert.deepEqual(x.state.config.receptions,[]);assert.deepEqual(x.state.testers[1].answers,{});console.log('PASS lot switch preserves separate receipts, product sheets and tester responses');
  await pa.reload();await pa.addScriptTag({path:require('node:path').resolve(__dirname,'../js/33-owner-sync.js')});await run(pa);x=await pa.evaluate(()=>inspect());assert(x.status.includes('vérifiées'));console.log('PASS owner hub reconnects after page reload');
+
+ await pb.evaluate(()=>{
+  const query=document.querySelector.bind(document),get=document.getElementById.bind(document);
+  document.querySelector=q=>q==='.modal-backdrop.show'?{id:'prepareJuryModal'}:query(q);
+  document.querySelectorAll=q=>q==='.modal-backdrop.show'?[{id:'prepareJuryModal'}]:[];
+  document.getElementById=id=>id==='prepareJuryModal'?{classList:{contains:()=>true}}:get(id);
+ });
+ await pa.evaluate(()=>saveSampleLotHistory([{id:'new-selection',lotName:'Lot 999 — Choix iPad',meta:{lotNumber:'999'},products:[{name:'Carottes'}]}]));
+ await run(pa);await run(pb);
+ assert.equal((await pb.evaluate(()=>loadSampleLotHistory())).length,0);
+ await pb.evaluate(()=>JuryOwnerSyncV357.run({prepareChooser:true}));
+ assert.equal((await pb.evaluate(()=>loadSampleLotHistory()))[0].lotName,'Lot 999 — Choix iPad');
+ console.log('PASS saved sample selection arrives while preparation chooser is open');
+
  console.log('ALL TWO-DEVICE SIMULATION CHECKS PASSED');
  }finally{await browser.close();}
 })().catch(e=>{console.error(e);process.exitCode=1});
