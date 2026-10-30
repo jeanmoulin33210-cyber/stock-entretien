@@ -1,9 +1,11 @@
-<!doctype html>
-<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Tests culinaires — Comptes des établissements</title>
-<style>body{margin:0;background:#edf5f8;color:#173f5c;font:17px system-ui}main{max-width:620px;margin:30px auto;padding:24px;background:white;border-radius:22px}h1{font-size:26px}label{display:block;margin:20px 0 8px}input,button{box-sizing:border-box;width:100%;padding:15px;border:1px solid #abc2d1;border-radius:12px;font:inherit}button{margin:12px 0;background:#087ea4;color:white;font-weight:700;cursor:pointer}button:disabled{opacity:.5}p{line-height:1.5}[hidden]{display:none!important}#message{white-space:pre-wrap}a{color:#076d8a}.small{font-size:14px}</style></head>
-<body><main id="schoolPortal"><h1>Tests culinaires — Établissements</h1><p>Premier essai avec des comptes séparés. Les adresses jury-test1@mailo.com et jury-test2@mailo.com sont ouvertes. Les dix autres sont réservées.</p>
-<p class="small">Cet essai permet de préparer les lots, les réceptions et les fiches, puis de créer les QR codes et de recueillir les réponses sur les téléphones. L’envoi des rapports par email reste désactivé.</p>
-<form id="login"><label for="email">Adresse email</label><input id="email" type="email" required autocomplete="username"><label for="password">Mot de passe de l’application</label><input id="password" type="password" required autocomplete="current-password"><div id="confirmWrap" hidden><label for="passwordConfirm">Confirmer le mot de passe</label><input id="passwordConfirm" type="password" autocomplete="new-password"><p class="small">Au moins 8 caractères, une majuscule et un chiffre. Choisissez un mot de passe différent de celui de Mailo.</p></div><button id="submit" type="submit">Se connecter</button><button id="setup" type="button">Première activation d’un compte test</button></form>
-<p id="message" role="status" aria-live="polite"></p><div id="connected" hidden><p id="identity"></p><button id="open" type="button">Ouvrir mes établissements</button><button id="logout" type="button">Se déconnecter de cet essai</button></div><p><a href="tests-culinaires.html">Retour à l’application principale</a></p></main>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.49.8/dist/umd/supabase.min.js"></script>
-<script src="js/40-school-trial.js?build=455"></script><script src="js/41-school-login.js?build=452"></script></body></html>
+<!doctype html><html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><title>Tests culinaires — Connexion</title></head><body><p>Ouverture de Tests culinaires…</p><p><a href="tests-culinaires.html?schoolLogin=1">Ouvrir l’application</a></p><script>
+(function(){
+ let pref={};try{pref=JSON.parse(localStorage.getItem('jm_tc_account_v385')||'{}')}catch(e){}
+ const force=!pref.schoolMode||pref.signedOut;
+ if(force)try{
+  const old=JSON.parse(localStorage.getItem('jm-school-trial-auth-v452')||'null');
+  if(old?.user?.email)sessionStorage.setItem('jm-school-login-hint-v456',old.user.email);
+ }catch(e){}
+ location.replace('tests-culinaires.html'+(force?'?schoolLogin=1':''));
+})();
+</script></body></html>
