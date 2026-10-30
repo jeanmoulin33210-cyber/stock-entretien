@@ -1,6 +1,17 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" class="login-required-v457">
 <head>
+<style id="loginGateStyleV457">
+html.login-required-v457 body{margin:0!important;min-height:100dvh;background:#edf5f8!important}
+html.login-required-v457 body>:not(#accountModalV385):not(style):not(script){display:none!important}
+html.login-required-v457:not(.login-form-ready-v457)::before{content:"Vérification de votre connexion…";position:fixed;inset:0;display:grid;place-items:center;background:#edf5f8;color:#173f5c;font:600 20px system-ui;z-index:2147483000}
+html.login-required-v457:not(.login-form-ready-v457) #accountModalV385{display:none!important}
+html.login-required-v457.login-form-ready-v457 #accountModalV385{display:flex!important;position:fixed!important;inset:0!important;align-items:center;justify-content:center;overflow:auto!important;background:#edf5f8!important;padding:20px!important;box-sizing:border-box;z-index:2147483001!important}
+html.login-required-v457 #accountModalV385 .modal{width:min(560px,100%)!important;max-height:calc(100dvh - 40px)!important;overflow:auto!important;box-sizing:border-box;background:white;border-radius:24px;box-shadow:0 15px 55px #173f5c22}
+html.login-required-v457 #accountCloseV385{display:none!important}
+@media(max-height:650px){html.login-required-v457.login-form-ready-v457 #accountModalV385{align-items:flex-start!important}}
+</style>
+<script src="js/00-login-gate.js?build=457-login-first"></script>
 <script src="js/01-v199-role-bootstrap.js?build=338a"></script>
 
 <meta charset="UTF-8" />
@@ -2161,13 +2172,13 @@
   else bindQrShareButtons();
 })();
 </script>
-<script src="js/33-owner-sync.js?build=456-unified-establishments"></script>
-<script src="js/35-owner-account.js?build=456-unified-login"></script>
+<script src="js/33-owner-sync.js?build=457-login-first"></script>
+<script src="js/35-owner-account.js?build=457-login-first"></script>
 <script src="js/36-tester-signature.js?build=446-close-tester-page"></script>
 <script src="js/37-reception-temperature.js?build=432-simple-temperature-feedback"></script>
 <script src="js/38-direct-report-email.js?build=416-gmail-direct"></script>
 <script src="js/39-establishment-demo.js?build=451-establishment-exercise"></script>
 <script src="js/40-school-trial.js?build=456-unified-establishments"></script>
-<script src="js/44-establishment-integration.js?build=456-unified-establishments"></script>
+<script src="js/44-establishment-integration.js?build=457-login-first"></script>
 </body>
 </html>
