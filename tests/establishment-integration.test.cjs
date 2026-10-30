@@ -39,3 +39,19 @@ test('normal result controls initialize when the retired report-note button is a
  for(const match of line.matchAll(/\.(?:onclick|oninput|onchange)=(\w+);/g))ctx[match[1]]=()=>{};
  vm.runInNewContext(line,ctx);assert.equal(typeof nodes.get('#csvBtn').onclick,'function');assert.equal(typeof nodes.get('#closureBtn').onclick,'function');
 });
+
+test('school saved snapshots are sent during continuous storage updates and retried',()=>{
+ const timers=new Map(),intervals=[],sent=[],listeners={};let next=0;
+ const parent={postMessage:m=>sent.push(m)},root={parent,__JURY_DEMO_BOOT:{school:'S1',nonce:'test',origin:'https://jury.test',payload:{}}};
+ const document={hidden:false,addEventListener:(name,fn)=>{listeners[name]=fn;},createElement:()=>({}),head:{appendChild(){}},body:{prepend(){}},getElementById:()=>null};
+ const ctx={window:root,document,navigator:{},setTimeout:fn=>{timers.set(++next,fn);return next},clearTimeout:id=>timers.delete(id),setInterval:fn=>intervals.push(fn)};
+ root.addEventListener=()=>{};vm.createContext(ctx);
+ vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/00-school-trial-sandbox.js'),'utf8'),ctx);
+ root.localStorage.setItem('jm_test_culinaire_prepared_v97','[]');
+ const first=[...timers.keys()][0];
+ for(let i=0;i<20;i++)root.localStorage.setItem('jm_test_culinaire_sample_lot_history_v178',JSON.stringify([{id:'lot'+i}]));
+ assert.equal([...timers.keys()][0],first,'later saves must not defer the scheduled send');
+ timers.get(first)();
+ assert.equal(JSON.parse(sent.at(-1).payload.jm_test_culinaire_sample_lot_history_v178)[0].id,'lot19');
+ listeners.DOMContentLoaded();const before=sent.length;intervals.at(-1)();assert.equal(sent.length,before+1);
+});
