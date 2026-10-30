@@ -27,7 +27,7 @@
      if(view==='reception'&&rs?.key==='done')continue;
      if(view==='receptionHistory'&&!(c.receptions||[]).some(r=>r.validatedAt))continue;
     }
-    out.push({school:row.school,label:row.label,id:String(rec.id),kind:rec.kind,lotName:c.lotName||rec.name||'Jury',products:c.products.length,status:rec.kind==='archive'||c._archive?.archivedAt?'Archivé':c.juryClose?.closedAt?'Jury terminé':c.juryLaunch?.openedAt?'Jury en cours':'Jury préparé'});
+    out.push({school:row.school,label:row.label,id:String(rec.id),kind:rec.kind,lotName:c.lotName||rec.name||'Jury',products:c.products.length,receptionStatus:typeof receptionStatus==='function'?receptionStatus(c):null,status:rec.kind==='archive'||c._archive?.archivedAt?'Archivé':c.juryClose?.closedAt?'Jury terminé':c.juryLaunch?.openedAt?'Jury en cours':'Jury préparé'});
    }
    if(view==='prepare')for(const rec of parse(p.jm_test_culinaire_sample_lot_history_v178,[])){
     if(!rec?.id||!rec.lotName||!rec.products?.length||occupied.has(logical(rec.lotName,rec.products)))continue;
@@ -61,7 +61,19 @@
   try{
    const rows=await refresh(),list=el(listId);if(!list)return;
    const records=entries(rows,view,typeof receptionStatusForConfig==='function'?receptionStatusForConfig:null);list.querySelector('[data-school-jurys]')?.remove();
-   if(!records.length)return;
+   if(!records.length){
+    if(view==='reception'){
+     const intro=el('receptionLotModal')?.querySelector('p');
+     if(intro)intro.textContent='Aucune réception en attente.';
+     const saved=entries(rows,'receptionHistory',typeof receptionStatusForConfig==='function'?receptionStatusForConfig:null);
+     if(saved.length&&!list.querySelector('[data-open-saved-receptions]')){
+      const b=document.createElement('button');b.type='button';b.className='reception-lot-choice';b.dataset.openSavedReceptions='1';
+      b.textContent='Consulter les réceptions enregistrées';
+      b.onclick=()=>{el('receptionLotModal')?.classList.remove('show');openReceptionHistoryFromHome()};list.appendChild(b);
+     }
+    }
+    return;
+   }
    const section=document.createElement('section');section.dataset.schoolJurys='1';
    const heading=document.createElement('h3');heading.textContent='Jurys des établissements';section.appendChild(heading);
    for(const rec of records){
@@ -167,6 +179,27 @@
   };
   if(el('homeReceptionBtn'))el('homeReceptionBtn').onclick=openReceptionFromHome;
   if(el('homeReceptionHistoryBtn'))el('homeReceptionHistoryBtn').onclick=openReceptionHistoryFromHome;
+
+  const localReceptionBadges=renderHomeReceptionBadge;
+  function schoolReceptionBadges(){
+   localReceptionBadges();
+   const records=entries(schoolRows,'results',typeof receptionStatusForConfig==='function'?receptionStatusForConfig:null).filter(r=>r.kind!=='archive'&&r.status!=='Archivé');
+   if(!records.length)return;
+   const local=allReceptionLots();
+   const totals=local.map(r=>r.receptionStatus).concat(records.map(r=>r.receptionStatus)).reduce((a,r)=>({done:a.done+Number(r?.done||0),total:a.total+Number(r?.total||0)}),{done:0,total:0});
+   const pending=el('homeReceptionBadge'),done=el('homeReceptionHistoryBadge');
+   if(pending){pending.textContent=totals.total?totals.done+'/'+totals.total:'0';pending.title='Réceptions de votre espace et des établissements';}
+   if(done){done.textContent=String(totals.done);done.title='Réceptions enregistrées dans votre espace et les établissements';}
+  }
+  renderHomeReceptionBadge=schoolReceptionBadges;
+  let refreshingReception=false;
+  async function refreshReceptionBadges(){
+   if(document.hidden||refreshingReception||!root.JuryAccountV385?.client||root.JuryAccountV385?.signedOut||root.JuryAccountV385?.schoolMode)return;
+   refreshingReception=true;
+   try{await refresh();schoolReceptionBadges()}catch(e){console.warn('Actualisation des réceptions',e)}finally{refreshingReception=false}
+  }
+  refreshReceptionBadges();
+  setInterval(refreshReceptionBadges,5000);
 
   const results=openResultsLotChooserV348;
   openResultsLotChooserV348=async function(){await results();await appendSchools('resultsLotListV348','results')};
