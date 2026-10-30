@@ -266,7 +266,7 @@
       const doc=new DOMParser().parseFromString(text,'text/html');
       doc.querySelectorAll('script[src*="39-establishment-demo"],script[src*="40-school-trial"],script[src*="33-owner-sync"],script[src*="35-owner-account"],script[src*="44-establishment-integration"],script[src*="19-v22-installation"],link[rel="manifest"]').forEach(n=>n.remove());
       const cloudScript=doc.querySelector('script[src*="06-v20-partage"]');
-      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=456';
+      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=462-admin-launch';
       if(!cloudScript)throw new Error('Connexion du jury indisponible.');
       cloudScript.after(bridge);
       const base=doc.createElement('base');base.href=new URL('./',location.href).href;doc.head.prepend(base);
