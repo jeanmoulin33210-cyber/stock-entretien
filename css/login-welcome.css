@@ -1,0 +1,53 @@
+.login-welcome-story{display:none}
+html.login-required-v457 body{background:#f6f1e7!important}
+html.login-required-v457:not(.login-form-ready-v457)::before{background:#f6f1e7;color:#254c41}
+html.login-required-v457.login-form-ready-v457 #accountModalV385{
+ display:grid!important;grid-template-columns:min(44vw,490px) min(42vw,440px);gap:clamp(24px,4vw,80px);align-content:center;align-items:center;justify-content:center;
+ padding:clamp(24px,5vw,72px)!important;
+ background:radial-gradient(ellipse at 7% 90%,#dce6cf 0,transparent 43%),radial-gradient(ellipse at 95% 4%,#f3dac3 0,transparent 40%),#f6f1e7!important;
+}
+html.login-required-v457 .login-welcome-story{display:block;position:relative;color:#254c41;max-width:490px;isolation:isolate}
+.login-welcome-brand{display:flex;align-items:center;gap:14px;font:700 17px system-ui;letter-spacing:.01em}
+.login-welcome-logo{display:grid;place-items:center;width:54px;height:54px;border-radius:18px;background:#285849;color:#fff8eb;box-shadow:0 8px 24px #254c4116}
+.login-welcome-logo svg{width:34px;height:34px}
+.login-welcome-kicker{margin:42px 0 16px!important;font:700 11px system-ui;letter-spacing:.2em;text-transform:uppercase;color:#9c6447}
+.login-welcome-story h1{margin:0!important;font:500 clamp(42px,4.6vw,67px)/1.06 Georgia,serif;letter-spacing:-.035em;color:#254c41}
+.login-welcome-story h1 em{font-weight:400;color:#b56d4d}
+.login-welcome-description{font:17px/1.7 system-ui;color:#617168;max-width:370px;margin:24px 0 0!important}
+.login-welcome-art{display:block;width:min(100%,430px);height:auto;margin:18px 0 -12px;filter:drop-shadow(0 16px 20px #554b3210)}
+.login-welcome-signature{font:600 11px system-ui;letter-spacing:.12em;text-transform:uppercase;color:#778275;margin-top:10px}
+html.login-required-v457 #accountModalV385 .modal{
+ position:relative;width:100%!important;max-width:440px!important;padding:clamp(26px,3vw,42px)!important;border:1px solid #fffdf6!important;border-radius:28px!important;
+ background:#fffdf8!important;box-shadow:0 26px 80px #42513616,0 3px 14px #42513608!important;color:#293e35;
+}
+html.login-required-v457 #accountTitleV385{font:500 34px/1.15 Georgia,serif!important;letter-spacing:-.02em;color:#254c41}
+html.login-required-v457 #accountIntroV385{font-size:14px;line-height:1.65;color:#7a8179;margin:13px 0 22px}
+html.login-required-v457 #accountModalV385 label{font-size:11px;letter-spacing:.08em;color:#647568;font-weight:700}
+html.login-required-v457 #accountModalV385 .field{margin:18px 0}
+html.login-required-v457 #accountModalV385 .field input{
+ width:100%;border:1px solid #dce2d5;border-radius:12px;background:#fbfcf7;color:#293e35;min-height:51px;padding:13px 15px;font:16px system-ui;box-shadow:none;transition:border-color .15s,box-shadow .15s;
+}
+html.login-required-v457 #accountModalV385 .field input:focus{outline:0;border-color:#567c61;box-shadow:0 0 0 3px #567c6119;background:white}
+html.login-required-v457 #accountRememberWrapV449{font-size:12px!important;letter-spacing:0!important;font-weight:400!important;text-transform:none;color:#6e796e}
+html.login-required-v457 #accountRememberV385{accent-color:#35604a;width:18px!important;height:18px!important}
+html.login-required-v457 #accountSubmitV385{background:#2d5948!important;border:1px solid #2d5948!important;color:#fffdf4!important;min-height:51px;border-radius:12px;font-size:15px;box-shadow:0 6px 15px #2d594819;transition:background .15s,transform .15s}
+html.login-required-v457 #accountSubmitV385:hover{background:#214737!important;transform:translateY(-1px)}
+html.login-required-v457 #accountLoginTabV385,html.login-required-v457 #accountSetupTabV385{font:600 12px system-ui;min-height:36px;padding:9px 12px;border-radius:9px;box-shadow:none}
+html.login-required-v457 #accountLoginTabV385{background:#e9eee2;color:#315940;border:1px solid #e9eee2}
+html.login-required-v457 #accountSetupTabV385{background:transparent;color:#8c7863;border:1px solid #e5dfd1}
+html.login-required-v457 #accountMessageV385{font-size:12px;line-height:1.6!important;margin:16px 0;min-height:0!important}
+html.login-required-v457 #accountFooterV458{padding-top:18px;margin:22px 0 0;border-top:1px solid #ecece1;font-size:11px!important;line-height:1.6!important;color:#929487!important}
+@media(max-width:760px){
+ html.login-required-v457.login-form-ready-v457 #accountModalV385{grid-template-columns:minmax(0,440px);gap:22px;align-content:start;padding:26px 20px!important}
+ .login-welcome-brand{justify-content:center;font-size:15px}.login-welcome-logo{width:44px;height:44px;border-radius:14px}
+ .login-welcome-kicker,.login-welcome-art,.login-welcome-signature{display:none!important}
+ .login-welcome-story h1{font-size:34px;text-align:center;margin-top:20px!important}
+ .login-welcome-description{font-size:13px;text-align:center;margin:12px auto 0!important;max-width:330px}
+ html.login-required-v457 #accountTitleV385{font-size:30px!important}
+ html.login-required-v457 #accountModalV385 .modal{max-height:none!important;padding:27px!important;border-radius:23px!important}
+}
+@media(min-width:761px) and (max-height:700px){
+ html.login-required-v457.login-form-ready-v457 #accountModalV385{align-content:start;padding:24px!important}
+ .login-welcome-art{max-width:300px}.login-welcome-kicker{margin-top:24px!important}.login-welcome-story h1{font-size:48px}
+}
+@media(prefers-reduced-motion:reduce){html.login-required-v457 #accountModalV385 *{transition:none!important}}
