@@ -74,3 +74,25 @@ test('opening a school jury from administrator launch goes to launch rather than
  vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/43-school-phone-bridge.js'),'utf8'),ctx);
  await root.JuryAccountV385.restore();assert.deepEqual(calls,['launch']);
 });
+
+test('admin reception includes closed school jurys, excludes archived and completed receptions',()=>{
+ const row=school('S1',state('closed','Lot 13',{juryClose:{closedAt:'today'}}));
+ assert.equal(entries([row],'reception',()=>({key:'pending'})).length,1);
+ assert.equal(entries([row],'reception',()=>({key:'done'})).length,0);
+ assert.equal(entries([row],'receptionHistory').length,0);
+ const st=state('closed','Lot 13',{juryClose:{closedAt:'today'},receptions:[{validatedAt:'today'}]});
+ const received=school('S1',st);assert.equal(entries([received],'receptionHistory').length,1);
+ const archived=school('S1',state('closed','Lot 13',{_archive:{archivedAt:'today'}}));
+ assert.equal(entries([archived],'reception').length,0);
+});
+test('administrator receipt target opens reception without connecting the tasting phones',async()=>{
+ const st=state('ready','Lot 13'),calls=[];
+ const root={__JURY_DEMO_BOOT:{school:'S1',nonce:'nonce',target:{id:'ready',kind:'prepared',view:'reception'}},__JURY_SCHOOL_TRIAL_ACTIVE:true,parent:{JurySchoolTrialV452:{clientForSchool:()=>({})}}};
+ const ctx={window:root,state:st,draftConfig:null,currentTester:1,currentProduct:'',currentSample:'',adminProduct:'',STORAGE_KEY:'state',
+  loadPreparedJurys:()=>[{id:'ready',state:st}],loadSampleLotHistory:()=>[],loadArchives:()=>[],deepClone:x=>JSON.parse(JSON.stringify(x)),
+  localStorage:{setItem(){}},phoneSharePrepared:()=>true,currentJuryShareSessionId:()=>'jury-session',ensurePreparedShareConnected:()=>{throw Error('Must not connect tasting for reception')},openReceptionView:index=>calls.push('reception:'+index),renderLaunchView:()=>calls.push('launch'),openConfig:()=>calls.push('prepare'),renderJuryView:()=>calls.push('running'),
+  ownerWorkspaceBusyV352:false,automaticOwnerWorkspaceV352:()=>{},cloudCfg:{},DEFAULT_SUPABASE_URL:'https://project.test',DEFAULT_SUPABASE_KEY:'public',setCloudStatus:()=>{},
+  document:{getElementById:()=>null}};
+ vm.createContext(ctx);vm.runInContext(fs.readFileSync(path.join(__dirname,'../js/43-school-phone-bridge.js'),'utf8'),ctx);
+ await root.JuryAccountV385.restore();assert.deepEqual(calls,['reception:-1']);
+});
