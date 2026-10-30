@@ -64,3 +64,6 @@ jobs:
 
       - name: School phone preparation and tester-only QR links
         run: node --test tests/school-phones.test.cjs
+
+      - name: Unified establishment lists and isolated jury selection
+        run: node --test tests/establishment-integration.test.cjs
