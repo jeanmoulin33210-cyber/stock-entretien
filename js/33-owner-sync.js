@@ -348,7 +348,7 @@
   };
 
   async function tick(){
-    if(root.JuryAccountV385?.schoolMode)return;
+    if(root.JuryAccountV385?.schoolMode||root.JuryLoginGateV457?.locked)return;
     if(busy||Date.now()<retryAt||guestTester||document.hidden||root.JuryAccountV385?.signedOut)return;
     const active=document.querySelector('.view.active')?.id;
     if(!active||active==='testerView'||active==='adminGateView'||active==='adminDeniedView')return;
