@@ -102,7 +102,30 @@
   const pref=parse(localStorage.getItem(PREF),{});
   if(pref.schoolMode)document.body.classList.add('establishment-account-v456');
   const prepare=prepareJuryFromHomeV180;
-  prepareJuryFromHomeV180=function(event){prepare(event);setTimeout(()=>appendSchools('prepareJuryList','prepare'),20);return false};
+  let preparing=false;
+  prepareJuryFromHomeV180=function(event){
+   prepare(event);
+   if(preparing)return false;
+   preparing=true;
+   (async()=>{
+    try{
+     // The chooser must read shared sample selections before rebuilding its local list.
+     await root.JuryOwnerSyncV357?.run({prepareChooser:true});
+     if(!el('prepareJuryModal')?.classList.contains('show'))return;
+     prepare(null);
+     await new Promise(resolve=>setTimeout(resolve,20));
+     if(el('prepareJuryModal')?.classList.contains('show'))await appendSchools('prepareJuryList','prepare');
+    }finally{preparing=false}
+   })().catch(e=>console.warn('Actualisation des jurys',e));
+   return false;
+  };
+  // A school may save while an administrator already has the chooser open.
+  let refreshingSchools=false;
+  setInterval(async()=>{
+   if(document.hidden||refreshingSchools||!el('prepareJuryModal')?.classList.contains('show'))return;
+   refreshingSchools=true;
+   try{await appendSchools('prepareJuryList','prepare')}finally{refreshingSchools=false}
+  },5000);
   const results=openResultsLotChooserV348;
   openResultsLotChooserV348=async function(){await results();await appendSchools('resultsLotListV348','results')};
   for(const id of ['resultsBtn','hubResultsBtn'])if(el(id))el(id).onclick=openResultsLotChooserV348;
