@@ -348,6 +348,7 @@
   };
 
   async function tick(){
+    if(root.JuryAccountV385?.schoolMode)return;
     if(busy||Date.now()<retryAt||guestTester||document.hidden||root.JuryAccountV385?.signedOut)return;
     const active=document.querySelector('.view.active')?.id;
     if(!active||active==='testerView'||active==='adminGateView'||active==='adminDeniedView')return;
@@ -660,3 +661,4 @@
   setTimeout(installSharedResetV368,700);
 
 })(typeof window==='undefined'?globalThis:window);
+
