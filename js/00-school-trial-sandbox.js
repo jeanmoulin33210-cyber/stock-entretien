@@ -59,7 +59,7 @@
     style.textContent='html body{padding-top:42px!important}#schoolExerciseBanner{position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#fff1d6;color:#62430c;padding:10px;text-align:center;font:700 14px system-ui}#ownerAccountBtnV385,#cloudBtn,#securityBtn,#adminLockBtn,#adminSecurityBtn,#installAppBtn{display:none!important}';
     document.head.appendChild(style);
     const banner=document.createElement('div');banner.id='schoolExerciseBanner';
-    banner.textContent='ESSAI — '+boot.label+' · données fictives';document.body.prepend(banner);
+    banner.textContent=boot.integrated?boot.label+' · Espace établissement':'ESSAI — '+boot.label+' · données fictives';document.body.prepend(banner);
     const disable=()=>{
       for(const id of ['configEmailArticlesBtn','simpleResultsEmailBtn','reportReadySendBtn']){
         const b=document.getElementById(id);if(b){b.disabled=true;b.title='L’envoi de rapports par email reste désactivé dans cet essai.';}
@@ -67,6 +67,7 @@
     };
     disable();setInterval(disable,800);
     root.parent.postMessage({kind:'jury-demo-mounted',school:boot.school,nonce:boot.nonce},boot.origin);
+    send();
   });
 })(typeof window==='undefined'?globalThis:window);
 
