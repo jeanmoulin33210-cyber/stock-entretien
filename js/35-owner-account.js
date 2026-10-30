@@ -83,15 +83,17 @@
   function open(next='login'){
     if(tester())return;
     setMode(next);
+    el('accountTitleV385').textContent=root.JuryLoginGateV457?.locked?'Connexion à Tests culinaires':'Mon compte';
     el('accountModalV385').classList.add('show');
     el('accountRememberV385').checked=preference().remember!==false;
     el('accountSignoutV385').hidden=!API.client;
     el('accountExtraTabV449').hidden=!API.client||!!API.schoolMode;
     el('accountEmailV385').value=API.email||read(PREF,{email:''}).email||'';
+    root.JuryLoginGateV457?.formReady();
     setTimeout(()=>el('accountEmailV385').focus(),50);
   }
   function close(){
-    if(working)return;
+    if(working||root.JuryLoginGateV457?.locked)return;
     el('accountModalV385').classList.remove('show');
     el('accountPasswordV385').value='';el('accountConfirmV385').value='';
     el('accountPinV385').value='';
@@ -149,6 +151,7 @@
       try{await window.JuryOwnerSyncV357.loadAccount();}
       catch(e){el('accountModalV385').classList.add('show');throw e;}
       renderHome();
+      root.JuryLoginGateV457?.release();
     }catch(e){if(!preference().enabled)API.client=was;throw e;}
   }
   async function finish(c,password,remember){
@@ -263,6 +266,7 @@
   }
   API.restore=async function(){
     if(tester())return false;
+    root.JuryLoginGateV457?.lock();
     if(new URLSearchParams(location.search).has('schoolLogin')){
       API.schoolMode=true;document.body.classList.add('establishment-account-v456');
       open();
@@ -270,7 +274,7 @@
       message('Connectez-vous avec le compte de votre établissement.');
       return true;
     }
-    const pref=preference();if(!pref.enabled)return false;
+    const pref=preference();if(!pref.enabled){open();message('Identifiez-vous pour accéder à Tests culinaires.');return true;}
     if(pref.signedOut){API.signedOut=true;API.schoolMode=!!pref.schoolMode;open();return true;}
     const c=accountClient(pref.remember!==false);
     try{
@@ -296,7 +300,7 @@
     try{
       if(API.schoolMode){await root.JuryEstablishmentsV456.signout();return;}
       const result=await API.client.auth.signOut({scope:'local'});if(result.error)throw result.error;
-      API.client=null;API.signedOut=true;candidate=null;
+      API.client=null;API.signedOut=true;candidate=null;root.JuryLoginGateV457?.lock();
       const pref=preference();localStorage.setItem(PREF,JSON.stringify({...pref,signedOut:true}));
       localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);localStorage.removeItem(OWNER_TOKEN_STORAGE_KEY);
       localStorage.removeItem('jm_tc_owner_connection_v353');localStorage.setItem('jm_tc_owner_disconnected_v353','1');
@@ -339,4 +343,5 @@
   API.open=open;API.signout=signout;API.verifiedConfig=verifiedConfig;
   mount();
 })(typeof window==='undefined'?globalThis:window);
+
 
