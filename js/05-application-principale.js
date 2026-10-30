@@ -2098,7 +2098,7 @@ function allReceptionLots(){
   const currentCfg=state?.config||{};
   const currentId=String(currentCfg._preparedId||'__current__');
 
-  if(currentCfg?.products?.length && !currentCfg?.juryClose?.closedAt && !currentCfg?._archive?.archivedAt){
+  if(currentCfg?.products?.length && !currentCfg?._archive?.archivedAt){
     const currentLotName=currentCfg.lotName||'Lot en cours';
     choices.push({
       id:currentId,
@@ -2121,7 +2121,7 @@ function allReceptionLots(){
 
   for(const rec of prepared){
     const cfg=rec?.state?.config||{};
-    if(!cfg?.products?.length || cfg?.juryClose?.closedAt || cfg?._archive?.archivedAt)continue;
+    if(!cfg?.products?.length || cfg?._archive?.archivedAt)continue;
     const id=String(rec.id||cfg._preparedId||'');
     if(!id || seenIds.has(id))continue;
 
