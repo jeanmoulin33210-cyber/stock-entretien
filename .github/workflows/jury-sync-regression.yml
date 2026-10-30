@@ -67,3 +67,6 @@ jobs:
 
       - name: Unified establishment lists and isolated jury selection
         run: node --test tests/establishment-integration.test.cjs
+
+      - name: Login gate, remembered accounts and QR entry
+        run: node --test tests/login-gate.test.cjs
