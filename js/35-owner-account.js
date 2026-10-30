@@ -63,7 +63,7 @@
   }
   function busy(value){working=value;el('accountFormV385').querySelectorAll('button,input').forEach(n=>n.disabled=value);for(const id of ['accountCloseV385','accountLoginTabV385','accountSetupTabV385','accountExtraTabV449','accountSignoutV385'])el(id).disabled=value;}
   function resetPasswordVisibility(){
-    document.querySelectorAll('[data-password-toggle]').forEach(button=>{
+    el('accountModalV385').querySelectorAll('[data-password-toggle]').forEach(button=>{
       const input=el(button.dataset.passwordToggle);if(!input)return;
       input.type='password';button.setAttribute('aria-pressed','false');
       button.setAttribute('aria-label','Afficher le mot de passe');button.title='Afficher le mot de passe';
