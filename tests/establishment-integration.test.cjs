@@ -1,5 +1,6 @@
 const {test}=require('node:test');
 const assert=require('node:assert/strict');
+const fs=require('node:fs'),vm=require('node:vm'),path=require('node:path');
 const {entries,isSchoolEmail}=require('../js/44-establishment-integration.js');
 const {resolveTarget}=require('../js/43-school-phone-bridge.js');
 const products=[{name:'Carottes'}];
@@ -31,4 +32,10 @@ test('opening a school jury selects only the requested record and fails if it wa
 test('school account recognition is limited to the configured trial addresses',()=>{
  assert.ok(isSchoolEmail('jury-test1@mailo.com'));assert.ok(isSchoolEmail('JURY-TEST12@MAILO.COM'));
  assert.equal(isSchoolEmail('jury-test13@mailo.com'),false);assert.equal(isSchoolEmail('jeanmoulin33210@gmail.com'),false);
+});
+test('normal result controls initialize when the retired report-note button is absent',()=>{
+ const line=fs.readFileSync(path.join(__dirname,'../js/05-application-principale.js'),'utf8').split('\n').find(l=>l.startsWith("$('#simpleResultsPdfBtn').onclick"));
+ const nodes=new Map();const ctx={$:id=>{if(id==='#saveReportNoteBtn')return null;if(!nodes.has(id))nodes.set(id,{});return nodes.get(id)}};
+ for(const match of line.matchAll(/\.(?:onclick|oninput|onchange)=(\w+);/g))ctx[match[1]]=()=>{};
+ vm.runInNewContext(line,ctx);assert.equal(typeof nodes.get('#csvBtn').onclick,'function');assert.equal(typeof nodes.get('#closureBtn').onclick,'function');
 });
