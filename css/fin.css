@@ -66,3 +66,6 @@
   background:rgba(255,255,255,.14)!important;
   box-shadow:none!important;
 }
+
+/* V474 — white play arrow, rendered as text rather than a colored emoji. */
+#homeView #juryBtn .cmd-icon{color:#fff!important;font-family:Arial,sans-serif!important;}
