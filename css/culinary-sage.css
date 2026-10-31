@@ -273,3 +273,10 @@ body .advanced-tools-body .btn{color:#2d5948!important;background:#e2e9d8!import
 /* V518 — Jury title preview in cream and sage, including its native pale-blue legacy surface. */
 body #sampleLotPreview.sample-lot-preview{background:#edf1e4!important;border:1px solid #d6ddca!important;color:#596b59!important}
 body #sampleLotPreview.sample-lot-preview strong{color:#2d5948!important}
+
+/* V519 — Question preparation: warm surfaces instead of pale blue. */
+body .criteria-config-note{background:#e8eddf!important;border-color:#d6ddca!important;color:#385747!important}
+body .criteria-preview{background:#f6f1e7!important;border-color:#d6ddca!important;color:#596b59!important}
+body .criterion-config-row{background:#fffdf8!important;border-color:#d9ddce!important}
+body .criterion-config-number strong,body .criteria-preview strong{color:#2d5948!important}
+body .criterion-config-number span{color:#657165!important}
