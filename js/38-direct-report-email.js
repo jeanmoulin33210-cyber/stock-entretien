@@ -44,8 +44,16 @@ async function openDirectFinalReportV415(){
       if(typeof syncSimpleResultsActions==='function')syncSimpleResultsActions();
       status.textContent='Envoi pris en charge ✓';send.disabled=true;send.textContent='Envoi pris en charge ✓';send.style.background='#23764e';
       form.querySelectorAll('input,textarea').forEach(el=>el.disabled=true);
-      const archive=document.getElementById('confirmReportSentArchiveBtn');if(archive)archive.hidden=false;
       busy=false;close.disabled=false;
+      modal.close();modal.remove();
+      if(typeof openSimplifiedResults==='function')openSimplifiedResults();
+      const archive=document.getElementById('confirmReportSentArchiveBtn');
+      if(archive){
+        archive.hidden=false;archive.disabled=false;
+        archive.scrollIntoView({block:'center',behavior:'smooth'});
+        archive.focus({preventScroll:true});
+      }
+      if(typeof toast==='function')toast('Rapport envoyé ✓ Vous pouvez maintenant archiver et verrouiller le jury.');
     }catch(error){status.textContent='Envoi impossible : '+error.message;status.scrollIntoView({block:'nearest'});busy=false;send.disabled=false;close.disabled=false;}
   };
 }
