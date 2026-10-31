@@ -392,3 +392,6 @@ body #adminView #productSheetsBtn:hover{background:#d3dfc5!important}
 /* V534 — OCCENA conserve la palette sauge après validation. */
 body #adminView #simpleResultsOccenaBtn{background:#dce6cf!important;color:#2d5948!important;border-color:#cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
 body #adminView #simpleResultsOccenaBtn:hover{background:#d3dfc5!important}
+
+/* V535 — Fiches validées : conserver la couleur même si le bouton est désactivé. */
+body #adminView #productSheetsBtn:disabled,body #adminView #productSheetsBtn.simple-results-complete-v305{background:#dce6cf!important;background-image:none!important;color:#2d5948!important;-webkit-text-fill-color:#2d5948!important;border-color:#cbd7bf!important;opacity:1!important;filter:none!important}
