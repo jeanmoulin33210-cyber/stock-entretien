@@ -189,3 +189,10 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
  #homeView .home-quick-tools-v174>button{height:clamp(100px,17dvh,126px)!important}
  #homeView .home-quick-tools-v174>button strong{font-size:12px!important}
 }
+
+/* V506 — More breathing room between iPad rows, with card and icon sizes unchanged. */
+@media (min-width:760px) and (orientation:landscape) and (max-height:950px){
+ #homeView .simple-command-grid{gap:14px!important;margin-top:14px!important}
+ #homeView .home-quick-tools-v174{gap:13px!important;margin-top:14px!important}
+ #homeView .advanced-tools{margin-top:14px!important}
+}
