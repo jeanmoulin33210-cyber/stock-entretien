@@ -110,7 +110,7 @@
     return backupTask;
   }
   const el=id=>document.getElementById(id);
-  function status(text,bad=false){const n=el('demoSaveV452');if(n){n.textContent=text;n.style.color=bad?'#a53131':'#285e53';}}
+  function status(text,bad=false){if(frame?.contentWindow)frame.contentWindow.postMessage({kind:'jury-school-save-status',nonce,text,bad},location.origin);const n=el('demoSaveV452');if(n){n.textContent=text;n.style.color=bad?'#a53131':'#285e53';}}
   function client(){const c=root.JuryAccountV385?.client;if(!c||root.JuryAccountV385?.signedOut)throw new Error('Connectez-vous avec votre compte de test.');return c;}
   function payloadFor(row){
     const queued=pendingCopies.get(pendingKey(row.school))||parse(localStorage.getItem(pendingKey(row.school)),null);
@@ -272,7 +272,7 @@
   async function openSchool(next,request=null){
     if(switching)return;switching=true;
     try{
-      await flushChild();if(frame){frame.remove();frame=null;}
+      await flushChild();overlay?.classList.remove('school-header-unified');if(frame){frame.remove();frame=null;}
       const row=rows.find(r=>r.school===next);if(!row?.enabled)throw new Error('Établissement inconnu.');
       let initialPayload=payloadFor(row);
       if(row.recovery){
@@ -294,7 +294,7 @@
       const doc=new DOMParser().parseFromString(text,'text/html');
       doc.querySelectorAll('script[src*="39-establishment-demo"],script[src*="40-school-trial"],script[src*="33-owner-sync"],script[src*="35-owner-account"],script[src*="44-establishment-integration"],script[src*="19-v22-installation"],link[rel="manifest"]').forEach(n=>n.remove());
       const cloudScript=doc.querySelector('script[src*="06-v20-partage"]');
-      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=488-school-archives';
+      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=496-unified-school-header';
       if(!cloudScript)throw new Error('Connexion du jury indisponible.');
       cloudScript.after(bridge);
       const base=doc.createElement('base');base.href=new URL('./',location.href).href;doc.head.prepend(base);
@@ -351,6 +351,17 @@
   }
   root.addEventListener('message',event=>{
     if(!frame||event.source!==frame.contentWindow||event.origin!==location.origin||event.data?.nonce!==nonce||event.data.school!==school)return;
+    if(event.data.kind==='jury-school-header-ready'){
+      if(integrated)overlay.classList.add('school-header-unified');
+      const text=el('demoSaveV452')?.textContent||'';
+      frame.contentWindow.postMessage({kind:'jury-school-save-status',nonce,text},location.origin);
+      return;
+    }
+    if(event.data.kind==='jury-school-header-action'){
+      if(event.data.action==='account')el('demoCloseV452')?.click();
+      else if(event.data.action==='refresh')el('schoolRefreshV492')?.click();
+      return;
+    }
     if(event.data.kind==='jury-demo-mounted'){mounted=true;status(integrated?'Dossiers de l’établissement ouverts.':'Mode essai — seuls les dossiers du lycée '+school+' sont affichés.');return;}
     if(event.data.kind==='jury-demo-unsaved'){flushWaiter?.(new Error('Enregistrez d’abord la fiche dans le logiciel, puis changez de rôle.'));return;}
     if(event.data.kind!=='jury-demo-state')return;
@@ -360,6 +371,7 @@
     const style=document.createElement('style');
     style.textContent='#establishmentDemoV452{position:fixed;inset:0;z-index:2000000;overflow:auto;background:#edf5f8;padding:14px;color:#173f5c}#establishmentDemoV452 .demo-header{max-width:1250px;margin:auto}#establishmentDemoV452 h2{margin:0 0 6px}#establishmentDemoV452 p{line-height:1.45;margin:8px 0}#establishmentDemoV452 .demo-nav{display:flex;gap:8px;flex-wrap:wrap;margin:12px 0}#establishmentDemoV452 button{padding:12px 16px;border:1px solid #9ab7c7;border-radius:12px;background:white;color:#173f5c;font:700 16px system-ui;cursor:pointer}#establishmentDemoV452 #demoContentV452{max-width:1250px;margin:14px auto}#establishmentDemoV452 .demo-school-card{background:white;border:1px solid #c4d8e3;border-radius:18px;padding:20px;margin:15px 0}#establishmentDemoV452 .demo-lot{background:#f0f6f9;padding:12px;border-radius:10px}#establishmentDemoV452 .demo-limit{font-size:13px;color:#5e7480}#establishmentDemoLauncherV452{margin-top:16px;padding:14px 20px;background:#fff3db;color:#62430c;border:1px solid #dfbc79;border-radius:14px;font:700 17px system-ui}#establishmentDemoLauncherV452[hidden]{display:none!important}';
     style.textContent+="\n#establishmentDemoV452.school-integrated-v456{padding:10px 14px;background:#edf5f8}\n#establishmentDemoV452.school-integrated-v456 .demo-header{display:grid;grid-template-columns:minmax(0,1fr) auto;align-items:center;gap:2px 12px;padding:4px 2px 6px;border-bottom:1px solid #d5e2e7}\n#establishmentDemoV452.school-integrated-v456 #schoolHeaderV456{margin:0;font:600 16px/1.35 system-ui,sans-serif;color:#234b60;min-width:0}\n#establishmentDemoV452.school-integrated-v456 .demo-nav{margin:0!important;gap:7px;justify-content:flex-end}\n#establishmentDemoV452.school-integrated-v456 .demo-nav button{min-height:36px;padding:6px 10px;border:1px solid #cedee5;border-radius:10px;background:#ffffffb8;color:#365b6e;font:600 12px/1.3 system-ui,sans-serif;box-shadow:none}\n#establishmentDemoV452.school-integrated-v456 .demo-nav button:hover{background:white;border-color:#9abac9}\n#establishmentDemoV452.school-integrated-v456 .demo-nav button:focus-visible{outline:3px solid #328aa6;outline-offset:2px}\n#establishmentDemoV452.school-integrated-v456 #demoSaveV452{grid-column:1/-1;font:400 10px/1.4 system-ui,sans-serif;margin:0}\n#establishmentDemoV452.school-integrated-v456 #demoContentV452{margin:10px auto}\n@media(max-width:600px){#establishmentDemoV452.school-integrated-v456 .demo-header{grid-template-columns:minmax(0,1fr);gap:8px}#establishmentDemoV452.school-integrated-v456 .demo-nav{justify-content:flex-start}#establishmentDemoV452.school-integrated-v456 #schoolHeaderV456{font-size:15px}}\n";
+    style.textContent+='#establishmentDemoV452.school-header-unified > .demo-header{display:none!important}#establishmentDemoV452.school-header-unified{padding:0!important}#establishmentDemoV452.school-header-unified #demoContentV452{margin:0 auto!important;max-width:none!important}#establishmentDemoV452.school-header-unified iframe{display:block;width:100%!important;height:100dvh!important;border:0!important;border-radius:0!important}';
     document.head.appendChild(style);
     const b=makeButton('Établissements — essai',()=>open().catch(showError));b.id='establishmentDemoLauncherV452';b.hidden=true;
     if(!document.getElementById('schoolPortal'))document.querySelector('#homeView .hero')?.appendChild(b);
