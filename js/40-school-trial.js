@@ -329,6 +329,20 @@
       overlay.innerHTML='<div class="demo-header"><h2 id="schoolHeaderV456">Tests culinaires</h2><div class="demo-nav"><button type="button" id="demoOverviewV452" hidden>Vue générale</button><button type="button" id="demoCloseV452"></button></div><strong id="demoRoleV452"></strong><p id="demoSaveV452" role="status" aria-live="polite"></p></div><div id="demoContentV452"></div>';
     }
     document.body.appendChild(overlay);
+    const refreshButton=makeButton('↻ Actualiser',async()=>{
+      if(switching)return;
+      refreshButton.disabled=true;
+      try{
+        // Flush saved changes and refuse reload while a form is unsaved.
+        await flushChild();
+        location.reload();
+      }catch(e){
+        showError(e);refreshButton.disabled=false;
+      }
+    });
+    refreshButton.id='schoolRefreshV492';
+    refreshButton.title='Enregistrer les changements sauvegardés puis recharger les dossiers du serveur';
+    overlay.querySelector('.demo-nav').appendChild(refreshButton);
     el('demoOverviewV452').onclick=overview;el('demoCloseV452').onclick=schoolAccount?()=>root.JuryAccountV385.open():close;
     if(integrated){
       el('demoCloseV452').textContent=schoolAccount?'Mon compte':'← Retour à la vue générale';
