@@ -301,3 +301,13 @@ body #launchShareStep .launch-step-number,body #launchOpenStep .launch-step-numb
 
 /* V523 — Uniform cream panels for both launch preparation steps. */
 body #launchShareStep.launch-step,body #launchOpenStep.launch-step{background:#fffaf1!important;border-color:#d6ddca!important}
+
+/* V524 — Culinary colors for the receipt lot chooser. */
+body #receptionLotModal>.modal{background:#fffaf1!important;border:1px solid #d6ddca!important;color:#2d5948!important}
+body #receptionLotModal h3{color:#2d5948!important}
+body #receptionLotModal p{color:#657165!important}
+body #receptionLotModal .reception-lot-choice,body #receptionLotModal .reception-lot-choice.current{background:#e8eddf!important;border:1px solid #cbd7bf!important;color:#2d5948!important}
+body #receptionLotModal .reception-lot-choice:hover{background:#dce6cf!important}
+body #receptionLotModal .reception-lot-choice strong,body #receptionLotModal .lot-arrow{color:#2d5948!important}
+body #receptionLotModal .reception-lot-choice span{color:#596b59!important}
+body #receptionLotModal #receptionLotCancelBtn{background:#fffaf1!important;color:#2d5948!important;border:1px solid #cbd7bf!important}
