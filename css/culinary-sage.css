@@ -400,3 +400,13 @@ body #adminView #productSheetsBtn:disabled,body #adminView #productSheetsBtn.sim
 body .modal-backdrop .prepare-jury-status{background:#e8eddf!important;color:#2d5948!important;border-color:#cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
 body .modal-backdrop .prepare-jury-choice,body .modal-backdrop .prepare-jury-choice.current{background:#fffaf1!important;color:#2d5948!important;border-color:#d6ddca!important}
 body #prepareJuryModal .modal{background:#fffaf1!important;color:#233e32!important}
+
+/* V537 — Palette commune à toutes les fenêtres, téléphone et tablette. */
+body .modal-backdrop .modal,body [role="dialog"]{background:#fffaf1!important;color:#233e32!important;border-color:#d6ddca!important}
+body .modal-backdrop .modal :is(h2,h3,h4,label){color:#2d5948!important}
+body .modal-backdrop .modal :is(.prepare-jury-choice,.reception-lot-choice,.simple-choice-btn,.product-lot-choice){background:#fffaf1!important;color:#2d5948!important;border-color:#d6ddca!important}
+body .modal-backdrop .modal :is(.prepare-jury-status,.status-chip,.draft-chip,.cloud-status,.owner-device-status){background:#e8eddf!important;color:#2d5948!important;border-color:#cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
+body .modal-backdrop .modal :is(input,select,textarea){background:#fffdf8!important;color:#233e32!important;border-color:#cbd7bf!important}
+body .modal-backdrop .modal .btn-secondary{background:#dce6cf!important;color:#2d5948!important;border-color:#cbd7bf!important}
+body .modal-backdrop .modal .btn-ghost{background:#fffaf1!important;color:#2d5948!important;border-color:#d6ddca!important}
+body .modal-backdrop .modal .btn-primary{background:#2d5948!important;color:#fffdf8!important;border-color:#2d5948!important}
