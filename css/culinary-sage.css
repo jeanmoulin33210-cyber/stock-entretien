@@ -196,3 +196,10 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
  #homeView .home-quick-tools-v174{gap:13px!important;margin-top:14px!important}
  #homeView .advanced-tools{margin-top:14px!important}
 }
+
+/* V507 — Additional breathing room, unchanged card dimensions. */
+@media (min-width:760px) and (orientation:landscape) and (max-height:950px){
+ #homeView .simple-command-grid{gap:18px!important;margin-top:18px!important}
+ #homeView .home-quick-tools-v174{gap:17px!important;margin-top:18px!important}
+ #homeView .advanced-tools{margin-top:18px!important}
+}
