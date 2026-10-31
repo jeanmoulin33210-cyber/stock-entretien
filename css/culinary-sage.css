@@ -203,3 +203,11 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
  #homeView .home-quick-tools-v174{gap:17px!important;margin-top:18px!important}
  #homeView .advanced-tools{margin-top:18px!important}
 }
+
+/* V508 — Black advanced-tools label and wider iPad spacing. */
+#homeView .advanced-tools>summary{color:#000!important}
+@media (min-width:760px) and (orientation:landscape) and (max-height:950px){
+ #homeView .simple-command-grid{gap:24px!important;margin-top:24px!important}
+ #homeView .home-quick-tools-v174{gap:23px!important;margin-top:24px!important}
+ #homeView .advanced-tools{margin-top:24px!important}
+}
