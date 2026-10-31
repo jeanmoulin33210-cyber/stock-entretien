@@ -44,3 +44,25 @@
 
 /* V447 — completed testers see the thank-you page without the last sample score. */
 #testerView.tester-final #sampleHero{display:none!important}
+
+/* V473 — same blue surface for every home navigation action. */
+#homeView .hero :is(.command-card,.home-reception-btn,.home-product-btn-v174),
+#homeView .hero #advancedTools > summary{
+  background:rgba(255,255,255,.12)!important;
+  border:1px solid rgba(255,255,255,.32)!important;
+  color:#fff!important;
+  box-shadow:0 3px 12px rgba(5,33,54,.10)!important;
+}
+#homeView .hero :is(.command-card,.home-reception-btn,.home-product-btn-v174):hover,
+#homeView .hero #advancedTools > summary:hover{
+  background:rgba(255,255,255,.20)!important;
+  border-color:rgba(255,255,255,.48)!important;
+}
+#homeView .hero :is(.command-card,.home-reception-btn,.home-product-btn-v174):focus-visible,
+#homeView .hero #advancedTools > summary:focus-visible{
+  outline:3px solid #fff!important;outline-offset:3px;
+}
+#homeView .hero :is(.command-card,.home-reception-btn,.home-product-btn-v174) :is(.cmd-icon,.quick-icon){
+  background:rgba(255,255,255,.14)!important;
+  box-shadow:none!important;
+}
