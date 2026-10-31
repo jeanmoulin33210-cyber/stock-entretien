@@ -178,3 +178,14 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
  #homeView .advanced-tools{margin-top:10px!important}
  #homeView .advanced-tools>summary{padding:7px 18px!important;font-size:11px!important;line-height:1.1!important}
 }
+
+/* V505 — Slightly larger iPad home, retaining the single-screen layout. */
+@media (min-width:760px) and (orientation:landscape) and (max-height:950px){
+ #homeView .simple-command-grid>.simple-command{height:clamp(172px,28dvh,210px)!important}
+ #homeView .simple-command-grid>.simple-command strong{font-size:17px!important}
+ #homeView .simple-command-grid>.simple-command div>span{font-size:11px!important}
+ #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon,#homeView #juryBtn>.cmd-icon.culinary-line-icon{width:68px!important;height:68px!important;min-height:68px!important;flex-basis:68px!important}
+ #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon>svg{width:58px!important;height:58px!important;min-width:58px!important;min-height:58px!important}
+ #homeView .home-quick-tools-v174>button{height:clamp(100px,17dvh,126px)!important}
+ #homeView .home-quick-tools-v174>button strong{font-size:12px!important}
+}
