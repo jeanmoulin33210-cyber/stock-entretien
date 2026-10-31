@@ -224,3 +224,48 @@
   #testerView .choice .pts{font-size:19px!important;}
   #testerView .choice .lbl{min-height:24px!important;}
 }
+
+/* V485 — a calm, polished signature dialog with clear touch actions. */
+#testerSignatureDialog{
+  box-sizing:border-box!important;padding:28px!important;
+  width:min(94vw,660px)!important;max-height:92dvh!important;
+  background:radial-gradient(ellipse at top right,#dff1ef 0,transparent 55%),linear-gradient(145deg,#fffdf8,#f0f7fa)!important;
+  border:1px solid #d1e2e7!important;border-radius:26px!important;
+  box-shadow:0 24px 80px rgba(13,44,64,.25)!important;
+  font-family:inherit;color:#19384d!important;
+}
+#testerSignatureDialog::backdrop{background:rgba(12,35,51,.48);backdrop-filter:blur(4px);}
+#testerSignatureDialog h2{margin:0 0 12px;font-size:clamp(23px,3.5vw,29px);line-height:1.2;color:#174b60;}
+#testerSignatureDialog p{line-height:1.5;}
+#testerSignatureDialog label{display:block;font-size:14px;font-weight:700;color:#36596b;}
+#testerSignatureDialog input{
+  box-sizing:border-box!important;margin-top:6px;width:100%!important;
+  min-width:0;min-height:46px;padding:11px 13px;
+  background:#fff;border:1px solid #cbdde4;border-radius:12px;
+  font:inherit;color:#19384d;box-shadow:0 2px 5px #16384b05;
+}
+#testerSignatureDialog input:focus{outline:3px solid #168fa42b;border-color:#168fa4;}
+#testerSignatureDialog canvas{
+  box-sizing:border-box!important;display:block;border:2px solid #b7d3dc!important;
+  border-radius:16px!important;background:#fff!important;
+  box-shadow:inset 0 2px 8px #173f5c08;
+}
+#testerSignatureDialog [data-message]{font-size:14px;color:#557383;margin:12px 0 18px;}
+#testerSignatureDialog button{
+  appearance:none;min-height:46px;padding:11px 18px;border-radius:12px;
+  border:1px solid #c9dce3;background:#fff;color:#31566b;
+  font:700 14px/1.35 system-ui,sans-serif;cursor:pointer;
+  box-shadow:0 3px 8px #173f5c08;touch-action:manipulation;
+}
+#testerSignatureDialog button[data-clear]{background:#edf4f7;}
+#testerSignatureDialog button[data-sign]{
+  margin-left:auto;border-color:transparent;background:linear-gradient(120deg,#117b91,#195879);
+  color:#fff;box-shadow:0 5px 14px #17647b30;
+}
+#testerSignatureDialog button:active{transform:translateY(1px);}
+#testerSignatureDialog button:focus-visible{outline:3px solid #159db6;outline-offset:3px;}
+@media(max-width:520px){
+  #testerSignatureDialog{padding:21px!important;border-radius:21px!important;}
+  #testerSignatureDialog button[data-sign]{width:100%;margin-left:0;}
+  #testerSignatureDialog button[data-clear],#testerSignatureDialog button[data-cancel]{flex:1;}
+}
