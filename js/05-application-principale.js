@@ -1309,6 +1309,20 @@ function openSampleSetup(){
   updateSampleLotPreview();
   requestAnimationFrame(()=>num?.focus());
 }
+function ensureSampleLotDossierV478(snapshot){
+  if(!snapshot)return null;
+  const sameProducts=(a,b)=>(a||[]).map(p=>String(p.name||'').trim().toLowerCase()).sort().join('|')===(b||[]).map(p=>String(p.name||'').trim().toLowerCase()).sort().join('|');
+  const existing=loadPreparedJurys().find(rec=>!rec?.state?.config?._archive?.archivedAt&&
+    (rec.state.config._sourceSampleLotId===snapshot.id||
+     (rec.state.config.lotName===snapshot.lotName&&sameProducts(rec.state.config.products,snapshot.products))));
+  if(existing)return existing;
+  const cfg=freshNewJuryDraft();
+  cfg._sourceSampleLotId=snapshot.id;
+  cfg._catalogCreatedV357=true;
+  const st=makeInitialState(cfg);
+  const id=upsertPreparedJury(st);
+  return id?{id,state:st}:null;
+}
 function commitSampleMaster({continueToJury=false}={}){
   const supplierNames=(Array.isArray(sampleSuppliersSetupDraft)?sampleSuppliersSetupDraft:[]).map(x=>String(x||'').trim());
   const meta=cleanSampleMasterMeta({lotNumber:$('#sampleLotNumber')?.value,lotTitle:$('#sampleLotTitle')?.value,productName:sampleProductsSetupDraft?.[0]?.name||'',supplierNames});
@@ -1331,9 +1345,10 @@ function commitSampleMaster({continueToJury=false}={}){
   const firstName=products[0]?.name||'';
   const savedMeta=saveSampleMasterMeta({...meta,productName:firstName});
   saveSampleMaster((products[0]?.samples||[]).map(s=>({id:s.id,supplier:''})));
-  saveSampleLotSnapshot(savedMeta,products);
+  const savedLot=saveSampleLotSnapshot(savedMeta,products);
+  ensureSampleLotDossierV478(savedLot);
   sampleProductsSetupDraft=products.map(p=>({name:p.name,samples:p.samples.map(s=>({id:s.id,supplier:''}))}));
-  toast('Lot enregistré ✓ · il restera disponible dans « Préparer le jury »');
+  toast('Lot enregistré ✓ · réception et fiches produits disponibles');
 
   if(draftConfig){
     draftConfig.lotNumber=meta.lotNumber;
@@ -1358,6 +1373,11 @@ function commitSampleMaster({continueToJury=false}={}){
   return true;
 }
 function startBlankJuryFromMaster(){
+  const selectedMeta=loadSampleMasterMeta(),selectedProducts=loadSampleProducts();
+  const selectedName=lotNameFromSampleMeta(selectedMeta);
+  const names=products=>(products||[]).map(p=>String(p.name||'').trim().toLowerCase()).sort().join('|');
+  const saved=loadPreparedJurys().find(r=>r?.state?.config?.lotName===selectedName&&names(r.state.config.products)===names(selectedProducts)&&!r.state.config.juryClose?.closedAt&&!r.state.config._archive?.archivedAt);
+  if(saved){activatePreparedJury(saved.id,'edit');return;}
   dashboardNewJury();
   const meta=loadSampleMasterMeta();
   const chosenProducts=loadSampleProducts();
@@ -7547,8 +7567,13 @@ function syncReceptionIntoProductSheet(rec,d={}){
      une observation complémentaire saisie dans la fiche produit. */
   return rec;
 }
+function productSheetSampleIdentityV478(sm){return String(sm.id||'')||'supplier:'+String(sm.supplier||'').trim().toLowerCase();}
 function ensureProductSheetRecord(st,p,sm){
-  const store=productSheetStore(st),k=productSheetKey(p.id,sm.id);
+  const store=productSheetStore(st),k=productSheetKey(p.id,productSheetSampleIdentityV478(sm));
+  if(!store[k]){
+    const old=Object.entries(store).find(([key,rec])=>key!==k&&String(rec?.productId)===String(p.id)&&String(rec?.supplier||'').trim().toLowerCase()===String(sm.supplier||'').trim().toLowerCase()&&!String(rec?.sampleId||'').trim());
+    if(old){store[k]=old[1];delete store[old[0]];store[k].sampleId=sm.id;}
+  }
   const d=receptionDefaultsForSample(st,p,sm);
   if(store[k]){
     const rec=syncReceptionIntoProductSheet(store[k],d);
@@ -7696,7 +7721,7 @@ function renderProductSheets(){
     const missing=productSheetMissingFields(state,p,sm);
     if(productSheetsReadOnlyView&&missing.length)return '';
     const locked=productSheetsReadOnlyView||missing.length===0;
-    return `<article class="product-sheet-sample ${missing.length&&productSheetsShowMissing?'has-missing':''}" data-ps-sample="${escapeHtml(String(sm.id))}" data-ps-readonly="${locked?'true':'false'}">
+    return `<article class="product-sheet-sample ${missing.length&&productSheetsShowMissing?'has-missing':''}" data-ps-sample="${escapeHtml(productSheetSampleIdentityV478(sm))}" data-ps-readonly="${locked?'true':'false'}">
       <div class="product-sheet-sample-head">
         <div><strong>${escapeHtml(sm.supplier||'Fournisseur')} · Échantillon ${escapeHtml(sm.id)}</strong><span>Informations reprises dans l’annexe du rapport final</span></div>
         <span class="product-sheet-status ${missing.length?'':'ready'}">${missing.length?`${missing.length} élément${missing.length>1?'s':''} à compléter`:'Terminée ✓ · lecture seule'}</span>
@@ -7740,7 +7765,7 @@ function renderProductSheets(){
   }).join('');
   box.innerHTML=`<section class="panel product-sheet-card"><h3>${escapeHtml(p.name||'Produit')}</h3><div class="sub">Une annexe produit regroupera tous les fournisseurs/échantillons ci-dessous.</div><div class="product-sheet-required-note">Tous les champs sont obligatoires pour le dossier final. Pour les dates, renseignez au moins <strong>la DDM ou la DLC</strong> : une seule des deux suffit. La date de fabrication est facultative. S’il n’y a aucune observation, « RAS » est ajouté automatiquement.</div>${rows||'<div class="results-empty">Aucun échantillon.</div>'}</section>`;
   for(const sm of p.samples||[]){
-    const card=findProductSheetCard(box,sm.id);if(!card)continue;
+    const card=findProductSheetCard(box,productSheetSampleIdentityV478(sm));if(!card)continue;
     const r=ensureProductSheetRecord(state,p,sm);
     if(card.dataset.psReadonly==='true')card.querySelectorAll('[data-ps-field]').forEach(el=>{el.disabled=true;el.readOnly=true;});
     for(const field of ['labeling','technicalSheet','deliveryTempConformity','packagingConformity']){
@@ -7788,7 +7813,7 @@ function captureProductSheetForm(){
   const box=$('#productSheetContent');if(!box||!state?.config)return;
   const p=state.config.products.find(x=>String(x.id)===String(activeProductSheetId));if(!p)return;
   for(const sm of p.samples||[]){
-    const card=findProductSheetCard(box,sm.id);if(!card||card.dataset.psReadonly==='true')continue;
+    const card=findProductSheetCard(box,productSheetSampleIdentityV478(sm));if(!card||card.dataset.psReadonly==='true')continue;
     const r=ensureProductSheetRecord(state,p,sm);
     card.querySelectorAll('[data-ps-field]').forEach(el=>{r[el.dataset.psField]=el.value??''});
     /* V252 — Observations : vide = RAS automatiquement avant enregistrement. */
