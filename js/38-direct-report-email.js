@@ -7,8 +7,8 @@ async function openDirectFinalReportV415(){
   const jury=state, lot=jury.config?.lotName||'Jury Marchés';
   const modal=document.createElement('dialog');
   modal.id='directFinalReportV415';
-  modal.style.cssText='border:0;border-radius:18px;padding:24px;width:calc(100% - 32px);max-width:540px;box-sizing:border-box';
-  modal.innerHTML='<form><h2>Envoyer le rapport final</h2><p role="status" aria-live="polite">Création du PDF…</p><label>Destinataire<input name="recipient" type="email" required autocomplete="email" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Objet<input name="subject" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Message<textarea name="message" required maxlength="10000" rows="5" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></textarea></label><button type="submit" class="btn btn-primary" disabled>Envoyer le rapport</button> <button type="button" class="btn btn-secondary">Fermer</button></form>';
+  modal.style.cssText='border:0;border-radius:18px;padding:24px;width:calc(100% - 32px);max-width:540px;max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box';
+  modal.innerHTML='<form><h2>Envoyer le rapport final</h2><p role="status" aria-live="polite" style="position:sticky;top:0;z-index:2;background:#edf5f8;border-radius:10px;padding:12px;color:#173f5c;font-weight:700">Création du PDF…</p><label>Destinataire<input name="recipient" type="email" required autocomplete="email" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Objet<input name="subject" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Message<textarea name="message" required maxlength="10000" rows="5" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></textarea></label><button type="submit" class="btn btn-primary" disabled>Envoyer le rapport</button> <button type="button" class="btn btn-secondary">Fermer</button></form>';
   document.body.appendChild(modal);modal.showModal();
   const form=modal.querySelector('form'), status=modal.querySelector('[role=status]'), send=form.querySelector('[type=submit]'), close=form.querySelector('[type=button]');
   let busy=false;
@@ -33,7 +33,11 @@ async function openDirectFinalReportV415(){
       if(!client)throw Error('Connectez-vous à votre compte pour envoyer le rapport.');
       const data=new FormData();data.append('recipient',form.elements.recipient.value.trim());data.append('subject',form.elements.subject.value.trim());data.append('message',form.elements.message.value);data.append('requestId',requestId);if(window.__JURY_DEMO_BOOT?.integrated)data.append('school',window.__JURY_DEMO_BOOT.school);data.append('report',pdf.blob,pdf.filename);
       const result=await client.functions.invoke('send-jury-report',{body:data});
-      if(result.error||!result.data?.id)throw Error('Envoi non confirmé. Vérifiez la configuration du service avant de réessayer.');
+      if(result.error||!result.data?.id){
+        let message=result.data?.error||'Envoi non confirmé. Réessayez après actualisation.';
+        try{const detail=await result.error?.context?.json();if(detail?.error)message=detail.error;}catch(_){}
+        throw Error(message);
+      }
       jury.config._finalReportPreparedAt=new Date().toISOString();
       jury.config._finalReportSentAt=jury.config._finalReportPreparedAt;
       jury.config._finalReportEmailId=result.data.id;saveState();
@@ -42,7 +46,7 @@ async function openDirectFinalReportV415(){
       form.querySelectorAll('input,textarea').forEach(el=>el.disabled=true);
       const archive=document.getElementById('confirmReportSentArchiveBtn');if(archive)archive.hidden=false;
       busy=false;close.disabled=false;
-    }catch(error){status.textContent=error.message;busy=false;send.disabled=false;close.disabled=false;}
+    }catch(error){status.textContent='Envoi impossible : '+error.message;status.scrollIntoView({block:'nearest'});busy=false;send.disabled=false;close.disabled=false;}
   };
 }
 
