@@ -341,7 +341,8 @@ async function openResultsLotChooserV348(){
     try{rows=await window.JuryOwnerSyncV357.readResultsChoices();}
     catch(e){console.error('Résultats V388',e);toast('Liste partagée indisponible : copies locales affichées.');}
   }
-  if(!rows.length)toast('Aucun résultat disponible. Vous pouvez rechercher la copie du lot D.');
+  rows=rows.filter(r=>r?.state?.config?.products?.length&&!juryArchivedV472(r.state.config));
+  if(!rows.length)toast('Aucun jury actif à consulter. Les jurys archivés sont dans « Archives ».');
   let modal=document.getElementById('resultsLotModalV348');
   if(!modal){
     modal=document.createElement('div');
