@@ -147,3 +147,34 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
  #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon{width:84px!important;height:84px!important;min-height:84px!important;flex-basis:84px!important;padding:7px!important}
  #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon>svg{width:66px!important;height:66px!important;min-width:66px!important;min-height:66px!important}
 }
+
+/* V504 — iPad landscape: the complete home fits beneath the compact toolbar. */
+@media (min-width:760px) and (orientation:landscape) and (max-height:950px){
+ body header.topbar{padding:6px 12px!important;gap:8px!important;min-height:42px!important}
+ body header.topbar .brandmark{width:32px!important;height:32px!important;flex-basis:32px!important}
+ body header.topbar .btn{min-height:32px!important;padding:6px 9px!important;font-size:11px!important}
+ body #schoolSaveStatusV496{padding:2px 12px!important;font-size:10px!important;line-height:1.2!important}
+ body #homeView{padding:8px 14px 10px!important}
+ #homeView .culinary-welcome{min-height:0!important;height:clamp(120px,20dvh,150px)!important;border-radius:15px}
+ #homeView .culinary-welcome-copy{padding:12px 24px!important;max-width:76%!important}
+ #homeView .culinary-welcome-copy:before{width:30px;height:2px;margin-bottom:8px}
+ #homeView #homeTitle{font-size:clamp(28px,3.4vw,38px)!important;line-height:1!important;margin-bottom:5px!important}
+ #homeView #homeSubtitle strong{font-size:10px!important;line-height:1.2!important}
+ #homeView #homeSubtitle>span{font-size:15px!important;line-height:1.25!important;margin-top:5px!important}
+ #homeView .simple-command-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important;gap:10px!important;margin-top:10px!important}
+ #homeView .simple-command-grid>.simple-command{min-height:0!important;height:clamp(164px,27dvh,202px)!important;padding:10px 10px 32px!important;gap:5px!important;border-radius:12px!important}
+ #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon,#homeView #juryBtn>.cmd-icon.culinary-line-icon{width:64px!important;height:64px!important;min-height:64px!important;flex:0 0 64px!important;padding:5px!important}
+ #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon>svg{width:54px!important;height:54px!important;min-width:54px!important;min-height:54px!important}
+ #homeView .simple-command-grid>.simple-command>div{gap:3px!important}
+ #homeView .simple-command-grid>.simple-command strong{font-size:16px!important;line-height:1.15!important;min-height:36px!important}
+ #homeView .simple-command-grid>.simple-command div>span{font-size:10px!important;line-height:1.2!important;min-height:24px!important}
+ #homeView .simple-command-grid>.simple-command:after{height:25px!important;font-size:21px!important}
+ #homeView .home-quick-tools-v174{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:9px!important;margin-top:10px!important}
+ #homeView .home-quick-tools-v174>button{height:clamp(96px,16dvh,120px)!important;min-height:0!important;padding:8px 8px 23px!important;gap:5px!important}
+ #homeView .home-quick-tools-v174>button .quick-icon{width:42px!important;height:42px!important}
+ #homeView .home-quick-tools-v174 .culinary-line-icon>svg{width:42px!important;height:42px!important}
+ #homeView .home-quick-tools-v174>button strong{font-size:11px!important;line-height:1.15!important}
+ #homeView .home-quick-tools-v174>button:after{font-size:18px;bottom:5px}
+ #homeView .advanced-tools{margin-top:10px!important}
+ #homeView .advanced-tools>summary{padding:7px 18px!important;font-size:11px!important;line-height:1.1!important}
+}
