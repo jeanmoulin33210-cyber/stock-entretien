@@ -274,7 +274,7 @@
       const boot=doc.createElement('script');
       boot.textContent='window.__JURY_DEMO_BOOT='+JSON.stringify({school:next,label:row.label,origin:location.origin,nonce,payload:initialPayload,target,integrated}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029')+';';
       csp.after(boot);
-      const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=460-live-preparation';boot.after(isolate);
+      const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=469-school-report-send';boot.after(isolate);
       frame=document.createElement('iframe');frame.title='Logiciel — '+row.label+' — essai';frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-modals allow-downloads');
       frame.style.cssText='width:100%;height:calc(100dvh - 200px);min-height:400px;border:1px solid #bfd2de;border-radius:12px;background:#edf5f8';
       el('demoContentV452').replaceChildren(frame);
