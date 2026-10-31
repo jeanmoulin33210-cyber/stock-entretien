@@ -93,3 +93,7 @@
 #homeView .simple-command-grid > .simple-command > div > span{
   display:block!important;margin:0!important;line-height:1.4!important;min-height:2.8em!important;
 }
+
+/* V477 — lower home card text by one line while keeping icon positions. */
+#homeView .simple-command-grid > .simple-command > div{transform:translateY(1em);}
+#homeView .simple-command-grid > .simple-command{padding-bottom:calc(18px + 1em)!important;}
