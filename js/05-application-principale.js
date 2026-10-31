@@ -724,7 +724,7 @@ function renderJuryChooser(){
   if(!list)return;
 
   const rows=loadPreparedJurys()
-    .filter(rec=>rec?.state?.config && (rec.state.config.products||[]).length>0 && !rec.state.config?.juryClose?.closedAt)
+    .filter(rec=>rec?.state?.config && (rec.state.config.products||[]).length>0 && !rec.state.config?.juryClose?.closedAt && !juryArchivedV472(rec.state.config))
     .sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
 
   if(!rows.length){
@@ -901,7 +901,7 @@ function juryCardMeta(st=state){
 }
 function renderCurrentDashboardCard(phase){
   const cfg=state.config||{},m=juryMetrics(),meta=juryCardMeta(state),parts=lotDisplayParts();
-  const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();
+  const opened=isJuryOfficiallyOpen(),closed=isJuryClosed()||juryArchivedV472(cfg);
   const statusText=phase==='prep'?'À préparer':phase==='run'?'En cours':'Fermé';
   const badge=`<span class="jury-mini-badge ${phase}">${statusText}</span>`;
   let detail='';
@@ -3452,17 +3452,22 @@ function renderMyJuriesDashboard(){
   document.querySelectorAll('[data-dash-archive-copy]').forEach(b=>b.onclick=()=>copyArchiveAsNew(b.dataset.dashArchiveCopy));
 }
 
+function juryArchivedV472(cfg){
+  if(!cfg)return false;
+  if(cfg._archive?.archivedAt||cfg._archive?.finalLocked)return true;
+  const keys=c=>[c?._preparedId,c?._juryInstanceId,c?.juryInstanceId,c?._shareSessionId,c?.juryLaunch?.instanceId,c?.juryLaunch?.sessionId].filter(Boolean).map(String);
+  const ids=new Set(keys(cfg));
+  return ids.size>0&&loadArchives().some(rec=>keys(rec?.state?.config).concat(rec?.id?String(rec.id):[]).some(id=>ids.has(id)));
+}
 function renderHome(){removeRetiredMoulikV356();if(!$('#homeView').classList.contains('active'))ensureCurrentPrepSaved();updateHeader();showView('homeView');renderHomeReceptionBadge();const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
-const preparedCount=loadPreparedJurys().filter(r=>(r?.state?.config?.products||[]).length>0&&!r?.state?.config?.juryClose?.closedAt).length;
+const preparedCount=loadPreparedJurys().filter(r=>(r?.state?.config?.products||[]).length>0&&!r?.state?.config?.juryClose?.closedAt&&!juryArchivedV472(r.state.config)).length;
 $('#juryBtnTitle').textContent=preparedCount>1
   ?'Choisir un jury'
   :preparedCount===1
     ?'Lancer le jury'
     :closed
       ?'Lancer un jury'
-      :(opened||m.done)
-        ?'Reprendre le jury'
-        :'Lancer le jury';
+      :'Lancer le jury';
 $('#juryBtnSub').textContent='';
 const ac=loadArchives().length;const ah=$('#archiveHomeCount');if(ah)ah.textContent=ac?`${ac} jury${ac>1?'s':''} archivé${ac>1?'s':''}`:'Aucun jury archivé';renderMyJuriesDashboard();renderPreparedHome()}
 
@@ -4215,7 +4220,7 @@ async function officialLaunch(){
   renderJuryView();
 }
 function openJuryFlow(){
-  const prepared=loadPreparedJurys().filter(r=>!r?.state?.config?.juryClose?.closedAt);
+  const prepared=loadPreparedJurys().filter(r=>!r?.state?.config?.juryClose?.closedAt&&!juryArchivedV472(r?.state?.config));
 
   if(prepared.length>1){
     renderJuryChooser();
@@ -4224,6 +4229,10 @@ function openJuryFlow(){
 
   const m=juryMetrics();
 
+  if(juryArchivedV472(state.config)){
+    if(prepared.length===1){activatePreparedJury(prepared[0].id,'launch');return;}
+    prepareJuryFromHome();return;
+  }
   if(isJuryOfficiallyOpen()){
     renderJuryView();
     return;
