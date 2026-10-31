@@ -295,3 +295,6 @@ body #juryChooserView .jury-choice-actions .btn-primary{background:#2d5948!impor
 
 /* V521 — Uniform cream jury chooser, including the selected jury. */
 body #juryChooserView .jury-chooser-head,body #juryChooserView .jury-choice-card,body #juryChooserView .jury-choice-card.current{background:#fffaf1!important;border:1px solid #d6ddca!important}
+
+/* V522 — Matching sage numbered steps in the jury launch flow. */
+body #launchShareStep .launch-step-number,body #launchOpenStep .launch-step-number{background:#dce6cf!important;color:#2d5948!important;border:1px solid #cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
