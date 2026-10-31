@@ -3468,7 +3468,7 @@ $('#juryBtnTitle').textContent=preparedCount>1
     :closed
       ?'Lancer un jury'
       :'Lancer le jury';
-$('#juryBtnSub').textContent='';
+$('#juryBtnSub').textContent='Démarrer les dégustations avec les testeurs';
 const ac=loadArchives().length;const ah=$('#archiveHomeCount');if(ah)ah.textContent=ac?`${ac} jury${ac>1?'s':''} archivé${ac>1?'s':''}`:'Aucun jury archivé';renderMyJuriesDashboard();renderPreparedHome()}
 
 
