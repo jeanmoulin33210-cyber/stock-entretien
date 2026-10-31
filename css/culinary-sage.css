@@ -357,3 +357,6 @@ body .view:not(#projectionView) .field :is(input,select,textarea){background:#ff
 body .view:not(#projectionView) .signature-pad{background:#fffdf8!important;border-color:#93aa88!important}
 body .view table th{background:#e2e9d8!important;color:#2d5948!important}
 body .view table td{background:#fffaf1!important}
+
+/* V528 — Vehicle compartment air guidance in the receipt palette. */
+body #receptionView #receptionVehicleGuideV395{background:#e8eddf!important;border-color:#cbd7bf!important;color:#385747!important}
