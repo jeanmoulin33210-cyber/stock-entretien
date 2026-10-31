@@ -1,5 +1,6 @@
 /* Direct report email through authenticated server-side Gmail SMTP. */
 async function openDirectFinalReportV415(){
+  if(window.__JURY_DEMO_ACTIVE&&!window.__JURY_DEMO_BOOT?.integrated)return alert('L’envoi réel est disponible dans l’espace établissement connecté.');
   if(state.config?._archive?.finalLocked)return alert('Ce jury est archivé et verrouillé.');
   if(!ensureProductSheetsComplete('envoyer le rapport final'))return;
   if(document.getElementById('directFinalReportV415'))return;
@@ -30,14 +31,14 @@ async function openDirectFinalReportV415(){
     try{
       const client=window.JuryAccountV385?.client;
       if(!client)throw Error('Connectez-vous à votre compte pour envoyer le rapport.');
-      const data=new FormData();data.append('recipient',form.elements.recipient.value.trim());data.append('subject',form.elements.subject.value.trim());data.append('message',form.elements.message.value);data.append('requestId',requestId);data.append('report',pdf.blob,pdf.filename);
+      const data=new FormData();data.append('recipient',form.elements.recipient.value.trim());data.append('subject',form.elements.subject.value.trim());data.append('message',form.elements.message.value);data.append('requestId',requestId);if(window.__JURY_DEMO_BOOT?.integrated)data.append('school',window.__JURY_DEMO_BOOT.school);data.append('report',pdf.blob,pdf.filename);
       const result=await client.functions.invoke('send-jury-report',{body:data});
       if(result.error||!result.data?.id)throw Error('Envoi non confirmé. Vérifiez la configuration du service avant de réessayer.');
       jury.config._finalReportPreparedAt=new Date().toISOString();
       jury.config._finalReportSentAt=jury.config._finalReportPreparedAt;
       jury.config._finalReportEmailId=result.data.id;saveState();
       if(typeof syncSimpleResultsActions==='function')syncSimpleResultsActions();
-      status.textContent='Envoi pris en charge ✓';send.textContent='Envoi pris en charge ✓';send.style.background='#23764e';
+      status.textContent='Envoi pris en charge ✓';send.disabled=true;send.textContent='Envoi pris en charge ✓';send.style.background='#23764e';
       form.querySelectorAll('input,textarea').forEach(el=>el.disabled=true);
       const archive=document.getElementById('confirmReportSentArchiveBtn');if(archive)archive.hidden=false;
       busy=false;close.disabled=false;
