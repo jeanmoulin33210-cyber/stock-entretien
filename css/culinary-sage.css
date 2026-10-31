@@ -259,3 +259,13 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
  #homeView .home-quick-tools-v174>button>span:nth-child(2)>span{display:block!important;margin-top:3px!important;font-size:11px!important;color:#657165!important;line-height:1.3!important}
  #homeView .home-quick-tools-v174>button .home-reception-badge{position:static!important;flex:0 0 30px!important;width:30px!important;height:30px!important;min-width:30px!important;margin:0!important}
 }
+
+/* V517 — Consistent field focus and native controls across all screens. */
+body input,body select,body textarea{accent-color:#527461}
+body input:focus,body select:focus,body textarea:focus,
+body .field input:focus,body .field select:focus,body .field textarea:focus{
+ border-color:#527461!important;outline:2px solid #78977e!important;outline-offset:1px!important;box-shadow:0 0 0 3px #78977e26!important;
+}
+body a{color:#2d5948}
+body #schoolSaveStatusV496{background:#f6f1e7!important}
+body .advanced-tools-body .btn{color:#2d5948!important;background:#e2e9d8!important;border-color:#cbd5bf!important}
