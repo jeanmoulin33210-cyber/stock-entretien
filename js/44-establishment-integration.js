@@ -6,7 +6,14 @@
  const parse=(s,f)=>{try{return JSON.parse(s)||f}catch(e){return f}};
  const schoolEmail=email=>/^jury-test(?:[1-9]|1[0-2])@mailo\.com$/.test(String(email||'').toLowerCase());
  const logical=(name,products)=>String(name||'').trim().toLowerCase()+'|'+(products||[]).map(p=>String(p.name||'').trim().toLowerCase()).sort().join('|');
- function entries(rows,view,receptionStatus){
+ function sheetProgress(st){
+  const c=st.config||{};
+  const prog=typeof productSheetsProgress==='function'?productSheetsProgress(st):{total:0,filled:0};
+  const names=typeof supplierNamesFromConfigV256==='function'?supplierNamesFromConfigV256(c):typeof supplierNamesFromConfigV252==='function'?supplierNamesFromConfigV252(c):(c.supplierNames||[]).filter(n=>String(n||'').trim());
+  const expected=(c.products||[]).reduce((sum,p)=>{const samples=p.samples||[];return sum+(!samples.length||samples.some(sm=>!String(sm.id||'').trim())?Math.max(samples.length,names.length):samples.length)},0);
+  return {total:Math.max(Number(prog.total||0),expected),filled:Number(prog.filled||0)};
+ }
+ function entries(rows,view,receptionStatus,progress=sheetProgress){
   const out=[];
   for(const row of rows||[]){
    if(!row.enabled)continue;
@@ -27,7 +34,13 @@
      if(view==='reception'&&rs?.key==='done')continue;
      if(view==='receptionHistory'&&!(c.receptions||[]).some(r=>r.validatedAt))continue;
     }
-    out.push({school:row.school,label:row.label,id:String(rec.id),kind:rec.kind,lotName:c.lotName||rec.name||'Jury',products:c.products.length,receptionStatus:typeof receptionStatus==='function'?receptionStatus(c):null,status:rec.kind==='archive'||c._archive?.archivedAt?'Archivé':c.juryClose?.closedAt?'Jury terminé':c.juryLaunch?.openedAt?'Jury en cours':'Jury préparé'});
+    const sheets=progress(rec.state);
+    if(view==='sheetsPending'||view==='sheetsDone'){
+     if(rec.kind==='archive'||c._archive?.archivedAt)continue;
+     if(view==='sheetsPending'&&sheets.total>0&&sheets.filled>=sheets.total)continue;
+     if(view==='sheetsDone'&&sheets.filled<=0)continue;
+    }
+    out.push({school:row.school,label:row.label,id:String(rec.id),kind:rec.kind,lotName:c.lotName||rec.name||'Jury',products:c.products.length,sheets,receptionStatus:typeof receptionStatus==='function'?receptionStatus(c):null,status:rec.kind==='archive'||c._archive?.archivedAt?'Archivé':c.juryClose?.closedAt?'Jury terminé':c.juryLaunch?.openedAt?'Jury en cours':'Jury préparé'});
    }
    if(view==='prepare')for(const rec of parse(p.jm_test_culinaire_sample_lot_history_v178,[])){
     if(!rec?.id||!rec.lotName||!rec.products?.length||occupied.has(logical(rec.lotName,rec.products)))continue;
@@ -79,8 +92,8 @@
    for(const rec of records){
     const b=document.createElement('button');b.type='button';b.className='prepare-jury-choice';
     const span=document.createElement('span'),title=document.createElement('strong'),label=document.createElement('span'),status=document.createElement('span');
-    title.textContent=rec.lotName;label.textContent=rec.label+' · '+rec.products+' produit(s)';status.textContent=rec.status;status.className='prepare-jury-status';
-    span.append(title,label,status);b.appendChild(span);b.onclick=()=>{const modal={prepare:'prepareJuryModal',results:'resultsLotModalV348',reception:'receptionLotModal',receptionHistory:'receptionHistoryModal'}[view];if(modal)el(modal)?.classList.remove('show');openEntry(rec,view)};section.appendChild(b);
+    title.textContent=rec.lotName;label.textContent=rec.label+' · '+rec.products+' produit(s)';status.textContent=view==='sheetsPending'||view==='sheetsDone'?rec.sheets.filled+'/'+rec.sheets.total+' fiche(s) complète(s) · '+rec.status:rec.status;status.className='prepare-jury-status';
+    span.append(title,label,status);b.appendChild(span);b.onclick=()=>{const modal={prepare:'prepareJuryModal',results:'resultsLotModalV348',reception:'receptionLotModal',receptionHistory:'receptionHistoryModal',sheetsPending:'productLotModalV174',sheetsDone:'productLotModalV174'}[view];if(modal)el(modal)?.classList.remove('show');openEntry(rec,view)};section.appendChild(b);
    }
    list.appendChild(section);
    if(view==='launch')list.querySelector('.empty')?.remove();
@@ -180,6 +193,26 @@
   if(el('homeReceptionBtn'))el('homeReceptionBtn').onclick=openReceptionFromHome;
   if(el('homeReceptionHistoryBtn'))el('homeReceptionHistoryBtn').onclick=openReceptionHistoryFromHome;
 
+  async function openSchoolSheets(mode){
+   const tools=root.JuryProductSheetsV467;if(!tools)return;
+   const local=tools.lots().filter(r=>mode==='done'?r.sheetFilled>0:r.sheetStatus!=='done');
+   tools.showPicker(local,mode);
+   const intro=el('productLotModalV174')?.querySelector('p');
+   if(intro)intro.textContent=mode==='done'?'Choisissez un lot pour consulter ses fiches terminées.':'Choisissez un lot pour compléter ses fiches produits.';
+   await appendSchools('productLotListV174',mode==='done'?'sheetsDone':'sheetsPending');
+   if(!el('productLotListV174')?.children.length&&intro)intro.textContent=mode==='done'?'Aucune fiche produit terminée pour le moment.':'Aucune fiche produit à compléter. Consultez « Fiches terminées » pour les fiches complètes.';
+  }
+  root.openProductSheetsFromHomeV174=()=>openSchoolSheets('pending');
+  root.openProductSheetsDoneFromHomeV200=()=>openSchoolSheets('done');
+  for(const [id,mode]of [['homeProductSheetsBtnV174','pending'],['homeProductSheetsDoneBtnV200','done']])if(el(id))el(id).onclick=()=>openSchoolSheets(mode);
+  API.productBadges=function(local){
+   const records=entries(schoolRows,'results').filter(r=>r.kind!=='archive'&&r.status!=='Archivé');
+   const totals=records.map(r=>r.sheets).concat(local.map(r=>({total:r.sheetTotal,filled:r.sheetFilled}))).reduce((a,r)=>({total:a.total+Number(r.total||0),filled:a.filled+Number(r.filled||0)}),{total:0,filled:0});
+   const pending=el('homeProductSheetsPendingBadgeV200'),done=el('homeProductSheetsDoneBadgeV200');
+   if(pending){pending.textContent=totals.total?totals.filled+'/'+totals.total:'0';pending.title=totals.filled+' fiche(s) complétée(s) sur '+totals.total;}
+   if(done){done.textContent=String(totals.filled);done.title=totals.filled+' fiche(s) produit terminée(s)';}
+  };
+
   const localReceptionBadges=renderHomeReceptionBadge;
   function schoolReceptionBadges(){
    localReceptionBadges();
@@ -196,7 +229,7 @@
   async function refreshReceptionBadges(){
    if(document.hidden||refreshingReception||!root.JuryAccountV385?.client||root.JuryAccountV385?.signedOut||root.JuryAccountV385?.schoolMode)return;
    refreshingReception=true;
-   try{await refresh();schoolReceptionBadges()}catch(e){console.warn('Actualisation des réceptions',e)}finally{refreshingReception=false}
+   try{await refresh();schoolReceptionBadges();root.renderProductSheetHomeBadgesV200?.()}catch(e){console.warn('Actualisation des réceptions',e)}finally{refreshingReception=false}
   }
   refreshReceptionBadges();
   setInterval(refreshReceptionBadges,5000);
