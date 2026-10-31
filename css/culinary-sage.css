@@ -342,3 +342,18 @@ body #receptionView .reception-saved-item span,body #receptionView .config-secti
 body #receptionView .btn-primary{background:#2d5948!important;color:#fffdf8!important}
 body #receptionView .btn-secondary{background:#dce6cf!important;color:#2d5948!important}
 body #receptionView .btn-ghost{background:#fffaf1!important;color:#2d5948!important;border-color:#cbd7bf!important}
+
+/* V527 — Shared surfaces for saved receipts, product sheets, archives and follow-up screens. */
+body .view:not(#homeView):not(#projectionView) .panel,
+body .view :is(.product-sheet-card,.archive-card,.results-card,.closure-card,.signature-card,.config-card){background:#fffaf1!important;border-color:#d6ddca!important}
+body .view :is(.product-sheet-sample,.product-sheet-auto,.reception-saved-item,.reception-line-card,.rank-card,.jury-mini-card){background:#edf1e4!important;border-color:#cbd7bf!important}
+body .view :is(.product-sheets-hero,.archive-hero-main,.stats-hero-main,.closure-hero-main,.tech-hero,.deploy-hero,.release-hero,.qr-hero-main){background:#e8eddf!important;border-color:#cbd7bf!important}
+body .view:not(#projectionView) :is(.product-sheet-card,.product-sheet-sample-head,.archive-card,.results-card,.reception-saved-item) :is(h2,h3,h4,strong){color:#2d5948!important}
+body .product-sheet-tabs button{background:#fffaf1!important;border-color:#cbd7bf!important;color:#385747!important}
+body .product-sheet-tabs button.active{background:#2d5948!important;border-color:#2d5948!important;color:#fffdf8!important}
+body .product-sheet-auto .criterion-mini span,body .view .jury-choice-meta span{background:#dce6cf!important;color:#385747!important}
+body .view:not(#projectionView) .field label{color:#385747!important}
+body .view:not(#projectionView) .field :is(input,select,textarea){background:#fffdf8!important;color:#233e32!important;border-color:#cbd7bf!important}
+body .view:not(#projectionView) .signature-pad{background:#fffdf8!important;border-color:#93aa88!important}
+body .view table th{background:#e2e9d8!important;color:#2d5948!important}
+body .view table td{background:#fffaf1!important}
