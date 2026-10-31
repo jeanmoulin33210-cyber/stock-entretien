@@ -9538,6 +9538,9 @@ async function confirmReportSentAndArchive(){
       ['session','accessCode'].forEach(k=>url.searchParams.delete(k));
       history.replaceState(null,'',url.toString());
     }catch(e){}
+    // The establishment opener still points at the prepared jury just removed.
+    // Clear that navigation target before restoring the now-empty workspace.
+    if(window.__JURY_SCHOOL_TRIAL_ACTIVE && window.__JURY_DEMO_BOOT)window.__JURY_DEMO_BOOT.target=null;
     // Rejoin the verified owner workspace after clearing the archived active jury.
     if(window.JuryAccountV385?.client&&typeof window.JuryAccountV385.restore==='function')await window.JuryAccountV385.restore();
     renderHome();
