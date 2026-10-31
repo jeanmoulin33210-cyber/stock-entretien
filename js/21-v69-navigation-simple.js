@@ -159,6 +159,11 @@ function syncSimpleResultsActions(){
       ?'✓ 2. Fiches produits — OK'
       :`📋 2. Fiches produits${ps.total?` (${ps.filled}/${ps.total})`:''}`;
     sheetsBtn.classList.toggle('simple-results-complete-v305',sheetsReady);
+    sheetsBtn.style.setProperty('background','#dce6cf','important');
+    sheetsBtn.style.setProperty('color','#2d5948','important');
+    sheetsBtn.style.setProperty('-webkit-text-fill-color','#2d5948','important');
+    sheetsBtn.style.setProperty('border-color','#cbd7bf','important');
+    sheetsBtn.style.setProperty('opacity','1','important');
   }
   if(reportBtn){
     /* V324 — ne plus bloquer le dossier sur le drapeau technique juryClose.
