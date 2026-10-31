@@ -238,3 +238,24 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
 @media (min-width:760px) and (orientation:landscape) and (max-height:950px){
  #homeView #advancedTools.advanced-tools>summary,#homeView #advancedTools.advanced-tools>summary span{line-height:1.15!important}
 }
+
+/* V515 — Phone: restore the familiar single-column home layout. */
+@media(max-width:600px){
+ #homeView .simple-command-grid{grid-template-columns:1fr!important;gap:14px!important}
+ #homeView .simple-command-grid>.simple-command{min-height:176px!important;height:auto!important;padding:20px 16px!important;gap:12px!important;border-radius:20px!important}
+ #homeView .simple-command-grid>.simple-command:after{display:none!important}
+ #homeView .simple-command-grid>.simple-command strong{font-family:inherit!important;font-size:19px!important;min-height:0!important}
+ #homeView .simple-command-grid>.simple-command div>span{font-size:13px!important;min-height:0!important}
+ #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon,#homeView #juryBtn>.cmd-icon.culinary-line-icon{width:64px!important;height:64px!important;min-height:64px!important;flex-basis:64px!important}
+ #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon>svg{width:50px!important;height:50px!important;min-width:50px!important;min-height:50px!important}
+ #homeView .home-quick-tools-v174{grid-template-columns:1fr!important;gap:10px!important}
+ #homeView :is(#homeReceptionBtn,#homeReceptionHistoryBtn,#homeProductSheetsBtnV174,#homeProductSheetsDoneBtnV200,#homeArchivesMiniBtn){display:flex!important;flex-direction:row!important;align-items:center!important;justify-content:flex-start!important;gap:12px!important;min-height:74px!important;height:auto!important;padding:14px 12px!important;border-radius:18px!important}
+ #homeView .home-quick-tools-v174>button:after{display:none!important}
+ #homeView .home-quick-tools-v174>button:last-child{grid-column:auto!important}
+ #homeView .home-quick-tools-v174>button .quick-icon{width:38px!important;height:38px!important;flex:0 0 38px!important}
+ #homeView .home-quick-tools-v174 .culinary-line-icon>svg{width:38px!important;height:38px!important}
+ #homeView :is(#homeReceptionBtn,#homeReceptionHistoryBtn,#homeProductSheetsBtnV174,#homeProductSheetsDoneBtnV200,#homeArchivesMiniBtn)>span:nth-child(2){text-align:left!important;flex:1!important;min-width:0!important}
+ #homeView .home-quick-tools-v174>button strong{font-size:14px!important;font-weight:600!important}
+ #homeView .home-quick-tools-v174>button>span:nth-child(2)>span{display:block!important;margin-top:3px!important;font-size:11px!important;color:#657165!important;line-height:1.3!important}
+ #homeView .home-quick-tools-v174>button .home-reception-badge{position:static!important;flex:0 0 30px!important;width:30px!important;height:30px!important;min-width:30px!important;margin:0!important}
+}
