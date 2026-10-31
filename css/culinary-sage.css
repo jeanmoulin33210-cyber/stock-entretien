@@ -224,3 +224,7 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
 
 /* V511 — Pin both Safari glyph paint and text color on the tools label. */
 #homeView #advancedTools.advanced-tools>summary,#homeView #advancedTools.advanced-tools>summary span{color:#000!important;-webkit-text-fill-color:#000!important;opacity:1!important;text-shadow:none!important}
+
+/* V512 — Advanced tools matches the product-sheet card palette. */
+#homeView #advancedTools.advanced-tools>summary{background:#fffdf8!important;color:#2d5948!important;-webkit-text-fill-color:#2d5948!important;border-color:#d6ddca!important}
+#homeView #advancedTools.advanced-tools>summary span{color:#2d5948!important;-webkit-text-fill-color:#2d5948!important}
