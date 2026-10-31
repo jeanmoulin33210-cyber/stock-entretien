@@ -1,0 +1,65 @@
+/* Culinary palette: presentation only; status/error colors and data flows stay intact. */
+:root{--bg:#f6f1e7;--panel:#fffdf8;--ink:#233e32;--muted:#657165;--line:#d9ddce;--brand:#2d5948;--brand2:#527461;--shadow:0 12px 32px #344b3410}
+html,body{background:#f6f1e7!important;color:#233e32}
+body{background:radial-gradient(ellipse at 95% 0,#dce6cf70,transparent 48%),#f6f1e7!important}
+body header.topbar{background:#fffdf8f5!important;border-color:#d9ddce!important;color:#2d5948!important;box-shadow:0 3px 18px #344b3408}
+body header.topbar .brandmark{background:#2d5948!important;color:#fffdf8!important;box-shadow:none!important}
+body header.topbar .topbar-title strong{color:#2d5948!important}
+body .btn-primary{background:#2d5948!important;color:#fffdf8!important;box-shadow:0 5px 14px #2d594818!important}
+body .btn-secondary{background:#e2e9d8!important;color:#2d5948!important;border-color:#c5d1ba!important}
+body .btn-ghost{background:#fffdf8!important;color:#385747!important;border-color:#d2dac9!important}
+body .btn:focus-visible,body button:focus-visible{outline:3px solid #b56d4d!important;outline-offset:3px}
+body .panel,body .modal,body .config-card,body .product-config,body .question-card,body .results-card,body .closure-card,body .signature-card,body .product-sheet-card,body .launch-card,body .jury-tester-card,body .archive-card,body .jury-mini-card,body .reception-line-card,body .reception-saved-item{background:#fffdf8!important;border-color:#d9ddce!important}
+body .field input,body .field select,body .field textarea,body .sample-table input,body .remarks textarea,body #reportNoteInput{background:#fffefa!important;border-color:#ccd5c3!important;color:#233e32}
+body input:focus,body select:focus,body textarea:focus{outline-color:#78977e;border-color:#78977e!important}
+body table,body table td{background:#fffdf8!important}body table th{background:#e2e9d8!important;color:#2d5948}
+body .hero:not(.simple-home-hero){background:linear-gradient(120deg,#2d5948,#527461)!important}
+#homeView .simple-home-hero{background:radial-gradient(ellipse at 92% 2%,#dce6cfaa,transparent 45%),#fffaf1!important;border:1px solid #e2dece!important;color:#2d5948!important;padding:28px!important;box-shadow:0 12px 36px #344b3410!important}
+#homeView .simple-home-hero:before,#homeView .simple-home-hero:after{display:none!important}
+#homeView #homeTitle{color:#244d3d!important;text-shadow:none!important;font-family:Georgia,'Times New Roman',serif;font-size:clamp(30px,4vw,48px)!important;letter-spacing:-.035em!important}
+#homeView #homeSubtitle,#homeView #homeSubtitle strong{color:#385747!important;text-shadow:none!important}
+#homeView #homeSubtitle>span{color:#657165!important}
+#homeView .hero-corner-left,#homeView .simple-home-kicker{color:#936446!important;text-shadow:none!important}
+#homeView .simple-command-grid{gap:12px!important;margin-top:24px!important}
+#homeView .simple-command-grid>.simple-command{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:16px!important;background:linear-gradient(145deg,#e6ebdb,#dce6cf)!important;color:#2d5948!important;border:1px solid #cbd7bf!important;border-radius:20px!important;padding:22px 14px!important;min-height:184px!important;height:auto!important;box-shadow:0 5px 18px #344b340a!important;text-align:center!important;transform:none}
+#homeView .simple-command-grid>.simple-command:hover{background:#d3dfc5!important;border-color:#8aa283!important;box-shadow:0 8px 22px #344b3414!important}
+#homeView .simple-command-grid>.simple-command>.cmd-icon{display:grid!important;place-items:center!important;align-self:center!important;margin:0!important;position:static!important;transform:none!important;width:48px!important;height:48px!important;border-radius:15px!important;background:#fffdf8!important;color:#2d5948!important;box-shadow:none!important;font-size:25px!important}
+#homeView #juryBtn>.cmd-icon{background:#2d5948!important;color:white!important}
+#homeView .simple-command-grid>.simple-command>div{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:8px!important;min-width:0!important;width:100%!important;margin:0!important;padding:0!important;transform:none!important}
+#homeView .simple-command-grid>.simple-command strong{display:flex!important;align-items:center!important;justify-content:center!important;min-height:44px!important;color:#2d5948!important;font-size:17px!important;line-height:1.25!important;text-shadow:none!important;margin:0!important}
+#homeView .simple-command-grid>.simple-command div>span{color:#596b59!important;font-size:12px!important;line-height:1.4!important;min-height:34px!important;margin:0!important;text-shadow:none!important}
+#homeView .home-quick-tools-v174>button{background:#fffdf8!important;border:1px solid #d6ddca!important;color:#2d5948!important;border-radius:16px!important;box-shadow:0 3px 12px #344b3408!important}
+#homeView .home-quick-tools-v174>button:hover{background:#edf1e4!important}
+#homeView .home-quick-tools-v174>button strong{color:#2d5948!important;text-shadow:none!important}
+#homeView .home-quick-tools-v174>button>span:nth-child(2)>span{color:#687261!important}
+#homeView .home-quick-tools-v174>button .quick-icon{background:#edf1e4!important;border-color:#d6ddca!important}
+#homeView .home-quick-tools-v174>button .home-reception-badge{background:#e2e9d8!important;color:#2d5948!important;border-color:#cad7be!important}
+#homeView .advanced-tools{border-color:#dedfce!important}
+#homeView .advanced-tools>summary{background:#fffdf8!important;border:1px solid #cbd5bf!important;color:#385747!important;box-shadow:none!important}
+#homeView .advanced-tools-body{background:#f6f1e7!important}
+#homeView .hero-chip,#homeView .jury-status-strip,#homeView .home-status-summary{background:#e7ecdf!important;color:#385747!important;border-color:#cad7be!important}
+body #adminView .simple-results-actions,body #closureView .closure-status-card,body #launchView .launch-simple-state,body #finishView .finish-state,body #productSheetsView .product-sheet-auto{background:#edf1e4!important;border-color:#ccd7bf!important}
+body #adminView .rank-card,body #adminView .report-note-card,body #adminView .jury-conclusion-card,body #adminView .occena-control-card{background:#fffdf8!important;border-color:#d6ddca!important}
+body #testerView .question-card,body #testerView .validation-panel{background:#fffdf8!important}
+body #testerView .choice{background:#f3f1e7!important;border-color:#d8ddca!important;color:#385747!important}
+body #testerView .choice.selected{background:#dce6cf!important;border-color:#527461!important;box-shadow:0 0 0 2px #52746125!important;color:#244d3d!important}
+body #testerView .choice.selected strong{color:#244d3d!important}
+body .product-sheet-tabs button.active{background:#2d5948!important;color:#fffdf8!important}
+body .prepare-jury-choice,body .product-lot-choice-v174,body .reception-lot-choice{background:#fffdf8!important;border-color:#d6ddca!important}
+body .prepare-jury-choice strong,body .product-lot-choice-v174 strong,body .reception-lot-choice strong{color:#2d5948!important}
+@media(min-width:901px){#homeView .simple-command-grid{grid-template-columns:repeat(4,minmax(0,1fr))!important}}
+@media(min-width:601px) and (max-width:900px){#homeView .simple-command-grid{grid-template-columns:repeat(2,minmax(0,1fr))!important}}
+@media(max-width:600px){
+ #homeView .simple-home-hero{padding:22px 16px!important;border-radius:22px!important}
+ #homeView .simple-command-grid{grid-template-columns:1fr!important;gap:12px!important}
+ #homeView .simple-command-grid>.simple-command{min-height:174px!important;padding:20px 14px!important;gap:12px!important}
+ #homeView .simple-command-grid>.simple-command strong{min-height:0!important}
+ #homeView .simple-command-grid>.simple-command div>span{min-height:0!important}
+ #homeView .hero-corner-left{display:none!important}
+ #homeView .simple-home-kicker{font-size:10px!important;letter-spacing:.15em!important}
+ #homeView #homeSubtitle{font-size:15px!important}
+ #homeView #homeSubtitle>span{font-size:13px!important}
+}
+@media(prefers-reduced-motion:reduce){#homeView button{transition:none!important}}
+
+#homeView #juryBtnSub{display:block!important}
