@@ -24,9 +24,11 @@
    for(const rec of prepared)if(rec?.id&&rec.state?.config?.products?.length)byId.set(String(rec.id),{...rec,kind:'prepared'});
    if(current?.config?._preparedId&&current.config.products?.length&&!current.config._emptyAfterReset&&!current.config._archive?.archivedAt)byId.set(String(current.config._preparedId),{id:current.config._preparedId,state:current,kind:'prepared'});
    for(const rec of archives)if(rec?.id&&rec.state?.config?.products?.length)byId.set('archive:'+rec.id,{...rec,kind:'archive'});
+   const archivedIds=new Set(archives.flatMap(rec=>[rec.state?.config?._preparedId,rec.state?.config?._juryInstanceId,rec.state?.config?.juryInstanceId,rec.state?.config?._shareSessionId].filter(Boolean).map(String)));
    const occupied=new Set();
    for(const rec of byId.values()){
     const c=rec.state.config,key=logical(c.lotName,c.products);occupied.add(key);
+    if(view==='results'&&(rec.kind==='archive'||c._archive?.archivedAt||c._archive?.finalLocked||[rec.id,c._preparedId,c._juryInstanceId,c.juryInstanceId,c._shareSessionId].filter(Boolean).some(id=>archivedIds.has(String(id)))))continue;
     if((view==='prepare'||view==='launch')&&(rec.kind==='archive'||c._archive?.archivedAt||c.juryClose?.closedAt))continue;
     if(view==='reception'||view==='receptionHistory'){
      if(rec.kind==='archive'||c._archive?.archivedAt)continue;
