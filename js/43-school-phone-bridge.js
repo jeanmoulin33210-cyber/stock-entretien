@@ -67,5 +67,35 @@
  };
  const at=document.getElementById('cloudStatus');
  if(at&&/Local/.test(at.textContent))at.textContent='● Espace établissement';
+
+ // One toolbar inside the app, with actions handled by the owning parent.
+ if(boot.integrated){
+  const paintSchoolHeader=()=>{
+   const title=document.getElementById('headerTitle'),sub=document.getElementById('headerSub');
+   if(title)title.textContent='Tests culinaires · '+boot.label;
+   if(sub)sub.textContent='Groupe Marchés Nouvelle-Aquitaine';
+  };
+  const previousHeader=updateHeader;
+  updateHeader=function(){const result=previousHeader.apply(this,arguments);paintSchoolHeader();return result;};
+  const mountHeader=()=>{
+   const bar=document.querySelector('header.topbar'),home=document.getElementById('homeBtn');
+   if(!bar||!home)return;
+   for(const [id,label,action]of [['schoolAccountV496','Mon compte','account'],['schoolRefreshV496','↻ Actualiser','refresh']]){
+    const button=document.createElement('button');button.id=id;button.type='button';button.className='btn btn-secondary btn-small';button.textContent=label;
+    button.onclick=()=>root.parent.postMessage({kind:'jury-school-header-action',school:boot.school,nonce:boot.nonce,action},boot.origin);
+    bar.insertBefore(button,home);
+   }
+   const status=document.createElement('p');status.id='schoolSaveStatusV496';status.setAttribute('role','status');status.setAttribute('aria-live','polite');bar.after(status);
+   const style=document.createElement('style');style.textContent='header.topbar{display:flex!important;flex-wrap:wrap!important;align-items:center;gap:8px!important;padding:10px 14px!important}header.topbar .topbar-title{flex:1 1 220px!important;min-width:0!important}header.topbar .topbar-title strong{font:600 15px/1.4 system-ui!important}header.topbar .topbar-title span{font-size:10px}header.topbar .btn{min-height:36px;padding:7px 10px;font-size:12px}#cloudStatus,#appBuildBadge{display:none!important}#schoolSaveStatusV496{margin:0;padding:3px 16px 5px;font:11px/1.4 system-ui;color:#537064;background:#edf5f8}#schoolSaveStatusV496:empty{display:none}@media(max-width:600px){header.topbar .topbar-title{flex-basis:calc(100% - 54px)!important}header.topbar .topbar-title strong{font-size:14px!important}}';document.head.appendChild(style);
+   paintSchoolHeader();
+   root.parent.postMessage({kind:'jury-school-header-ready',school:boot.school,nonce:boot.nonce},boot.origin);
+  };
+  root.addEventListener('message',event=>{
+   if(event.source!==root.parent||event.origin!==boot.origin||event.data?.nonce!==boot.nonce||event.data.kind!=='jury-school-save-status')return;
+   const node=document.getElementById('schoolSaveStatusV496');if(node){node.textContent=event.data.text||'';node.style.color=event.data.bad?'#a53131':'#537064';}
+  });
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountHeader);else mountHeader();
+ }
+
 })(typeof window==='undefined'?globalThis:window);
 
