@@ -280,7 +280,10 @@
       b.textContent=String(doneCount);
       b.title=doneCount ? doneCount+' fiche'+(doneCount>1?'s':'')+' produit terminée'+(doneCount>1?'s':'') : 'Aucune fiche produit terminée';
     }
+    window.JuryEstablishmentsV456?.productBadges?.(all);
   }
+
+  window.JuryProductSheetsV467={lots:sheetLots,showPicker:showPicker};
 
   function statusText(row){
     if(row.sheetStatus==='done') return '✓ Toutes les fiches produits sont complètes';
