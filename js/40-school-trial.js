@@ -145,8 +145,22 @@
     clearTimeout(saveTimer);saveTimer=setTimeout(()=>saveNow().catch(showError),450);
     await backup(s,{revision:row.revision,payload,base:pending.base,baseRevision:pending.baseRevision});
   }
+  async function preferServerAfterConflict(row,server){
+    if(!server?.enabled||!validPayload(server.payload))throw new Error('Version du serveur indisponible. Votre copie reste conservée.');
+    await pendingDB(pendingKey(row.school)+':recovery:'+Date.now(),{school:row.school,at:new Date().toISOString(),local:copy(pending),server:copy(server)});
+    // Detach the stale document before accepting any more of its snapshots.
+    if(school===row.school&&frame){const old=frame;frame=null;mounted=false;old.remove();}
+    clearTimeout(saveTimer);
+    pending=null;
+    await backup(row.school,null);
+    row.payload=copy(server.payload);row.revision=server.revision;
+    row.frameBase=copy(server.payload);row.frameLast=null;delete row.recovery;
+    status('Version du serveur reprise. La copie de cet appareil reste sauvegardée.');
+    return row.school;
+  }
   async function saveNow(){
     if(saving)return saving;
+    let resumeSchool=null;
     saving=(async()=>{
       while(pending){
         const attempt=pending,row=rows.find(r=>r.school===attempt.school);
@@ -162,8 +176,8 @@
           if(!fresh.data?.enabled)throw new Error('Établissement indisponible. Votre copie est conservée.');
           try{candidate=mergeSchoolPayload(base,attempt.payload,fresh.data.payload);}
           catch(e){
-            await backup(row.school,{revision:row.revision,payload:pending.payload,base:pending.base,baseRevision:pending.baseRevision});
-            throw new Error('Deux appareils ont modifié la même information. Votre copie reste conservée ; ne fermez pas cette fenêtre.');
+            resumeSchool=await preferServerAfterConflict(row,fresh.data);
+            return;
           }
           expected=fresh.data.revision;
         }
@@ -173,7 +187,8 @@
           // New local saves arrived during the network request: rebase them on
           // the committed union, rather than erasing the other device's fields.
           const latest=pending;
-          latest.payload=mergeSchoolPayload(attempt.payload,latest.payload,candidate);
+          try{latest.payload=mergeSchoolPayload(attempt.payload,latest.payload,candidate);}
+          catch(e){resumeSchool=await preferServerAfterConflict(row,{enabled:true,payload:candidate,revision:row.revision});return;}
           latest.base=copy(candidate);latest.baseRevision=row.revision;
           await backup(row.school,{revision:row.revision,payload:latest.payload,base:latest.base,baseRevision:latest.baseRevision});
         }
@@ -181,6 +196,7 @@
       status(integrated?'Dossiers enregistrés sur le serveur.':'Dossiers de test enregistrés sur le serveur.');
     })();
     try{await saving;}finally{saving=null;}
+    if(resumeSchool&&!switching)await openSchool(resumeSchool);
   }
   function showError(e){status(e?.message||String(e),true);}
   async function flushChild(){
