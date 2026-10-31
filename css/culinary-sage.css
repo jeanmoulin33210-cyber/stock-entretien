@@ -384,3 +384,7 @@ body #adminView #simpleResultsReceptionBtn:hover{background:#d3dfc5!important}
 
 /* V531 — État des fiches d’évaluation, palette sauge. */
 body #productSheetsView .product-sheet-status{background:#e8eddf!important;color:#2d5948!important;border:1px solid #cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
+
+/* V533 — Fiches produits : même sauge que la réception. */
+body #adminView #productSheetsBtn{background:#dce6cf!important;color:#2d5948!important;border-color:#cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
+body #adminView #productSheetsBtn:hover{background:#d3dfc5!important}
