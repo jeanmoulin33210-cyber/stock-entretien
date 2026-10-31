@@ -82,7 +82,14 @@
    if(!bar||!home)return;
    for(const [id,label,action]of [['schoolAccountV496','Mon compte','account'],['schoolRefreshV496','↻ Actualiser','refresh']]){
     const button=document.createElement('button');button.id=id;button.type='button';button.className='btn btn-secondary btn-small';button.textContent=label;
-    button.onclick=()=>root.parent.postMessage({kind:'jury-school-header-action',school:boot.school,nonce:boot.nonce,action},boot.origin);
+    button.onclick=()=>{
+     if(action==='refresh'){
+      button.textContent='↻ Actualisation…';
+      const note=document.getElementById('schoolSaveStatusV496');
+      if(note)note.textContent='Actualisation en cours…';
+     }
+     root.parent.postMessage({kind:'jury-school-header-action',school:boot.school,nonce:boot.nonce,action},boot.origin);
+    };
     bar.insertBefore(button,home);
    }
    const status=document.createElement('p');status.id='schoolSaveStatusV496';status.setAttribute('role','status');status.setAttribute('aria-live','polite');bar.after(status);
@@ -91,7 +98,14 @@
    root.parent.postMessage({kind:'jury-school-header-ready',school:boot.school,nonce:boot.nonce},boot.origin);
   };
   root.addEventListener('message',event=>{
-   if(event.source!==root.parent||event.origin!==boot.origin||event.data?.nonce!==boot.nonce||event.data.kind!=='jury-school-save-status')return;
+   if(event.source!==root.parent||event.origin!==boot.origin||event.data?.nonce!==boot.nonce)return;
+   if(event.data.kind==='jury-school-refresh-result'){
+    const button=document.getElementById('schoolRefreshV496');if(button)button.textContent='↻ Actualiser';
+    const note=document.getElementById('schoolSaveStatusV496');if(note){note.textContent=event.data.error||'';note.style.color='#a53131';}
+    return;
+   }
+   if(event.data.kind!=='jury-school-save-status')return;
+   if(event.data.bad){const button=document.getElementById('schoolRefreshV496');if(button)button.textContent='↻ Actualiser';}
    const node=document.getElementById('schoolSaveStatusV496');if(node){node.textContent=event.data.text||'';node.style.color=event.data.bad?'#a53131':'#537064';}
   });
   if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',mountHeader);else mountHeader();
