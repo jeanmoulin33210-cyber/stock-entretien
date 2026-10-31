@@ -221,3 +221,6 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
 #homeView #advancedTools.advanced-tools>summary{background:#fffdf8!important;color:#000!important;border-color:#cbd5bf!important}
 #homeView #advancedTools.advanced-tools>summary:hover{background:#edf1e4!important;color:#000!important}
 #homeView #advancedTools.advanced-tools>summary::marker,#homeView #advancedTools.advanced-tools>summary *{color:#000!important}
+
+/* V511 — Pin both Safari glyph paint and text color on the tools label. */
+#homeView #advancedTools.advanced-tools>summary,#homeView #advancedTools.advanced-tools>summary span{color:#000!important;-webkit-text-fill-color:#000!important;opacity:1!important;text-shadow:none!important}
