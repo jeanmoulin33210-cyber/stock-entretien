@@ -388,3 +388,7 @@ body #productSheetsView .product-sheet-status{background:#e8eddf!important;color
 /* V533 — Fiches produits : même sauge que la réception. */
 body #adminView #productSheetsBtn{background:#dce6cf!important;color:#2d5948!important;border-color:#cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
 body #adminView #productSheetsBtn:hover{background:#d3dfc5!important}
+
+/* V534 — OCCENA conserve la palette sauge après validation. */
+body #adminView #simpleResultsOccenaBtn{background:#dce6cf!important;color:#2d5948!important;border-color:#cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
+body #adminView #simpleResultsOccenaBtn:hover{background:#d3dfc5!important}
