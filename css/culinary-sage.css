@@ -311,3 +311,20 @@ body #receptionLotModal .reception-lot-choice:hover{background:#dce6cf!important
 body #receptionLotModal .reception-lot-choice strong,body #receptionLotModal .lot-arrow{color:#2d5948!important}
 body #receptionLotModal .reception-lot-choice span{color:#596b59!important}
 body #receptionLotModal #receptionLotCancelBtn{background:#fffaf1!important;color:#2d5948!important;border:1px solid #cbd7bf!important}
+
+/* V525 — Shared cream and sage presentation for application dialogs. */
+body .modal-backdrop:not(#accountModalV385) .modal{
+ background:#fffaf1!important;color:#2d5948!important;border:1px solid #d6ddca!important;
+ box-shadow:0 16px 48px #2d594824!important;
+}
+body .modal-backdrop:not(#accountModalV385) .modal :is(h2,h3,h4){color:#2d5948!important}
+body .modal-backdrop:not(#accountModalV385) .modal>p{color:#657165!important}
+body .modal-backdrop:not(#accountModalV385) :is(.prepare-jury-choice,.product-lot-choice-v174,.reception-lot-choice,.jury-choice-card,.panel){
+ background:#e8eddf!important;border-color:#cbd7bf!important;color:#2d5948!important;
+}
+body .modal-backdrop:not(#accountModalV385) :is(.prepare-jury-choice,.product-lot-choice-v174,.reception-lot-choice,.jury-choice-card) strong{color:#2d5948!important}
+body .modal-backdrop:not(#accountModalV385) :is(.prepare-jury-choice,.product-lot-choice-v174,.reception-lot-choice):hover{background:#dce6cf!important}
+body .modal-backdrop:not(#accountModalV385) :is(input,select,textarea){background:#fffdf8!important;border-color:#cbd7bf!important;color:#233e32!important}
+body .modal-backdrop:not(#accountModalV385) .btn-primary{background:#2d5948!important;color:#fffdf8!important}
+body .modal-backdrop:not(#accountModalV385) .btn-secondary{background:#dce6cf!important;color:#2d5948!important;border-color:#cbd7bf!important}
+body .modal-backdrop:not(#accountModalV385) .btn-ghost{background:#fffaf1!important;color:#2d5948!important;border-color:#cbd7bf!important}
