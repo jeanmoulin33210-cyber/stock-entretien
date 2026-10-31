@@ -328,3 +328,17 @@ body .modal-backdrop:not(#accountModalV385) :is(input,select,textarea){backgroun
 body .modal-backdrop:not(#accountModalV385) .btn-primary{background:#2d5948!important;color:#fffdf8!important}
 body .modal-backdrop:not(#accountModalV385) .btn-secondary{background:#dce6cf!important;color:#2d5948!important;border-color:#cbd7bf!important}
 body .modal-backdrop:not(#accountModalV385) .btn-ghost{background:#fffaf1!important;color:#2d5948!important;border-color:#cbd7bf!important}
+
+/* V526 — Receipt sheet in the shared culinary palette. */
+body #receptionView .panel,body #receptionView .reception-signature-card{background:#fffaf1!important;border-color:#d6ddca!important}
+body #receptionView .reception-hero{background:#e8eddf!important}
+body #receptionView :is(h2,h3,.eyebrow,.config-section-head strong,.reception-line-head strong){color:#2d5948!important}
+body #receptionView .field label{color:#385747!important}
+body #receptionView .reception-line-card,body #receptionView .reception-saved-item{background:#edf1e4!important;border-color:#cbd7bf!important}
+body #receptionView .field :is(input,select,textarea){background:#fffdf8!important;border-color:#cbd7bf!important;color:#233e32!important;accent-color:#527461}
+body #receptionView .signature-pad{background:#fffdf8!important;border-color:#93aa88!important}
+body #receptionView .reception-saved-item strong{color:#2d5948!important}
+body #receptionView .reception-saved-item span,body #receptionView .config-section-head p{color:#657165!important}
+body #receptionView .btn-primary{background:#2d5948!important;color:#fffdf8!important}
+body #receptionView .btn-secondary{background:#dce6cf!important;color:#2d5948!important}
+body #receptionView .btn-ghost{background:#fffaf1!important;color:#2d5948!important;border-color:#cbd7bf!important}
