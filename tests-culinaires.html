@@ -236,6 +236,23 @@ body #appBuildBadge,body #v199Diag{background:#dce6cf!important;background-image
 /* Retirer le grand encadré sous le retour Accueil sur les résultats. */
 body #adminView > .results-hero{display:none!important}
 </style>
+
+<style id="lightBeigeDialogsV541">
+/* Unified light beige surfaces, including dynamically created modal cards. */
+html body .modal-backdrop,
+html body [role="dialog"]{background:#fffaf1!important;color:#233e32!important}
+html body .modal-backdrop :is(.modal,.modal-card),
+html body [role="dialog"] :is(.modal,.modal-card),
+html body #resultsLotModalV348 .modal-card{
+ background:#fffaf1!important;background-image:none!important;color:#233e32!important;border-color:#d6ddca!important;
+}
+html body .modal-backdrop :is(h2,h3,h4,label),
+html body #resultsLotModalV348 :is(h2,h3,h4){color:#2d5948!important}
+html body #resultsLotModalV348 :is(.prepare-jury-choice,.prepare-jury-choice.current,.prepare-jury-status){
+ background:#fffaf1!important;background-image:none!important;color:#2d5948!important;border-color:#d6ddca!important;
+}
+html body #resultsLotModalV348 .prepare-jury-choice:hover{background:#f6f1e7!important}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#1a3025;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
