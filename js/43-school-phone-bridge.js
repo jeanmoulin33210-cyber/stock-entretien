@@ -80,6 +80,16 @@
   const mountHeader=()=>{
    const bar=document.querySelector('header.topbar'),home=document.getElementById('homeBtn');
    if(!bar||!home)return;
+   const navigate=async action=>{
+    try{
+     const parentApi=root.parent.JurySchoolTrialV452;
+     if(typeof parentApi?.headerAction==='function')await parentApi.headerAction(action,boot.school,boot.nonce);
+     else root.parent.postMessage({kind:'jury-school-header-action',school:boot.school,nonce:boot.nonce,action},boot.origin);
+    }catch(e){
+     const note=document.getElementById('schoolSaveStatusV496');if(note){note.textContent=e.message||String(e);note.style.color='#a53131';}
+    }
+   };
+   home.onclick=()=>navigate('home');
    for(const [id,label,action]of [['schoolAccountV496','Mon compte','account'],['schoolRefreshV496','↻ Actualiser','refresh']]){
     const button=document.createElement('button');button.id=id;button.type='button';button.className='btn btn-secondary btn-small';button.textContent=label;
     button.onclick=()=>{
@@ -88,7 +98,7 @@
       const note=document.getElementById('schoolSaveStatusV496');
       if(note)note.textContent='Actualisation en cours…';
      }
-     root.parent.postMessage({kind:'jury-school-header-action',school:boot.school,nonce:boot.nonce,action},boot.origin);
+     navigate(action);
     };
     bar.insertBefore(button,home);
    }
