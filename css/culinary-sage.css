@@ -377,3 +377,7 @@ body .occena-phone-tools-v301{background:#e8eddf!important;border-color:#cbd7bf!
 body .occena-phone-card-v300 :is(h3,label>span),body .occena-phone-product-v300{color:#2d5948!important}
 body .occena-phone-card-v300 :is(input,textarea),body .occena-phone-control-v300 button,body .occena-phone-tools-v301 button{background:#fffdf8!important;border-color:#cbd7bf!important;color:#2d5948!important}
 body .occena-phone-control-v300 button.active{background:#2d5948!important;color:#fffdf8!important}
+
+/* V530 — Receipt workflow action matches the sage step buttons. */
+body #adminView #simpleResultsReceptionBtn{background:#dce6cf!important;color:#2d5948!important;border-color:#cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
+body #adminView #simpleResultsReceptionBtn:hover{background:#d3dfc5!important}
