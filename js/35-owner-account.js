@@ -336,6 +336,26 @@
     const style=document.createElement('style');style.textContent='#accountModalV385 [hidden]{display:none!important}#accountModalV385 .field input{box-sizing:border-box;max-width:100%}#accountModalV385 h2{margin:0;font-size:1.4rem}';document.head.appendChild(style);
     const button=document.createElement('button');button.type='button';button.id='ownerAccountBtnV385';button.className='btn btn-secondary btn-small';button.textContent='👤 Se connecter';button.onclick=()=>open();
     document.querySelector('header.topbar')?.insertBefore(button,el('homeBtn'));
+    const refresh=document.createElement('button');
+    refresh.id='ownerRefreshV516';refresh.type='button';refresh.className='btn btn-secondary btn-small';
+    refresh.textContent='↻ Actualiser';refresh.title='Actualiser les données et la présentation';
+    refresh.onclick=async()=>{
+      if(refresh.disabled)return;
+      if(document.querySelector('.view.active')?.id!=='homeView'){
+        alert('Revenez à l’accueil après avoir enregistré votre fiche pour actualiser.');return;
+      }
+      refresh.disabled=true;refresh.textContent='↻ Actualisation…';
+      try{
+        await root.JuryOwnerSyncV357?.run({prepareChooser:true});
+        const url=new URL(location.href);url.searchParams.set('_refresh',String(Date.now()));
+        location.replace(url.toString());
+      }catch(e){
+        refresh.disabled=false;refresh.textContent='↻ Actualiser';
+        alert(e?.message||'L’actualisation n’a pas pu aboutir. Réessayez.');
+      }
+    };
+    document.querySelector('header.topbar')?.insertBefore(refresh,el('homeBtn'));
+
     const box=document.createElement('div');box.className='modal-backdrop';box.id='accountModalV385';
     box.innerHTML=`<aside class="login-welcome-story" aria-label="Tests culinaires">
 <div class="login-welcome-brand"><span class="login-welcome-logo" aria-hidden="true"><svg viewBox="0 0 40 40" fill="none"><circle cx="22" cy="22" r="11" stroke="currentColor" stroke-width="1.6"/><circle cx="22" cy="22" r="7.5" stroke="currentColor" stroke-width=".7" opacity=".6"/><path d="M6 7v9m-3-9v5c0 3 6 3 6 0V7M6 16v17" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/><path d="M23 18c-1-5 4-7 6-5-1 4-3 6-6 5Z" fill="#d8dfb1"/></svg></span><span>Tests culinaires</span></div>
