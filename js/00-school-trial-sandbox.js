@@ -58,6 +58,7 @@
   document.addEventListener('DOMContentLoaded',()=>{
     const style=document.createElement('style');
     style.textContent='html body{padding-top:42px!important}#schoolExerciseBanner{position:fixed;top:0;left:0;right:0;z-index:2147483647;background:#fff1d6;color:#62430c;padding:10px;text-align:center;font:700 14px system-ui}#ownerAccountBtnV385,#cloudBtn,#securityBtn,#adminLockBtn,#adminSecurityBtn,#installAppBtn{display:none!important}';
+    if(boot.integrated)style.textContent+='html body{padding-top:0!important}#schoolExerciseBanner{display:none!important}';
     document.head.appendChild(style);
     const banner=document.createElement('div');banner.id='schoolExerciseBanner';
     banner.textContent=boot.integrated?boot.label+' · Espace établissement':'ESSAI — '+boot.label+' · données fictives';document.body.prepend(banner);
