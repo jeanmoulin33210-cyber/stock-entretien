@@ -136,3 +136,14 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
  #homeView .home-quick-tools-v174>button .quick-icon{width:54px!important;height:54px!important}
  #homeView .home-quick-tools-v174>button{min-height:150px!important}
 }
+
+/* V503 — Explicit SVG dimensions and strokes for Safari/iPad. */
+#homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon{display:flex!important;align-items:center!important;justify-content:center!important;flex:0 0 100px!important;width:100px!important;height:100px!important;min-height:100px!important;padding:8px!important;color:#244d3d!important;background:#fffdf8!important}
+#homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon>svg{width:76px!important;height:76px!important;min-width:76px!important;min-height:76px!important;max-width:none!important;max-height:none!important;display:block!important;flex:none!important;stroke:#244d3d!important;fill:none!important;color:#244d3d!important;opacity:1!important;visibility:visible!important}
+#homeView .home-quick-tools-v174 .culinary-line-icon>svg{width:52px!important;height:52px!important;max-width:none!important;max-height:none!important;display:block!important;stroke:#244d3d!important;fill:none!important;color:#244d3d!important}
+#homeView .culinary-line-icon svg [stroke="#b56d4d"]{stroke:#b56d4d!important}
+#homeView .culinary-line-icon svg [stroke="#fffdf8"]{stroke:#fffdf8!important}
+@media(max-width:600px){
+ #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon{width:84px!important;height:84px!important;min-height:84px!important;flex-basis:84px!important;padding:7px!important}
+ #homeView .simple-command-grid>.simple-command>.cmd-icon.culinary-line-icon>svg{width:66px!important;height:66px!important;min-width:66px!important;min-height:66px!important}
+}
