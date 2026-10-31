@@ -211,3 +211,8 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
  #homeView .home-quick-tools-v174{gap:23px!important;margin-top:24px!important}
  #homeView .advanced-tools{margin-top:24px!important}
 }
+
+/* V509 — Black advanced tools button, white readable label. */
+#homeView #advancedTools.advanced-tools>summary{background:#171717!important;color:#fff!important;border-color:#171717!important;box-shadow:none!important}
+#homeView #advancedTools.advanced-tools>summary:hover{background:#303030!important}
+#homeView #advancedTools.advanced-tools>summary::marker{color:#fff!important}
