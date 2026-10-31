@@ -129,3 +129,24 @@
 #receptionView :is(#receptionDate,#receptionTime)::-webkit-date-and-time-value{
   min-width:0;text-align:center;
 }
+
+/* V481 — prevent native date fields overflowing receipt product cards on iPad. */
+#receptionView .reception-line-grid > .field{min-width:0;max-width:100%;}
+#receptionView .reception-line-grid :is(input,select,textarea){
+  box-sizing:border-box!important;width:100%!important;min-width:0!important;max-width:100%!important;
+}
+#receptionView .reception-line-grid input[type="date"]{
+  -webkit-appearance:none;appearance:none;display:block;
+  min-inline-size:0!important;max-inline-size:100%!important;inline-size:100%!important;
+  padding:10px 8px;min-height:44px;
+}
+#receptionView .reception-line-grid input[type="date"]::-webkit-date-and-time-value{
+  min-width:0;text-align:center;
+}
+@media(min-width:601px) and (max-width:1200px){
+  #receptionView .reception-line-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    gap:14px 18px!important;
+  }
+  #receptionView .reception-line-grid .obs{grid-column:span 2!important;}
+}
