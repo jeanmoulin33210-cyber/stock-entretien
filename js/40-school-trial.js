@@ -294,7 +294,7 @@
       const doc=new DOMParser().parseFromString(text,'text/html');
       doc.querySelectorAll('script[src*="39-establishment-demo"],script[src*="40-school-trial"],script[src*="33-owner-sync"],script[src*="35-owner-account"],script[src*="44-establishment-integration"],script[src*="19-v22-installation"],link[rel="manifest"]').forEach(n=>n.remove());
       const cloudScript=doc.querySelector('script[src*="06-v20-partage"]');
-      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=501-visible-refresh';
+      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=502-header-navigation';
       if(!cloudScript)throw new Error('Connexion du jury indisponible.');
       cloudScript.after(bridge);
       const base=doc.createElement('base');base.href=new URL('./',location.href).href;doc.head.prepend(base);
@@ -353,6 +353,24 @@
       await loadRows();
     }else await overview();
   }
+  async function headerAction(action,s,n){
+    if(!frame||s!==school||n!==nonce)return;
+    try{
+      if(action==='account'){
+        const account=root.JuryAccountV385;
+        if(!account?.open)throw new Error('Le compte est encore en cours de chargement.');
+        account.open();
+        const modal=el('accountModalV385');
+        if(modal){modal.style.setProperty('z-index','2147483005','important');modal.classList.add('show');}
+      }else if(action==='home'){
+        const currentSchool=school;
+        await openSchool(currentSchool,{view:'home'});
+      }else if(action==='refresh'){
+        el('schoolRefreshV492')?.click();
+      }
+    }catch(e){showError(e);}
+  }
+  API.headerAction=headerAction;
   root.addEventListener('message',event=>{
     if(!frame||event.source!==frame.contentWindow||event.origin!==location.origin||event.data?.nonce!==nonce||event.data.school!==school)return;
     if(event.data.kind==='jury-school-header-ready'){
@@ -362,8 +380,7 @@
       return;
     }
     if(event.data.kind==='jury-school-header-action'){
-      if(event.data.action==='account')el('demoCloseV452')?.click();
-      else if(event.data.action==='refresh')el('schoolRefreshV492')?.click();
+      headerAction(event.data.action,school,nonce);
       return;
     }
     if(event.data.kind==='jury-demo-mounted'){mounted=true;status(integrated?'Dossiers de l’établissement ouverts.':'Mode essai — seuls les dossiers du lycée '+school+' sont affichés.');return;}
