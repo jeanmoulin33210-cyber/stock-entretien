@@ -7724,7 +7724,7 @@ function renderProductSheets(){
     return `<article class="product-sheet-sample ${missing.length&&productSheetsShowMissing?'has-missing':''}" data-ps-sample="${escapeHtml(productSheetSampleIdentityV478(sm))}" data-ps-readonly="${locked?'true':'false'}">
       <div class="product-sheet-sample-head">
         <div><strong>${escapeHtml(sm.supplier||'Fournisseur')} · Échantillon ${escapeHtml(sm.id)}</strong><span>Informations reprises dans l’annexe du rapport final</span></div>
-        <span class="product-sheet-status ${missing.length?'':'ready'}">${missing.length?`${missing.length} élément${missing.length>1?'s':''} à compléter`:'Terminée ✓ · lecture seule'}</span>
+        <span style="background:#e8eddf!important;color:#2d5948!important;border:1px solid #cbd7bf!important;-webkit-text-fill-color:#2d5948!important" class="product-sheet-status ${missing.length?'':'ready'}">${missing.length?`${missing.length} élément${missing.length>1?'s':''} à compléter`:'Terminée ✓ · lecture seule'}</span>
       </div>
       <div class="product-sheet-grid">
         <div class="field"><label>Marque</label><input data-ps-field="brand" value="${escapeHtml(r.brand||'')}" placeholder="Marque"></div>
