@@ -30,12 +30,13 @@
     localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
    }
    // A reloaded jury resumes the same session and retrieves telephone answers.
-   if(!['reception','receptionHistory','sheetsPending','sheetsDone'].includes(target?.view)&&phoneSharePrepared(state.config)&&currentJuryShareSessionId()){
+   if(target?.kind!=='archive'&&target?.view!=='archives'&&!['reception','receptionHistory','sheetsPending','sheetsDone'].includes(target?.view)&&phoneSharePrepared(state.config)&&currentJuryShareSessionId()){
     await ensurePreparedShareConnected();
     await fetchCloudState();
    }
    if(selected){
-    if(target.view==='reception')openReceptionView(-1);
+    if(target.kind==='archive'||target.view==='archives')renderArchives();
+    else if(target.view==='reception')openReceptionView(-1);
     else if(target.view==='receptionHistory'){
      const index=latestValidatedReceptionIndex(state.config);
      if(index<0)throw new Error('Aucune réception enregistrée pour ce lot.');
