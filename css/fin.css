@@ -211,3 +211,16 @@
 #homeView .simple-command-grid > .simple-command > div > :is(strong,span){
   text-align:center!important;width:100%!important;box-sizing:border-box!important;
 }
+
+/* V484 — slightly smaller scoring choices on tablets and larger screens. */
+@media(min-width:701px){
+  #testerView .choice{
+    min-height:94px!important;padding:8px 6px!important;
+    border-radius:16px!important;gap:3px!important;
+  }
+  #testerView .choice .youth-face{
+    width:34px!important;height:34px!important;font-size:20px!important;
+  }
+  #testerView .choice .pts{font-size:19px!important;}
+  #testerView .choice .lbl{min-height:24px!important;}
+}
