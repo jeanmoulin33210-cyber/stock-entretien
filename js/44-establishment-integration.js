@@ -28,6 +28,7 @@
    const occupied=new Set();
    for(const rec of byId.values()){
     const c=rec.state.config,key=logical(c.lotName,c.products);occupied.add(key);
+    if(view==='archives'&&!(rec.kind==='archive'||c._archive?.archivedAt||c._archive?.finalLocked))continue;
     if(view==='results'&&(rec.kind==='archive'||c._archive?.archivedAt||c._archive?.finalLocked||[rec.id,c._preparedId,c._juryInstanceId,c.juryInstanceId,c._shareSessionId].filter(Boolean).some(id=>archivedIds.has(String(id)))))continue;
     if((view==='prepare'||view==='launch')&&(rec.kind==='archive'||c._archive?.archivedAt||c.juryClose?.closedAt))continue;
     if(view==='reception'||view==='receptionHistory'){
@@ -90,7 +91,7 @@
     return;
    }
    const section=document.createElement('section');section.dataset.schoolJurys='1';
-   const heading=document.createElement('h3');heading.textContent='Jurys des établissements';section.appendChild(heading);
+   const heading=document.createElement('h3');heading.textContent=view==='archives'?'Archives des établissements':'Jurys des établissements';section.appendChild(heading);
    for(const rec of records){
     const b=document.createElement('button');b.type='button';b.className='prepare-jury-choice';
     const span=document.createElement('span'),title=document.createElement('strong'),label=document.createElement('span'),status=document.createElement('span');
@@ -235,6 +236,14 @@
   }
   refreshReceptionBadges();
   setInterval(refreshReceptionBadges,5000);
+
+  const localArchives=renderArchives;
+  renderArchives=function(){
+   localArchives();
+   appendSchools('archiveList','archives').then(()=>{
+    if(el('archiveList')?.querySelector('[data-school-jurys]'))el('archiveList')?.querySelector('.archive-empty')?.remove();
+   });
+  };
 
   const results=openResultsLotChooserV348;
   openResultsLotChooserV348=async function(){await results();await appendSchools('resultsLotListV348','results')};
