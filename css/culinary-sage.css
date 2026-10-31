@@ -395,3 +395,8 @@ body #adminView #simpleResultsOccenaBtn:hover{background:#d3dfc5!important}
 
 /* V535 — Fiches validées : conserver la couleur même si le bouton est désactivé. */
 body #adminView #productSheetsBtn:disabled,body #adminView #productSheetsBtn.simple-results-complete-v305{background:#dce6cf!important;background-image:none!important;color:#2d5948!important;-webkit-text-fill-color:#2d5948!important;border-color:#cbd7bf!important;opacity:1!important;filter:none!important}
+
+/* V536 — Fenêtres de sélection, même palette sur téléphone et tablette. */
+body .modal-backdrop .prepare-jury-status{background:#e8eddf!important;color:#2d5948!important;border-color:#cbd7bf!important;-webkit-text-fill-color:#2d5948!important}
+body .modal-backdrop .prepare-jury-choice,body .modal-backdrop .prepare-jury-choice.current{background:#fffaf1!important;color:#2d5948!important;border-color:#d6ddca!important}
+body #prepareJuryModal .modal{background:#fffaf1!important;color:#233e32!important}
