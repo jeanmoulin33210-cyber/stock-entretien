@@ -328,6 +328,23 @@
       if(key==='rpc')return (name,args,options)=>name==='test_culinaire_create_secure_session'
         ?target.rpc('school_trial_create_secure_session',{...args,p_school:schoolId},options)
         :target.rpc(name,args,options);
+      if(key==='functions')return new Proxy(target.functions,{get(functions,k){
+        if(k==='invoke')return (name,options={})=>{
+          // FormData from the child iframe fails the SDK's parent-realm instanceof check.
+          // Rebuild it here so the SDK sends multipart data instead of JSON "{}".
+          if(name==='send-jury-report'&&options.body&&typeof options.body.entries==='function'){
+            const body=new root.FormData();
+            for(const [field,value]of options.body.entries()){
+              if(typeof value==='string')body.append(field,value);
+              else body.append(field,new root.Blob([value],{type:value.type||'application/octet-stream'}),value.name||'rapport.pdf');
+            }
+            body.set('school',schoolId);
+            return functions.invoke(name,{...options,body});
+          }
+          return functions.invoke(name,options);
+        };
+        const value=functions[k];return typeof value==='function'?value.bind(functions):value;
+      }});
       if(key==='auth')return new Proxy(target.auth,{get(auth,k){
         if(['signOut','signInAnonymously','signInWithPassword','signUp','updateUser'].includes(k))return async()=>{throw new Error('Utilisez la connexion de l’établissement hors du jury.');};
         const v=auth[k];return typeof v==='function'?v.bind(auth):v;
