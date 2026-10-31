@@ -30,7 +30,7 @@
     localStorage.setItem(STORAGE_KEY,JSON.stringify(state));
    }
    // A reloaded jury resumes the same session and retrieves telephone answers.
-   if(!['reception','receptionHistory'].includes(target?.view)&&phoneSharePrepared(state.config)&&currentJuryShareSessionId()){
+   if(!['reception','receptionHistory','sheetsPending','sheetsDone'].includes(target?.view)&&phoneSharePrepared(state.config)&&currentJuryShareSessionId()){
     await ensurePreparedShareConnected();
     await fetchCloudState();
    }
@@ -40,6 +40,10 @@
      const index=latestValidatedReceptionIndex(state.config);
      if(index<0)throw new Error('Aucune réception enregistrée pour ce lot.');
      openReceptionView(index);
+    }
+    else if(target.view==='sheetsPending'||target.view==='sheetsDone'){
+     activeProductSheetId=target.view==='sheetsDone'?(state.config.products||[]).find(p=>(p.samples||[]).some(sm=>productSheetMissingFields(state,p,sm).length===0))?.id:firstIncompleteProductSheetId(state);
+     openProductSheets(target.view==='sheetsDone');
     }
     else if(target.view==='results')openSimplifiedResults();
     else if(target.view==='launch'&&!state.config.juryLaunch?.openedAt)renderLaunchView();
