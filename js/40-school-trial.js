@@ -258,8 +258,20 @@
     try{
       await flushChild();if(frame){frame.remove();frame=null;}
       const row=rows.find(r=>r.school===next);if(!row?.enabled)throw new Error('Établissement inconnu.');
-      const initialPayload=payloadFor(row);
-      if(row.recovery){await showRecovery(row,next,request);return;}
+      let initialPayload=payloadFor(row);
+      if(row.recovery){
+        // On conflict, the shared server copy is authoritative. Keep both
+        // versions durably before retiring the stale device write queue.
+        const result=await client().from('jury_school_trials').select('school,payload,revision,enabled').eq('school',row.school).maybeSingle();
+        if(result.error)throw result.error;
+        if(!result.data?.enabled||!validPayload(result.data.payload))throw new Error('Version du serveur indisponible. La copie de cet appareil est conservée.');
+        await pendingDB(pendingKey(row.school)+':recovery:'+Date.now(),{school:row.school,at:new Date().toISOString(),local:row.recovery,server:copy(result.data)});
+        await backup(row.school,null);
+        if(pending?.school===row.school)pending=null;
+        row.payload=result.data.payload;row.revision=result.data.revision;
+        delete row.recovery;
+        initialPayload=copy(row.payload);
+      }
       row.frameBase=copy(row.payload);row.frameLast=null;
       school=next;target=request;mounted=false;nonce=crypto.randomUUID();
       let text=await fetch(new URL('tests-culinaires.html',location.href),{cache:'no-store'}).then(r=>{if(!r.ok)throw new Error('Écran d’essai indisponible.');return r.text();});
