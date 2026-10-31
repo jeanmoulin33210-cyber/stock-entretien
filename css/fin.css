@@ -97,3 +97,18 @@
 /* V477 — lower home card text by one line while keeping icon positions. */
 #homeView .simple-command-grid > .simple-command > div{transform:translateY(1em);}
 #homeView .simple-command-grid > .simple-command{padding-bottom:calc(18px + 1em)!important;}
+
+/* V479 — keep iPad date/time controls inside their grid columns. */
+#receptionView .reception-meta-grid > .field{min-width:0;max-width:100%;}
+#receptionView .reception-meta-grid :is(input,select){
+  box-sizing:border-box;width:100%;min-width:0;max-width:100%;
+}
+#receptionView :is(#receptionDate,#receptionTime){
+  display:block;min-inline-size:0;inline-size:100%;max-inline-size:100%;
+  padding:10px 8px;min-height:44px;
+}
+@media(min-width:801px){
+  #receptionView .reception-meta-grid{
+    grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr) minmax(0,.75fr) minmax(0,1fr);
+  }
+}
