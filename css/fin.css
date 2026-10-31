@@ -74,7 +74,7 @@
 #homeView .simple-command-grid > .simple-command{
   display:grid!important;
   grid-template-rows:38px auto!important;
-  align-content:start!important;
+  align-content:center!important;
   justify-items:center!important;
   gap:12px!important;
   padding:18px 14px!important;
