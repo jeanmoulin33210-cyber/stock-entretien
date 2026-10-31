@@ -292,3 +292,6 @@ body #juryChooserView .jury-choice-card.current{background:#e8eddf!important;bor
 body #juryChooserView .jury-choice-meta span{background:#e8eddf!important;color:#385747!important}
 body #juryChooserView .jury-choice-state.ready,body #juryChooserView .jury-choice-state.running{background:#dce6cf!important;color:#2d5948!important}
 body #juryChooserView .jury-choice-actions .btn-primary{background:#2d5948!important;color:#fffdf8!important}
+
+/* V521 — Uniform cream jury chooser, including the selected jury. */
+body #juryChooserView .jury-chooser-head,body #juryChooserView .jury-choice-card,body #juryChooserView .jury-choice-card.current{background:#fffaf1!important;border:1px solid #d6ddca!important}
