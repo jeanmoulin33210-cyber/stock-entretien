@@ -194,3 +194,20 @@
   #productSheetsView .product-sheet-grid{grid-template-columns:minmax(0,1fr)!important;}
   #productSheetsView .product-sheet-grid :is(.wide,.full){grid-column:1/-1!important;}
 }
+
+/* V483 — full-width card column prevents mobile content drifting left. */
+#homeView .simple-command-grid > .simple-command{
+  grid-template-columns:minmax(0,1fr)!important;
+  justify-content:stretch!important;text-align:center!important;
+  box-sizing:border-box!important;
+}
+#homeView .simple-command-grid > .simple-command > .cmd-icon{
+  justify-self:center!important;
+}
+#homeView .simple-command-grid > .simple-command > div{
+  justify-self:stretch!important;min-width:0!important;
+  text-align:center!important;box-sizing:border-box!important;
+}
+#homeView .simple-command-grid > .simple-command > div > :is(strong,span){
+  text-align:center!important;width:100%!important;box-sizing:border-box!important;
+}
