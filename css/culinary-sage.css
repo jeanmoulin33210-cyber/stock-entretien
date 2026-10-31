@@ -360,3 +360,20 @@ body .view table td{background:#fffaf1!important}
 
 /* V528 — Vehicle compartment air guidance in the receipt palette. */
 body #receptionView #receptionVehicleGuideV395{background:#e8eddf!important;border-color:#cbd7bf!important;color:#385747!important}
+
+/* V529 — OCCENA desktop and phone controls in cream and sage. */
+body #occenaView .panel,body .occena-product-block{background:#fffaf1!important;border-color:#d6ddca!important}
+body #occenaView .product-sheets-hero,body .occena-product-block h4,body .occena-global-box{background:#e8eddf!important;border-color:#cbd7bf!important;color:#2d5948!important}
+body .occena-control-head strong,body .occena-row-id strong,body .occena-global-box strong{color:#2d5948!important}
+body .occena-row{border-color:#d6ddca!important}
+body .occena-row.complete{background:#edf1e4!important}
+body .occena-row :is(input,select),body .occena-global-box input{background:#fffdf8!important;border-color:#cbd7bf!important;color:#233e32!important}
+body .occena-row input:disabled,body .occena-global-box input:disabled{background:#e8eddf!important;color:#657165!important}
+body .occena-progress-bar{background:#dce6cf!important}
+body .occena-progress-bar>span{background:#527461!important}
+body .occena-phone-head-v300,body .occena-phone-nav-v300 button,body .occena-phone-control-v300 button.active{background:#2d5948!important;color:#fffdf8!important;border-color:#2d5948!important}
+body .occena-phone-card-v300,body .occena-phone-summary-v300,body .occena-phone-nav-v300{background:#fffaf1!important;border-color:#d6ddca!important}
+body .occena-phone-tools-v301{background:#e8eddf!important;border-color:#cbd7bf!important}
+body .occena-phone-card-v300 :is(h3,label>span),body .occena-phone-product-v300{color:#2d5948!important}
+body .occena-phone-card-v300 :is(input,textarea),body .occena-phone-control-v300 button,body .occena-phone-tools-v301 button{background:#fffdf8!important;border-color:#cbd7bf!important;color:#2d5948!important}
+body .occena-phone-control-v300 button.active{background:#2d5948!important;color:#fffdf8!important}
