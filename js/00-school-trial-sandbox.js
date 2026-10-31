@@ -62,7 +62,7 @@
     const banner=document.createElement('div');banner.id='schoolExerciseBanner';
     banner.textContent=boot.integrated?boot.label+' · Espace établissement':'ESSAI — '+boot.label+' · données fictives';document.body.prepend(banner);
     const disable=()=>{
-      for(const id of ['configEmailArticlesBtn','simpleResultsEmailBtn','reportReadySendBtn']){
+      for(const id of (boot.integrated?['configEmailArticlesBtn']:['configEmailArticlesBtn','simpleResultsEmailBtn','reportReadySendBtn'])){
         const b=document.getElementById(id);if(b){b.disabled=true;b.title='L’envoi de rapports par email reste désactivé dans cet essai.';}
       }
     };
