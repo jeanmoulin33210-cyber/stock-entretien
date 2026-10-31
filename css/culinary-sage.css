@@ -125,3 +125,14 @@ body header.topbar .brandmark:after{content:"";width:13px;height:25px;position:a
 
 #homeView :is(#homeReceptionBtn,#homeReceptionHistoryBtn,#homeProductSheetsBtnV174,#homeProductSheetsDoneBtnV200,#homeArchivesMiniBtn){display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;grid-template-columns:none!important}
 #homeView :is(#homeReceptionBtn,#homeReceptionHistoryBtn,#homeProductSheetsBtnV174,#homeProductSheetsDoneBtnV200,#homeArchivesMiniBtn)>span:nth-child(2){text-align:center!important}
+
+/* V501 — Larger, legible line drawings on tablet and mobile. */
+#homeView .simple-command-grid>.simple-command>.cmd-icon,#homeView #juryBtn>.cmd-icon{width:100px!important;height:100px!important;padding:9px!important}
+#homeView .home-quick-tools-v174>button .quick-icon{width:60px!important;height:60px!important}
+#homeView .home-quick-tools-v174>button{min-height:160px!important}
+@media(max-width:600px){
+ #homeView .simple-command-grid>.simple-command>.cmd-icon,#homeView #juryBtn>.cmd-icon{width:84px!important;height:84px!important;padding:7px!important}
+ #homeView .simple-command-grid>.simple-command{min-height:246px!important}
+ #homeView .home-quick-tools-v174>button .quick-icon{width:54px!important;height:54px!important}
+ #homeView .home-quick-tools-v174>button{min-height:150px!important}
+}
