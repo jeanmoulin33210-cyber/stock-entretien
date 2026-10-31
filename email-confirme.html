@@ -1,0 +1,12 @@
+<!doctype html>
+<html lang="fr"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><meta name="referrer" content="no-referrer"><meta name="theme-color" content="#174d5c"><title>E-mail confirmé — Tests culinaires</title>
+<style>*{box-sizing:border-box}body{margin:0;min-height:100vh;min-height:100dvh;display:grid;place-items:center;padding:24px;font-family:system-ui,-apple-system,sans-serif;color:#234451;background:radial-gradient(ellipse at 15% 10%,#d7eee5,transparent 60%),linear-gradient(135deg,#fff8eb,#e8f3f8)}main{width:min(100%,510px);padding:42px 30px;background:#ffffffed;border:1px solid #dbe7e5;border-radius:28px;box-shadow:0 18px 55px #174d5c15;text-align:center}.brand{font-size:12px;letter-spacing:.15em;font-weight:750;text-transform:uppercase;color:#607f82}.icon{display:grid;place-items:center;width:76px;height:76px;margin:26px auto 20px;border-radius:50%;background:#e2f3e9;color:#23734f;font-size:38px}h1{font-size:30px;margin:0 0 15px;line-height:1.2}p{line-height:1.65;color:#5b7078;margin:0 0 28px}a{display:block;padding:16px 18px;border-radius:14px;background:linear-gradient(110deg,#176f71,#174d68);color:white;text-decoration:none;font-weight:700;line-height:1.4}a:focus-visible{outline:3px solid #d8953f;outline-offset:4px}small{display:block;margin-top:22px;color:#72888c;font-size:12px}@media(max-width:420px){main{padding:32px 21px}h1{font-size:26px}}</style></head>
+<body><main><div class="brand">Tests culinaires · Jury marchés</div><div class="icon" id="icon" aria-hidden="true">✓</div><h1 id="title">E-mail confirmé</h1><p id="message">Votre adresse e-mail a bien été confirmée.<br>Vous pouvez maintenant vous connecter à votre espace.</p><a href="tests-culinaires.html?schoolLogin=1">Retour à la page d’identification</a><small>Groupe Marchés Nouvelle-Aquitaine</small></main>
+<script>
+(function(){
+ const params=new URLSearchParams(location.hash.slice(1)),query=new URLSearchParams(location.search);
+ const failed=params.has('error')||params.has('error_code')||query.has('error')||query.has('error_code');
+ history.replaceState(null,'',location.pathname);
+ if(failed){document.getElementById('icon').textContent='!';document.getElementById('title').textContent='Confirmation non terminée';document.getElementById('message').textContent='Ce lien a expiré ou a déjà été utilisé. Si votre adresse est déjà confirmée, vous pouvez vous connecter à votre espace.';document.title='Confirmation — Tests culinaires';}
+})();
+</script></body></html>
