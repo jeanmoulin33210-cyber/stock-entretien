@@ -315,7 +315,10 @@
     try{
       if(API.schoolMode){await root.JuryEstablishmentsV456.signout();return;}
       const result=await API.client.auth.signOut({scope:'local'});if(result.error)throw result.error;
-      API.client=null;API.signedOut=true;candidate=null;root.JuryLoginGateV457?.lock();
+      API.client=null;API.signedOut=true;candidate=null;
+      root.JuryLoginGateV457?.lock();
+      el('accountPasswordV385').value='';el('accountConfirmV385').value='';el('accountPinV385').value='';
+      open('login');
       const pref=preference();localStorage.setItem(PREF,JSON.stringify({...pref,signedOut:true}));
       localStorage.removeItem(ADMIN_TOKEN_STORAGE_KEY);localStorage.removeItem(OWNER_TOKEN_STORAGE_KEY);
       localStorage.removeItem('jm_tc_owner_connection_v353');localStorage.setItem('jm_tc_owner_disconnected_v353','1');
