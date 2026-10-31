@@ -112,3 +112,20 @@
     grid-template-columns:minmax(0,1.25fr) minmax(0,.75fr) minmax(0,.75fr) minmax(0,1fr);
   }
 }
+
+/* V480 — dedicate a full tablet row to date and time native iPad controls. */
+@media(min-width:601px) and (max-width:1200px){
+  #receptionView .reception-meta-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr))!important;
+    column-gap:18px!important;row-gap:14px!important;
+  }
+  #receptionView .reception-meta-grid > .field.wide{grid-column:span 2!important;}
+}
+#receptionView :is(#receptionDate,#receptionTime){
+  box-sizing:border-box!important;
+  min-width:0!important;max-width:100%!important;width:100%!important;
+  -webkit-appearance:none;appearance:none;
+}
+#receptionView :is(#receptionDate,#receptionTime)::-webkit-date-and-time-value{
+  min-width:0;text-align:center;
+}
