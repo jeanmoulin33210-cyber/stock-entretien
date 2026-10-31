@@ -117,6 +117,13 @@
   if(r.error)throw r.error;
   const row=r.data?.find(x=>x.enabled&&x.email===user.email.toLowerCase());
   if(!row)throw new Error('Cet établissement n’est pas encore activé.');
+  // The name is display metadata only; access remains tied to the authorized email.
+  const name=String(user.user_metadata?.establishment_name||'').trim().slice(0,120);
+  if(name&&/^Établissement test \d+$/i.test(row.label||'')){
+   const saved=await c.from('jury_school_trials').update({label:name}).eq('school',row.school).eq('email',user.email.toLowerCase()).select('label').single();
+   if(saved.error)throw saved.error;
+   row.label=saved.data.label;
+  }
   clearTimeout(cloudSyncTimer);cloudReady=false;cloudRole=null;
   await root.JuryOwnerSyncV357?.pauseAccount();
   for(const channel of [cloudChannel,cloudPresenceChannel])if(channel&&cloudClient)try{await cloudClient.removeChannel(channel)}catch(e){}
