@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="561-loaded-version-check">
+<meta name="jury-release" content="562-warm-beige-chooser">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  display:inline-flex!important;flex:0 0 16px!important;align-items:center!important;justify-content:center!important;
@@ -433,6 +433,23 @@ html body #prepareJuryModal #prepareJuryList .prepare-jury-status{
 <script id="captureLoadedAppearanceV561">
 window.__juryLoadedAppearanceV561=Array.from(document.head.querySelectorAll('style[id],link[rel="stylesheet"]')).map(n=>n.tagName==='STYLE'?n.id+'|'+n.textContent:n.getAttribute('href')).join('\n');
 </script>
+<style id="prepareChooserWarmBeigeV562">
+html body:has(#prepareJuryModal.show),
+html body #prepareJuryModal.modal-backdrop.show,
+html body #prepareJuryModal.modal-backdrop.show>.modal,
+html body #prepareJuryModal #prepareJuryList,
+html body #prepareJuryModal #prepareJuryList button.prepare-jury-choice,
+html body #prepareJuryModal #prepareJuryList button.prepare-jury-choice.latest,
+html body #prepareJuryModal #prepareJuryList button.prepare-jury-choice.current,
+html body #prepareJuryModal #prepareJuryCancelBtn{
+ background:#f6f1e7!important;background-image:none!important;border-color:#cbd7bf!important;color:#2d5948!important;
+}
+html body #prepareJuryModal :is(h3,strong){color:#2d5948!important;-webkit-text-fill-color:#2d5948!important}
+html body #prepareJuryModal #prepareJuryList button.prepare-jury-choice :is(span,b){
+ background:transparent!important;background-image:none!important;color:#527461!important;
+}
+html body #prepareJuryModal #prepareJuryCancelBtn{color:#2d5948!important;-webkit-text-fill-color:#2d5948!important}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#1a3025;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
