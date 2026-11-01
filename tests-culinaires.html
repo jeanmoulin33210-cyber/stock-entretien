@@ -287,6 +287,9 @@ html body #accountModalV385 :is(#accountLoginTabV385,#accountSetupTabV385)[aria-
 <style id="homeStepNumbersV544">
 #homeView #juryBtnTitle::before{content:"3. ";white-space:pre}
 </style>
+<style id="directLaunchEditV545">
+#launchView .launch-simple-state #launchEditBtn{display:block!important;margin:14px auto 0!important;min-height:44px;white-space:normal}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#1a3025;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
@@ -533,6 +536,7 @@ html body #accountModalV385 :is(#accountLoginTabV385,#accountSetupTabV385)[aria-
     <div class="launch-simple-state">
       <strong id="launchStateTitle">Contrôle en cours</strong>
       <span id="launchStateDetail">Vérification du jury.</span>
+      <button class="btn btn-secondary" id="launchEditBtn">✏️ Modifier le jury</button>
     </div>
 
     <div class="launch-step launch-share-step" id="launchShareStep">
@@ -583,7 +587,7 @@ html body #accountModalV385 :is(#accountLoginTabV385,#accountSetupTabV385)[aria-
       </div>
 
       <div class="launch-extra-actions launch-tools-row">
-        <button class="btn btn-secondary" id="launchEditBtn">✏️ Modifier le jury</button>
+        
         <button class="btn btn-secondary" id="launchPrepBtn">🖨️ Préparation</button>
         <button class="btn btn-secondary" id="launchPreflightBtn">✅ Vérifier</button>
         <button class="btn btn-secondary" id="launchRehearsalBtn">🎭 Répétition</button>
