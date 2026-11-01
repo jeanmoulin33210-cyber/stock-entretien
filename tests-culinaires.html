@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="564-preparation-beige">
+<meta name="jury-release" content="565-stable-release-indicator">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  display:inline-flex!important;flex:0 0 16px!important;align-items:center!important;justify-content:center!important;
@@ -2459,11 +2459,8 @@ html body #configView :is(h2,h3,h4,label){color:#2d5948!important}
    const doc=new DOMParser().parseFromString(source,'text/html');
    const remote=doc.querySelector('meta[name="jury-release"]')?.content;
    if(!doc.querySelector('#homeView')||!remote)throw Error('Version non vérifiable');
-   const fingerprint=signature(source);
-   const remoteAppearance=Array.from(doc.head.querySelectorAll('style[id],link[rel="stylesheet"]')).map(n=>n.tagName==='STYLE'?n.id+'|'+n.textContent:n.getAttribute('href')).join('\n');
-   const appearanceChanged=typeof window.__juryLoadedAppearanceV561==='string'&&remoteAppearance!==window.__juryLoadedAppearanceV561;
-   ready=remote!==revision||appearanceChanged||!!baseline&&baseline!==fingerprint;
-   if(!baseline)baseline=fingerprint;
+   ready=remote!==revision;
+   baseline=remote;
    paint(ready?'✓ Mise à jour prête — Actualiser':'✓ Version à jour');
    button.dataset.ready=String(ready);
    button.title=ready?'La nouvelle version est disponible sur le serveur. Cliquez une seule fois.':'Vérification automatique toutes les 15 secondes. Cliquez pour vérifier maintenant.';
