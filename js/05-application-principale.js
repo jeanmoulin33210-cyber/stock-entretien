@@ -4858,7 +4858,7 @@ async function requestPreparationEditV347(){
   modal.classList.add('show');$('#preparationPinInputV347').focus();
 }
 
-function openConfig(){preparationEditKeyV347='';try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig();window.scrollTo({top:0,left:0,behavior:'instant'});requestAnimationFrame(()=>{if($('#configView')?.classList.contains('active'))window.scrollTo({top:0,left:0,behavior:'instant'});})}
+function openConfig(){preparationEditKeyV347='';try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig();const creationMethods=$('#creationMethods');if(creationMethods)creationMethods.style.display='none';const creationIntro=document.querySelector('#configView .creation-choice-intro');if(creationIntro)creationIntro.style.display='none';window.scrollTo({top:0,left:0,behavior:'instant'});requestAnimationFrame(()=>{if($('#configView')?.classList.contains('active'))window.scrollTo({top:0,left:0,behavior:'instant'});})}
 function renderConfig(){
   const c=draftConfig;
   c.criteria=normalizeCriteria(c.criteria);
@@ -6182,7 +6182,11 @@ function renderProductConfigs(){
   draftConfig.products.forEach((p,pi)=>{
     p.criteria=normalizeCriteria(p.criteria||draftConfig.criteria);
     /* Tous les produits (n°1, n°2, n°3…) reprennent la même liste de fournisseurs. */
-    p.samples=rowsForAllSuppliers(p.samples,draftConfig?.supplierNames||[]);
+    // Opening or repainting the editor must preserve every existing sample.
+    // Supplier rows are initialized only for products without any rows.
+    if(!Array.isArray(p.samples)||!p.samples.length){
+      p.samples=rowsForAllSuppliers([],draftConfig?.supplierNames||[]);
+    }
 
     const group=document.createElement('section');
     group.className='product-config-group';
