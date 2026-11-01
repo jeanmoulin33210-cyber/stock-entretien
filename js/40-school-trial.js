@@ -302,8 +302,8 @@
       const boot=doc.createElement('script');
       boot.textContent='window.__JURY_DEMO_BOOT='+JSON.stringify({school:next,label:row.label,origin:location.origin,nonce,payload:initialPayload,target,integrated}).replace(/</g,'\\u003c').replace(/\u2028/g,'\\u2028').replace(/\u2029/g,'\\u2029')+';';
       csp.after(boot);
-      const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=495-no-school-banner';boot.after(isolate);
-      frame=document.createElement('iframe');frame.title='Logiciel — '+row.label+' — essai';frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-modals allow-downloads');
+      const isolate=doc.createElement('script');isolate.src='js/00-school-trial-sandbox.js?build=572-enable-article-pdf';boot.after(isolate);
+      frame=document.createElement('iframe');frame.title='Logiciel — '+row.label+' — essai';frame.setAttribute('sandbox','allow-scripts allow-same-origin allow-modals allow-downloads');frame.setAttribute('allow','web-share');
       frame.style.cssText='width:100%;height:calc(100dvh - 200px);min-height:400px;border:1px solid #d1dbc2;border-radius:12px;background:#f3f6ef';
       el('demoContentV452').replaceChildren(frame);
       frame.srcdoc='<!DOCTYPE html>'+doc.documentElement.outerHTML;
