@@ -70,7 +70,10 @@
       button.querySelector('[data-eye-slash]').style.display='none';
     });
   }
-  function setMode(next){
+  function setMode(next,chosen=false){
+    for(const [id,value] of [['accountLoginTabV385','login'],['accountSetupTabV385','setup']]){
+      el(id).setAttribute('aria-pressed',String(chosen&&next===value));
+    }
     mode=next;pending=false;
     resetPasswordVisibility();
     const setup=next==='setup'||next==='extra';
@@ -391,7 +394,7 @@
     });
     box.addEventListener('focusout',()=>{if(!box.contains(document.activeElement))resetPasswordVisibility();});
     document.addEventListener('visibilitychange',()=>{if(document.hidden)resetPasswordVisibility();});
-    el('accountLoginTabV385').onclick=()=>setMode('login');el('accountSetupTabV385').onclick=()=>setMode('setup');
+    el('accountLoginTabV385').onclick=()=>setMode('login',true);el('accountSetupTabV385').onclick=()=>setMode('setup',true);
     el('accountExtraTabV449').onclick=()=>{
       if(!API.client)return;
       setMode('extra');el('accountEmailV385').value='';el('accountPasswordV385').value='';el('accountConfirmV385').value='';el('accountEmailProofV385').value='';el('accountEmailV385').focus();
