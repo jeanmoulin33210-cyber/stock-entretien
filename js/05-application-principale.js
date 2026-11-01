@@ -6429,6 +6429,14 @@ function applyDraft(){
   savedConfig._preparedId=savedConfig._preparedId||uid('prepared');
   savedConfig._preparedAt=savedConfig._preparedAt||new Date().toISOString();
 
+  // A changed configuration cannot reuse a previous phone preparation.
+  if(!savedConfig.juryLaunch?.openedAt&&!savedConfig.juryClose?.closedAt&&
+     savedConfig._shareSessionId&&
+     savedConfig._phoneShareSignature!==phoneShareSignature(savedConfig)){
+    savedConfig._phoneShareSignature='';
+    delete savedConfig._preparationLockedAt;
+  }
+
   // V55 : on reconstruit le jury à partir de la composition choisie.
   const newState=makeInitialState(savedConfig);
 
@@ -6463,7 +6471,7 @@ function applyDraft(){
 
   const phonesReady=phoneSharePrepared(state.config);
 
-  if(!phonesReady&&!window.__JURY_SCHOOL_TRIAL_ACTIVE){
+  if(!phonesReady){
     /* Le jury est bien enregistré, mais on ne renvoie pas l'utilisateur
        à l'accueil avec un jury impossible à lancer sans explication. */
     draftConfig=deepClone(state.config);
@@ -6473,7 +6481,7 @@ function applyDraft(){
       alert(
         `Jury enregistré avec ${requestedTesterCount} testeur${requestedTesterCount>1?'s':''}.\n\n`+
         `Attention : les téléphones et les QR codes ne sont plus à jour.\n`+
-        `Préparez maintenant les téléphones à l’étape 5 avant de revenir à l’accueil.`
+        `Préparez à nouveau les téléphones avant de lancer le jury.`
       );
       $('#configPhonesStep')?.scrollIntoView({behavior:'smooth',block:'center'});
     },80);
