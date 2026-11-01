@@ -51,3 +51,20 @@ html.login-required-v457 #accountFooterV458{padding-top:18px;margin:22px 0 0;bor
  .login-welcome-art{max-width:300px}.login-welcome-kicker{margin-top:24px!important}.login-welcome-story h1{font-size:48px}
 }
 @media(prefers-reduced-motion:reduce){html.login-required-v457 #accountModalV385 *{transition:none!important}}
+
+/* Keep the welcome copy and form in separate, non-shrinking rows on phones. */
+@media(max-width:760px){
+ html.login-required-v457.login-form-ready-v457 #accountModalV385{
+  grid-template-rows:max-content max-content!important;grid-auto-rows:max-content;
+  align-content:start!important;align-items:start!important;overflow-y:auto!important;
+  height:100dvh!important;max-height:100dvh!important;box-sizing:border-box;
+  padding-bottom:max(26px,env(safe-area-inset-bottom))!important;
+ }
+ html.login-required-v457 #accountModalV385 .login-welcome-story{
+  height:auto!important;min-height:max-content;align-self:start;margin:0!important;
+ }
+ html.login-required-v457 #accountModalV385 .modal{
+  position:relative!important;inset:auto!important;transform:none!important;
+  align-self:start;margin:0!important;min-width:0;max-width:100%!important;
+ }
+}
