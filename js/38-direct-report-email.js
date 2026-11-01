@@ -102,10 +102,13 @@ async function openDirectArticleNumbersV573(){
         try{const detail=await result.error?.context?.json();if(detail?.error)message=detail.error;}catch(_){}
         throw Error(message);
       }
-      status.textContent='Numéros des articles envoyés ✓';
-      send.disabled=true;send.textContent='Envoyé ✓';
-      form.querySelectorAll('input,textarea').forEach(el=>el.disabled=true);
-      busy=false;close.disabled=false;
+      busy=false;
+      modal.close();modal.remove();
+      const returnButton=document.getElementById('configEmailArticlesBtn');
+      if(returnButton){
+        returnButton.scrollIntoView({block:'center',behavior:'smooth'});
+        returnButton.focus({preventScroll:true});
+      }
       if(typeof toast==='function')toast('PDF des numéros d’articles envoyé ✓');
 
     }catch(error){status.textContent='Envoi impossible : '+error.message;status.scrollIntoView({block:'nearest'});busy=false;send.disabled=false;close.disabled=false;}
