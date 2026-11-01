@@ -402,11 +402,16 @@ html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d594
 <meta name="jury-release" content="557-update-indicator">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
- font:600 12px/1.3 system-ui!important;padding:8px 12px!important;min-height:36px!important;border-radius:10px!important;
- background:#f6f1e7!important;color:#2d5948!important;border:1px solid #d6ddca!important;white-space:normal!important;
+ display:inline-flex!important;flex:0 0 16px!important;align-items:center!important;justify-content:center!important;
+ width:16px!important;height:24px!important;min-width:16px!important;min-height:24px!important;
+ padding:0!important;margin:0 0 0 2px!important;border:0!important;border-radius:50%!important;
+ background:transparent!important;box-shadow:none!important;font-size:0!important;vertical-align:middle!important;
 }
-html body #deploymentStatusV557[data-ready="true"]{background:#2d5948!important;color:#fffaf1!important;border-color:#2d5948!important}
-html body #deploymentStatusV557:disabled{opacity:.7!important}
+html body #deploymentStatusV557::before{content:"";display:block;width:5px;height:5px;border-radius:50%;background:#78977e;opacity:.65}
+html body #deploymentStatusV557[data-status="ready"]::before{background:#b58040;opacity:.9}
+html body #deploymentStatusV557[data-status="checking"]::before,
+html body #deploymentStatusV557[data-status="offline"]::before{background:#999b8d;opacity:.5}
+html body #deploymentStatusV557:focus-visible{outline:1px solid #78977e!important;outline-offset:2px}
 </style>
 </head>
 <body>
@@ -2386,7 +2391,7 @@ html body #deploymentStatusV557:disabled{opacity:.7!important}
   }
   if(host&&button.parentElement!==host)host.appendChild(button);
  }
- function paint(text){button.textContent=text;}
+ function paint(text){button.textContent='';button.setAttribute('aria-label',text);button.title=text;button.dataset.status=text.includes('prête')?'ready':text.includes('jour')?'current':text.includes('Vérification')?'checking':'offline';}
  function signature(text){
   let hash=2166136261;
   for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
@@ -2413,7 +2418,8 @@ html body #deploymentStatusV557:disabled{opacity:.7!important}
   finally{busy=false;button.disabled=false;}
  }
  button.onclick=function(){
-  if(!ready){check();return;}
+  if(!ready){alert(button.getAttribute('aria-label')||'Vérification de la version');check();return;}
+  if(!confirm('La mise à jour est prête. Actualiser maintenant ?'))return;
   const schoolRefresh=document.getElementById('schoolRefreshV492');
   if(schoolRefresh){schoolRefresh.click();return;}
   const url=new URL(location.href);url.searchParams.set('_refresh',String(Date.now()));location.replace(url.toString());
