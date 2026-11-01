@@ -274,6 +274,8 @@
     try{
       await flushChild();overlay?.classList.remove('school-header-unified');if(frame){frame.remove();frame=null;}
       const row=rows.find(r=>r.school===next);if(!row?.enabled)throw new Error('Établissement inconnu.');
+      // Display name comes from the signed-in school's activation; access still uses school/email.
+      if(schoolAccount&&request?.label)row.label=String(request.label).trim().slice(0,120)||row.label;
       let initialPayload=payloadFor(row);
       if(row.recovery){
         // On conflict, the shared server copy is authoritative. Keep both
