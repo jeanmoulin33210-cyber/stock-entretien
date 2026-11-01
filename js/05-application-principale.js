@@ -5009,7 +5009,7 @@ function renderArticlePrintStatus(){
   const count=articles.length;
 
   detail.textContent=count
-    ?`${count} numéro${count>1?'s':''} prêt${count>1?'s':''} à imprimer — jusqu’à 8 par feuille A4.`
+    ?`${count} carton${count>1?'s':''} à imprimer · 1 exemplaire de chaque numéro par testeur (${Math.max(1,Math.min(20,Math.floor(Number(draftConfig.testerCount)||1)))} testeur${Number(draftConfig.testerCount)>1?'s':''}) — jusqu’à 8 par feuille A4.`
     :'Renseignez les numéros d’échantillons à imprimer.';
 
   btn.disabled=count===0;
@@ -5040,7 +5040,8 @@ function articleNumbersToPrint(cfg=draftConfig){
     }
   });
 
-  return out;
+  const testerCount=Math.max(1,Math.min(20,Math.floor(Number(cfg?.testerCount)||1)));
+  return Array.from({length:testerCount},()=>out.map(item=>({...item}))).flat();
 }
 function buildArticlePrintCards(){
   if(typeof syncTopDraft==='function')syncTopDraft();
