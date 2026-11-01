@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="566-single-refresh">
+<meta name="jury-release" content="567-left-status-dot">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  display:inline-flex!important;flex:0 0 16px!important;align-items:center!important;justify-content:center!important;
@@ -2440,7 +2440,12 @@ html body #configView :is(h2,h3,h4,label){color:#2d5948!important}
     const style=document.getElementById('deploymentStatusStyleV557');
     if(style)childDoc.head.appendChild(style.cloneNode(true));
   }
-  if(host&&button.parentElement!==host)host.appendChild(button);
+  if(host){
+   const logo=host.querySelector('.brandmark');
+   if(logo){
+    if(button.parentElement!==host||logo.nextElementSibling!==button)logo.after(button);
+   }else if(button.parentElement!==host)host.prepend(button);
+  }
  }
  function paint(text){button.textContent='';button.setAttribute('aria-label',text);button.title=text;button.dataset.status=text.includes('prête')?'ready':text.includes('jour')?'current':text.includes('Vérification')?'checking':'offline';}
  function signature(text){
