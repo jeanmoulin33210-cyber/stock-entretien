@@ -218,7 +218,7 @@
       school=null;await loadRows();
       const box=el('demoContentV452');box.replaceChildren();
       const intro=document.createElement('p');
-      intro.textContent='Les établissements autorisés pour votre compte sont affichés ci-dessous. Les comptes 1 et 2 sont ouverts pour le premier essai.';box.appendChild(intro);
+      intro.textContent='Les établissements autorisés pour votre compte sont affichés ci-dessous. Les comptes de test 1 à 12 sont ouverts.';box.appendChild(intro);
       for(const row of rows){
         const card=document.createElement('section');card.className='demo-school-card';
         const title=document.createElement('h3');title.textContent=row.label;card.appendChild(title);
@@ -230,7 +230,7 @@
           card.appendChild(item);
         }
         if(!lots.length){const empty=document.createElement('p');empty.textContent='Aucun lot dans cet établissement fictif.';card.appendChild(empty);}
-        if(row.enabled)card.appendChild(makeButton('Ouvrir '+row.label,()=>openSchool(row.school).catch(showError)));else {const note=document.createElement('p');note.textContent='En attente du premier essai avec les comptes 1 et 2.';card.appendChild(note);}
+        if(row.enabled)card.appendChild(makeButton('Ouvrir '+row.label,()=>openSchool(row.school).catch(showError)));else {const note=document.createElement('p');note.textContent='Cet établissement n’est pas encore activé.';card.appendChild(note);}
         box.appendChild(card);
       }
       el('demoRoleV452').textContent='Établissements accessibles à votre compte';
