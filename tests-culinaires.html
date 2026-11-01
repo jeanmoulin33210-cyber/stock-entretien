@@ -399,19 +399,18 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="567-left-status-dot">
+<meta name="jury-release" content="568-logo-leaf-status">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
- display:inline-flex!important;flex:0 0 16px!important;align-items:center!important;justify-content:center!important;
- width:16px!important;height:24px!important;min-width:16px!important;min-height:24px!important;
- padding:0!important;margin:0 0 0 2px!important;border:0!important;border-radius:50%!important;
- background:transparent!important;box-shadow:none!important;font-size:0!important;vertical-align:middle!important;
+ position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;min-height:0!important;
+ padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important;
 }
-html body #deploymentStatusV557::before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:#78977e;opacity:.8}
-html body #deploymentStatusV557[data-status="ready"]::before{background:#dc8c28;opacity:1}
-html body #deploymentStatusV557[data-status="checking"]::before,
-html body #deploymentStatusV557[data-status="offline"]::before{background:#999b8d;opacity:.5}
-html body #deploymentStatusV557:focus-visible{outline:1px solid #78977e!important;outline-offset:2px}
+html body #deploymentStatusV557::before{display:none!important}
+html body header.topbar .brandmark[data-update-status]::after{
+ background:#b56d4d!important;opacity:1!important;transition:background-color .25s ease;
+}
+html body header.topbar .brandmark[data-update-status="current"]::after{background:#78977e!important}
+html body header.topbar .brandmark[data-update-status="ready"]::after{background:#dc8c28!important}
 </style>
 <style id="prepareChooserUniformCreamV559">
 html body:has(#prepareJuryModal.show){background:#fffaf1!important;background-image:none!important}
@@ -2443,11 +2442,13 @@ html body #configView :is(h2,h3,h4,label){color:#2d5948!important}
   if(host){
    const logo=host.querySelector('.brandmark');
    if(logo){
+    logo.dataset.updateStatus=button.dataset.status||'checking';
+    logo.title=button.getAttribute('aria-label')||'Vérification de la version';
     if(button.parentElement!==host||logo.nextElementSibling!==button)logo.after(button);
    }else if(button.parentElement!==host)host.prepend(button);
   }
  }
- function paint(text){button.textContent='';button.setAttribute('aria-label',text);button.title=text;button.dataset.status=text.includes('prête')?'ready':text.includes('jour')?'current':text.includes('Vérification')?'checking':'offline';}
+ function paint(text){button.textContent='';button.setAttribute('aria-label',text);button.title=text;button.dataset.status=text.includes('prête')?'ready':text.includes('jour')?'current':text.includes('Vérification')?'checking':'offline';place();}
  function signature(text){
   let hash=2166136261;
   for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
