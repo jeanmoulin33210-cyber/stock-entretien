@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="577-footer-button-spacing">
+<meta name="jury-release" content="578-centered-footer-buttons">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;min-height:0!important;
@@ -526,6 +526,15 @@ html body #configView .config-summary-bar .right>.btn{margin:0!important}
   display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:12px!important;width:100%!important;
  }
  html body #configView .config-summary-bar .right>#saveConfigBtn{grid-column:1/-1}
+}
+</style>
+<style id="centerPreparationFooterV578">
+html body #configView .config-summary-bar{
+ display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;text-align:center!important;
+}
+html body #configView .config-summary-bar .summary-copy{text-align:center!important}
+html body #configView .config-summary-bar .right{
+ justify-content:center!important;align-self:center!important;margin-left:auto!important;margin-right:auto!important;
 }
 </style>
 </head>
