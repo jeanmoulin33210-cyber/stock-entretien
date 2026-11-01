@@ -37,7 +37,7 @@
     profile.innerHTML='<label>Fonction<input data-sign-function type="text" maxlength="120" autocomplete="organization-title" required style="display:block;width:100%" placeholder="Ex. : chef de cuisine"></label><label>Établissement<input data-sign-establishment type="text" maxlength="200" autocomplete="organization" required style="display:block;width:100%" placeholder="Ex. : lycée Jean Moulin"></label>';
     dialog.querySelector('canvas').before(profile);
     document.body.appendChild(dialog);dialog.showModal();
-    const canvas=dialog.querySelector('canvas'),ctx=canvas.getContext('2d');ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#16384b';let drawing=false,length=0,last;
+    const canvas=dialog.querySelector('canvas'),ctx=canvas.getContext('2d');ctx.lineWidth=3;ctx.lineCap='round';ctx.lineJoin='round';ctx.strokeStyle='#2d5948';let drawing=false,length=0,last;
     const point=e=>{const r=canvas.getBoundingClientRect();return {x:(e.clientX-r.left)*600/r.width,y:(e.clientY-r.top)*220/r.height};};
     canvas.onpointerdown=e=>{e.preventDefault();drawing=true;last=point(e);canvas.setPointerCapture(e.pointerId);ctx.beginPath();ctx.moveTo(last.x,last.y);};
     canvas.onpointermove=e=>{if(!drawing)return;const p=point(e);length+=Math.hypot(p.x-last.x,p.y-last.y);ctx.lineTo(p.x,p.y);ctx.stroke();last=p;};
