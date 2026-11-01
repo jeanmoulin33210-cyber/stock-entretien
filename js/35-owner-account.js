@@ -227,7 +227,6 @@
         if(!validAccountPassword(password))throw new Error('Choisissez un mot de passe d’au moins 8 caractères, avec une majuscule et un chiffre.');
         if(password!==el('accountConfirmV385').value)throw new Error('Les deux mots de passe sont différents.');
         if(mode==='setup'&&root.JuryEstablishmentsV456?.isSchoolEmail(email)){
-          if(!/^jury-test[12]@mailo\.com$/i.test(email))throw new Error('Les comptes 1 et 2 sont ouverts pour ce premier essai.');
           const establishmentName=el('accountEstablishmentV497').value.trim();
           if(!establishmentName)throw new Error('Indiquez le nom de votre établissement.');
           const r=await c.auth.signUp({email,password,options:{data:{establishment_name:establishmentName}}});if(r.error)throw r.error;
