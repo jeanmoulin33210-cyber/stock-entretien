@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="560-version-check-fix">
+<meta name="jury-release" content="561-loaded-version-check">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  display:inline-flex!important;flex:0 0 16px!important;align-items:center!important;justify-content:center!important;
@@ -430,6 +430,9 @@ html body #prepareJuryModal #prepareJuryList .prepare-jury-status{
  background:transparent!important;background-image:none!important;color:#2d5948!important;
 }
 </style>
+<script id="captureLoadedAppearanceV561">
+window.__juryLoadedAppearanceV561=Array.from(document.head.querySelectorAll('style[id],link[rel="stylesheet"]')).map(n=>n.tagName==='STYLE'?n.id+'|'+n.textContent:n.getAttribute('href')).join('\n');
+</script>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#1a3025;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
@@ -2426,7 +2429,9 @@ html body #prepareJuryModal #prepareJuryList .prepare-jury-status{
    const remote=doc.querySelector('meta[name="jury-release"]')?.content;
    if(!doc.querySelector('#homeView')||!remote)throw Error('Version non vérifiable');
    const fingerprint=signature(source);
-   ready=remote!==revision||!!baseline&&baseline!==fingerprint;
+   const remoteAppearance=Array.from(doc.head.querySelectorAll('style[id],link[rel="stylesheet"]')).map(n=>n.tagName==='STYLE'?n.id+'|'+n.textContent:n.getAttribute('href')).join('\n');
+   const appearanceChanged=typeof window.__juryLoadedAppearanceV561==='string'&&remoteAppearance!==window.__juryLoadedAppearanceV561;
+   ready=remote!==revision||appearanceChanged||!!baseline&&baseline!==fingerprint;
    if(!baseline)baseline=fingerprint;
    paint(ready?'✓ Mise à jour prête — Actualiser':'✓ Version à jour');
    button.dataset.ready=String(ready);
@@ -2435,7 +2440,7 @@ html body #prepareJuryModal #prepareJuryList .prepare-jury-status{
   finally{busy=false;button.disabled=false;}
  }
  button.onclick=function(){
-  if(!ready){alert(button.getAttribute('aria-label')||'Vérification de la version');check();return;}
+  if(!ready){check().then(()=>{alert(ready?'Une mise à jour est prête. Touchez à nouveau le point pour actualiser.':button.getAttribute('aria-label')||'Vérification en cours');});return;}
   if(!confirm('La mise à jour est prête. Actualiser maintenant ?'))return;
   const schoolRefresh=document.getElementById('schoolRefreshV492');
   if(schoolRefresh){schoolRefresh.click();return;}
