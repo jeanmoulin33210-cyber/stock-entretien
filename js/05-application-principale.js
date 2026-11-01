@@ -4804,7 +4804,7 @@ function applyPreparationLockV347(){
   banner.hidden=!locked;
   const final=!!draftConfig.juryLaunch?.openedAt||!!draftConfig.juryClose?.closedAt||preparationHasAnswersV347();
   const title=final?'Préparation verrouillée — jury lancé ou dégustation commencée':'Préparation verrouillée — accès téléphones générés';
-  const note=final?'Consultation uniquement. Les paramètres du jury ne peuvent plus être modifiés.':'Vous pouvez consulter le jury et retrouver les QR codes. Toute modification nécessite le PIN et une confirmation.';
+  const note=final?'Consultation uniquement. Les paramètres du jury ne peuvent plus être modifiés.':(window.__JURY_SCHOOL_TRIAL_ACTIVE&&window.__JURY_DEMO_BOOT?.school?'Vous pouvez consulter le jury et retrouver les QR codes. Pour modifier, confirmez votre choix. Après les changements, préparez à nouveau les téléphones.':'Vous pouvez consulter le jury et retrouver les QR codes. Toute modification nécessite le PIN et une confirmation.');
   if(banner.querySelector('[data-lock-title]').textContent!==title)banner.querySelector('[data-lock-title]').textContent=title;
   if(banner.querySelector('[data-lock-note]').textContent!==note)banner.querySelector('[data-lock-note]').textContent=note;
   $('#unlockPreparationV347').hidden=final;
@@ -4818,9 +4818,29 @@ function applyPreparationLockV347(){
     else if(!locked&&el.dataset.preparationDisabledV347==='1'){delete el.dataset.preparationDisabledV347;el.disabled=false;}
   });
 }
+async function confirmPreparationEditV579(){
+        if(typeof cloudReady!=='undefined'&&state.config._shareSessionId){
+          if(!cloudReady||cloudRole!=='admin'||cloudCfg.sessionId!==state.config._shareSessionId)throw new Error('Reconnectez le jury pour vérifier qu’aucune dégustation n’a commencé.');
+          const sessionCheck=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',cloudCfg.sessionId).maybeSingle();
+          if(sessionCheck.error||!sessionCheck.data?.config)throw new Error('Impossible de vérifier le statut du jury. La préparation reste verrouillée.');
+          if(sessionCheck.data.config.juryLaunch?.openedAt||sessionCheck.data.config.juryClose?.closedAt)throw new Error('Le jury a déjà été lancé. La préparation reste verrouillée.');
+          const {data,error}=await cloudClient.from('test_culinaire_reponses').select('product_id,choices,remarks').eq('session_id',cloudCfg.sessionId);
+          if(error)throw new Error('Impossible de vérifier les réponses des téléphones. La préparation reste verrouillée.');
+          if((data||[]).some(r=>r.product_id!=='__meta__'&&((r.choices||[]).some(v=>v!==null&&v!==undefined)||(r.remarks||[]).some(v=>String(v||'').trim()))))throw new Error('Une dégustation a déjà commencé. La préparation reste verrouillée.');
+        }
+        if(preparationHasAnswersV347()||state.config.juryLaunch?.openedAt||state.config.juryClose?.closedAt)throw new Error('Le jury a commencé. La préparation reste verrouillée.');
+        if(!confirm('Modifier ce jury ? Après les changements, préparez à nouveau les téléphones et vérifiez les QR codes avant de lancer la dégustation.'))return false;
+        preparationEditKeyV347=preparationKeyV347(draftConfig);
+
+  renderConfig();return true;
+}
 async function requestPreparationEditV347(){
   if(state.config.juryLaunch?.openedAt||state.config.juryClose?.closedAt||preparationHasAnswersV347()){
     alert('La dégustation est lancée ou commencée. La préparation reste verrouillée.');return;
+  }
+  if(window.__JURY_SCHOOL_TRIAL_ACTIVE&&window.__JURY_DEMO_BOOT?.school){
+    try{await confirmPreparationEditV579();}catch(e){alert(e.message||String(e));}
+    return;
   }
   if(typeof securityEnabled!=='function'||!securityEnabled()){
     alert('Définissez d’abord votre PIN dans « Sécurité », puis revenez sur « Modifier le jury ».');
@@ -4838,18 +4858,7 @@ async function requestPreparationEditV347(){
         const ok=await verifyPin($('#preparationPinInputV347').value);
         $('#preparationPinInputV347').value='';
         if(!ok)throw new Error('Code PIN incorrect.');
-        if(typeof cloudReady!=='undefined'&&state.config._shareSessionId){
-          if(!cloudReady||cloudRole!=='admin'||cloudCfg.sessionId!==state.config._shareSessionId)throw new Error('Reconnectez le jury pour vérifier qu’aucune dégustation n’a commencé.');
-          const sessionCheck=await cloudClient.from('test_culinaire_sessions').select('config').eq('session_id',cloudCfg.sessionId).maybeSingle();
-          if(sessionCheck.error||!sessionCheck.data?.config)throw new Error('Impossible de vérifier le statut du jury. La préparation reste verrouillée.');
-          if(sessionCheck.data.config.juryLaunch?.openedAt||sessionCheck.data.config.juryClose?.closedAt)throw new Error('Le jury a déjà été lancé. La préparation reste verrouillée.');
-          const {data,error}=await cloudClient.from('test_culinaire_reponses').select('product_id,choices,remarks').eq('session_id',cloudCfg.sessionId);
-          if(error)throw new Error('Impossible de vérifier les réponses des téléphones. La préparation reste verrouillée.');
-          if((data||[]).some(r=>r.product_id!=='__meta__'&&((r.choices||[]).some(v=>v!==null&&v!==undefined)||(r.remarks||[]).some(v=>String(v||'').trim()))))throw new Error('Une dégustation a déjà commencé. La préparation reste verrouillée.');
-        }
-        if(preparationHasAnswersV347()||state.config.juryLaunch?.openedAt||state.config.juryClose?.closedAt)throw new Error('Le jury a commencé. La préparation reste verrouillée.');
-        if(!confirm('Modifier ce jury ? Après les changements, préparez à nouveau les téléphones et vérifiez les QR codes avant de lancer la dégustation.'))return;
-        preparationEditKeyV347=preparationKeyV347(draftConfig);
+        if(!await confirmPreparationEditV579())return;
         modal.classList.remove('show');renderConfig();
       }catch(e){$('#preparationPinErrorV347').textContent=e.message||String(e);}
       finally{btn.disabled=false;}
