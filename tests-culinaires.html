@@ -322,6 +322,25 @@ html body #accountModalV385 :is(#accountLoginTabV385,#accountSetupTabV385)[aria-
  margin-left:auto!important;margin-right:auto!important;
 }
 </style>
+<style id="testerSignatureSageV549">
+html body dialog#testerSignatureDialog{
+ background:#fffaf1!important;background-image:none!important;color:#233e32!important;border:1px solid #d6ddca!important;box-shadow:0 16px 48px #2d594824!important;
+}
+html body dialog#testerSignatureDialog::backdrop{background:rgba(45,65,49,.45)!important;backdrop-filter:blur(3px)}
+html body dialog#testerSignatureDialog :is(h2,strong,label){color:#2d5948!important}
+html body dialog#testerSignatureDialog p{color:#596b59!important}
+html body dialog#testerSignatureDialog input{
+ background:#fffdf8!important;color:#233e32!important;border:1px solid #cbd7bf!important;box-shadow:none!important;
+}
+html body dialog#testerSignatureDialog canvas{background:#fffdf8!important;border-color:#93aa88!important}
+html body dialog#testerSignatureDialog button{
+ background:#dce6cf!important;background-image:none!important;color:#2d5948!important;-webkit-text-fill-color:#2d5948!important;border:1px solid #cbd7bf!important;box-shadow:none!important;
+}
+html body dialog#testerSignatureDialog button[data-cancel]{background:#fffaf1!important}
+html body dialog#testerSignatureDialog button[data-sign]{
+ background:#2d5948!important;color:#fffaf1!important;-webkit-text-fill-color:#fffaf1!important;border-color:#2d5948!important;
+}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#1a3025;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
@@ -2273,7 +2292,7 @@ html body #accountModalV385 :is(#accountLoginTabV385,#accountSetupTabV385)[aria-
 </script>
 <script src="js/33-owner-sync.js?build=460-live-preparation"></script>
 <script src="js/35-owner-account.js?build=542-identification-choice"></script>
-<script src="js/36-tester-signature.js?build=446-close-tester-page"></script>
+<script src="js/36-tester-signature.js?build=549-sage-signature"></script>
 <script src="js/37-reception-temperature.js?build=432-simple-temperature-feedback"></script>
 <script src="js/38-direct-report-email.js?build=471-send-return-archive"></script>
 <script src="js/39-establishment-demo.js?build=451-establishment-exercise"></script>
