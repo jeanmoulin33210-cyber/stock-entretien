@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="565-stable-release-indicator">
+<meta name="jury-release" content="566-single-refresh">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  display:inline-flex!important;flex:0 0 16px!important;align-items:center!important;justify-content:center!important;
@@ -2427,8 +2427,8 @@ html body #configView :is(h2,h3,h4,label){color:#2d5948!important}
  'use strict';
  if(window.parent!==window)return;
  const revision=document.querySelector('meta[name="jury-release"]').content;
- const button=document.createElement('button');
- button.type='button';button.id='deploymentStatusV557';button.className='btn btn-secondary btn-small';
+ const button=document.createElement('span');
+ button.id='deploymentStatusV557';button.setAttribute('role','status');
  button.setAttribute('aria-live','polite');
  let busy=false,ready=false,baseline='',timer;
  function place(){
@@ -2461,19 +2461,13 @@ html body #configView :is(h2,h3,h4,label){color:#2d5948!important}
    if(!doc.querySelector('#homeView')||!remote)throw Error('Version non vérifiable');
    ready=remote!==revision;
    baseline=remote;
-   paint(ready?'✓ Mise à jour prête — Actualiser':'✓ Version à jour');
+   paint(ready?'✓ Mise à jour prête : appuyez sur Actualiser':'✓ Version à jour');
    button.dataset.ready=String(ready);
-   button.title=ready?'La nouvelle version est disponible sur le serveur. Cliquez une seule fois.':'Vérification automatique toutes les 15 secondes. Cliquez pour vérifier maintenant.';
+   button.title=ready?'La nouvelle version est disponible. Appuyez une fois sur Actualiser.':'Vérification automatique toutes les 15 secondes.';
   }catch(e){paint('Connexion à vérifier · Réessayer');button.title='Impossible de vérifier la version pour le moment.';}
   finally{busy=false;button.disabled=false;}
  }
- button.onclick=function(){
-  if(!ready){check().then(()=>{alert(ready?'Une mise à jour est prête. Touchez à nouveau le point pour actualiser.':button.getAttribute('aria-label')||'Vérification en cours');});return;}
-  if(!confirm('La mise à jour est prête. Actualiser maintenant ?'))return;
-  const schoolRefresh=document.getElementById('schoolRefreshV492');
-  if(schoolRefresh){schoolRefresh.click();return;}
-  const url=new URL(location.href);url.searchParams.set('_refresh',String(Date.now()));location.replace(url.toString());
- };
+
  place();
  new MutationObserver(place).observe(document.body,{childList:true,subtree:true});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
