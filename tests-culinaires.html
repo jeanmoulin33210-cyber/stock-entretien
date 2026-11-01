@@ -399,6 +399,15 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
+<meta name="jury-release" content="557-update-indicator">
+<style id="deploymentStatusStyleV557">
+html body #deploymentStatusV557{
+ font:600 12px/1.3 system-ui!important;padding:8px 12px!important;min-height:36px!important;border-radius:10px!important;
+ background:#f6f1e7!important;color:#2d5948!important;border:1px solid #d6ddca!important;white-space:normal!important;
+}
+html body #deploymentStatusV557[data-ready="true"]{background:#2d5948!important;color:#fffaf1!important;border-color:#2d5948!important}
+html body #deploymentStatusV557:disabled{opacity:.7!important}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#1a3025;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
@@ -2356,5 +2365,57 @@ html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d594
 <script src="js/39-establishment-demo.js?build=451-establishment-exercise"></script>
 <script src="js/40-school-trial.js?build=517-full-palette"></script>
 <script src="js/44-establishment-integration.js?build=497-establishment-name"></script>
+
+<script id="deploymentIndicatorV557">
+(function(){
+ 'use strict';
+ if(window.parent!==window)return;
+ const revision='557-update-indicator';
+ const button=document.createElement('button');
+ button.type='button';button.id='deploymentStatusV557';button.className='btn btn-secondary btn-small';
+ button.setAttribute('aria-live','polite');
+ let busy=false,ready=false,baseline='',timer;
+ function place(){
+  const host=document.querySelector('#establishmentDemoV452 .demo-nav')||document.querySelector('header.topbar');
+  if(host&&button.parentElement!==host)host.appendChild(button);
+ }
+ function paint(text){button.textContent=text;}
+ function signature(text){
+  let hash=2166136261;
+  for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
+  return (hash>>>0).toString(16);
+ }
+ async function check(){
+  if(busy||ready||document.hidden)return;
+  busy=true;paint('↻ Vérification de la version…');button.disabled=true;
+  try{
+   const url=new URL(location.href);url.hash='';url.searchParams.set('_updateCheck',String(Date.now()));
+   const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
+   if(!response.ok)throw Error('Serveur indisponible');
+   const source=await response.text();
+   const doc=new DOMParser().parseFromString(source,'text/html');
+   const remote=doc.querySelector('meta[name="jury-release"]')?.content;
+   if(!doc.querySelector('#homeView')||!remote)throw Error('Version non vérifiable');
+   const fingerprint=signature(source);
+   ready=remote!==revision||!!baseline&&baseline!==fingerprint;
+   if(!baseline)baseline=fingerprint;
+   paint(ready?'✓ Mise à jour prête — Actualiser':'✓ Version à jour');
+   button.dataset.ready=String(ready);
+   button.title=ready?'La nouvelle version est disponible sur le serveur. Cliquez une seule fois.':'Vérification automatique toutes les 30 secondes. Cliquez pour vérifier maintenant.';
+  }catch(e){paint('Connexion à vérifier · Réessayer');button.title='Impossible de vérifier la version pour le moment.';}
+  finally{busy=false;button.disabled=false;}
+ }
+ button.onclick=function(){
+  if(!ready){check();return;}
+  const schoolRefresh=document.getElementById('schoolRefreshV492');
+  if(schoolRefresh){schoolRefresh.click();return;}
+  const url=new URL(location.href);url.searchParams.set('_refresh',String(Date.now()));location.replace(url.toString());
+ };
+ place();
+ new MutationObserver(place).observe(document.body,{childList:true,subtree:true});
+ document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
+ check();timer=setInterval(check,30000);
+})();
+</script>
 </body>
 </html>
