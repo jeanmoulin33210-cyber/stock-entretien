@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="557-update-indicator">
+<meta name="jury-release" content="560-version-check-fix">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  display:inline-flex!important;flex:0 0 16px!important;align-items:center!important;justify-content:center!important;
@@ -407,8 +407,8 @@ html body #deploymentStatusV557{
  padding:0!important;margin:0 0 0 2px!important;border:0!important;border-radius:50%!important;
  background:transparent!important;box-shadow:none!important;font-size:0!important;vertical-align:middle!important;
 }
-html body #deploymentStatusV557::before{content:"";display:block;width:5px;height:5px;border-radius:50%;background:#78977e;opacity:.65}
-html body #deploymentStatusV557[data-status="ready"]::before{background:#b58040;opacity:.9}
+html body #deploymentStatusV557::before{content:"";display:block;width:7px;height:7px;border-radius:50%;background:#78977e;opacity:.8}
+html body #deploymentStatusV557[data-status="ready"]::before{background:#dc8c28;opacity:1}
 html body #deploymentStatusV557[data-status="checking"]::before,
 html body #deploymentStatusV557[data-status="offline"]::before{background:#999b8d;opacity:.5}
 html body #deploymentStatusV557:focus-visible{outline:1px solid #78977e!important;outline-offset:2px}
@@ -2392,7 +2392,7 @@ html body #prepareJuryModal #prepareJuryList .prepare-jury-status{
 (function(){
  'use strict';
  if(window.parent!==window)return;
- const revision='557-update-indicator';
+ const revision=document.querySelector('meta[name="jury-release"]').content;
  const button=document.createElement('button');
  button.type='button';button.id='deploymentStatusV557';button.className='btn btn-secondary btn-small';
  button.setAttribute('aria-live','polite');
@@ -2416,9 +2416,9 @@ html body #prepareJuryModal #prepareJuryList .prepare-jury-status{
  }
  async function check(){
   if(busy||ready||document.hidden)return;
-  busy=true;paint('↻ Vérification de la version…');button.disabled=true;
+  busy=true;if(!baseline)paint('↻ Vérification de la version…');button.disabled=true;
   try{
-   const url=new URL(location.href);url.hash='';url.searchParams.set('_updateCheck',String(Date.now()));
+   const url=new URL('tests-culinaires.html',location.href);url.searchParams.set('_updateCheck',String(Date.now()));
    const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
    if(!response.ok)throw Error('Serveur indisponible');
    const source=await response.text();
@@ -2430,7 +2430,7 @@ html body #prepareJuryModal #prepareJuryList .prepare-jury-status{
    if(!baseline)baseline=fingerprint;
    paint(ready?'✓ Mise à jour prête — Actualiser':'✓ Version à jour');
    button.dataset.ready=String(ready);
-   button.title=ready?'La nouvelle version est disponible sur le serveur. Cliquez une seule fois.':'Vérification automatique toutes les 30 secondes. Cliquez pour vérifier maintenant.';
+   button.title=ready?'La nouvelle version est disponible sur le serveur. Cliquez une seule fois.':'Vérification automatique toutes les 15 secondes. Cliquez pour vérifier maintenant.';
   }catch(e){paint('Connexion à vérifier · Réessayer');button.title='Impossible de vérifier la version pour le moment.';}
   finally{busy=false;button.disabled=false;}
  }
@@ -2444,7 +2444,7 @@ html body #prepareJuryModal #prepareJuryList .prepare-jury-status{
  place();
  new MutationObserver(place).observe(document.body,{childList:true,subtree:true});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
- check();timer=setInterval(check,30000);setInterval(place,2000);
+ check();timer=setInterval(check,15000);setInterval(place,2000);
 })();
 </script>
 </body>
