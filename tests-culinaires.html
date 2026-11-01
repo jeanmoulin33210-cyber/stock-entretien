@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="568-logo-leaf-status">
+<meta name="jury-release" content="569-cream-fields">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;min-height:0!important;
@@ -462,6 +462,22 @@ html body #configView :is(input,select,textarea){
  background:#fffaf1!important;color:#233e32!important;border-color:#cbd7bf!important;
 }
 html body #configView :is(h2,h3,h4,label){color:#2d5948!important}
+</style>
+<style id="creamFormFieldsV569">
+html body :is(.view,.modal-backdrop,dialog) input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):not([type="button"]):not([type="submit"]),
+html body :is(.view,.modal-backdrop,dialog) select,
+html body :is(.view,.modal-backdrop,dialog) textarea,
+html body #configView :is(input,select,textarea){
+ background-color:#f6f1e7!important;background-image:none!important;color:#233e32!important;
+ border-color:#cbd7bf!important;-webkit-text-fill-color:#233e32!important;color-scheme:light;
+}
+html body #configView select[data-p-criterion-select],
+html body #configView select[data-criterion-select]{
+ background-color:#f6f1e7!important;background-image:none!important;-webkit-appearance:none!important;appearance:none!important;
+ border:1px solid #cbd7bf!important;border-radius:12px!important;padding-right:32px!important;
+}
+html body :is(.view,.modal-backdrop,dialog) select option{background:#f6f1e7;color:#233e32}
+html body #configView :is(input,select,textarea):disabled{background-color:#eee9dd!important;opacity:1!important;color:#657165!important;-webkit-text-fill-color:#657165!important}
 </style>
 </head>
 <body>
