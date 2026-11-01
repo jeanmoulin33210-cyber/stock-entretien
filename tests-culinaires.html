@@ -2376,7 +2376,14 @@ html body #deploymentStatusV557:disabled{opacity:.7!important}
  button.setAttribute('aria-live','polite');
  let busy=false,ready=false,baseline='',timer;
  function place(){
-  const host=document.querySelector('#establishmentDemoV452 .demo-nav')||document.querySelector('header.topbar');
+  let childDoc=null;
+  try{childDoc=document.querySelector('#establishmentDemoV452 iframe')?.contentDocument;}catch(e){}
+  const childBar=childDoc?.querySelector('header.topbar');
+  const host=childBar||document.querySelector('#establishmentDemoV452 .demo-nav')||document.querySelector('header.topbar');
+  if(childBar&&!childDoc.getElementById('deploymentStatusStyleV557')){
+    const style=document.getElementById('deploymentStatusStyleV557');
+    if(style)childDoc.head.appendChild(style.cloneNode(true));
+  }
   if(host&&button.parentElement!==host)host.appendChild(button);
  }
  function paint(text){button.textContent=text;}
@@ -2414,7 +2421,7 @@ html body #deploymentStatusV557:disabled{opacity:.7!important}
  place();
  new MutationObserver(place).observe(document.body,{childList:true,subtree:true});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
- check();timer=setInterval(check,30000);
+ check();timer=setInterval(check,30000);setInterval(place,2000);
 })();
 </script>
 </body>
