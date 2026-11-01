@@ -60,3 +60,58 @@ async function openDirectFinalReportV415(){
 
 emailCurrentReport=openDirectFinalReportV415;
 window.emailCurrentReport=openDirectFinalReportV415;
+
+/* Article labels use the same authenticated mail service, without final-report lifecycle changes. */
+async function openDirectArticleNumbersV573(){
+  if(window.__JURY_DEMO_ACTIVE&&!window.__JURY_DEMO_BOOT?.integrated)return alert('L’envoi réel est disponible dans l’espace établissement connecté.');
+  if(state.config?._archive?.finalLocked)return alert('Ce jury est archivé et verrouillé.');
+  if(!draftConfig)return alert('Ouvrez d’abord la préparation du jury.');
+  if(document.getElementById('directArticleNumbersV573'))return;
+  const jury=state, selection=draftConfig, lot=selection.lotName||'Jury Marchés';
+  const modal=document.createElement('dialog');
+  modal.id='directArticleNumbersV573';
+  modal.style.cssText='border:0;border-radius:18px;padding:24px;width:calc(100% - 32px);max-width:540px;max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box';
+  modal.innerHTML='<form><h2>Envoyer les numéros des articles</h2><p role="status" aria-live="polite" style="position:sticky;top:0;z-index:2;background:#edf5f8;border-radius:10px;padding:12px;color:#173f5c;font-weight:700">Création du PDF…</p><label>Destinataire<input name="recipient" type="email" required autocomplete="email" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Objet<input name="subject" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Message<textarea name="message" required maxlength="10000" rows="5" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></textarea></label><button type="submit" class="btn btn-primary" disabled>Envoyer le PDF</button> <button type="button" class="btn btn-secondary">Fermer</button></form>';
+  document.body.appendChild(modal);modal.showModal();
+  const form=modal.querySelector('form'), status=modal.querySelector('[role=status]'), send=form.querySelector('[type=submit]'), close=form.querySelector('[type=button]');
+  let busy=false;
+  close.onclick=()=>{if(!busy)modal.remove()};
+  modal.addEventListener('cancel',e=>{if(busy)e.preventDefault();else modal.remove()});
+  form.elements.subject.value='Numéros des articles — '+lot;
+  form.elements.message.value='Bonjour,\n\nVeuillez trouver en pièce jointe les numéros des articles à imprimer pour le jury « '+lot+' ».\n\nCordialement';
+  let pdf,preparedSignature;
+  try{
+    pdf=await buildArticleNumbersPdf();
+    preparedSignature=JSON.stringify(selection);
+    if(!pdf.blob?.size||pdf.blob.size>5000000)throw Error('Le PDF doit faire moins de 5 Mo.');
+    status.textContent=pdf.filename+' · '+(pdf.blob.size/1000000).toFixed(2)+' Mo · pièce jointe automatique';
+    send.disabled=false;
+  }catch(e){status.textContent='Préparation impossible : '+e.message;return;}
+  const requestId=crypto.randomUUID();
+  form.onsubmit=async e=>{
+    e.preventDefault();if(busy||!form.reportValidity())return;
+    if(state!==jury||draftConfig!==selection||JSON.stringify(selection)!==preparedSignature){status.textContent='Le jury a changé. Fermez puis rouvrez cette fenêtre.';return;}
+    busy=true;send.disabled=true;close.disabled=true;status.textContent='Envoi en cours…';
+    try{
+      const client=window.JuryAccountV385?.client;
+      if(!client)throw Error('Connectez-vous à votre compte pour envoyer le PDF.');
+      const data=new FormData();data.append('recipient',form.elements.recipient.value.trim());data.append('subject',form.elements.subject.value.trim());data.append('message',form.elements.message.value);data.append('requestId',requestId);if(window.__JURY_DEMO_BOOT?.integrated)data.append('school',window.__JURY_DEMO_BOOT.school);data.append('report',pdf.blob,pdf.filename);
+      const result=await client.functions.invoke('send-jury-report',{body:data});
+      if(result.error||!result.data?.id){
+        let message=result.data?.error||'Envoi non confirmé. Réessayez après actualisation.';
+        try{const detail=await result.error?.context?.json();if(detail?.error)message=detail.error;}catch(_){}
+        throw Error(message);
+      }
+      status.textContent='Numéros des articles envoyés ✓';
+      send.disabled=true;send.textContent='Envoyé ✓';
+      form.querySelectorAll('input,textarea').forEach(el=>el.disabled=true);
+      busy=false;close.disabled=false;
+      if(typeof toast==='function')toast('PDF des numéros d’articles envoyé ✓');
+
+    }catch(error){status.textContent='Envoi impossible : '+error.message;status.scrollIntoView({block:'nearest'});busy=false;send.disabled=false;close.disabled=false;}
+  };
+}
+
+emailArticleNumbersPdf=openDirectArticleNumbersV573;
+window.emailArticleNumbersPdf=openDirectArticleNumbersV573;
+if(document.getElementById('configEmailArticlesBtn'))document.getElementById('configEmailArticlesBtn').onclick=openDirectArticleNumbersV573;
