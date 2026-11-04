@@ -19,7 +19,7 @@ const QUESTIONS=[
 const CRITERION_LIBRARY={
   couleur:{short:'Couleur',title:'Comment trouvez-vous la couleur de ce produit ?',labels10:['Trop pâle','','','Parfait','','','Trop foncée']},
   texture:{short:'Texture',title:'Comment trouvez-vous la texture de ce produit en bouche ?',labels10:['Trop ferme','','','Parfait','','','Trop mou / fondant']},
-  aspect:{short:'Aspect visuel',title:'Comment trouvez-vous l’aspect général de ce produit ?',labels10:['Très insuffisant','','','Idéal','','','Très excessif']},
+  aspect:{short:'Aspect visuel',title:'Comment trouvez-vous l’aspect général de ce produit ?',labels10:['Très mauvais','Mauvais','Insuffisant','Correct','Bon','Très bon','Excellent']},
   odeur:{short:'Odeur',title:'Comment trouvez-vous l’intensité de l’odeur de ce produit ?',labels10:['Trop forte','','','Parfait','','','Trop faible']},
   gout:{short:'Goût',title:'Globalement, comment jugez-vous le goût de ce produit ?',labels10:['Très mauvais','','','Idéal','','','Trop marqué'],labels25:['Immangeable','Insuffisant','Acceptable','Bon','Très bon','Excellent']},
   tendrete:{short:'Tendreté',title:'Ce produit est-il suffisamment tendre ?',labels10:['Trop ferme','','','Idéale','','','Trop tendre']},
@@ -57,7 +57,7 @@ function criterionQuestion(selection,qi){
   const isMain=qi===4;
   return{
     key:sel.key,short,title,
-    weights:isMain?[0,2.5,5,7.5,12.5,25]:[0,3,6,10,6,3,0],
+    weights:isMain?[0,2.5,5,7.5,12.5,25]:sel.key==='aspect'?[0,2,4,6,8,9,10]:[0,3,6,10,6,3,0],
     labels:isMain?(def.labels25||GENERIC_25_LABELS):(def.labels10||CRITERION_LIBRARY.autre.labels10)
   }
 }
@@ -872,7 +872,10 @@ function getProduct(id){return state.config.products.find(p=>p.id===id)}
 function sampleKey(pid,sid){return `${pid}__${sid}`}
 function ensureAnswer(t,pid,sid){const tdata=state.testers[t];const k=sampleKey(pid,sid);if(!tdata.answers[k])tdata.answers[k]={choices:Array(QUESTIONS.length).fill(null),remarks:Array(QUESTIONS.length).fill('')};const a=tdata.answers[k];if(!Array.isArray(a.choices))a.choices=Array(QUESTIONS.length).fill(null);while(a.choices.length<QUESTIONS.length)a.choices.push(null);if(!Array.isArray(a.remarks))a.remarks=Array(QUESTIONS.length).fill('');while(a.remarks.length<QUESTIONS.length)a.remarks.push('');return a}
 function complete(a){return !!a&&a.choices.length===QUESTIONS.length&&a.choices.every(x=>x!==null&&x!==undefined)}
-function calcScore(a){return a.choices.reduce((sum,idx,q)=>sum+(idx==null?0:QUESTIONS[q].weights[idx]),0)}
+function calcScore(a,product=null,cfg=state?.config){
+  const qs=product?juryQuestions(cfg,product):QUESTIONS;
+  return (a?.choices||[]).reduce((sum,idx,qi)=>sum+(idx==null?0:Number(qs[qi]?.weights?.[idx]??0)),0);
+}
 function testerCompleted(t){let n=0;state.config.products.forEach(p=>p.samples.forEach(s=>{const a=state.testers[t]?.answers[sampleKey(p.id,s.id)];if(complete(a))n++}));return n}
 function testerValidated(t){const total=totalSamples();return !!state.testers[t]?.validatedAt&&total>0&&testerCompleted(t)===total}
 function validatedCount(){let n=0;for(let t=1;t<=state.config.testerCount;t++)if(testerValidated(t))n++;return n}
@@ -6645,7 +6648,7 @@ function renderValidatedTesterFinal(){
   if(p&&sample&&answer){
     $('#productCode').textContent=p.name;
     $('#sampleTitle').textContent='Échantillon '+sample.id;
-    $('#sampleScore').textContent=fmt(calcScore(answer));
+    $('#sampleScore').textContent=fmt(calcScore(answer,p));
     $('#sampleHero').style.display='flex';
   }
   $('#questions').style.display='none';
@@ -6663,7 +6666,7 @@ function scrollTesterToFinalScore(){
     if(hero)hero.scrollIntoView({behavior:'smooth',block:'start'});
   });
 }
-function renderSample(){if(testerValidated(currentTester)){renderValidatedTesterFinal();return;}$('#testerView')?.classList.remove('tester-final');if(testerMustWaitForLaunch()){renderTesterWaitingForLaunch();return}stopTesterLaunchWait();if(isJuryClosed()){showView('testerView');const ci=juryCloseInfo();$('#testerSelect').value=currentTester;$('#testerSelect').disabled=!!guestTester;$('#productSelect').disabled=true;$('#sampleSelect').disabled=true;$('#sampleHero').style.display='none';$('#questions').style.display='none';$('.sample-actions').style.display='none';const vp=$('#validationPanel');vp.className='panel tester-closed-screen';vp.innerHTML=`<div class="lock">🔒</div><h2>Jury clôturé</h2><p>La session de dégustation est terminée. Vos réponses ont été enregistrées et sont définitivement verrouillées. Pour toute correction, adressez-vous au responsable du jury avant la clôture administrative.</p><span class="date">Fermé le ${escapeHtml(fmtCloseDate(ci.closedAt))}</span>`;return}else{$('#sampleHero').style.display='flex';$('#questions').style.display='grid';$('.sample-actions').style.display='flex';$('#productSelect').disabled=false;$('#sampleSelect').disabled=false;}const p=getProduct(currentProduct);if(!p)return;const sample=p.samples.find(s=>String(s.id)===String(currentSample))||p.samples[0];currentSample=sample.id;const a=ensureAnswer(currentTester,p.id,currentSample);updateTesterYouthUI(a);const locked=testerValidated(currentTester);$('#testerSelect').value=currentTester;$('#productSelect').value=currentProduct;syncSampleSelector();$('#sampleSelect').value=currentSample;const hero=$('#sampleHero');hero.style.background=`linear-gradient(135deg,${shade(p.color,-18)},${shade(p.color,12)})`;$('#productCode').textContent=p.name;$('#sampleTitle').textContent=`Échantillon ${currentSample}`;$('#sampleScore').textContent=fmt(calcScore(a));const qbox=$('#questions');qbox.innerHTML='';const activeQuestions=juryQuestions(state.config,p);activeQuestions.forEach((q,qi)=>{const card=document.createElement('article');card.className='panel question-card';card.dataset.question=qi;card.innerHTML=`${qi===0?`<div class="tester-sample-context-v349" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#e8f3f7;color:#173f5c;font-size:17px;line-height:1.35"><strong>${escapeHtml(p.name)}</strong><strong>Échantillon ${escapeHtml(String(currentSample))}</strong></div>`:""}<div class="q-head"><div class="q-num">${qi+1}</div><div class="q-title">${escapeHtml(q.title)}</div><div class="q-score">${a.choices[qi]==null?'—':fmt(q.weights[a.choices[qi]])} pt</div></div><div class="scale ${q.weights.length===6?'six':''}"></div><div class="remarks"><label>Remarque</label><textarea placeholder="Facultatif…">${escapeHtml(a.remarks[qi]||'')}</textarea></div><div class="criterion-quick"><div class="criterion-quick-title">Commentaires rapides pour ce critère</div><div class="criterion-quick-buttons"></div><div class="criterion-quick-help">Un clic ajoute le texte dans « Remarque ». Un second clic le retire.</div></div>`;const scale=card.querySelector('.scale');q.weights.forEach((w,idx)=>{const b=document.createElement('button');b.type='button';const face=testerYouthFace(idx,q.weights.length);b.className='choice'+testerYouthJarClass(idx,q.weights.length)+(a.choices[qi]===idx?' selected':'');b.innerHTML=`${face?`<div class="youth-face">${face}</div>`:''}<div class="pts">${fmt(w)}</div><div class="lbl">${escapeHtml(q.labels[idx]||'')}</div>`;b.disabled=locked;b.onclick=()=>{if(locked)return;a.choices[qi]=idx;saveState();renderSample()};scale.appendChild(b)});const ta=card.querySelector('textarea');ta.disabled=locked;ta.oninput=e=>{
+function renderSample(){if(testerValidated(currentTester)){renderValidatedTesterFinal();return;}$('#testerView')?.classList.remove('tester-final');if(testerMustWaitForLaunch()){renderTesterWaitingForLaunch();return}stopTesterLaunchWait();if(isJuryClosed()){showView('testerView');const ci=juryCloseInfo();$('#testerSelect').value=currentTester;$('#testerSelect').disabled=!!guestTester;$('#productSelect').disabled=true;$('#sampleSelect').disabled=true;$('#sampleHero').style.display='none';$('#questions').style.display='none';$('.sample-actions').style.display='none';const vp=$('#validationPanel');vp.className='panel tester-closed-screen';vp.innerHTML=`<div class="lock">🔒</div><h2>Jury clôturé</h2><p>La session de dégustation est terminée. Vos réponses ont été enregistrées et sont définitivement verrouillées. Pour toute correction, adressez-vous au responsable du jury avant la clôture administrative.</p><span class="date">Fermé le ${escapeHtml(fmtCloseDate(ci.closedAt))}</span>`;return}else{$('#sampleHero').style.display='flex';$('#questions').style.display='grid';$('.sample-actions').style.display='flex';$('#productSelect').disabled=false;$('#sampleSelect').disabled=false;}const p=getProduct(currentProduct);if(!p)return;const sample=p.samples.find(s=>String(s.id)===String(currentSample))||p.samples[0];currentSample=sample.id;const a=ensureAnswer(currentTester,p.id,currentSample);updateTesterYouthUI(a);const locked=testerValidated(currentTester);$('#testerSelect').value=currentTester;$('#productSelect').value=currentProduct;syncSampleSelector();$('#sampleSelect').value=currentSample;const hero=$('#sampleHero');hero.style.background=`linear-gradient(135deg,${shade(p.color,-18)},${shade(p.color,12)})`;$('#productCode').textContent=p.name;$('#sampleTitle').textContent=`Échantillon ${currentSample}`;$('#sampleScore').textContent=fmt(calcScore(a,p));const qbox=$('#questions');qbox.innerHTML='';const activeQuestions=juryQuestions(state.config,p);activeQuestions.forEach((q,qi)=>{const card=document.createElement('article');card.className='panel question-card';card.dataset.question=qi;card.innerHTML=`${qi===0?`<div class="tester-sample-context-v349" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#e8f3f7;color:#173f5c;font-size:17px;line-height:1.35"><strong>${escapeHtml(p.name)}</strong><strong>Échantillon ${escapeHtml(String(currentSample))}</strong></div>`:""}<div class="q-head"><div class="q-num">${qi+1}</div><div class="q-title">${escapeHtml(q.title)}</div><div class="q-score">${a.choices[qi]==null?'—':fmt(q.weights[a.choices[qi]])} pt</div></div><div class="scale ${q.weights.length===6?'six':''}"></div><div class="remarks"><label>Remarque</label><textarea placeholder="Facultatif…">${escapeHtml(a.remarks[qi]||'')}</textarea></div><div class="criterion-quick"><div class="criterion-quick-title">Commentaires rapides pour ce critère</div><div class="criterion-quick-buttons"></div><div class="criterion-quick-help">Un clic ajoute le texte dans « Remarque ». Un second clic le retire.</div></div>`;const scale=card.querySelector('.scale');q.weights.forEach((w,idx)=>{const b=document.createElement('button');b.type='button';const isQuality=q.key==='aspect';const face=isQuality?['😟','🙁','😕','😐','🙂','😊','😄'][idx]:testerYouthFace(idx,q.weights.length);b.className='choice'+(isQuality?' quality-choice':testerYouthJarClass(idx,q.weights.length))+(a.choices[qi]===idx?' selected':'');b.innerHTML=`${face?`<div class="youth-face">${face}</div>`:''}<div class="pts">${fmt(w)}</div><div class="lbl">${escapeHtml(q.labels[idx]||'')}</div>`;b.disabled=locked;b.onclick=()=>{if(locked)return;a.choices[qi]=idx;saveState();renderSample()};scale.appendChild(b)});const ta=card.querySelector('textarea');ta.disabled=locked;ta.oninput=e=>{
   if(locked)return;
   a.remarks[qi]=e.target.value;
   const currentText=String(e.target.value||'').toLocaleLowerCase('fr');
@@ -6815,8 +6818,8 @@ function sampleStats(p,s){
     manualRemarkCount+=Array.from({length:QUESTIONS.length},(_,qi)=>manualRemarkText(a,qi)).filter(Boolean).length;
     quickCommentCount+=getQuickTags(a).length;
     if(!complete(a))continue;
-    total+=calcScore(a);count++;
-    QUESTIONS.forEach((q,qi)=>{const idx=a.choices?.[qi];if(idx!=null){criterionTotals[qi]+=q.weights[idx];criterionCounts[qi]++}});
+    total+=calcScore(a,p);count++;
+    juryQuestions(state.config,p).forEach((q,qi)=>{const idx=a.choices?.[qi];if(idx!=null){criterionTotals[qi]+=q.weights[idx];criterionCounts[qi]++}});
   }
   const criterionAvg=criterionTotals.map((v,i)=>criterionCounts[i]?v/criterionCounts[i]:0);
   return{total,count,avg:count?total/count:0,criterionAvg,quickCommentCount,manualRemarkCount};
@@ -6846,7 +6849,7 @@ function renderRanking(){
 function renderSampleDetail(p,s){
   const box=$('#sampleDetail');if(!box)return;
   if(!p||!s){box.innerHTML='<div class="sample-detail-empty">Sélectionnez un produit pour afficher le détail d’un échantillon.</div>';return}
-  const st=sampleStats(p,s);const maxes=QUESTIONS.map(q=>Math.max(...q.weights));
+  const st=sampleStats(p,s);const maxes=juryQuestions(state.config,p).map(q=>Math.max(...q.weights));
   box.innerHTML=`<div class="sample-detail-top"><div><div class="tag">${escapeHtml(p.name)}</div><h4>Échantillon ${escapeHtml(s.id)}</h4><p>Fournisseur : <strong>${escapeHtml(s.supplier||'—')}</strong></p></div><div class="detail-score"><strong>${st.count?fmt(st.avg):'—'}</strong><span>moyenne /65</span></div></div><div class="criteria-list">${QUESTIONS.map((q,i)=>{const avg=st.criterionAvg[i]||0,max=maxes[i]||1;return `<div class="criterion-row"><span>${criterionShortsForConfig(state.config,p)[i]||`Critère ${i+1}`}</span><div class="criterion-track"><i style="width:${Math.max(0,Math.min(100,avg/max*100))}%"></i></div><strong>${st.count?`${fmt(avg)}/${fmt(max)}`:'—'}</strong></div>`}).join('')}</div><div class="sample-quick-summary"><h5>Commentaires rapides</h5><div class="quick-summary">${(()=>{const qs=sampleQuickTagStats(p,s);return qs.length?qs.slice(0,10).map(x=>`<span class="quick-summary-chip">${escapeHtml(x.tag)} <strong>${x.count}</strong></span>`).join(''):'<span class="quick-summary-empty">Aucun commentaire rapide pour cet échantillon.</span>'})()}</div></div><div class="detail-meta"><div class="detail-mini"><strong>${st.count}/${state.config.testerCount}</strong><span>testeurs pris en compte</span></div><div class="detail-mini"><strong>${fmt(st.total)}</strong><span>total des points</span></div><div class="detail-mini"><strong>${st.quickCommentCount}</strong><span>commentaires rapides</span></div></div>`;
 }
 function renderProgress(){
@@ -7064,7 +7067,7 @@ function collectRemarks(){
             sample:s.id,
             supplier:s.supplier||'—',
             criterion:criterionShortsForConfig(state.config,p)[qi]||`Critère ${qi+1}`,
-            score:idx==null?'—':`${fmt(QUESTIONS[qi].weights[idx])} pt`,
+            score:idx==null?'—':`${fmt(juryQuestions(state.config,p)[qi].weights[idx])} pt`,
             remark:txt
           });
         }
@@ -7090,9 +7093,10 @@ function exportCsv(){
   for(let t=1;t<=state.config.testerCount;t++)state.config.products.forEach(p=>p.samples.forEach(s=>{
     const a=state.testers[t]?.answers[sampleKey(p.id,s.id)];if(!a)return;
     const names=criterionShortsForConfig(state.config,p);
-    const scores=a.choices.map((idx,q)=>idx==null?'':QUESTIONS[q].weights[idx]);
+    const productQuestions=juryQuestions(state.config,p);
+    const scores=a.choices.map((idx,q)=>idx==null?'':productQuestions[q].weights[idx]);
     const free=QUESTIONS.map((_,qi)=>manualRemarkText(a,qi));
-    rows.push([state.config.lotName,state.testers[t]?.name||`Testeur ${t}`,testerValidated(t)?'Oui':'Non',state.testers[t]?.validatedAt||'',p.name,s.id,s.supplier,...scores,calcScore(a),...free,QUESTIONS.map((_,qi)=>getQuickTags(a,qi).length?`${names[qi]||`Critère ${qi+1}`}: ${getQuickTags(a,qi).join(', ')}`:'').filter(Boolean).join(' | ')])
+    rows.push([state.config.lotName,state.testers[t]?.name||`Testeur ${t}`,testerValidated(t)?'Oui':'Non',state.testers[t]?.validatedAt||'',p.name,s.id,s.supplier,...scores,calcScore(a,p),...free,QUESTIONS.map((_,qi)=>getQuickTags(a,qi).length?`${names[qi]||`Critère ${qi+1}`}: ${getQuickTags(a,qi).join(', ')}`:'').filter(Boolean).join(' | ')])
   }));
   const csv='\ufeff'+rows.map(r=>r.map(csvCell).join(';')).join('\n');download(new Blob([csv],{type:'text/csv;charset=utf-8'}),`resultats-${slug(state.config.lotName)}.csv`);toast('CSV créé')
 }
@@ -7466,7 +7470,7 @@ function closureReport(){
 
 function stateTotalSamples(st){return (st?.config?.products||[]).reduce((n,p)=>n+(p.samples||[]).length,0)}
 function stateCompleteAnswer(a){return !!a&&Array.isArray(a.choices)&&a.choices.length===QUESTIONS.length&&a.choices.every(x=>x!==null&&x!==undefined)}
-function stateAnswerScore(a){return (a?.choices||[]).reduce((sum,idx,q)=>sum+(idx==null?0:(QUESTIONS[q]?.weights?.[idx]||0)),0)}
+function stateAnswerScore(a,st=null,product=null){return calcScore(a,product,st?.config||state?.config)}
 function stateValidatedCount(st){let n=0;for(let t=1;t<=Number(st?.config?.testerCount||0);t++)if(st?.testers?.[t]?.validatedAt)n++;return n}
 function stateCompletedCount(st){
   let n=0;
@@ -7486,8 +7490,8 @@ function stateSampleStats(st,p,sm){
     if(!a)continue;
     remarkCount+=(a.remarks||[]).slice(0,QUESTIONS.length).filter(x=>String(x||'').trim()).length+getQuickTags(a).length;
     if(!stateCompleteAnswer(a))continue;
-    total+=stateAnswerScore(a);count++;
-    QUESTIONS.forEach((q,qi)=>{
+    total+=stateAnswerScore(a,st,p);count++;
+    juryQuestions(st.config,p).forEach((q,qi)=>{
       const idx=a.choices?.[qi];
       if(idx!=null){criterionTotals[qi]+=q.weights[idx];criterionCounts[qi]++}
     });
@@ -7525,7 +7529,7 @@ function stateRemarks(st){
             sample:sm.id,
             supplier:sm.supplier||'—',
             criterion:criterionShortsForConfig(st?.config,p)[qi]||`Critère ${qi+1}`,
-            score:idx==null?'—':`${fmt(QUESTIONS[qi].weights[idx])} pt`,
+            score:idx==null?'—':`${fmt(juryQuestions(st.config,p)[qi].weights[idx])} pt`,
             remark
           });
         }
@@ -7625,7 +7629,7 @@ function ensureProductSheetRecord(st,p,sm){
 }
 function productSheetStats(st,p,sm){
   const stats=stateSampleStats(st,p,sm);
-  const maxes=QUESTIONS.map(q=>Math.max(...q.weights));
+  const maxes=juryQuestions(st.config,p).map(q=>Math.max(...q.weights));
   const names=criterionShortsForConfig(st.config,p);
   return{
     count:stats.count,
@@ -8266,7 +8270,7 @@ function pvProductRanking(st,p){
     for(let t=1;t<=Number(st.config?.testerCount||0);t++){
       const a=st.testers?.[t]?.answers?.[`${p.id}__${sm.id}`];
       if(!stateCompleteAnswer(a))continue;
-      total+=stateAnswerScore(a);count++
+      total+=stateAnswerScore(a,st,p);count++
     }
     out.push({sample:sm.id||'',supplier:sm.supplier||'—',count,avg:count?total/count:0})
   }
@@ -8408,10 +8412,10 @@ function dossierCriteriaAverages(st){
     if(!stateCompleteAnswer(a))continue;
     a.choices.forEach((idx,qi)=>{
       if(idx==null)return;
-      sums[qi]+=QUESTIONS[qi].weights[idx];counts[qi]++
+      sums[qi]+=juryQuestions(st.config,p)[qi].weights[idx];counts[qi]++
     })
   }
-  const names=criterionShortsForConfig(st?.config);return sums.map((s,i)=>({name:names[i]||`Critère ${i+1}`,avg:counts[i]?s/counts[i]:0,count:counts[i],max:Math.max(...QUESTIONS[i].weights)}))
+  const names=criterionShortsForConfig(st?.config);return sums.map((s,i)=>({name:names[i]||`Critère ${i+1}`,avg:counts[i]?s/counts[i]:0,count:counts[i],max:i===4?25:10}))
 }
 function openJuryDossier(st,sourceLabel='Jury'){
   if(!st?.config?.products?.length){alert('Aucun jury à présenter dans le dossier.');return}
