@@ -644,6 +644,11 @@ html body #configView .config-summary-bar .right{
     </div></div>
     <div class="hero-meta" id="homeMeta"></div>
     <div class="jury-status-strip" id="homeJuryStrip"><div class="left"><span class="jury-dot" id="homeJuryDot"></span><div><strong id="homeJuryStatus">Jury prêt</strong><span id="homeJuryDetail"> · Test à l’aveugle, fournisseurs masqués</span></div></div><span id="homeLotContext">Jury actuel</span></div>
+    <section id="homeRunningQrRecoveryV586" class="panel" hidden style="margin:12px 0;padding:14px 16px;border:1px solid #c9d7c8;border-radius:12px">
+      <strong>Jury déjà lancé ?</strong>
+      <p id="homeRunningQrRecoveryTextV586" style="margin:7px 0 12px">Vous pouvez retrouver les accès testeurs sans recommencer le jury.</p>
+      <button type="button" class="btn btn-primary" id="homeRunningQrRecoverBtnV586">▦ Récupérer les QR codes</button>
+    </section>
     <div class="home-status-summary"><div><strong id="homeProgressTitle">Aucune dégustation commencée</strong><span id="homeProgressDetail">Le jury peut être préparé.</span></div><div class="pct" id="homeProgressPct">0 %</div></div>
     <div class="home-command-grid simple-command-grid">
       <button class="command-card simple-command" id="samplesSetupBtn"><span class="cmd-icon culinary-line-icon"><svg width="76" height="76" style="width:76px;height:76px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m8 23 24-12 24 12-24 12zM12 26v22l20 9 20-9V26M32 35v22M8 23v10l24 12M56 23v10L32 45M20 17l24 12"/><path stroke="#b56d4d" d="M43 49q8-3 10-12-9 2-10 12Zm-3 6 10-12"/></svg></span><div><strong>1. Choix des échantillons</strong><span>Créer un nouveau lot</span></div></button>
@@ -2386,7 +2391,7 @@ html body #configView .config-summary-bar .right{
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=585-aspect-qualite"></script>
+<script src="js/05-application-principale.js?build=586-recuperation-qr"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
