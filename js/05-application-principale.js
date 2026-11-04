@@ -726,6 +726,11 @@ function renderJuryChooser(){
   const rows=loadPreparedJurys()
     .filter(rec=>rec?.state?.config && (rec.state.config.products||[]).length>0 && !rec.state.config?.juryClose?.closedAt && !juryArchivedV472(rec.state.config))
     .sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+  /* Retrouver le jury actif même s'il n'apparaît plus dans les préparations. */
+  if(isJuryOfficiallyOpen()&&!isJuryClosed()&&!juryArchivedV472(state.config)&&
+     !rows.some(rec=>String(rec.id)===String(state.config?._preparedId||''))){
+    rows.unshift({id:'__active_running_v586__',state,name:state.config.lotName});
+  }
 
   if(!rows.length){
     list.innerHTML=`
@@ -758,7 +763,11 @@ function renderJuryChooser(){
 
       let buttons='';
       if(running){
-        buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','resume')">▶ ${current?'Reprendre ce jury':'Ouvrir ce jury'}</button>`;
+        const resume=String(rec.id)==='__active_running_v586__'
+          ?'renderJuryView()'
+          :"activatePreparedJury('"+escapeHtml(String(rec.id))+"','resume')";
+        buttons=`<button type="button" class="btn btn-primary" onclick="${resume}">▶ ${current?'Reprendre ce jury':'Ouvrir ce jury'}</button>
+          <button type="button" class="btn btn-secondary" data-recover-running-qr-v586="${escapeHtml(String(rec.id))}">▦ Récupérer les QR codes</button>`;
       }else if(phonesReady){
         buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','launch')">▶ Continuer vers le lancement</button>`;
       }else{
@@ -784,6 +793,10 @@ function renderJuryChooser(){
       return '';
     }
   }).join('');
+  list.querySelectorAll('[data-recover-running-qr-v586]').forEach(b=>b.onclick=()=>{
+    const id=b.dataset.recoverRunningQrV586;
+    recoverRunningJuryQrV586(id==='__active_running_v586__'?'':id);
+  });
 }
 
 /* V586 : retrouver les QR codes du jury en cours, sans rouvrir sa préparation. */
