@@ -785,6 +785,45 @@ function renderJuryChooser(){
     }
   }).join('');
 }
+
+/* V586 : retrouver les QR codes du jury en cours, sans rouvrir sa préparation. */
+async function recoverRunningJuryQrV586(id=''){
+  if(id){
+    const rec=loadPreparedJurys().find(x=>String(x.id)===String(id));
+    if(!rec?.state?.config){
+      alert('Jury introuvable dans les jurys enregistrés. Vérifiez le bon compte.');
+      return false;
+    }
+    const cfg=rec.state.config;
+    if(!cfg.juryLaunch?.openedAt || cfg.juryClose?.closedAt || juryArchivedV472(cfg)){
+      alert('Ce jury n’est pas en cours.');
+      return false;
+    }
+    const active=String(state?.config?._preparedId||'')===String(id) && isJuryOfficiallyOpen() && !isJuryClosed();
+    if(!active)activatePreparedJury(id,'resume');
+  }
+  if(!isJuryOfficiallyOpen() || isJuryClosed()){
+    alert('Aucun jury en cours n’est ouvert. Reprenez le bon lot depuis « Mes jurys ».');
+    return false;
+  }
+  return await openQrCodesFromJury();
+}
+function renderRunningQrRecoveryV586(){
+  const panel=$('#homeRunningQrRecoveryV586'),btn=$('#homeRunningQrRecoverBtnV586'),info=$('#homeRunningQrRecoveryTextV586');
+  if(!panel || !btn)return;
+  const current=isJuryOfficiallyOpen() && !isJuryClosed() && !juryArchivedV472(state.config);
+  const rows=loadPreparedJurys().filter(r=>r?.state?.config?.juryLaunch?.openedAt && !r.state.config?.juryClose?.closedAt && !juryArchivedV472(r.state.config));
+  panel.hidden=!current && rows.length===0;
+  if(panel.hidden)return;
+  const item=current?state.config:rows.length===1?rows[0].state.config:null;
+  if(info)info.textContent=item?'Le jury « '+(item.lotName||'sans nom')+' » est déjà lancé. Récupérez ses QR codes sans recommencer.':'Plusieurs jurys sont en cours : choisissez le lot concerné.';
+  btn.textContent=current || rows.length===1?'▦ Récupérer les QR codes':'▦ Choisir le jury et ses QR codes';
+  btn.onclick=()=>{
+    if(current)recoverRunningJuryQrV586();
+    else if(rows.length===1)recoverRunningJuryQrV586(rows[0].id);
+    else renderJuryChooser();
+  };
+}
 function scrollToPreparedJurys(){
   const box=$('#preparedJuriesHome');
   if(box&&!box.hidden){
@@ -3492,7 +3531,7 @@ $('#juryBtnTitle').textContent=preparedCount>1
       ?'Lancer un jury'
       :'Lancer le jury';
 $('#juryBtnSub').textContent='Démarrer les dégustations avec les testeurs';
-const ac=loadArchives().length;const ah=$('#archiveHomeCount');if(ah)ah.textContent=ac?`${ac} jury${ac>1?'s':''} archivé${ac>1?'s':''}`:'Aucun jury archivé';renderMyJuriesDashboard();renderPreparedHome()}
+const ac=loadArchives().length;const ah=$('#archiveHomeCount');if(ah)ah.textContent=ac?`${ac} jury${ac>1?'s':''} archivé${ac>1?'s':''}`:'Aucun jury archivé';renderMyJuriesDashboard();renderPreparedHome();renderRunningQrRecoveryV586()}
 
 
 function juryCloseInfo(){return state.config?.juryClose||{}}
