@@ -2,7 +2,7 @@ const fs=require('fs'),vm=require('vm'),assert=require('assert/strict'),{webcryp
 const source=fs.readFileSync(require('path').join(__dirname,'../js/35-owner-account.js'),'utf8').replace('  mount();','  API.__test={setMode,submit,extraAccountClient,finishExtra};');
 function fixture({confirm=true,pin=true}={}){
  const nodes=new Map(),events=[],opts=[];let member=false,encrypted=null,confirmed=confirm;
- const element=id=>{if(!nodes.has(id))nodes.set(id,{value:'',checked:true,hidden:false,style:{},classList:{add(){},remove(){}},querySelectorAll:()=>[],focus(){}});return nodes.get(id);};
+ const element=id=>{if(!nodes.has(id))nodes.set(id,{value:'',checked:true,hidden:false,style:{},classList:{add(){},remove(){}},querySelectorAll:()=>[],setAttribute(){},focus(){}});return nodes.get(id);};
  const value={v:1,hub:{url:'https://avhyoujlplwkuccvhnvz.supabase.co',sessionId:'675ee51b-915e-416a-ac45-349d6a69f524'},adminToken:'a'.repeat(64),ownerToken:'b'.repeat(64)};
  const config={security:{ownerTokenHash:'hash:owner:'+value.ownerToken,adminTokenHash:'hash:admin:'+value.adminToken}};
  const makeClient=(isMain=false)=>({
