@@ -399,30 +399,20 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="589-safe-school-update">
+<meta name="jury-release" content="590-discreet-leaf-update">
 <style id="deploymentStatusStyleV557">
+/* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
  position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;min-height:0!important;
  padding:0!important;margin:-1px!important;overflow:hidden!important;clip-path:inset(50%)!important;white-space:nowrap!important;border:0!important;
 }
 html body #deploymentStatusV557::before{display:none!important}
 html body header.topbar .brandmark[data-update-status]::after{
- background:#b56d4d!important;opacity:1!important;transition:background-color .25s ease;
+ background:#78977e!important;opacity:.85!important;transition:background-color .25s ease!important;
 }
-html body header.topbar .brandmark[data-update-status="current"]::after{background:#78977e!important}
-html body header.topbar .brandmark[data-update-status="ready"]{
- background:#966346!important;color:#fffaf1!important;-webkit-text-fill-color:#fffaf1!important;
- border-radius:12px!important;box-shadow:0 0 0 3px rgba(150,99,70,.22)!important;
- transition:background-color .25s ease,color .25s ease,box-shadow .25s ease;
+html body header.topbar .brandmark[data-update-status="ready"]::after{
+ background:#966346!important;opacity:1!important;
 }
-html body header.topbar .brandmark[data-update-status="ready"]::after{background:#f1c99b!important;opacity:1!important}
-html body #deploymentRefreshBtnV587{
- display:none;padding:7px 10px!important;min-height:32px;border:1px solid #966346!important;
- border-radius:9px!important;background:#966346!important;color:#fffaf1!important;
- -webkit-text-fill-color:#fffaf1!important;font:700 12px system-ui,sans-serif!important;
- white-space:nowrap;cursor:pointer;
-}
-html body #deploymentRefreshBtnV587[data-visible="true"]{display:inline-flex!important;align-items:center;justify-content:center}
 </style>
 <style id="prepareChooserUniformCreamV559">
 html body:has(#prepareJuryModal.show){background:#fffaf1!important;background-image:none!important}
@@ -2529,25 +2519,6 @@ html body #configView .config-summary-bar .right{
  const status=document.createElement('span');
  status.id='deploymentStatusV557';
  status.setAttribute('role','status');status.setAttribute('aria-live','polite');
- const refresh=document.createElement('button');
- refresh.id='deploymentRefreshBtnV587';refresh.type='button';
- refresh.textContent='↻ Actualiser';refresh.dataset.visible='false';
- refresh.title='Charger la nouvelle version de Tests culinaires';
- refresh.onclick=async()=>{
-   if(!confirm('Charger la nouvelle version maintenant ? Les jurys et les réponses déjà enregistrés seront conservés.'))return;
-   refresh.disabled=true;
-   try{
-     /* Ne jamais recharger un espace établissement avec une sauvegarde
-        différée ou une fiche en cours de saisie : le parent contrôle la fusion. */
-     if(window.JurySchoolTrialV452?.flush)await window.JurySchoolTrialV452.flush();
-     const url=new URL(location.href);
-     url.searchParams.set('_appRefresh',String(Date.now()));
-     location.replace(url.toString());
-   }catch(e){
-     alert('La mise à jour est suspendue : votre travail n’est pas encore enregistré. '+(e?.message||e));
-     refresh.disabled=false;
-   }
- };
  let busy=false,ready=false;
  function place(){
    let childDoc=null;
@@ -2564,17 +2535,13 @@ html body #configView .config-summary-bar .right{
      logo.dataset.updateStatus=status.dataset.status||'checking';
      logo.title=status.getAttribute('aria-label')||'Vérification de la version';
      if(status.parentElement!==host||logo.nextElementSibling!==status)logo.after(status);
-     if(refresh.parentElement!==host||status.nextElementSibling!==refresh)status.after(refresh);
    }else{
      if(status.parentElement!==host)host.prepend(status);
-     if(refresh.parentElement!==host)status.after(refresh);
    }
  }
  function paint(state,label){
    status.textContent='';status.dataset.status=state;
    status.setAttribute('aria-label',label);status.title=label;
-   refresh.dataset.visible=state==='ready'?'true':'false';
-   refresh.disabled=state!=='ready';
    place();
  }
  async function check(){
