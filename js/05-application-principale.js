@@ -9,31 +9,31 @@ const SAMPLE_PRODUCTS_STORAGE_KEY='jm_test_culinaire_sample_products_v1';
 const SAMPLE_LOT_HISTORY_STORAGE_KEY='jm_test_culinaire_sample_lot_history_v178';
 const PALETTE=['#e5862f','#2f8f5b','#7d5ab5','#2e7cae','#c95366','#8a6b37','#3a8e91','#9b5f9b'];
 const QUESTIONS=[
- {title:'Par rapport à la couleur que vous jugez idéale, où se situe le produit testé ?',weights:[0,3,6,10,6,3,0],labels:['Trop pâle','','','Parfait','','','Trop foncée']},
- {title:'Par rapport à la texture que vous jugez idéale, où se situe le produit testé ?',weights:[0,3,6,10,6,3,0],labels:['Trop ferme','','','Parfait','','','Trop mou / fondant']},
- {title:"Pour vous, quel est l’aspect visuel idéal ?",weights:[0,3,6,10,6,3,0],labels:['Très insuffisant','','','Idéal','','','Très excessif']},
- {title:"Pour vous, quelle est l’odeur idéale ?",weights:[0,3,6,10,6,3,0],labels:['Trop forte','','','Parfait','','','Trop faible']},
- {title:'Pour vous, quel est le goût idéal ?',weights:[0,2.5,5,7.5,12.5,25],labels:['Immangeable','Insuffisant','Acceptable','Bon','Très bon','Excellent']}
+ {title:'Comment trouvez-vous la couleur de ce produit ?',weights:[0,3,6,10,6,3,0],labels:['Trop pâle','','','Parfait','','','Trop foncée']},
+ {title:'Comment trouvez-vous la texture de ce produit en bouche ?',weights:[0,3,6,10,6,3,0],labels:['Trop ferme','','','Parfait','','','Trop mou / fondant']},
+ {title:"Comment trouvez-vous l’aspect général de ce produit ?",weights:[0,3,6,10,6,3,0],labels:['Très insuffisant','','','Idéal','','','Très excessif']},
+ {title:"Comment trouvez-vous l’intensité de l’odeur de ce produit ?",weights:[0,3,6,10,6,3,0],labels:['Trop forte','','','Parfait','','','Trop faible']},
+ {title:'Globalement, comment jugez-vous le goût de ce produit ?',weights:[0,2.5,5,7.5,12.5,25],labels:['Immangeable','Insuffisant','Acceptable','Bon','Très bon','Excellent']}
 
 ];
 const CRITERION_LIBRARY={
-  couleur:{short:'Couleur',title:'Par rapport à la couleur que vous jugez idéale, où se situe le produit testé ?',labels10:['Trop pâle','','','Parfait','','','Trop foncée']},
-  texture:{short:'Texture',title:'Par rapport à la texture que vous jugez idéale, où se situe le produit testé ?',labels10:['Trop ferme','','','Parfait','','','Trop mou / fondant']},
-  aspect:{short:'Aspect visuel',title:'Pour vous, quel est l’aspect visuel idéal ?',labels10:['Très insuffisant','','','Idéal','','','Très excessif']},
-  odeur:{short:'Odeur',title:'Pour vous, quelle est l’odeur idéale ?',labels10:['Trop forte','','','Parfait','','','Trop faible']},
-  gout:{short:'Goût',title:'Pour vous, quel est le goût idéal ?',labels10:['Très mauvais','','','Idéal','','','Trop marqué'],labels25:['Immangeable','Insuffisant','Acceptable','Bon','Très bon','Excellent']},
-  tendrete:{short:'Tendreté',title:'Comment jugez-vous la tendreté du produit ?',labels10:['Trop ferme','','','Idéale','','','Trop tendre']},
-  jutosite:{short:'Jutosité',title:'Comment jugez-vous la jutosité du produit ?',labels10:['Trop sec','','','Idéale','','','Trop juteux']},
-  tenue:{short:'Tenue à la cuisson',title:'Comment jugez-vous la tenue du produit après cuisson ou préparation ?',labels10:['Très mauvaise','','','Idéale','','','Trop ferme']},
-  calibre:{short:'Calibre / régularité',title:'Comment jugez-vous le calibre et la régularité du produit ?',labels10:['Très irrégulier','','','Idéal','','','Trop uniforme']},
-  fermete:{short:'Fermeté',title:'Comment jugez-vous la fermeté du produit ?',labels10:['Trop mou','','','Idéale','','','Trop ferme']},
-  arome:{short:'Parfum / arôme',title:'Comment jugez-vous le parfum ou l’arôme du produit ?',labels10:['Trop faible','','','Idéal','','','Trop fort']},
-  sucre:{short:'Équilibre sucré',title:'Comment jugez-vous l’équilibre sucré du produit ?',labels10:['Pas assez sucré','','','Idéal','','','Trop sucré']},
-  assaisonnement:{short:'Assaisonnement',title:'Comment jugez-vous l’assaisonnement du produit ?',labels10:['Pas assez assaisonné','','','Idéal','','','Trop assaisonné']},
-  onctuosite:{short:'Onctuosité',title:'Comment jugez-vous l’onctuosité du produit ?',labels10:['Trop fluide','','','Idéale','','','Trop épaisse']},
-  croquant:{short:'Croquant',title:'Comment jugez-vous le croquant du produit ?',labels10:['Pas assez croquant','','','Idéal','','','Trop croquant']},
-  acidite:{short:'Acidité',title:'Comment jugez-vous l’acidité du produit ?',labels10:['Pas assez acide','','','Idéale','','','Trop acide']},
-  autre:{short:'Autre',title:'Comment jugez-vous ce critère ?',labels10:['Très insuffisant','','','Idéal','','','Très excessif']}
+  couleur:{short:'Couleur',title:'Comment trouvez-vous la couleur de ce produit ?',labels10:['Trop pâle','','','Parfait','','','Trop foncée']},
+  texture:{short:'Texture',title:'Comment trouvez-vous la texture de ce produit en bouche ?',labels10:['Trop ferme','','','Parfait','','','Trop mou / fondant']},
+  aspect:{short:'Aspect visuel',title:'Comment trouvez-vous l’aspect général de ce produit ?',labels10:['Très insuffisant','','','Idéal','','','Très excessif']},
+  odeur:{short:'Odeur',title:'Comment trouvez-vous l’intensité de l’odeur de ce produit ?',labels10:['Trop forte','','','Parfait','','','Trop faible']},
+  gout:{short:'Goût',title:'Globalement, comment jugez-vous le goût de ce produit ?',labels10:['Très mauvais','','','Idéal','','','Trop marqué'],labels25:['Immangeable','Insuffisant','Acceptable','Bon','Très bon','Excellent']},
+  tendrete:{short:'Tendreté',title:'Ce produit est-il suffisamment tendre ?',labels10:['Trop ferme','','','Idéale','','','Trop tendre']},
+  jutosite:{short:'Jutosité',title:'Comment trouvez-vous la quantité de jus dans ce produit ?',labels10:['Trop sec','','','Idéale','','','Trop juteux']},
+  tenue:{short:'Tenue à la cuisson',title:'Le produit garde-t-il une bonne tenue après cuisson ?',labels10:['Très mauvaise','','','Idéale','','','Trop ferme']},
+  calibre:{short:'Calibre / régularité',title:'Les morceaux sont-ils de taille régulière ?',labels10:['Très irrégulier','','','Idéal','','','Trop uniforme']},
+  fermete:{short:'Fermeté',title:'La fermeté de ce produit vous semble-t-elle adaptée ?',labels10:['Trop mou','','','Idéale','','','Trop ferme']},
+  arome:{short:'Parfum / arôme',title:'Le parfum de ce produit est-il suffisamment présent ?',labels10:['Trop faible','','','Idéal','','','Trop fort']},
+  sucre:{short:'Équilibre sucré',title:'Ce produit est-il suffisamment sucré ?',labels10:['Pas assez sucré','','','Idéal','','','Trop sucré']},
+  assaisonnement:{short:'Assaisonnement',title:'L’assaisonnement de ce produit est-il bien dosé ?',labels10:['Pas assez assaisonné','','','Idéal','','','Trop assaisonné']},
+  onctuosite:{short:'Onctuosité',title:'La consistance de ce produit est-elle suffisamment crémeuse ?',labels10:['Trop fluide','','','Idéale','','','Trop épaisse']},
+  croquant:{short:'Croquant',title:'Ce produit est-il suffisamment croquant ?',labels10:['Pas assez croquant','','','Idéal','','','Trop croquant']},
+  acidite:{short:'Acidité',title:'L’acidité de ce produit est-elle bien équilibrée ?',labels10:['Pas assez acide','','','Idéale','','','Trop acide']},
+  autre:{short:'Autre',title:'Comment évaluez-vous ce critère personnalisé ?',labels10:['Très insuffisant','','','Idéal','','','Très excessif']}
 };
 const DEFAULT_CRITERIA_KEYS=['couleur','texture','aspect','odeur','gout'];
 const GENERIC_25_LABELS=['Très insuffisant','Insuffisant','Acceptable','Bon','Très bon','Excellent'];
