@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="588-safe-qr-tabs">
+<meta name="jury-release" content="589-safe-school-update">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;min-height:0!important;
@@ -2533,11 +2533,20 @@ html body #configView .config-summary-bar .right{
  refresh.id='deploymentRefreshBtnV587';refresh.type='button';
  refresh.textContent='↻ Actualiser';refresh.dataset.visible='false';
  refresh.title='Charger la nouvelle version de Tests culinaires';
- refresh.onclick=()=>{
+ refresh.onclick=async()=>{
    if(!confirm('Charger la nouvelle version maintenant ? Les jurys et les réponses déjà enregistrés seront conservés.'))return;
-   const url=new URL(location.href);
-   url.searchParams.set('_appRefresh',String(Date.now()));
-   location.replace(url.toString());
+   refresh.disabled=true;
+   try{
+     /* Ne jamais recharger un espace établissement avec une sauvegarde
+        différée ou une fiche en cours de saisie : le parent contrôle la fusion. */
+     if(window.JurySchoolTrialV452?.flush)await window.JurySchoolTrialV452.flush();
+     const url=new URL(location.href);
+     url.searchParams.set('_appRefresh',String(Date.now()));
+     location.replace(url.toString());
+   }catch(e){
+     alert('La mise à jour est suspendue : votre travail n’est pas encore enregistré. '+(e?.message||e));
+     refresh.disabled=false;
+   }
  };
  let busy=false,ready=false;
  function place(){
