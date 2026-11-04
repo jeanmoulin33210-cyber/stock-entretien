@@ -19,6 +19,9 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: QR tester tab isolation protects school data and owner identity
+        run: node --test tests/tester-tab-isolation.test.cjs
+
       - name: Jury identity and closure isolation
         run: node tests/jury-isolation.test.cjs
       - name: Two-device synchronization, concurrent saves and offline recovery
