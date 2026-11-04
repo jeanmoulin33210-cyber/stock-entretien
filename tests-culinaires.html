@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="583-school-display-name">
+<meta name="jury-release" content="587-update-detection-logo">
 <style id="deploymentStatusStyleV557">
 html body #deploymentStatusV557{
  position:absolute!important;width:1px!important;height:1px!important;min-width:0!important;min-height:0!important;
@@ -410,7 +410,19 @@ html body header.topbar .brandmark[data-update-status]::after{
  background:#b56d4d!important;opacity:1!important;transition:background-color .25s ease;
 }
 html body header.topbar .brandmark[data-update-status="current"]::after{background:#78977e!important}
-html body header.topbar .brandmark[data-update-status="ready"]::after{background:#dc8c28!important}
+html body header.topbar .brandmark[data-update-status="ready"]{
+ background:#966346!important;color:#fffaf1!important;-webkit-text-fill-color:#fffaf1!important;
+ border-radius:12px!important;box-shadow:0 0 0 3px rgba(150,99,70,.22)!important;
+ transition:background-color .25s ease,color .25s ease,box-shadow .25s ease;
+}
+html body header.topbar .brandmark[data-update-status="ready"]::after{background:#f1c99b!important;opacity:1!important}
+html body #deploymentRefreshBtnV587{
+ display:none;padding:7px 10px!important;min-height:32px;border:1px solid #966346!important;
+ border-radius:9px!important;background:#966346!important;color:#fffaf1!important;
+ -webkit-text-fill-color:#fffaf1!important;font:700 12px system-ui,sans-serif!important;
+ white-space:nowrap;cursor:pointer;
+}
+html body #deploymentRefreshBtnV587[data-visible="true"]{display:inline-flex!important;align-items:center;justify-content:center}
 </style>
 <style id="prepareChooserUniformCreamV559">
 html body:has(#prepareJuryModal.show){background:#fffaf1!important;background-image:none!important}
@@ -2391,7 +2403,7 @@ html body #configView .config-summary-bar .right{
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=586-recuperation-qr"></script>
+<script src="js/05-application-principale.js?build=587-update-detection-logo"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
@@ -2501,62 +2513,87 @@ html body #configView .config-summary-bar .right{
 <script src="js/44-establishment-integration.js?build=582-school-activation-name"></script>
 
 <script id="deploymentIndicatorV557">
+
 (function(){
  'use strict';
  if(window.parent!==window)return;
- const revision=document.querySelector('meta[name="jury-release"]').content;
- const button=document.createElement('span');
- button.id='deploymentStatusV557';button.setAttribute('role','status');
- button.setAttribute('aria-live','polite');
- let busy=false,ready=false,baseline='',timer;
+ /* V587 — compare la version ET les fichiers liés à la page. */
+ function releaseFingerprint(doc){
+   const release=doc.querySelector('meta[name="jury-release"]')?.content||'';
+   const main=doc.querySelector('script[src*="05-application-principale.js"]')?.getAttribute('src')||'';
+   const assets=Array.from(doc.querySelectorAll('script[src],link[rel="stylesheet"][href]'))
+     .map(x=>x.getAttribute('src')||x.getAttribute('href')||'').join('|');
+   return release+'||'+main+'||'+assets;
+ }
+ const localRelease=releaseFingerprint(document);
+ const status=document.createElement('span');
+ status.id='deploymentStatusV557';
+ status.setAttribute('role','status');status.setAttribute('aria-live','polite');
+ const refresh=document.createElement('button');
+ refresh.id='deploymentRefreshBtnV587';refresh.type='button';
+ refresh.textContent='↻ Actualiser';refresh.dataset.visible='false';
+ refresh.title='Charger la nouvelle version de Tests culinaires';
+ refresh.onclick=()=>{
+   if(!confirm('Charger la nouvelle version maintenant ? Les jurys et les réponses déjà enregistrés seront conservés.'))return;
+   const url=new URL(location.href);
+   url.searchParams.set('_appRefresh',String(Date.now()));
+   location.replace(url.toString());
+ };
+ let busy=false,ready=false;
  function place(){
-  let childDoc=null;
-  try{childDoc=document.querySelector('#establishmentDemoV452 iframe')?.contentDocument;}catch(e){}
-  const childBar=childDoc?.querySelector('header.topbar');
-  const host=childBar||document.querySelector('#establishmentDemoV452 .demo-nav')||document.querySelector('header.topbar');
-  if(childBar&&!childDoc.getElementById('deploymentStatusStyleV557')){
-    const style=document.getElementById('deploymentStatusStyleV557');
-    if(style)childDoc.head.appendChild(style.cloneNode(true));
-  }
-  if(host){
+   let childDoc=null;
+   try{childDoc=document.querySelector('#establishmentDemoV452 iframe')?.contentDocument;}catch(e){}
+   const childBar=childDoc?.querySelector('header.topbar');
+   const host=childBar||document.querySelector('#establishmentDemoV452 .demo-nav')||document.querySelector('header.topbar');
+   if(childBar&&!childDoc.getElementById('deploymentStatusStyleV557')){
+     const style=document.getElementById('deploymentStatusStyleV557');
+     if(style)childDoc.head.appendChild(style.cloneNode(true));
+   }
+   if(!host)return;
    const logo=host.querySelector('.brandmark');
    if(logo){
-    logo.dataset.updateStatus=button.dataset.status||'checking';
-    logo.title=button.getAttribute('aria-label')||'Vérification de la version';
-    if(button.parentElement!==host||logo.nextElementSibling!==button)logo.after(button);
-   }else if(button.parentElement!==host)host.prepend(button);
-  }
+     logo.dataset.updateStatus=status.dataset.status||'checking';
+     logo.title=status.getAttribute('aria-label')||'Vérification de la version';
+     if(status.parentElement!==host||logo.nextElementSibling!==status)logo.after(status);
+     if(refresh.parentElement!==host||status.nextElementSibling!==refresh)status.after(refresh);
+   }else{
+     if(status.parentElement!==host)host.prepend(status);
+     if(refresh.parentElement!==host)status.after(refresh);
+   }
  }
- function paint(text){button.textContent='';button.setAttribute('aria-label',text);button.title=text;button.dataset.status=text.includes('prête')?'ready':text.includes('jour')?'current':text.includes('Vérification')?'checking':'offline';place();}
- function signature(text){
-  let hash=2166136261;
-  for(let i=0;i<text.length;i++){hash^=text.charCodeAt(i);hash=Math.imul(hash,16777619);}
-  return (hash>>>0).toString(16);
+ function paint(state,label){
+   status.textContent='';status.dataset.status=state;
+   status.setAttribute('aria-label',label);status.title=label;
+   refresh.dataset.visible=state==='ready'?'true':'false';
+   refresh.disabled=state!=='ready';
+   place();
  }
  async function check(){
-  if(busy||ready||document.hidden)return;
-  busy=true;if(!baseline)paint('↻ Vérification de la version…');button.disabled=true;
-  try{
-   const url=new URL('tests-culinaires.html',location.href);url.searchParams.set('_updateCheck',String(Date.now()));
-   const response=await fetch(url,{cache:'no-store',credentials:'same-origin'});
-   if(!response.ok)throw Error('Serveur indisponible');
-   const source=await response.text();
-   const doc=new DOMParser().parseFromString(source,'text/html');
-   const remote=doc.querySelector('meta[name="jury-release"]')?.content;
-   if(!doc.querySelector('#homeView')||!remote)throw Error('Version non vérifiable');
-   ready=remote!==revision;
-   baseline=remote;
-   paint(ready?'✓ Mise à jour prête : appuyez sur Actualiser':'✓ Version à jour');
-   button.dataset.ready=String(ready);
-   button.title=ready?'La nouvelle version est disponible. Appuyez une fois sur Actualiser.':'Vérification automatique toutes les 15 secondes.';
-  }catch(e){paint('Connexion à vérifier · Réessayer');button.title='Impossible de vérifier la version pour le moment.';}
-  finally{busy=false;button.disabled=false;}
+   if(busy||ready||document.hidden)return;
+   busy=true;
+   if(!status.dataset.status)paint('checking','Vérification de la version…');
+   try{
+     const url=new URL('tests-culinaires.html',location.href);
+     url.searchParams.set('_updateCheck',String(Date.now()));
+     const res=await fetch(url,{cache:'no-store',credentials:'same-origin'});
+     if(!res.ok)throw Error('Serveur indisponible');
+     const remote=new DOMParser().parseFromString(await res.text(),'text/html');
+     if(!remote.querySelector('#homeView')||!remote.querySelector('meta[name="jury-release"]'))throw Error('Version non vérifiable');
+     ready=releaseFingerprint(remote)!==localRelease;
+     paint(ready?'ready':'current',ready
+       ?'Nouvelle version disponible : cliquez sur Actualiser.'
+       :'Version à jour — vérification automatique');
+   }catch(e){
+     paint('offline','Vérification impossible : connexion à contrôler');
+   }finally{busy=false;}
  }
-
  place();
  new MutationObserver(place).observe(document.body,{childList:true,subtree:true});
  document.addEventListener('visibilitychange',()=>{if(!document.hidden)check();});
- check();timer=setInterval(check,15000);setInterval(place,2000);
+ window.addEventListener('online',check);
+ check();
+ setInterval(check,15000);
+ setInterval(place,2000);
 })();
 </script>
 </body>
