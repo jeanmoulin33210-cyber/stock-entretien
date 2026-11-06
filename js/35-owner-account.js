@@ -46,12 +46,31 @@
   const tester=()=>!!guestTester||!!new URLSearchParams(location.search).get('tester')||String(root.__JM_REQUESTED_ROLE_V199||'').startsWith('tester:');
   function message(text,bad=false){const box=el('accountMessageV385');box.textContent=text;box.style.color=bad?'#a22d36':'#245b6a';}
   function preference(){return read(PREF,{remember:true,enabled:false});}
+  // Keep account requests authenticated even when the SDK is used from another realm.
+  // Never send private workspace reads/writes with only a publishable API key.
+  function accountFetchV592(getClient){
+    return async(input,init={})=>{
+      const url=new URL(typeof input==='string'?input:input.url,DEFAULT_SUPABASE_URL);
+      if(url.origin!==new URL(DEFAULT_SUPABASE_URL).origin||
+        !/^\/(rest|functions)\/v1(?:\/|$)/.test(url.pathname))return root.fetch(input,init);
+      const c=getClient();
+      const auth=await c.auth.getSession();
+      if(auth.error||!auth.data?.session?.access_token){
+        throw new Error('Connexion du compte interrompue. Vos modifications restent conservées sur cet appareil. Reconnectez-vous dans « Mon compte », puis réessayez.');
+      }
+      const headers=new Headers(init.headers||(typeof input!=='string'?input.headers:undefined));
+      headers.set('Authorization','Bearer '+auth.data.session.access_token);
+      return root.fetch(input,{...init,headers});
+    };
+  }
   function accountClient(remember=true){
     if(candidate&&candidateRemember===remember)return candidate;
     if(candidate&&candidate!==API.client)candidate.auth.stopAutoRefresh();
     candidateRemember=remember;
     const storageKey='jm-tc-owner-account-v385'+(remember?'-persistent':'-tab');
-    candidate=window.supabase.createClient(DEFAULT_SUPABASE_URL,DEFAULT_SUPABASE_KEY,{auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey,storage:remember?localStorage:sessionStorage}});
+    let account;
+    account=window.supabase.createClient(DEFAULT_SUPABASE_URL,DEFAULT_SUPABASE_KEY,{global:{fetch:accountFetchV592(()=>account)},auth:{persistSession:true,autoRefreshToken:true,detectSessionInUrl:false,storageKey,storage:remember?localStorage:sessionStorage}});
+    candidate=account;
     candidate.__jmStorageKeyV357=storageKey;
     return candidate;
   }
