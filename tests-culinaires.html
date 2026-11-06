@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="593-orange-update-leaf">
+<meta name="jury-release" content="594-stable-release-indicator">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -2507,13 +2507,11 @@ html body #configView .config-summary-bar .right{
 (function(){
  'use strict';
  if(window.parent!==window)return;
- /* V587 — compare la version ET les fichiers liés à la page. */
+ /* V594 — compare uniquement la version publiée, indépendante de l’écran affiché. */
  function releaseFingerprint(doc){
-   const release=doc.querySelector('meta[name="jury-release"]')?.content||'';
-   const main=doc.querySelector('script[src*="05-application-principale.js"]')?.getAttribute('src')||'';
-   const assets=Array.from(doc.querySelectorAll('script[src],link[rel="stylesheet"][href]'))
-     .map(x=>x.getAttribute('src')||x.getAttribute('href')||'').join('|');
-   return release+'||'+main+'||'+assets;
+   // Runtime scripts and styles can change after loading; only the published
+   // release marker identifies an update reliably.
+   return doc.querySelector('meta[name="jury-release"]')?.content||'';
  }
  const localRelease=releaseFingerprint(document);
  const status=document.createElement('span');
