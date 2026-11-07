@@ -310,7 +310,16 @@
     if(email){
       if(!allReady)delete email.dataset.finalReportOpenedV322;
       var opened=email.dataset.finalReportOpenedV322==="1";
-      email.disabled=!allReady;
+      email.disabled=false;
+      var missing=[];
+      if(!juryDone)missing.push("les dégustations et validations des testeurs");
+      if(!closureDone)missing.push("la fiche de clôture");
+      if(!receptionDone)missing.push("les réceptions marchandises");
+      if(!sheetsDone)missing.push("les fiches produits");
+      if(!occenaDone)missing.push("le contrôle OCCENA");
+      if(!conclusionDone)missing.push("la conclusion du jury");
+      email.dataset.reportMissingV601=missing.join("\n• ");
+      email.title=allReady?"Envoyer le rapport final":"Afficher les étapes à terminer avant l’envoi";
       email.classList.remove("final-report-ready-v322","final-report-opened-v322","btn-primary","simple-results-next-btn");
 
       if(state.config._finalReportSentAt&&allReady){
@@ -416,7 +425,14 @@
     var steps=document.querySelector(".simple-results-action-buttons");
     if(steps&&!steps.__orderedV402){steps.__orderedV402=true;new MutationObserver(orderResultsStepsV402).observe(steps,{childList:true,subtree:true,characterData:true});}
     var email=document.getElementById("simpleResultsEmailBtn");
-    if(email)email.onclick=function(){return emailCurrentReport();};
+    if(email)email.onclick=async function(){
+      if(email.dataset.reportMissingV601){
+        alert("Avant d’envoyer le rapport, terminez :\n\n• "+email.dataset.reportMissingV601);
+        return;
+      }
+      try{await emailCurrentReport();}
+      catch(error){console.error("Ouverture envoi rapport",error);alert("Impossible d’ouvrir l’envoi : "+(error?.message||String(error)));}
+    };
     ensureStyle();
     ensureButton();
     ensureJuryButtonV309();
