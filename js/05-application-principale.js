@@ -3630,12 +3630,27 @@ let testerLaunchWaitTimer=null;
 function testerLinkRequested(){
   try{return new URLSearchParams(location.search).has('tester')}catch(e){return false}
 }
+function testerSessionFinishedV613(){
+  return !testerPreviewMode&&!!(isJuryClosed()||state.config?._archive?.archivedAt||state.config?._archive?.finalLocked||testerValidated(currentTester));
+}
+function renderTesterSessionFinishedV613(){
+  stopTesterLaunchWait();
+  showView('testerView');
+  $('#testerView')?.classList.add('tester-final');
+  ['testerSelect','productSelect','sampleSelect'].forEach(id=>{const el=$('#'+id);if(el)el.disabled=true;});
+  ['#sampleHero','#questions','.sample-actions'].forEach(selector=>{const el=$(selector);if(el)el.style.display='none';});
+  const panel=$('#validationPanel');
+  if(panel){
+    panel.className='panel tester-closed-screen';
+    panel.innerHTML='<div class="lock">✓</div><h2>Ce jury est terminé</h2><p>Merci pour votre participation.</p><span class="date">Vous pouvez fermer cette page.</span>';
+  }
+}
 function testerMustWaitForLaunch(){
   /* V162 — verrou global.
      Une vraie fiche testeur ne peut être ouverte par PERSONNE avant le lancement
      officiel du jury, y compris depuis le téléphone administrateur/propriétaire.
      Seul le mode explicite "Aperçu testeur" peut montrer la fiche avant lancement. */
-  if(testerPreviewMode||isJuryClosed())return false;
+  if(testerPreviewMode||testerSessionFinishedV613())return false;
   return !isJuryOfficiallyOpen();
 }
 function stopTesterLaunchWait(){
@@ -3701,6 +3716,7 @@ async function refreshTesterLaunchState(){
 function startTesterLaunchWait(){
   if(testerLaunchWaitTimer||!testerMustWaitForLaunch())return;
   const check=async()=>{
+    if(testerSessionFinishedV613()){renderTesterSessionFinishedV613();return;}
     if(!testerMustWaitForLaunch()){stopTesterLaunchWait();return}
     if(cloudReady){
       try{
@@ -3708,6 +3724,7 @@ function startTesterLaunchWait(){
         else if(typeof reloadCloudConfig==='function')await reloadCloudConfig();
       }catch(e){}
     }
+    if(testerSessionFinishedV613()){renderTesterSessionFinishedV613();return;}
     if(isJuryOfficiallyOpen()){
       stopTesterLaunchWait();
       renderTesterSelectors();
@@ -3719,6 +3736,7 @@ function startTesterLaunchWait(){
   testerLaunchWaitTimer=setInterval(check,1000);
 }
 function renderTesterWaitingForLaunch(){
+  if(testerSessionFinishedV613()){renderTesterSessionFinishedV613();return;}
   showView('testerView');
   $('#testerSelect').value=currentTester;
   $('#testerSelect').disabled=true;
@@ -3737,6 +3755,7 @@ function renderTesterWaitingForLaunch(){
     try{
       if(cloudRole==='tester')await refreshTesterLaunchState();
       else if(typeof reloadCloudConfig==='function')await reloadCloudConfig();
+      if(testerSessionFinishedV613()){renderTesterSessionFinishedV613();return;}
       if(isJuryOfficiallyOpen()){
         stopTesterLaunchWait();
         renderTesterSelectors();
@@ -6740,7 +6759,7 @@ function scrollTesterToFinalScore(){
     if(hero)hero.scrollIntoView({behavior:'smooth',block:'start'});
   });
 }
-function renderSample(){if(typeof testerTextEditingV610==='function'&&testerTextEditingV610()&&!isJuryClosed()&&!testerValidated(currentTester))return;if(testerValidated(currentTester)){renderValidatedTesterFinal();return;}$('#testerView')?.classList.remove('tester-final');if(testerMustWaitForLaunch()){renderTesterWaitingForLaunch();return}stopTesterLaunchWait();if(isJuryClosed()){showView('testerView');const ci=juryCloseInfo();$('#testerSelect').value=currentTester;$('#testerSelect').disabled=!!guestTester;$('#productSelect').disabled=true;$('#sampleSelect').disabled=true;$('#sampleHero').style.display='none';$('#questions').style.display='none';$('.sample-actions').style.display='none';const vp=$('#validationPanel');vp.className='panel tester-closed-screen';vp.innerHTML=`<div class="lock">🔒</div><h2>Jury clôturé</h2><p>La session de dégustation est terminée. Vos réponses ont été enregistrées et sont définitivement verrouillées. Pour toute correction, adressez-vous au responsable du jury avant la clôture administrative.</p><span class="date">Fermé le ${escapeHtml(fmtCloseDate(ci.closedAt))}</span>`;return}else{$('#sampleHero').style.display='flex';$('#questions').style.display='grid';$('.sample-actions').style.display='flex';$('#productSelect').disabled=false;$('#sampleSelect').disabled=false;}const p=getProduct(currentProduct);if(!p)return;const sample=p.samples.find(s=>String(s.id)===String(currentSample))||p.samples[0];currentSample=sample.id;const a=ensureAnswer(currentTester,p.id,currentSample);updateTesterYouthUI(a);const locked=testerValidated(currentTester);$('#testerSelect').value=currentTester;$('#productSelect').value=currentProduct;syncSampleSelector();$('#sampleSelect').value=currentSample;const hero=$('#sampleHero');hero.style.background=`linear-gradient(135deg,${shade(p.color,-18)},${shade(p.color,12)})`;$('#productCode').textContent=p.name;$('#sampleTitle').textContent=`Échantillon ${currentSample}`;$('#sampleScore').textContent=fmt(calcScore(a,p));const qbox=$('#questions');qbox.innerHTML='';const activeQuestions=juryQuestions(state.config,p);activeQuestions.forEach((q,qi)=>{const card=document.createElement('article');card.className='panel question-card';card.dataset.question=qi;card.innerHTML=`${qi===0?`<div class="tester-sample-context-v349" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#e8f3f7;color:#173f5c;font-size:17px;line-height:1.35"><strong>${escapeHtml(p.name)}</strong><strong>Échantillon ${escapeHtml(String(currentSample))}</strong></div>`:""}<div class="q-head"><div class="q-num">${qi+1}</div><div class="q-title">${escapeHtml(q.title)}</div><div class="q-score">${a.choices[qi]==null?'—':fmt(q.weights[a.choices[qi]])} pt</div></div><div class="scale ${q.weights.length===6?'six':''}"></div><div class="remarks"><label>Remarque</label><textarea placeholder="Facultatif…">${escapeHtml(a.remarks[qi]||'')}</textarea></div><div class="criterion-quick"><div class="criterion-quick-title">Commentaires rapides pour ce critère</div><div class="criterion-quick-buttons"></div><div class="criterion-quick-help">Un clic ajoute le texte dans « Remarque ». Un second clic le retire.</div></div>`;const scale=card.querySelector('.scale');q.weights.forEach((w,idx)=>{const b=document.createElement('button');b.type='button';const isQuality=q.key==='aspect';const face=isQuality?['😟','🙁','😕','😐','🙂','😊','😄'][idx]:testerYouthFace(idx,q.weights.length);b.className='choice'+(isQuality?' quality-choice':testerYouthJarClass(idx,q.weights.length))+(a.choices[qi]===idx?' selected':'');b.innerHTML=`${face?`<div class="youth-face">${face}</div>`:''}<div class="pts">${fmt(w)}</div><div class="lbl">${escapeHtml(q.labels[idx]||'')}</div>`;b.disabled=locked;b.onclick=()=>{if(locked)return;a.choices[qi]=idx;saveState();renderSample()};scale.appendChild(b)});const ta=card.querySelector('textarea');ta.disabled=locked;ta.oninput=e=>{
+function renderSample(){if(typeof testerTextEditingV610==='function'&&testerTextEditingV610()&&!isJuryClosed()&&!testerValidated(currentTester))return;if(testerValidated(currentTester)){stopTesterLaunchWait();renderValidatedTesterFinal();return;}if(testerSessionFinishedV613()){renderTesterSessionFinishedV613();return;}$('#testerView')?.classList.remove('tester-final');if(testerMustWaitForLaunch()){renderTesterWaitingForLaunch();return}stopTesterLaunchWait();if(isJuryClosed()){showView('testerView');const ci=juryCloseInfo();$('#testerSelect').value=currentTester;$('#testerSelect').disabled=!!guestTester;$('#productSelect').disabled=true;$('#sampleSelect').disabled=true;$('#sampleHero').style.display='none';$('#questions').style.display='none';$('.sample-actions').style.display='none';const vp=$('#validationPanel');vp.className='panel tester-closed-screen';vp.innerHTML=`<div class="lock">🔒</div><h2>Jury clôturé</h2><p>La session de dégustation est terminée. Vos réponses ont été enregistrées et sont définitivement verrouillées. Pour toute correction, adressez-vous au responsable du jury avant la clôture administrative.</p><span class="date">Fermé le ${escapeHtml(fmtCloseDate(ci.closedAt))}</span>`;return}else{$('#sampleHero').style.display='flex';$('#questions').style.display='grid';$('.sample-actions').style.display='flex';$('#productSelect').disabled=false;$('#sampleSelect').disabled=false;}const p=getProduct(currentProduct);if(!p)return;const sample=p.samples.find(s=>String(s.id)===String(currentSample))||p.samples[0];currentSample=sample.id;const a=ensureAnswer(currentTester,p.id,currentSample);updateTesterYouthUI(a);const locked=testerValidated(currentTester);$('#testerSelect').value=currentTester;$('#productSelect').value=currentProduct;syncSampleSelector();$('#sampleSelect').value=currentSample;const hero=$('#sampleHero');hero.style.background=`linear-gradient(135deg,${shade(p.color,-18)},${shade(p.color,12)})`;$('#productCode').textContent=p.name;$('#sampleTitle').textContent=`Échantillon ${currentSample}`;$('#sampleScore').textContent=fmt(calcScore(a,p));const qbox=$('#questions');qbox.innerHTML='';const activeQuestions=juryQuestions(state.config,p);activeQuestions.forEach((q,qi)=>{const card=document.createElement('article');card.className='panel question-card';card.dataset.question=qi;card.innerHTML=`${qi===0?`<div class="tester-sample-context-v349" style="display:flex;flex-wrap:wrap;align-items:center;gap:6px 12px;margin:0 0 10px;padding:10px 12px;border-radius:12px;background:#e8f3f7;color:#173f5c;font-size:17px;line-height:1.35"><strong>${escapeHtml(p.name)}</strong><strong>Échantillon ${escapeHtml(String(currentSample))}</strong></div>`:""}<div class="q-head"><div class="q-num">${qi+1}</div><div class="q-title">${escapeHtml(q.title)}</div><div class="q-score">${a.choices[qi]==null?'—':fmt(q.weights[a.choices[qi]])} pt</div></div><div class="scale ${q.weights.length===6?'six':''}"></div><div class="remarks"><label>Remarque</label><textarea placeholder="Facultatif…">${escapeHtml(a.remarks[qi]||'')}</textarea></div><div class="criterion-quick"><div class="criterion-quick-title">Commentaires rapides pour ce critère</div><div class="criterion-quick-buttons"></div><div class="criterion-quick-help">Un clic ajoute le texte dans « Remarque ». Un second clic le retire.</div></div>`;const scale=card.querySelector('.scale');q.weights.forEach((w,idx)=>{const b=document.createElement('button');b.type='button';const isQuality=q.key==='aspect';const face=isQuality?['😟','🙁','😕','😐','🙂','😊','😄'][idx]:testerYouthFace(idx,q.weights.length);b.className='choice'+(isQuality?' quality-choice':testerYouthJarClass(idx,q.weights.length))+(a.choices[qi]===idx?' selected':'');b.innerHTML=`${face?`<div class="youth-face">${face}</div>`:''}<div class="pts">${fmt(w)}</div><div class="lbl">${escapeHtml(q.labels[idx]||'')}</div>`;b.disabled=locked;b.onclick=()=>{if(locked)return;a.choices[qi]=idx;saveState();renderSample()};scale.appendChild(b)});const ta=card.querySelector('textarea');ta.disabled=locked;ta.oninput=e=>{
   if(locked)return;
   a.remarks[qi]=e.target.value;
   const currentText=String(e.target.value||'').toLocaleLowerCase('fr');
