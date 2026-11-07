@@ -4354,20 +4354,31 @@ let projectionRotateTimer=null;
 let projectionSlideIndex=0;
 let projectionAutoRotate=true;
 const PROJECTION_ROTATE_MS=8000;
+let projectionResultsRevealedV608=false;
+let projectionOpenedAtV608=0;
+const PROJECTION_TIPS_V608=[
+  ['Prenez le temps','Observez le produit, sentez-le, puis goûtez-le avant de répondre.'],
+  ['Entre deux échantillons','Buvez un peu d’eau pour préparer la dégustation suivante.'],
+  ['Votre avis compte','Répondez selon votre propre perception, sans chercher la réponse des autres.'],
+  ['Un échange à la fin','Gardez vos impressions pour vous jusqu’à la validation, puis partagez-les ensemble.'],
+  ['Juste comme il faut','Pour les questions à sept choix, la réponse du milieu correspond à votre idéal.'],
+  ['Avant de terminer','Vérifiez vos réponses, puis signez pour valider votre dégustation.']
+];
+function projectionFinishedV608(d){return totalSamples()>0&&d.totalTesters>0&&d.done===d.totalTesters;}
 
 function projectionSlidesAvailable(){
-  const slides=['projectionSlideProgress','projectionSlideTesters'];
-  /* Les classements ne sont jamais projetés pendant la dégustation.
-     Ils n'apparaissent qu'après fermeture officielle du jury. */
-  if(isJuryClosed())slides.push('projectionSlideResults');
-  return slides;
+  const d=projectionProgressData();
+  if(projectionFinishedV608(d)){
+    return projectionResultsRevealedV608&&isJuryClosed()?['projectionSlideResults']:['projectionSlideThanksV608'];
+  }
+  return ['projectionSlideProgress','projectionSlideTesters'];
 }
 function projectionTesterState(t,total){
   const done=testerCompleted(t);
   const validated=testerValidated(t);
   if(validated)return {label:'Terminé ✓',cls:'done'};
   if(total>0&&done>=total)return {label:'À valider',cls:'running'};
-  if(done>0)return {label:'En cours',cls:'running'};
+  if(done>0)return {label:'En dégustation',cls:'running'};
   return {label:'Pas commencé',cls:'waiting'};
 }
 function projectionProgressData(){
@@ -4391,80 +4402,60 @@ function projectionProgressData(){
 }
 function renderProjectionData(){
   if(!$('#projectionView')?.classList.contains('active'))return;
-
-  const p=lotDisplayParts();
-  const d=projectionProgressData();
-
+  const p=lotDisplayParts(),d=projectionProgressData(),finished=projectionFinishedV608(d);
+  const validatedPct=d.totalTesters?Math.round(d.done/d.totalTesters*100):0;
   $('#projectionTitle').textContent=p.title||state.config.lotName||'Jury en cours';
   $('#projectionSubtitle').textContent=p.subtitle||state.config.subtitle||'';
-  $('#projectionPercent').textContent=`${d.pct} %`;
-  $('#projectionMainBar').style.width=`${d.pct}%`;
+  $('#projectionPercent').textContent=validatedPct+' %';
+  $('#projectionMainBar').style.width=validatedPct+'%';
+  $('#projectionMainBar').parentElement?.setAttribute('aria-valuenow',String(validatedPct));
   $('#projectionDoneTesters').textContent=d.done;
   $('#projectionRunningTesters').textContent=d.running;
   $('#projectionWaitingTesters').textContent=d.waiting;
-
+  const counter=$('#projectionCounterV608');
+  if(counter)counter.textContent=d.done+' / '+d.totalTesters;
+  $('#projectionProgressText').textContent=d.done+' testeur'+(d.done>1?'s':'')+' sur '+d.totalTesters+' '+(d.done>1?'ont':'a')+' terminé';
+  $('#projectionMessage').textContent=finished?'Toutes les dégustations ont été validées et signées.':
+    d.completedEvaluations?d.completedEvaluations+' fiche'+(d.completedEvaluations>1?'s':'')+' sur '+d.maxEvaluations+' renseignées · pensez à signer à la fin.':'Installez-vous, scannez votre QR code et commencez à votre rythme.';
   const clock=$('#projectionClock');
-  if(clock){
-    clock.textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
-  }
-
-  const progressText=$('#projectionProgressText');
-  const msg=$('#projectionMessage');
-
-  if(d.done===d.totalTesters){
-    progressText.textContent=
-      d.done===1
-        ?`1 testeur sur ${d.totalTesters} a terminé`
-        :`${d.done} testeurs sur ${d.totalTesters} ont terminé`;
-    msg.textContent=isJuryClosed()
-      ?'Jury terminé — résultats définitifs disponibles.'
-      :'Toutes les fiches sont terminées. Le jury peut maintenant être clôturé.';
-  }else if(d.completedEvaluations===0){
-    progressText.textContent=`0 fiche reçue sur ${d.maxEvaluations}`;
-    msg.textContent='En attente des premières réponses.';
-  }else{
-    progressText.textContent=`${d.completedEvaluations} fiche${d.completedEvaluations>1?'s':''} reçue${d.completedEvaluations>1?'s':''} sur ${d.maxEvaluations}`;
-    msg.textContent=d.running
-      ?'Merci de poursuivre la dégustation et de valider votre fiche à la fin.'
-      :'Merci de poursuivre la dégustation.';
-  }
-
+  if(clock)clock.textContent=new Date().toLocaleTimeString('fr-FR',{hour:'2-digit',minute:'2-digit'});
   const grid=$('#projectionTesterGrid');
   if(grid){
-    grid.innerHTML='';
+    const cards=[];
     for(let t=1;t<=d.totalTesters;t++){
       const st=projectionTesterState(t,d.totalSamplesCount);
-      const completed=testerCompleted(t);
-      const pct=d.totalSamplesCount?Math.round(completed/d.totalSamplesCount*100):0;
-      grid.insertAdjacentHTML('beforeend',`
-        <div class="projection-tester-card ${st.cls}">
-          <strong>${escapeHtml(state.testers?.[t]?.name||`Testeur ${t}`)}</strong>
-          <span>${st.label} · ${pct} %</span>
-          <div class="projection-tester-progress" aria-label="Progression ${pct} %">
-            <div class="projection-tester-progress-fill" style="width:${Math.max(0,Math.min(100,pct))}%"></div>
-          </div>
-        </div>`);
+      const pct=Math.max(0,Math.min(100,Math.round(testerCompleted(t)/d.totalSamplesCount*100)));
+      cards.push('<div class="projection-tester-card '+st.cls+'"><div class="projection-tester-avatar-v608" aria-hidden="true">'+(st.cls==='done'?'✓':t)+'</div><strong>'+escapeHtml(state.testers?.[t]?.name||'Testeur '+t)+'</strong><span>'+escapeHtml(st.label)+'</span><div class="projection-tester-progress" role="progressbar" aria-label="Fiches renseignées" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div class="projection-tester-progress-fill" style="width:'+pct+'%"></div></div></div>');
     }
+    const html=cards.join('');
+    if(grid.innerHTML!==html)grid.innerHTML=html;
   }
-
+  const tip=PROJECTION_TIPS_V608[Math.max(0,Math.floor((Date.now()-projectionOpenedAtV608)/12000))%PROJECTION_TIPS_V608.length];
+  const tipTitle=$('#projectionTipTitleV608'),tipText=$('#projectionTipTextV608');
+  if(tipTitle)tipTitle.textContent=tip[0];
+  if(tipText)tipText.textContent=tip[1];
+  const tipBox=$('#projectionTipsV608');if(tipBox)tipBox.hidden=finished;
+  const thanks=$('#projectionThanksDetailV608');
+  if(thanks)thanks.textContent=d.totalTesters+' testeur'+(d.totalTesters>1?'s':'')+' · Toutes les dégustations sont enregistrées et signées.';
+  const reveal=$('#projectionRevealResultsV608');
+  if(reveal){
+    reveal.hidden=!(finished&&isJuryClosed());
+    reveal.textContent=projectionResultsRevealedV608?'← Revenir aux remerciements':'Afficher les résultats';
+    reveal.onclick=()=>{
+      if(!projectionFinishedV608(projectionProgressData())||!isJuryClosed())return;
+      projectionResultsRevealedV608=!projectionResultsRevealedV608;
+      projectionSlideIndex=0;renderProjectionData();
+    };
+  }
   const ranking=$('#projectionFinalRanking');
   if(ranking){
-    if(isJuryClosed()){
+    if(finished&&isJuryClosed()&&projectionResultsRevealedV608){
       const rows=overallRanking().slice(0,8);
-      ranking.innerHTML=rows.length
-        ?rows.map((r,i)=>`
-          <div class="projection-rank-row">
-            <div class="n">${i+1}</div>
-            <strong>${escapeHtml(r.supplier)}</strong>
-            <div class="score">${r.count?fmt(supplierGlobalNote5(r.avg)):'—'} / 5</div>
-          </div>`).join('')
-        :'<div style="text-align:center;opacity:.7">Aucun résultat disponible.</div>';
-    }else{
-      ranking.innerHTML='';
-    }
+      ranking.innerHTML=rows.length?rows.map((r,i)=>'<div class="projection-rank-row"><div class="n">'+(i+1)+'</div><strong>'+escapeHtml(r.supplier)+'</strong><div class="score">'+(r.count?fmt(supplierGlobalNote5(r.avg)):'—')+' / 5</div></div>').join(''):'<p>Aucun résultat disponible.</p>';
+    }else ranking.innerHTML='';
   }
-
-  renderProjectionDots();
+  const lbl=$('#projectionAutoLabel');
+  if(lbl)lbl.textContent=finished?'Dégustation terminée':projectionAutoRotate?'Défilement automatique · 8 s':'Défilement en pause';
   setProjectionSlide(projectionSlideIndex,false);
 }
 function setProjectionSlide(index,restartTimer=true){
@@ -4472,7 +4463,7 @@ function setProjectionSlide(index,restartTimer=true){
   if(!slides.length)return;
   projectionSlideIndex=((index%slides.length)+slides.length)%slides.length;
 
-  ['projectionSlideProgress','projectionSlideTesters','projectionSlideResults'].forEach(id=>{
+  ['projectionSlideProgress','projectionSlideTesters','projectionSlideResults','projectionSlideThanksV608'].forEach(id=>{
     $('#'+id)?.classList.remove('active');
   });
   $('#'+slides[projectionSlideIndex])?.classList.add('active');
@@ -4527,6 +4518,8 @@ function stopProjectionMode(exitFullscreenToo=false){
   document.body.classList.remove('projection-fullscreen');
 }
 function openProjectionView(){
+  projectionResultsRevealedV608=false;
+  projectionOpenedAtV608=Date.now();
   projectionSlideIndex=0;
   projectionAutoRotate=true;
 
