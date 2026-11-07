@@ -4353,7 +4353,8 @@ let projectionRefreshTimer=null;
 let projectionRotateTimer=null;
 let projectionSlideIndex=0;
 let projectionAutoRotate=true;
-const PROJECTION_ROTATE_MS=8000;
+const PROJECTION_ROTATE_MS=6000;
+let projectionValidatedV609=null;
 let projectionResultsRevealedV608=false;
 let projectionOpenedAtV608=0;
 const PROJECTION_TIPS_V608=[
@@ -4412,6 +4413,20 @@ function renderProjectionData(){
   $('#projectionDoneTesters').textContent=d.done;
   $('#projectionRunningTesters').textContent=d.running;
   $('#projectionWaitingTesters').textContent=d.waiting;
+  const liveCounter=$('#projectionLiveCountV609');
+  if(liveCounter)liveCounter.textContent=d.done+' / '+d.totalTesters;
+  const liveStatus=$('#projectionLiveStatusV609');
+  if(liveStatus)liveStatus.textContent=finished?'Tout le monde a terminé':'testeurs ont terminé';
+  const currentValidated=new Set(Array.from({length:d.totalTesters},(_,i)=>i+1).filter(t=>testerValidated(t)));
+  const firstRenderV609=projectionValidatedV609===null;
+  const newlyValidated=firstRenderV609?[]:[...currentValidated].filter(t=>!projectionValidatedV609.has(t));
+  projectionValidatedV609=currentValidated;
+  const arrival=$('#projectionValidationNoteV609');
+  if(arrival&&newlyValidated.length){
+    arrival.textContent=newlyValidated.map(t=>state.testers?.[t]?.name||'Testeur '+t).join(', ')+(newlyValidated.length>1?' ont terminé ✓':' a terminé ✓');
+  }else if(arrival&&firstRenderV609)arrival.textContent='';
+  const testerGrid=$('#projectionTesterGrid');
+  if(testerGrid)testerGrid.classList.toggle('projection-many-testers-v609',d.totalTesters>4);
   const counter=$('#projectionCounterV608');
   if(counter)counter.textContent=d.done+' / '+d.totalTesters;
   $('#projectionProgressText').textContent=d.done+' testeur'+(d.done>1?'s':'')+' sur '+d.totalTesters+' '+(d.done>1?'ont':'a')+' terminé';
@@ -4425,7 +4440,7 @@ function renderProjectionData(){
     for(let t=1;t<=d.totalTesters;t++){
       const st=projectionTesterState(t,d.totalSamplesCount);
       const pct=Math.max(0,Math.min(100,Math.round(testerCompleted(t)/d.totalSamplesCount*100)));
-      cards.push('<div class="projection-tester-card '+st.cls+'"><div class="projection-tester-avatar-v608" aria-hidden="true">'+(st.cls==='done'?'✓':t)+'</div><strong>'+escapeHtml(state.testers?.[t]?.name||'Testeur '+t)+'</strong><span>'+escapeHtml(st.label)+'</span><div class="projection-tester-progress" role="progressbar" aria-label="Fiches renseignées" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div class="projection-tester-progress-fill" style="width:'+pct+'%"></div></div></div>');
+      cards.push('<div class="projection-tester-card '+st.cls+(newlyValidated.includes(t)?' projection-new-validation-v609':'')+'"><div class="projection-tester-avatar-v608" aria-hidden="true">'+(st.cls==='done'?'✓':t)+'</div><strong>'+escapeHtml(state.testers?.[t]?.name||'Testeur '+t)+'</strong><span>'+escapeHtml(st.label)+'</span><div class="projection-tester-progress" role="progressbar" aria-label="Fiches renseignées" aria-valuemin="0" aria-valuemax="100" aria-valuenow="'+pct+'"><div class="projection-tester-progress-fill" style="width:'+pct+'%"></div></div></div>');
     }
     const html=cards.join('');
     if(grid.innerHTML!==html)grid.innerHTML=html;
@@ -4455,7 +4470,7 @@ function renderProjectionData(){
     }else ranking.innerHTML='';
   }
   const lbl=$('#projectionAutoLabel');
-  if(lbl)lbl.textContent=finished?'Dégustation terminée':projectionAutoRotate?'Défilement automatique · 8 s':'Défilement en pause';
+  if(lbl)lbl.textContent=finished?'Dégustation terminée':projectionAutoRotate?'Défilement automatique · 6 s':'Défilement en pause';
   setProjectionSlide(projectionSlideIndex,false);
 }
 function setProjectionSlide(index,restartTimer=true){
@@ -4519,6 +4534,7 @@ function stopProjectionMode(exitFullscreenToo=false){
 }
 function openProjectionView(){
   projectionResultsRevealedV608=false;
+  projectionValidatedV609=null;
   projectionOpenedAtV608=Date.now();
   projectionSlideIndex=0;
   projectionAutoRotate=true;
@@ -4534,9 +4550,9 @@ function openProjectionView(){
   projectionRefreshTimer=setInterval(renderProjectionData,3000);
 
   const pause=$('#projectionPauseBtn');
-  if(pause)pause.textContent='⏸ Pause';
+  if(pause)pause.textContent='⏸ Fixer cet écran';
   const lbl=$('#projectionAutoLabel');
-  if(lbl)lbl.textContent='Défilement automatique · 8 s';
+  if(lbl)lbl.textContent='Défilement automatique · 6 s';
 
   startProjectionRotateTimer();
 }
@@ -4549,9 +4565,9 @@ function toggleProjectionRotation(){
   const btn=$('#projectionPauseBtn');
 
   if(projectionAutoRotate){
-    if(btn)btn.textContent='⏸ Pause';
+    if(btn)btn.textContent='⏸ Fixer cet écran';
     const lbl=$('#projectionAutoLabel');
-    if(lbl)lbl.textContent='Défilement automatique · 8 s';
+    if(lbl)lbl.textContent='Défilement automatique · 6 s';
     startProjectionRotateTimer();
     toast('Défilement automatique activé');
   }else{
