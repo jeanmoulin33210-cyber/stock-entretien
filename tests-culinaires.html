@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="607-qr-until-archive">
+<meta name="jury-release" content="608-live-projection">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -571,6 +571,49 @@ html body #launchShareStep :is(#launchCloudBtn,#launchQrBtn):hover{background:#2
 html body :is(#juryQrBtn,#resultsQrBtnV607){background:#2d5948!important;background-image:none!important;color:#fffaf1!important;-webkit-text-fill-color:#fffaf1!important;border:1px solid #2d5948!important}
 html body :is(#juryQrBtn,#resultsQrBtnV607):hover{background:#244b3c!important}
 html body :is(#juryQrBtn,#resultsQrBtnV607)[hidden]{display:none!important}
+</style>
+<style id="dynamicProjectionV608">
+html body #projectionView{background:#f6f1e7!important;color:#2d5948!important}
+html body #projectionView .projection-shell{background:radial-gradient(ellipse at top right,#e4ead8 0,transparent 55%),#f6f1e7!important;color:#2d5948!important;border:0;border-radius:24px;padding:clamp(18px,3vw,48px);box-sizing:border-box}
+html body #projectionView .projection-top{border-bottom:1px solid #cbd7bf;padding-bottom:20px;margin-bottom:24px}
+html body #projectionView :is(h1,h2,strong,.projection-clock,.projection-eyebrow,.projection-slide-label,.projection-progress-text,.projection-final-title){color:#2d5948!important;-webkit-text-fill-color:#2d5948!important}
+html body #projectionView :is(p,.projection-message,.projection-final-sub,.projection-auto-status){color:#657063!important}
+html body #projectionView .projection-slide{min-height:0;padding:clamp(20px,3vw,40px);border-radius:24px;background:#fffaf1!important;border:1px solid #d4ddca;box-shadow:0 10px 32px rgba(45,89,72,.05)}
+html body #projectionView .projection-slide.active{animation:projectionEnterV608 .5s ease-out}
+html body #projectionView .projection-count-v608{font-size:clamp(60px,9vw,128px);line-height:1.1;font-weight:750;letter-spacing:-.05em;color:#2d5948;text-align:center}
+html body #projectionView .projection-count-caption-v608{text-align:center;font-size:clamp(18px,2.3vw,30px);color:#657063}
+html body #projectionView .projection-big-percent{font-size:clamp(20px,3vw,36px);margin:14px 0;color:#52775d!important}
+html body #projectionView .projection-main-bar{background:#e5e9dc!important;border-radius:99px;overflow:hidden;height:14px}
+html body #projectionView :is(.projection-main-bar>span,.projection-tester-progress-fill){background:#6c9877!important;transition:width .75s ease}
+html body #projectionView .projection-kpis>div{background:#f0f2e8!important;border:1px solid #d4ddca;border-radius:16px;color:#657063}
+html body #projectionView .projection-tester-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:18px}
+html body #projectionView .projection-tester-card{display:flex;flex-direction:column;gap:10px;align-items:center;text-align:center;padding:24px 18px;background:#f7f3e9!important;border:1px solid #d4ddca!important;border-radius:20px;color:#657063!important}
+html body #projectionView .projection-tester-card.done{background:#e3ecd8!important;border-color:#9db78e!important}
+html body #projectionView .projection-tester-card.running{background:#f0f3e8!important}
+html body #projectionView .projection-tester-avatar-v608{width:58px;height:58px;border-radius:50%;display:grid;place-items:center;background:#e0e7d5;color:#2d5948;font-size:26px;font-weight:750}
+html body #projectionView .running .projection-tester-avatar-v608{animation:projectionPulseV608 3s ease-in-out infinite}
+html body #projectionView .done .projection-tester-avatar-v608{background:#2d5948;color:#fffaf1}
+html body #projectionView .projection-tester-progress{width:100%;background:#dfe5d6!important;height:8px;border-radius:99px;overflow:hidden}
+html body #projectionView .projection-tip-v608{display:flex;align-items:center;gap:18px;background:#e7eddd;border:1px solid #cbd7bf;border-radius:18px;padding:20px 24px;margin-top:22px}
+html body #projectionView .projection-tip-v608 strong{font-size:clamp(18px,2vw,24px)}
+html body #projectionView .projection-tip-v608 p{margin:6px 0 0;font-size:clamp(16px,1.7vw,22px);line-height:1.5}
+html body #projectionView .projection-tip-icon-v608{font-size:32px;color:#6d8e70}
+html body #projectionView #projectionSlideThanksV608{text-align:center;padding:clamp(30px,5vw,80px)}
+html body #projectionView #projectionSlideThanksV608 h2{font-size:clamp(30px,4.5vw,60px);line-height:1.2;margin:22px 0}
+html body #projectionView #projectionSlideThanksV608 p{font-size:clamp(18px,2vw,28px);line-height:1.6}
+html body #projectionView .projection-thanks-icon-v608{width:100px;height:100px;margin:0 auto 22px;border-radius:50%;display:grid;place-items:center;background:#dce6cf;color:#2d5948;font-size:58px}
+html body #projectionView .projection-footer{background:transparent!important;border-color:#cbd7bf;color:#657063;margin-top:24px;gap:16px;flex-wrap:wrap}
+html body #projectionView .projection-controls{gap:10px;flex-wrap:wrap}
+html body #projectionView .projection-controls button{background:#e3ead8!important;color:#2d5948!important;border:1px solid #cbd7bf;border-radius:12px;min-height:44px;padding:10px 16px}
+html body #projectionView .projection-dot{background:#d6dfca!important;border:0}
+html body #projectionView .projection-dot.active{background:#2d5948!important}
+html body #projectionView .projection-rank-row{background:#edf1e5!important;color:#2d5948!important;border:1px solid #cbd7bf}
+html body #projectionView :is(.projection-rank-row .n,.projection-rank-row .score){background:#dce6cf!important;color:#2d5948!important}
+html body #projectionView [hidden]{display:none!important}
+@keyframes projectionEnterV608{from{opacity:.4;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes projectionPulseV608{50%{box-shadow:0 0 0 7px rgba(109,142,112,.12)}}
+@media(prefers-reduced-motion:reduce){html body #projectionView *,html body #projectionView *::before{animation:none!important;transition:none!important}}
+@media(max-width:650px){html body #projectionView .projection-tester-grid{grid-template-columns:repeat(2,minmax(0,1fr))}html body #projectionView .projection-tester-card{padding:18px 10px}html body #projectionView .projection-tip-v608{padding:16px}html body #projectionView .projection-footer{display:flex;flex-direction:column;align-items:stretch}}
 </style>
 </head>
 <body>
@@ -1322,8 +1365,8 @@ html body :is(#juryQrBtn,#resultsQrBtnV607)[hidden]{display:none!important}
 
     <section class="projection-slide active" id="projectionSlideProgress">
       <div class="projection-slide-label">AVANCEMENT DU JURY</div>
-      <div class="projection-big-percent" id="projectionPercent">0 %</div>
-      <div class="projection-main-bar"><span id="projectionMainBar"></span></div>
+      <div class="projection-count-v608" id="projectionCounterV608">0 / 0</div><div class="projection-count-caption-v608">testeurs ont terminé</div><div class="projection-big-percent" id="projectionPercent">0 %</div>
+      <div class="projection-main-bar" role="progressbar" aria-label="Testeurs ayant validé" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0"><span id="projectionMainBar"></span></div>
       <div class="projection-progress-text" id="projectionProgressText">En attente des réponses</div>
       <div class="projection-kpis">
         <div><strong id="projectionDoneTesters">0</strong><span>testeurs terminés</span></div>
@@ -1338,6 +1381,14 @@ html body :is(#juryQrBtn,#resultsQrBtnV607)[hidden]{display:none!important}
       <div class="projection-tester-grid" id="projectionTesterGrid"></div>
     </section>
 
+    <section class="projection-slide" id="projectionSlideThanksV608">
+      <div class="projection-thanks-icon-v608" aria-hidden="true">✓</div>
+      <div class="projection-slide-label">DÉGUSTATION TERMINÉE</div>
+      <h2>Merci pour votre participation !</h2>
+      <p>Vos avis nous aident à choisir les produits ensemble.</p>
+      <p id="projectionThanksDetailV608"></p>
+    </section>
+
     <section class="projection-slide" id="projectionSlideResults">
       <div class="projection-slide-label">RÉSULTATS FINAUX</div>
       <div class="projection-final-title">Jury terminé</div>
@@ -1345,6 +1396,10 @@ html body :is(#juryQrBtn,#resultsQrBtnV607)[hidden]{display:none!important}
       <div class="projection-ranking" id="projectionFinalRanking"></div>
     </section>
 
+    <aside id="projectionTipsV608" class="projection-tip-v608">
+      <span class="projection-tip-icon-v608" aria-hidden="true">✦</span>
+      <div><strong id="projectionTipTitleV608">Prenez le temps</strong><p id="projectionTipTextV608">Observez, sentez puis goûtez avant de répondre.</p></div>
+    </aside>
     <footer class="projection-footer">
       <div class="projection-auto-status">
         <div class="projection-dots" id="projectionDots"></div>
@@ -1354,6 +1409,7 @@ html body :is(#juryQrBtn,#resultsQrBtnV607)[hidden]{display:none!important}
         <button type="button" id="projectionPrevBtn">‹</button>
         <button type="button" id="projectionPauseBtn">⏸ Pause</button>
         <button type="button" id="projectionNextBtn">›</button>
+        <button type="button" id="projectionRevealResultsV608" hidden>Afficher les résultats</button>
         <button type="button" id="projectionFullscreenBtn">⛶ Plein écran</button>
         <button type="button" id="projectionBackBtn">← Retour au jury</button>
       </div>
@@ -2423,7 +2479,7 @@ html body :is(#juryQrBtn,#resultsQrBtnV607)[hidden]{display:none!important}
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=607-qr-until-archive"></script>
+<script src="js/05-application-principale.js?build=608-live-projection"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
