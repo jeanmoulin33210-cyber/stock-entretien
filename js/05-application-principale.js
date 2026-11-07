@@ -623,17 +623,22 @@ function setActiveStateAfterPreparedDeleteV238(remaining){
   adminProduct=currentProduct;
   selectedAdminSample='';
 }
-async function deletePreparedJuryV238(id){
+async function deletePreparedJuryV238(id,returnHome=false){
   const rows=loadPreparedJurys();
-  const rec=rows.find(x=>String(x.id)===String(id));
-  if(!rec)return;
+  const rec=rows.find(x=>String(x.id)===String(id))||
+    (id&&String(state?.config?._preparedId||'')===String(id)?{id:String(id),state:deepClone(state)}:null);
+  if(!rec){alert('Ce jury est introuvable. Aucune suppression effectuée.');return;}
+  if(rec.state?.config?._archive?.archivedAt||rec.state?.config?._archive?.finalLocked){
+    alert('Ce jury est archivé. La suppression depuis les résultats est désactivée.');return;
+  }
   const name=rec?.state?.config?.lotName||rec?.name||'ce jury';
-  if(!confirm(`Supprimer « ${name} » des jurys actifs ?\n\nLes archives ne seront pas touchées.`))return;
+  if(!confirm(`Supprimer uniquement « ${name} » et ses données de test ?\n\nLes autres lots et les archives seront conservés.`))return;
 
   try{
     if(!window.JuryOwnerSyncV357?.publishPreparedRemoval){
       throw new Error('Rechargez la page pour activer la suppression partagée. Rien n’a été supprimé.');
     }
+    localStorage.setItem('jm_tc_before_single_jury_delete_v599',JSON.stringify({at:new Date().toISOString(),jury:rec}));
     await window.JuryOwnerSyncV357.publishPreparedRemoval(rec);
   }catch(e){
     alert(e?.message||'Suppression non confirmée. Le jury est conservé.');
@@ -650,8 +655,8 @@ async function deletePreparedJuryV238(id){
   }
 
   toast('Suppression partagée confirmée ✓');
-  if(remaining.length)renderJuryChooser();
-  else renderHome();
+  if(returnHome||!remaining.length)renderHome();
+  else renderJuryChooser();
 }
 async function clearPreparedJurysV238(){
   const rows=loadPreparedJurys();
@@ -6840,6 +6845,17 @@ function moveSample(delta){
   scrollTesterToFirstQuestion();
 }
 function renderAdmin(){
+  const deleteBtn=document.getElementById('deleteResultsJuryV599');
+  if(deleteBtn){
+    deleteBtn.hidden=!state.config?._preparedId||!!state.config?._archive?.archivedAt||!!state.config?._archive?.finalLocked;
+    deleteBtn.onclick=async()=>{
+      if(deleteBtn.disabled)return;
+      const id=String(state.config?._preparedId||'');
+      deleteBtn.disabled=true;
+      try{await deletePreparedJuryV238(id,true);}
+      finally{deleteBtn.disabled=false;}
+    };
+  }
   try{if(!state.config?._archive?.finalLocked&&healSupplierNamesV252(state.config))localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){console.warn('Reprise des fournisseurs',e);}
   const sentArchiveBtn=$('#confirmReportSentArchiveBtn');if(sentArchiveBtn)sentArchiveBtn.hidden=!state.config?._finalReportPreparedAt||!!state.config?._archive?.finalLocked;
   showView('adminView');
