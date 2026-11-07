@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="598-supplier-sample-recovery">
+<meta name="jury-release" content="599-single-results-delete">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -2116,7 +2116,7 @@ html body :is(#launchQrBtn,#juryQrBtn):hover{background:#f2eadb!important}
 </main>
 
 <main id="adminView" class="view">
-  <div class="results-subpage-back"><button type="button" class="btn btn-ghost btn-small" id="resultsBackHubBtn">← Accueil</button></div>
+  <div class="results-subpage-back" style="display:flex;justify-content:space-between;align-items:center;gap:12px;flex-wrap:wrap"><button type="button" class="btn btn-ghost btn-small" id="resultsBackHubBtn">← Accueil</button><button type="button" class="btn btn-secondary btn-small" id="deleteResultsJuryV599" hidden style="background:#fffaf1;color:#2d5948;border:1px solid #cbd7bf">🗑️ Supprimer ce lot</button></div>
 
   <section class="results-hero" style="grid-template-columns:1fr">
     <div class="panel results-identity">
@@ -2399,7 +2399,7 @@ html body :is(#launchQrBtn,#juryQrBtn):hover{background:#f2eadb!important}
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=598-supplier-sample-recovery"></script>
+<script src="js/05-application-principale.js?build=599-single-results-delete"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
