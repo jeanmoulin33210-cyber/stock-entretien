@@ -4588,7 +4588,9 @@ async function toggleProjectionFullscreen(){
   }
 }
 
-async function openQrCodesFromJury(){
+async function openQrCodesFromJury(returnView='juryView'){
+  if(state.config?._archive?.archivedAt||state.config?._archive?.finalLocked){alert('Ce jury est archivé. Les QR codes ne sont plus proposés.');return;}
+  const qrReturnView=typeof returnView==='string'?returnView:'juryView';
   const btn=$('#juryQrBtn');
   const oldText=btn?.textContent||'▦ QR codes';
 
@@ -4621,7 +4623,7 @@ async function openQrCodesFromJury(){
       if(!ok)return;
 
       await createReplacementRunningQrSessionV252();
-      renderQrCodes('juryView');
+      renderQrCodes(qrReturnView);
       return;
     }
 
@@ -4631,7 +4633,7 @@ async function openQrCodesFromJury(){
       await ensurePreparedShareConnected();
     }
 
-    renderQrCodes('juryView');
+    renderQrCodes(qrReturnView);
   }catch(e){
     console.error(e);
     alert(`Impossible d’ouvrir les QR codes. ${e?.message||e}`);
@@ -4683,6 +4685,8 @@ async function autoCloseJuryIfReady(){
 }
 
 function renderJuryView(){
+  const runningQr=document.getElementById('juryQrBtn');
+  if(runningQr)runningQr.hidden=!!state.config?._archive?.archivedAt||!!state.config?._archive?.finalLocked;
   updateHeader();
   // Refresh live progress in place; only scroll when entering this screen.
   if(!$('#juryView').classList.contains('active'))showView('juryView');
@@ -6846,6 +6850,11 @@ function moveSample(delta){
   scrollTesterToFirstQuestion();
 }
 function renderAdmin(){
+  const resultsQr=document.getElementById('resultsQrBtnV607');
+  if(resultsQr){
+    resultsQr.hidden=!state.config?.products?.length||!!state.config?._archive?.archivedAt||!!state.config?._archive?.finalLocked;
+    resultsQr.onclick=()=>openQrCodesFromJury('adminView');
+  }
   const deleteBtn=document.getElementById('deleteResultsJuryV599');
   if(deleteBtn){
     deleteBtn.hidden=!state.config?._preparedId||!!state.config?._archive?.archivedAt||!!state.config?._archive?.finalLocked;
