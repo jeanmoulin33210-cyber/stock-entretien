@@ -765,7 +765,7 @@ function renderJuryChooser(){
     .filter(rec=>rec?.state?.config && (rec.state.config.products||[]).length>0 && !rec.state.config?.juryClose?.closedAt && !juryArchivedV472(rec.state.config))
     .sort((a,b)=>String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
   /* Retrouver le jury actif même s'il n'apparaît plus dans les préparations. */
-  if(isJuryOfficiallyOpen()&&!isJuryClosed()&&!juryArchivedV472(state.config)&&
+  if(state.config?.products?.length&&!state.config._emptyAfterReset&&isJuryOfficiallyOpen()&&!isJuryClosed()&&!juryArchivedV472(state.config)&&
      !rows.some(rec=>String(rec.id)===String(state.config?._preparedId||''))){
     rows.unshift({id:'__active_running_v586__',state,name:state.config.lotName});
   }
@@ -3616,6 +3616,7 @@ function ensureJuryInstanceId(cfg=state.config){
   return juryInstanceId(cfg);
 }
 function isJuryOfficiallyOpen(){
+  if(state.config?._emptyAfterReset||!state.config?.products?.length)return false;
   const launch=juryLaunchInfo();
   const currentId=juryInstanceId(state.config);
   const launchId=String(launch?.instanceId||'').trim();
