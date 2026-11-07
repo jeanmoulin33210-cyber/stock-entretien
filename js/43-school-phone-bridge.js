@@ -112,6 +112,16 @@
    paintSchoolHeader();
    root.parent.postMessage({kind:'jury-school-header-ready',school:boot.school,nonce:boot.nonce},boot.origin);
   };
+  // A refresh warning applies only while the unsaved form is open.
+  function clearLeftFormWarningV605(){
+   if(!document.querySelector('#homeView.active'))return;
+   const note=document.getElementById('schoolSaveStatusV496');
+   if(note?.textContent!=='Enregistrez d’abord la fiche dans le logiciel, puis changez de rôle.')return;
+   note.textContent='';note.style.color='#537064';
+   root.parent.postMessage({kind:'jury-school-clear-form-warning',school:boot.school,nonce:boot.nonce},boot.origin);
+  }
+  const warningObserverV605=new MutationObserver(clearLeftFormWarningV605);
+  warningObserverV605.observe(document.documentElement,{subtree:true,attributes:true,attributeFilter:['class']});
   root.addEventListener('message',event=>{
    if(event.source!==root.parent||event.origin!==boot.origin||event.data?.nonce!==boot.nonce)return;
    if(event.data.kind==='jury-school-refresh-result'){
