@@ -296,7 +296,7 @@
       const doc=new DOMParser().parseFromString(text,'text/html');
       doc.querySelectorAll('script[src*="39-establishment-demo"],script[src*="40-school-trial"],script[src*="33-owner-sync"],script[src*="35-owner-account"],script[src*="44-establishment-integration"],script[src*="19-v22-installation"],link[rel="manifest"]').forEach(n=>n.remove());
       const cloudScript=doc.querySelector('script[src*="06-v20-partage"]');
-      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=517-full-palette';
+      const bridge=doc.createElement('script');bridge.src='js/43-school-phone-bridge.js?build=605-clear-form-warning';
       if(!cloudScript)throw new Error('Connexion du jury indisponible.');
       cloudScript.after(bridge);
       const base=doc.createElement('base');base.href=new URL('./',location.href).href;doc.head.prepend(base);
@@ -386,6 +386,11 @@
       if(integrated)overlay.classList.add('school-header-unified');
       const text=el('demoSaveV452')?.textContent||'';
       frame.contentWindow.postMessage({kind:'jury-school-save-status',nonce,text},location.origin);
+      return;
+    }
+    if(event.data.kind==='jury-school-clear-form-warning'){
+      const note=el('demoSaveV452');
+      if(note?.textContent==='Enregistrez d’abord la fiche dans le logiciel, puis changez de rôle.')status('');
       return;
     }
     if(event.data.kind==='jury-school-header-action'){
