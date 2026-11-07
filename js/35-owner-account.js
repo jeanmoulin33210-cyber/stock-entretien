@@ -154,6 +154,10 @@
   async function activate(c,user,value,remember){
     if(tester())throw new Error('Un accès testeur ne peut pas ouvrir un compte propriétaire.');
     await verifiedConfig(c,value);
+    if(document.getElementById('establishmentDemoV452')){
+      if(await root.JurySchoolTrialV452.close()!==true)
+        throw new Error('Le jury ouvert doit être enregistré avant de revenir au compte principal.');
+    }
     API.schoolMode=false;document.body.classList.remove('establishment-account-v456');
     const old=read('jm_tc_owner_hub_v357');
     if(old&&old.sessionId!==value.hub.sessionId&&(loadPreparedJurys().length||loadSampleLotHistory().length||loadArchives().length)){
