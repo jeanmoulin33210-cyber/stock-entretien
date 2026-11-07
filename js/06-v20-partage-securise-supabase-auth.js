@@ -953,7 +953,21 @@ async function activeSessionMatchesV357(){
   const {data,error}=await c.from('test_culinaire_sessions').select('config').eq('session_id',sid).maybeSingle();
   return !error&&!!data?.config&&state===current&&cloudCfg.sessionId===sid&&sameJuryV357(state.config,data.config);
 }
+/* Keep a tester's active text field mounted while answers continue uploading. */
+function testerTextEditingV610(){
+  if(cloudRole!=='tester'||!document.querySelector('#testerView.active'))return false;
+  const field=document.activeElement;
+  return !!(field&&(field.matches?.('textarea,input:not([type=button]):not([type=submit]):not([type=checkbox]):not([type=radio]),[contenteditable=true]')));
+}
+function testerAnswersPendingV610(){
+  if(cloudRole!=='tester')return false;
+  const t=Number(cloudTesterNo||guestTester||0);
+  if(!t)return false;
+  return Object.entries(state.testers?.[t]?.answers||{}).some(([key,answer])=>
+    lastCloudAnswerHashes.get(t+'::'+key)!==hashJson(answer));
+}
 async function reloadCloudAnswers(){if(testerPreviewMode)return;
+  if(testerTextEditingV610()){cloudAnswersReloadPendingV323=true;return;}
   if(cloudReady&&!(await activeSessionMatchesV357()))return;
   if(!cloudReady)return;
   if(cloudBusy){cloudAnswersReloadPendingV323=true;return;}
@@ -974,6 +988,11 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
   let q=cloudClient.from('test_culinaire_reponses').select('tester_no,product_id,sample_id,choices,remarks,updated_at').eq('session_id',cloudCfg.sessionId);
   if(cloudRole==='tester')q=q.eq('tester_no',cloudTesterNo);
   const {data,error}=await q;if(error)return;
+  if(testerTextEditingV610()||testerAnswersPendingV610()){
+    cloudAnswersReloadPendingV323=true;
+    if(testerAnswersPendingV610())scheduleCloudSync();
+    return;
+  }
   updateTesterActivityFromRows(data||[]);
 
   /* Relever l'état officiel de __validation__ et l'éventuel marqueur de secours.
@@ -1073,6 +1092,7 @@ async function reloadCloudAnswers(){if(testerPreviewMode)return;
   if($('#adminView').classList.contains('active'))originalRenderAdmin();else if($('#liveDayView')?.classList.contains('active'))renderLiveDayCards();else if($('#launchView')?.classList.contains('active'))renderLaunchView();else if($('#juryView')?.classList.contains('active'))renderJuryView();else if($('#projectionView')?.classList.contains('active'))renderProjectionData();else if($('#homeView').classList.contains('active'))originalRenderHome();else if($('#testerView').classList.contains('active'))renderSample()
 }
 async function reloadCloudConfig(){if(testerPreviewMode)return;
+  if(testerTextEditingV610()){cloudConfigReloadPendingV323=true;return;}
   if(!cloudReady)return;
   if(cloudBusy){cloudConfigReloadPendingV323=true;return;}
   cloudConfigReloadPendingV323=false;
@@ -1142,6 +1162,11 @@ async function reloadCloudConfig(){if(testerPreviewMode)return;
     if(error)return;
     const row=Array.isArray(data)?data[0]:data;
     if(!row?.public_config)return;
+    if(testerTextEditingV610()||testerAnswersPendingV610()){
+      cloudConfigReloadPendingV323=true;
+      if(testerAnswersPendingV610())scheduleCloudSync();
+      return;
+    }
     const old=deepClone(state.testers[cloudTesterNo]?.answers||{});
     const val=state.testers[cloudTesterNo]?.validatedAt||null;
     const ns=makeInitialState(row.public_config);
@@ -2813,3 +2838,11 @@ async function compactLocalJuryCopiesV360(){
     delete state.config._ownerWorkspaceV351;delete state.config._ownerCatalogV357;
   }
 }
+
+document.addEventListener('focusout',()=>{
+  setTimeout(()=>{
+    if(!cloudReady||testerTextEditingV610()||cloudRole!=='tester')return;
+    if(cloudAnswersReloadPendingV323)reloadCloudAnswers();
+    if(cloudConfigReloadPendingV323)reloadCloudConfig();
+  },0);
+});
