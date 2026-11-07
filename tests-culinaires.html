@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="595-admin-home-return">
+<meta name="jury-release" content="596-jury-qr-access">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -539,6 +539,16 @@ html body #configView .config-summary-bar .right{
  justify-content:center!important;align-self:center!important;margin-left:auto!important;margin-right:auto!important;
 }
 </style>
+<style id="juryQrAccessV596">
+.jury-qr-access-v596{display:flex;justify-content:center;flex-wrap:wrap;margin:14px 0 18px}
+html body :is(#launchQrBtn,#juryQrBtn){
+ background:#fffaf1!important;background-image:none!important;color:#2d5948!important;
+ border:1px solid #cbd7bf!important;border-radius:12px!important;box-shadow:none!important;
+ padding:10px 16px!important;font-size:14px!important;line-height:1.4!important;
+ min-height:44px;max-width:100%;white-space:normal
+}
+html body :is(#launchQrBtn,#juryQrBtn):hover{background:#f2eadb!important}
+</style>
 </head>
 <body>
 <div id="v199Diag" style="position:fixed;right:8px;bottom:8px;z-index:999999;background:#1a3025;color:white;padding:5px 8px;border-radius:8px;font:700 10px Arial;opacity:.92">v338</div>
@@ -646,12 +656,7 @@ html body #configView .config-summary-bar .right{
     </div></div>
     <div class="hero-meta" id="homeMeta"></div>
     <div class="jury-status-strip" id="homeJuryStrip"><div class="left"><span class="jury-dot" id="homeJuryDot"></span><div><strong id="homeJuryStatus">Jury prêt</strong><span id="homeJuryDetail"> · Test à l’aveugle, fournisseurs masqués</span></div></div><span id="homeLotContext">Jury actuel</span></div>
-    <section id="homeRunningQrRecoveryV586" class="panel" hidden style="margin:12px 0;padding:14px 16px;border:1px solid #c9d7c8;border-radius:12px">
-      <strong>Jury déjà lancé ?</strong>
-      <p id="homeRunningQrRecoveryTextV586" style="margin:7px 0 12px">Vous pouvez retrouver les accès testeurs sans recommencer le jury.</p>
-      <button type="button" class="btn btn-primary" id="homeRunningQrRecoverBtnV586">▦ Récupérer les QR codes</button>
-    </section>
-    <div class="home-status-summary"><div><strong id="homeProgressTitle">Aucune dégustation commencée</strong><span id="homeProgressDetail">Le jury peut être préparé.</span></div><div class="pct" id="homeProgressPct">0 %</div></div>
+<div class="home-status-summary"><div><strong id="homeProgressTitle">Aucune dégustation commencée</strong><span id="homeProgressDetail">Le jury peut être préparé.</span></div><div class="pct" id="homeProgressPct">0 %</div></div>
     <div class="home-command-grid simple-command-grid">
       <button class="command-card simple-command" id="samplesSetupBtn"><span class="cmd-icon culinary-line-icon"><svg width="76" height="76" style="width:76px;height:76px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m8 23 24-12 24 12-24 12zM12 26v22l20 9 20-9V26M32 35v22M8 23v10l24 12M56 23v10L32 45M20 17l24 12"/><path stroke="#b56d4d" d="M43 49q8-3 10-12-9 2-10 12Zm-3 6 10-12"/></svg></span><div><strong>1. Choix des échantillons</strong><span>Créer un nouveau lot</span></div></button>
       <button class="command-card simple-command" id="configureBtn" type="button"><span class="cmd-icon culinary-line-icon"><svg width="76" height="76" style="width:76px;height:76px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="32" cy="17" r="6"/><circle cx="13" cy="24" r="5"/><circle cx="51" cy="24" r="5"/><path d="M20 49v-7a12 12 0 0 1 24 0v7M3 45v-4a10 10 0 0 1 14-9M61 45v-4a10 10 0 0 0-14-9"/><path stroke="#b56d4d" d="M20 55h24"/></svg></span><div><strong>2. Préparer le jury</strong><span>Questions, testeurs et préparation du jury</span></div></button>
@@ -786,6 +791,7 @@ html body #configView .config-summary-bar .right{
     <h2 id="launchLotTitle">Prêt à lancer le jury ?</h2>
     <p id="launchLotSubtitle"></p>
     <div class="launch-summary" id="launchSummary"></div>
+    <div class="jury-qr-access-v596"><button type="button" class="btn btn-secondary" id="launchQrBtn" disabled>▦ Voir / imprimer les QR codes</button></div>
 
     <div class="launch-simple-state">
       <strong id="launchStateTitle">Contrôle en cours</strong>
@@ -801,7 +807,7 @@ html body #configView .config-summary-bar .right{
       </div>
       <div class="launch-step-actions">
         <button class="btn btn-primary" id="launchCloudBtn">📱 Préparer les téléphones</button>
-        <button class="btn btn-secondary" id="launchQrBtn" disabled>▦ Voir les QR codes</button>
+
       </div>
       <div class="launch-share-status" id="launchShareState">À faire</div>
     </div>
@@ -1233,7 +1239,7 @@ html body #configView .config-summary-bar .right{
       <span class="jury-simple-status" id="juryLiveState"><span class="dot"></span><span id="juryLiveStateText">Jury en cours</span></span>
       <span class="blind-badge">👁️ Test à l’aveugle</span>
     </div>
-    <button class="btn btn-primary" id="juryQrBtn" style="margin-top:14px">▦ Afficher les QR codes</button>
+    <div class="jury-qr-access-v596"><button type="button" class="btn btn-secondary" id="juryQrBtn">▦ Voir / imprimer les QR codes</button></div>
   </section>
 
   <section class="panel jury-simple-progress">
@@ -2393,7 +2399,7 @@ html body #configView .config-summary-bar .right{
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=587-update-detection-logo"></script>
+<script src="js/05-application-principale.js?build=596-jury-qr-access"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
