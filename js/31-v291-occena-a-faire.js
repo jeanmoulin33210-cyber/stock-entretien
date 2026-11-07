@@ -347,7 +347,7 @@
       var label=button.textContent.replace(/^\d+\.\s*/,"").replace(/\b[1-8]\.\s*/,"");
       if(id==="simpleResultsPdfBtn"){
         var verified=!!(typeof state!=="undefined"&&state&&state.config&&state.config.finalReportVerifiedAt);
-        label=verified?"✓ Rapport vérifié":"📚 Vérifier le rapport avant envoi";
+        label=verified?"✓ Rapport vérifié — OK":"📚 Vérifier le rapport avant envoi";
         button.classList.toggle("occena-step-complete-v304",verified);
       }
       var text=(index+1)+". "+label;if(button.textContent!==text)button.textContent=text;
