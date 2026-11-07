@@ -358,6 +358,18 @@ function rawSupplierNamesV263(cfg){
 
   (Array.isArray(cfg?.supplierNames)?cfg.supplierNames:[]).forEach(add);
 
+  // A synchronized sample selection keeps its supplier list in its own metadata.
+  // Read that same-lot source before looking in older recovery copies.
+  const selection=cfg?._sampleSelectionV370;
+  const sameSelection=selection&&(!cfg?._preparedId||String(cfg._preparedId)===String(selection.id));
+  if(sameSelection){
+    (Array.isArray(selection.meta?.supplierNames)?selection.meta.supplierNames:[]).forEach(add);
+    (Array.isArray(selection.products)?selection.products:[]).forEach(p=>
+      (Array.isArray(p?.samples)?p.samples:[]).forEach(sample=>add(sample?.supplier))
+    );
+  }
+
+
   (Array.isArray(cfg?.products)?cfg.products:[]).forEach(p=>
     (Array.isArray(p?.samples)?p.samples:[]).forEach(s=>add(s?.supplier))
   );
@@ -1469,21 +1481,7 @@ function receptionList(cfg=receptionConfig()){
 
 function receptionSupplierNames(cfg=receptionConfig()){
   if(!cfg||typeof cfg!=='object')return[];
-  const names=[];
-  const configured=Array.isArray(cfg.supplierNames)?cfg.supplierNames:[];
-  for(const x of configured){
-    const n=String(x||'').trim();
-    if(n)names.push(n);
-  }
-  const products=Array.isArray(cfg.products)?cfg.products:[];
-  for(const p of products){
-    const samples=Array.isArray(p?.samples)?p.samples:[];
-    for(const sm of samples){
-      const n=String(sm?.supplier||'').trim();
-      if(n)names.push(n);
-    }
-  }
-  return [...new Set(names)];
+  return rawSupplierNamesV263(cfg);
 }
 
 function supplierBackupMatchV263(target,source){
