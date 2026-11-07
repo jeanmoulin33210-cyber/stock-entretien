@@ -341,13 +341,6 @@ async function openResultsLotChooserV348(){
      !rows.some(r=>String(r.id)===currentId)){
     rows.unshift({id:currentId,name:state.config.lotName,state:deepClone(state),current:true});
   }
-  if(cloudReady&&window.JuryOwnerSyncV357?.readResultsChoices){
-    toast('Chargement des lots partagés…');
-    try{rows=await window.JuryOwnerSyncV357.readResultsChoices();}
-    catch(e){console.error('Résultats V388',e);toast('Liste partagée indisponible : copies locales affichées.');}
-  }
-  rows=rows.filter(r=>r?.state?.config?.products?.length&&!juryArchivedV472(r.state.config));
-  if(!rows.length)toast('Aucun jury actif à consulter. Les jurys archivés sont dans « Archives ».');
   let modal=document.getElementById('resultsLotModalV348');
   if(!modal){
     modal=document.createElement('div');
@@ -363,11 +356,27 @@ async function openResultsLotChooserV348(){
     modal.addEventListener('keydown',e=>{if(e.key==='Escape')modal.classList.remove('show')});
   }
   const list=modal.querySelector('#resultsLotListV348');
+  modal.style.zIndex='10050';
+  modal.classList.add('show');
+  list.innerHTML='<p role="status">Chargement des résultats…</p>';
+  if(cloudReady&&window.JuryOwnerSyncV357?.readResultsChoices){
+    let timer;
+    try{
+      rows=await Promise.race([
+        window.JuryOwnerSyncV357.readResultsChoices(),
+        new Promise((_,reject)=>{timer=setTimeout(()=>reject(new Error('Lecture du partage trop longue')),8000);})
+      ]);
+    }catch(e){console.error('Résultats V600',e);toast('Liste partagée indisponible : copies locales affichées.');}
+    finally{clearTimeout(timer);}
+  }
+  rows=(Array.isArray(rows)?rows:[]).filter(r=>r?.state?.config?.products?.length&&!juryArchivedV472(r.state.config));
+  if(!modal.classList.contains('show'))return;
   list.innerHTML=rows.map((r,i)=>{
     const cfg=r.state.config,meta=preparedJuryMeta(r.state);
     const status=cfg.juryClose?.closedAt?'Jury terminé':cfg.juryLaunch?.openedAt?'Jury en cours':'Jury préparé';
     return '<button type="button" class="prepare-jury-choice" data-results-lot="'+i+'"><span><strong>'+escapeHtml(cfg.lotName||r.name||'Jury')+'</strong><span>'+meta.products+' produit(s) · '+meta.samples+' échantillon(s)</span><span class="prepare-jury-status">'+status+'</span></span><b>›</b></button>';
   }).join('');
+  if(!rows.length)list.innerHTML='<p class="results-empty-v600">Aucun lot dans les résultats de votre espace. Les éventuels jurys des établissements sont affichés ci-dessous. Pour un nouveau test, commencez par « Choix des échantillons ».</p>';
   list.querySelectorAll('[data-results-lot]').forEach(btn=>btn.onclick=()=>{
     const rec=rows[Number(btn.dataset.resultsLot)];
     if(String(rec.id)!==String(state?.config?._preparedId||'')||hashJson(rec.state)!==hashJson(state)){
@@ -395,10 +404,10 @@ if(document.getElementById('hubResultsBtn'))document.getElementById('hubResultsB
 (function(){
   const button=document.getElementById('resultsBtn');if(!button)return;
   let touch=null,lastTouch=0;
-  function openResults(){
+  async function openResults(){
     try{
       if(typeof openResultsLotChooserV348!=='function')throw new Error('Le module de résultats n’est pas chargé.');
-      openResultsLotChooserV348();
+      await openResultsLotChooserV348();
       const modal=document.getElementById('resultsLotModalV348');
       if(modal?.classList.contains('show'))modal.style.zIndex='10050';
     }catch(e){
