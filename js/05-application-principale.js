@@ -346,6 +346,15 @@ function dedupePreparedJurysV238(rows){
   return [...byKey.values(),...withoutKey]
     .sort((a,b)=>String(b?.savedAt||'').localeCompare(String(a?.savedAt||'')));
 }
+function supplierSelectionMatchesV598(cfg,selection){
+  if(!cfg||!selection)return false;
+  const norm=v=>String(v||'').normalize('NFD').replace(/[\u0300-\u036f]/g,'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const lot=norm(cfg.lotName),sourceLot=norm(selection.lotName);
+  if(!lot||lot!==sourceLot)return false;
+  const signature=products=>(Array.isArray(products)?products:[]).map(p=>norm(p?.name)).filter(Boolean).sort().join('|');
+  const products=signature(cfg.products);
+  return !!products&&products===signature(selection.products);
+}
 function rawSupplierNamesV263(cfg){
   const out=[],seen=new Set();
   const add=v=>{
@@ -361,7 +370,7 @@ function rawSupplierNamesV263(cfg){
   // A synchronized sample selection keeps its supplier list in its own metadata.
   // Read that same-lot source before looking in older recovery copies.
   const selection=cfg?._sampleSelectionV370;
-  const sameSelection=selection&&(!cfg?._preparedId||String(cfg._preparedId)===String(selection.id));
+  const sameSelection=selection&&supplierSelectionMatchesV598(cfg,selection);
   if(sameSelection){
     (Array.isArray(selection.meta?.supplierNames)?selection.meta.supplierNames:[]).forEach(add);
     (Array.isArray(selection.products)?selection.products:[]).forEach(p=>
@@ -446,6 +455,18 @@ function healSupplierNamesV252(cfg){
   if(!same){
     cfg.supplierNames=names;
     changed=true;
+  }
+  // With one recorded supplier, every unnamed sample belongs to that supplier.
+  // Multiple suppliers require an explicit per-sample association.
+  if(names.length===1){
+    for(const product of cfg.products||[]){
+      for(const sample of product.samples||[]){
+        if(!String(sample.supplier||'').trim()){
+          sample.supplier=names[0];
+          changed=true;
+        }
+      }
+    }
   }
   if(Number(cfg.supplierResponseCount||0)!==names.length){
     cfg.supplierResponseCount=names.length;
@@ -6819,6 +6840,7 @@ function moveSample(delta){
   scrollTesterToFirstQuestion();
 }
 function renderAdmin(){
+  try{if(!state.config?._archive?.finalLocked&&healSupplierNamesV252(state.config))localStorage.setItem(STORAGE_KEY,JSON.stringify(state));}catch(e){console.warn('Reprise des fournisseurs',e);}
   const sentArchiveBtn=$('#confirmReportSentArchiveBtn');if(sentArchiveBtn)sentArchiveBtn.hidden=!state.config?._finalReportPreparedAt||!!state.config?._archive?.finalLocked;
   showView('adminView');
   $('#headerTitle').textContent=`Résultats — ${state.config.lotName}`;
