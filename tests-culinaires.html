@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="603-hide-empty-running-jury">
+<meta name="jury-release" content="604-discreet-placeholders">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -548,6 +548,15 @@ html body :is(#launchQrBtn,#juryQrBtn){
  min-height:44px;max-width:100%;white-space:normal
 }
 html body :is(#launchQrBtn,#juryQrBtn):hover{background:#f2eadb!important}
+</style>
+<style id="discreetPlaceholdersV604">
+html body input::placeholder,
+html body textarea::placeholder{
+  color:#969b92!important;
+  -webkit-text-fill-color:#969b92!important;
+  opacity:1!important;
+  font-weight:400!important;
+}
 </style>
 </head>
 <body>
