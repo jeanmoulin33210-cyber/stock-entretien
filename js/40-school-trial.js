@@ -315,7 +315,7 @@
     }finally{switching=false;}
   }
   async function close(){
-    if(switching)return;switching=true;
+    if(switching)return false;switching=true;
     try{
       await flushChild();
       frame?.remove();frame=null;overlay?.remove();overlay=null;school=null;return true;
@@ -365,8 +365,15 @@
         const modal=el('accountModalV385');
         if(modal){modal.style.setProperty('z-index','2147483005','important');modal.classList.add('show');}
       }else if(action==='home'){
-        const currentSchool=school;
-        await openSchool(currentSchool,{view:'home'});
+        if(!schoolAccount){
+          // A general administrator exits the school iframe after its saved work is flushed.
+          if(await close()!==true)return;
+          root.renderHome();
+          root.scrollTo({top:0,left:0,behavior:'instant'});
+        }else{
+          const currentSchool=school;
+          await openSchool(currentSchool,{view:'home'});
+        }
       }else if(action==='refresh'){
         el('schoolRefreshV492')?.click();
       }
