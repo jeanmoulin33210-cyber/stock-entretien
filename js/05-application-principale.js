@@ -7838,7 +7838,11 @@ function ensureProductSheetsComplete(actionLabel='continuer'){
 function renderProductSheetStatus(){
   const b=$('#productSheetsBtn');if(!b)return;
   const x=productSheetsProgress(state);
-  b.textContent=`📋 Fiches produits${x.total?` (${x.filled}/${x.total})`:''}`;
+  const complete=x.total>0&&x.filled===x.total;
+  b.textContent=complete?'4. ✓ Fiches produits — OK':
+    `4. 📋 Fiches produits${x.total?` (${x.filled}/${x.total})`:''}`;
+  b.classList.toggle('occena-step-complete-v304',complete);
+  b.classList.toggle('simple-results-complete-v305',complete);
 }
 let productSheetsReadOnlyView=false;
 let productSheetsShowMissing=false;
