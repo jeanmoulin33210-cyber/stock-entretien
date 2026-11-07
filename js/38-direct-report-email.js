@@ -52,9 +52,9 @@ async function openDirectFinalReportV415(){
   const modal=document.createElement('dialog');
   modal.id='directFinalReportV415';
   modal.style.cssText='border:0;border-radius:18px;padding:24px;width:calc(100% - 32px);max-width:540px;max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box';
-  modal.innerHTML='<form><h2>Envoyer le rapport final</h2><p role="status" aria-live="polite" style="position:sticky;top:0;z-index:2;background:#edf5f8;border-radius:10px;padding:12px;color:#173f5c;font-weight:700">Création du PDF…</p><label>Destinataire<input name="recipient" type="email" required autocomplete="email" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Objet<input name="subject" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Message<textarea name="message" required maxlength="10000" rows="5" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></textarea></label><button type="submit" class="btn btn-primary" disabled>Envoyer le rapport</button> <button type="button" class="btn btn-secondary">Fermer</button></form>';
+  modal.innerHTML='<form><h2>Envoyer le rapport final</h2><p role="status" aria-live="polite" style="position:sticky;top:0;z-index:2;background:#edf5f8;border-radius:10px;padding:12px;color:#173f5c;font-weight:700">Création du PDF…</p><label>Destinataire<input name="recipient" type="email" required autocomplete="email" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Objet<input name="subject" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Message<textarea name="message" required maxlength="10000" rows="5" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></textarea></label><button type="button" data-mail-send class="btn btn-primary" disabled>Envoyer le rapport</button> <button type="button" data-mail-close class="btn btn-secondary">Fermer</button></form>';
   document.body.appendChild(modal);modal.showModal();
-  const form=modal.querySelector('form'), status=modal.querySelector('[role=status]'), send=form.querySelector('[type=submit]'), close=form.querySelector('[type=button]');
+  const form=modal.querySelector('form'), status=modal.querySelector('[role=status]'), send=form.querySelector('[data-mail-send]'), close=form.querySelector('[data-mail-close]');
   let busy=false;
   close.onclick=()=>{if(!busy)modal.remove()};
   modal.addEventListener('cancel',e=>{if(busy)e.preventDefault();else modal.remove()});
@@ -100,6 +100,8 @@ async function openDirectFinalReportV415(){
       if(typeof toast==='function')toast('Rapport envoyé ✓ Vous pouvez maintenant archiver et verrouiller le jury.');
     }catch(error){status.textContent='Envoi impossible : '+error.message;status.scrollIntoView({block:'nearest'});busy=false;send.disabled=false;close.disabled=false;}
   };
+  // School frames intentionally block native form submissions; use the authenticated JS action.
+  send.onclick=form.onsubmit;
 }
 
 emailCurrentReport=openDirectFinalReportV415;
@@ -115,9 +117,9 @@ async function openDirectArticleNumbersV573(){
   const modal=document.createElement('dialog');
   modal.id='directArticleNumbersV573';
   modal.style.cssText='border:0;border-radius:18px;padding:24px;width:calc(100% - 32px);max-width:540px;max-height:calc(100dvh - 24px);overflow:auto;box-sizing:border-box';
-  modal.innerHTML='<form><h2>Envoyer les numéros des articles</h2><p role="status" aria-live="polite" style="position:sticky;top:0;z-index:2;background:#edf5f8;border-radius:10px;padding:12px;color:#173f5c;font-weight:700">Création du PDF…</p><label>Destinataire<input name="recipient" type="email" required autocomplete="email" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Objet<input name="subject" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Message<textarea name="message" required maxlength="10000" rows="5" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></textarea></label><button type="submit" class="btn btn-primary" disabled>Envoyer le PDF</button> <button type="button" class="btn btn-secondary">Fermer</button></form>';
+  modal.innerHTML='<form><h2>Envoyer les numéros des articles</h2><p role="status" aria-live="polite" style="position:sticky;top:0;z-index:2;background:#edf5f8;border-radius:10px;padding:12px;color:#173f5c;font-weight:700">Création du PDF…</p><label>Destinataire<input name="recipient" type="email" required autocomplete="email" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Objet<input name="subject" required maxlength="200" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></label><label>Message<textarea name="message" required maxlength="10000" rows="5" style="display:block;width:100%;box-sizing:border-box;margin:8px 0 16px"></textarea></label><button type="button" data-mail-send class="btn btn-primary" disabled>Envoyer le PDF</button> <button type="button" data-mail-close class="btn btn-secondary">Fermer</button></form>';
   document.body.appendChild(modal);modal.showModal();
-  const form=modal.querySelector('form'), status=modal.querySelector('[role=status]'), send=form.querySelector('[type=submit]'), close=form.querySelector('[type=button]');
+  const form=modal.querySelector('form'), status=modal.querySelector('[role=status]'), send=form.querySelector('[data-mail-send]'), close=form.querySelector('[data-mail-close]');
   let busy=false;
   close.onclick=()=>{if(!busy)modal.remove()};
   modal.addEventListener('cancel',e=>{if(busy)e.preventDefault();else modal.remove()});
@@ -157,6 +159,8 @@ async function openDirectArticleNumbersV573(){
 
     }catch(error){status.textContent='Envoi impossible : '+error.message;status.scrollIntoView({block:'nearest'});busy=false;send.disabled=false;close.disabled=false;}
   };
+  // School frames intentionally block native form submissions; use the authenticated JS action.
+  send.onclick=form.onsubmit;
 }
 
 emailArticleNumbersPdf=openDirectArticleNumbersV573;
