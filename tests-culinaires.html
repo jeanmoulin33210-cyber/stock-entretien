@@ -400,7 +400,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="634-jury-counter-refresh">
+<meta name="jury-release" content="635-jury-information-actions">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -2193,9 +2193,9 @@ html body #closureDate{
   <div class="closure-actions">
     <button class="btn btn-primary" id="saveClosureBtn">💾 Enregistrer les résultats</button>
     <button class="btn btn-ghost" id="closureBackBtn">← Retour aux résultats</button>
-    <button class="btn btn-secondary" id="closureMinutesBtn">📝 Voir le procès-verbal</button>
+    <button hidden style="display:none!important" class="btn btn-secondary" id="closureMinutesBtn">📝 Voir le procès-verbal</button>
     <button hidden style="display:none!important" class="btn btn-secondary" id="closureDossierBtn">📚 Dossier complet</button>
-    <button class="btn btn-secondary" id="closureSummaryBtn">📋 Synthèse jury</button>
+    <button hidden style="display:none!important" class="btn btn-secondary" id="closureSummaryBtn">📋 Synthèse jury</button>
     <button hidden style="display:none!important" class="btn btn-primary" id="closureReportBtn">➡️ Continuer vers le rapport final</button>
   </div>
 </main>
