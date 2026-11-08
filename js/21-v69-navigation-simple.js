@@ -143,7 +143,7 @@ function syncSimpleResultsActions(){
     /* V321 — Clôture reste toujours accessible.
        Même lorsqu'elle est complète, on peut la rouvrir pour vérifier ou modifier. */
     closureBtn.disabled=false;
-    closureBtn.textContent=closureReady?'✓ 1. Clôture — OK':'✍️ 1. Clôture';
+    closureBtn.textContent=closureReady?'✓ 2. Fiche du jury complétée':'2. Compléter la fiche du jury';
     closureBtn.classList.toggle('simple-results-complete-v305',closureReady);
   }
   if(receptionBtn){
@@ -190,7 +190,7 @@ function syncSimpleResultsActions(){
     hint.textContent='Le jury se ferme automatiquement. Vous allez ensuite compléter la clôture.';
   }else if(!closureReady){
     if(title)title.textContent='👉 À faire maintenant : la clôture';
-    hint.textContent='Cliquez sur « 1. Clôture », renseignez les informations et signez. Ensuite revenez ici.';
+    hint.textContent='Cliquez sur « 2. Compléter la fiche du jury », renseignez les informations et signez. Ensuite revenez ici.';
     highlight(closureBtn);
   }else if(!sheetsReady){
     if(title)title.textContent='👉 À faire maintenant : les fiches produits';
