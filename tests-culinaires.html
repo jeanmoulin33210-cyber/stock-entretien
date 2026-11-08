@@ -400,7 +400,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="641-durable-workflow">
+<meta name="jury-release" content="642-uniform-results-buttons">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -709,6 +709,40 @@ html body #closureDate{
 }
 @media(max-width:600px){
  html body .closure-card .form-grid{grid-template-columns:minmax(0,1fr)}
+}
+</style>
+<style id="resultsUniformButtonsV642">
+html body #adminView .simple-results-actions{
+ display:grid!important;grid-template-columns:minmax(0,1fr) minmax(0,420px);
+ align-items:start;gap:0 24px;box-sizing:border-box;
+}
+html body #adminView .simple-results-actions-copy{
+ grid-column:1;grid-row:1;align-self:center;min-width:0;
+}
+html body #adminView .simple-results-action-buttons{
+ grid-column:2;grid-row:1;display:flex!important;flex-direction:column;
+ align-items:stretch;gap:10px;width:100%;min-width:0;margin:0;
+}
+html body #adminView .simple-results-action-buttons > button{
+ width:100%!important;min-width:0!important;max-width:none!important;
+ height:72px!important;min-height:72px!important;box-sizing:border-box!important;
+ display:flex;align-items:center;justify-content:center;
+ margin:0!important;padding:10px 14px!important;text-align:center;
+ white-space:normal;overflow-wrap:anywhere;line-height:1.3;font-size:14px;
+}
+html body #adminView .simple-results-action-buttons > button[hidden]{display:none!important}
+html body #adminView .results-admin-tools-access{
+ grid-column:2;grid-row:2;width:100%;min-width:0;box-sizing:border-box;
+}
+html body #adminView #simpleResultsMoreBtn{
+ max-width:100%;white-space:normal;font-size:12px;line-height:1.4;
+ padding:10px 14px;box-shadow:none;
+}
+@media(max-width:700px){
+ html body #adminView .simple-results-actions{grid-template-columns:minmax(0,1fr);gap:16px}
+ html body #adminView .simple-results-actions-copy{grid-column:1;grid-row:1}
+ html body #adminView .simple-results-action-buttons{grid-column:1;grid-row:2}
+ html body #adminView .results-admin-tools-access{grid-column:1;grid-row:3;margin-top:4px!important}
 }
 </style>
 </head>
