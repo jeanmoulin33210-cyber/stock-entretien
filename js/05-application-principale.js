@@ -739,8 +739,10 @@ function activatePreparedJury(id,mode='launch'){
     if(typeof ensurePreparedShareConnected==='function'){
       Promise.resolve()
         .then(()=>ensurePreparedShareConnected())
-        .then(()=>{
-          try{renderJuryView()}catch(e){}
+        .then(async()=>{
+          if(typeof reloadCloudAnswers==='function')await reloadCloudAnswers();
+          if(typeof reloadCloudConfig==='function')await reloadCloudConfig();
+          if(document.getElementById('juryView')?.classList.contains('active'))renderJuryView();
         })
         .catch(e=>{
           console.error(e);
