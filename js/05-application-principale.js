@@ -1483,8 +1483,8 @@ function startBlankJuryFromMaster(){
   if(intro)intro.style.display='none';
   if(methods)methods.style.display='none';
   const heroTitle=document.querySelector('#configView .config-start-hero h2');
-  if(heroTitle)heroTitle.textContent='Préparer le jury';
-  $('#headerTitle').textContent='Préparer le jury';
+  if(heroTitle)heroTitle.textContent='Préparation du lot';
+  $('#headerTitle').textContent='Préparation du lot';
   $('#headerSub').textContent='Produits et fournisseurs déjà repris · Saisissez les numéros d’échantillons, puis réglez les questions et les testeurs';
   window.scrollTo({top:0,left:0,behavior:'instant'});
   requestAnimationFrame(()=>{if($('#configView')?.classList.contains('active'))window.scrollTo({top:0,left:0,behavior:'instant'});});
@@ -2881,8 +2881,8 @@ function closeReceptionView(){
   captureReceptionForm();
   if(draftConfig){
     showView('configView');
-    $('#headerTitle').textContent='Préparer le jury';
-    $('#headerSub').textContent='Questions, testeurs et validation';
+    $('#headerTitle').textContent='Préparation du lot';
+    $('#headerSub').textContent='Produits, échantillons et questions';
     renderConfig();
     setTimeout(()=>$('#cfgTesterCount')?.scrollIntoView({behavior:'smooth',block:'center'}),80);
   }else renderHome();
@@ -3123,7 +3123,7 @@ function prepareJuryFromHomeV180(event){
       });
     }catch(e){
       console.error('Préparer le jury v180',e);
-      if(intro)intro.textContent='Préparer le jury';
+      if(intro)intro.textContent='Préparation du lot';
       list.innerHTML='<div class="prepare-jury-empty-v180">Une ancienne donnée empêche de lire certains lots. Les autres fonctions de l’application restent disponibles.</div>';
     }
   },0);
@@ -3443,7 +3443,7 @@ function dashboardNewJury(){
   if(intro)intro.style.display='';
   if(methods)methods.style.display='';
   const heroTitle=document.querySelector('#configView .config-start-hero h2');
-  if(heroTitle)heroTitle.textContent='Préparer le jury';
+  if(heroTitle)heroTitle.textContent='Préparation du lot';
   /* V122 : sauvegarder le jury actuel avant d'en préparer un autre.
      Un jury déjà en cours reste accessible dans "Mes jurys". */
   try{
@@ -5010,7 +5010,7 @@ function updateJuryEditAvailabilityV555(){
   button.disabled=!juryEditAvailableV555();
   button.title=button.disabled?'Préparez de nouveaux échantillons pour modifier un jury.':'Modifier le jury actuel';
 }
-function openConfig(){if(!juryEditAvailableV555()){updateJuryEditAvailabilityV555();toast('Préparez d’abord de nouveaux échantillons.');return;}preparationEditKeyV347='';try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparer le jury';$('#headerSub').textContent='Questions, testeurs et validation';renderConfig();const creationMethods=$('#creationMethods');if(creationMethods)creationMethods.style.display='none';const creationIntro=document.querySelector('#configView .creation-choice-intro');if(creationIntro)creationIntro.style.display='none';window.scrollTo({top:0,left:0,behavior:'instant'});requestAnimationFrame(()=>{if($('#configView')?.classList.contains('active'))window.scrollTo({top:0,left:0,behavior:'instant'});})}
+function openConfig(){if(!juryEditAvailableV555()){updateJuryEditAvailabilityV555();toast('Préparez d’abord de nouveaux échantillons.');return;}preparationEditKeyV347='';try{if(healSupplierNamesV252(state.config))saveState()}catch(e){}draftConfig=deepClone(state.config);try{healSupplierNamesV252(draftConfig)}catch(e){}pendingMarketLot='';showView('configView');$('#headerTitle').textContent='Préparation du lot';$('#headerSub').textContent='Produits, échantillons et questions';renderConfig();const creationMethods=$('#creationMethods');if(creationMethods)creationMethods.style.display='none';const creationIntro=document.querySelector('#configView .creation-choice-intro');if(creationIntro)creationIntro.style.display='none';window.scrollTo({top:0,left:0,behavior:'instant'});requestAnimationFrame(()=>{if($('#configView')?.classList.contains('active'))window.scrollTo({top:0,left:0,behavior:'instant'});})}
 function renderConfig(){
   const c=draftConfig;
   c.criteria=normalizeCriteria(c.criteria);
@@ -5115,12 +5115,12 @@ function renderDraftSummary(){
     }else if(prepared){
       fs.textContent=`✅ ${activeLotLabel} préparé`;
       fd.textContent=ready
-        ? `Jury prêt à enregistrer · ${c.testers} testeur${c.testers>1?'s':''} · 5 questions par produit.`
+        ? 'Lot prêt à enregistrer · 5 questions par produit.'
         : `Le lot est bien préparé. Vous pouvez continuer les questions, produits et échantillons.`;
     }else{
-      fs.textContent=ready?'Jury prêt à enregistrer':'⏳ Jury à compléter';
+      fs.textContent=ready?'Lot prêt à enregistrer':'Lot à préparer';
       fd.textContent=ready
-        ? `${c.testers} testeur${c.testers>1?'s':''} · 5 questions par produit · les fournisseurs resteront cachés pendant le test.`
+        ? '5 questions par produit · les fournisseurs resteront cachés pendant le test.'
         : 'Complétez les questions, noms de produits, numéros d’échantillons et fournisseurs.';
     }
   }
