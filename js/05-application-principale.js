@@ -6626,8 +6626,8 @@ function applyDraft(){
 
   if(!phonesReady){
     draftConfig=deepClone(state.config);
-    renderLaunchView();
-    toast('Lot enregistré ✓ — choisissez maintenant les testeurs');
+    renderHome();
+    toast('Lot enregistré ✓');
     return;
   }
 
