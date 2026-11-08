@@ -1311,7 +1311,9 @@ async function syncDirtyToCloud(){if(testerPreviewMode)return;
 
     const answerRows=[],answerHashes=[];
     const validationRows=[],validationHashes=[];
-    const testers=cloudRole==='admin'?Array.from({length:state.config.testerCount},(_,i)=>i+1):[cloudTesterNo];
+    // Automatic administrator sync owns configuration only. Tester answers must
+    // never be replaced by a stale or empty administrator snapshot.
+    const testers=cloudRole==='tester'?[cloudTesterNo]:[];
 
     for(const t of testers){
       if(!t||!state.testers[t])continue;
