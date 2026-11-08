@@ -755,7 +755,7 @@ function activatePreparedJury(id,mode='launch'){
 function renderJuryChooser(){
   updateHeader();
   showView('juryChooserView');
-  $('#headerTitle').textContent='Choisir un jury';
+  $('#headerTitle').textContent='Lancer un jury';
   $('#headerSub').textContent='Mes jurys · correction 384';
 
   const list=$('#juryChooserList');
@@ -809,7 +809,7 @@ function renderJuryChooser(){
       }else if(phonesReady){
         buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','launch')">▶ Continuer vers le lancement</button>`;
       }else{
-        buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','launch')">${phonesRefresh?'↻ Vérifier les téléphones':'📱 Préparer les téléphones'}</button>`;
+        buttons=`<button type="button" class="btn btn-primary" onclick="activatePreparedJury('${escapeHtml(String(rec.id))}','launch')">${phonesRefresh?'↻ Vérifier les accès testeurs':'📱 Préparer les accès testeurs'}</button>`;
       }
 
       return `<article class="panel jury-choice-card ${current?'current':''}">
@@ -4106,7 +4106,7 @@ function renderLaunchView(){
     stateDetail.textContent=`${blocking}. Cliquez sur « Modifier » pour corriger.`;
   }else if(!phonesReady){
     stateTitle.textContent='Téléphones à préparer';
-    stateDetail.textContent='Choisissez les testeurs ci-dessous, puis cliquez sur « Préparer les téléphones ».';
+    stateDetail.textContent='Choisissez les testeurs ci-dessous, puis cliquez sur « Préparer les accès testeurs ».';
   }else{
     stateTitle.textContent='Tout est prêt ✓';
     stateDetail.textContent='Les téléphones et les QR codes ont déjà été préparés. Vous pouvez lancer le jury.';
@@ -4138,7 +4138,7 @@ function renderLaunchView(){
     shareHint.textContent=blocking
       ?'Corrigez d’abord le jury dans « Plus d’options > Modifier le jury ».'
       :phonesReady
-        ?'Les accès testeurs sont prêts. Vous pouvez afficher les QR codes ou vérifier à nouveau les téléphones.'
+        ?'Les accès testeurs sont prêts. Vous pouvez afficher les QR codes ou vérifier à nouveau les accès testeurs.'
         :'Préparez les accès testeurs ici. Ensuite le bouton « Lancer ce jury » se débloquera.';
   }
   if(shareState){
@@ -4147,7 +4147,7 @@ function renderLaunchView(){
   }
   if(cloudBtn){
     cloudBtn.disabled=!!blocking||opened;
-    cloudBtn.textContent=phonesReady?'↻ Vérifier les téléphones':'📱 Préparer les téléphones';
+    cloudBtn.textContent=phonesReady?'↻ Vérifier les accès testeurs':'📱 Préparer les accès testeurs';
   }
 
   const btn=$('#officialLaunchBtn');
@@ -5363,8 +5363,8 @@ function renderConfigPhoneShare(){
     title.textContent='Téléphones à préparer';
     detail.textContent=configReady
       ?'Le jury est prêt. Créez maintenant les accès et les QR codes des testeurs.'
-      :'Vous pouvez cliquer sur « Préparer les téléphones » : l’application vous indiquera précisément ce qu’il reste à compléter.';
-    prepBtn.textContent='☁️ Préparer les téléphones';
+      :'Vous pouvez cliquer sur « Préparer les accès testeurs » : l’application vous indiquera précisément ce qu’il reste à compléter.';
+    prepBtn.textContent='☁️ Préparer les accès testeurs';
     prepBtn.disabled=false;
     qrBtn.disabled=true;
   }
@@ -5433,7 +5433,7 @@ async function preparePhonesFromConfig(){
     syncTopDraft();
     const err=validateDraft();
     if(err){
-      alert(`Avant de préparer les téléphones : ${err}`);
+      alert(`Avant de préparer les accès testeurs : ${err}`);
       renderDraftSummary();
       return;
     }
