@@ -557,6 +557,9 @@ function preserveRicherAdminWorkflowV323(cfg,prev){
     }
   }catch(e){}
 
+  for(const key of ['finalReportVerifiedAt','_finalReportPreparedAt','_finalReportSentAt','_finalReportEmailId']){
+    if(!Object.prototype.hasOwnProperty.call(cfg,key)&&prev[key])cfg[key]=deepClone(prev[key]);
+  }
   return cfg;
 }
 
@@ -2846,3 +2849,18 @@ document.addEventListener('focusout',()=>{
     if(cloudConfigReloadPendingV323)reloadCloudConfig();
   },0);
 });
+
+async function saveWorkflowStateV641(){
+  try{saveState()}catch(error){
+    if(error?.name!=='QuotaExceededError'&&error?.code!==22&&error?.code!==1014)throw error;
+    await verifyRecoveryValueV360('workflow-before-storage-recovery',JSON.stringify(state));
+    await compactLocalJuryCopiesV360();
+    for(const key of Object.keys(localStorage).filter(key=>/^jm[_-]/.test(key)&&/backup|recovery/i.test(key)&&![STORAGE_KEY,PREPARED_JURY_STORAGE_KEY,ARCHIVE_STORAGE_KEY].includes(key))){
+      const raw=localStorage.getItem(key);if(raw===null)continue;
+      await verifyRecoveryValueV360(key,raw);
+      if(localStorage.getItem(key)===raw)localStorage.removeItem(key);
+    }
+    saveState();
+  }
+}
+window.saveWorkflowStateV641=saveWorkflowStateV641;
