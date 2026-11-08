@@ -4034,7 +4034,7 @@ function launchChecksData(){
     {key:'samples',level:samplesComplete&&total>0?'ok':'bad',title:'Échantillons et fournisseurs',detail:samplesComplete&&total>0?`${total} échantillon${total>1?'s':''} avec correspondance fournisseur`:'Un numéro d’échantillon ou fournisseur est incomplet',required:true},
     {key:'testers',level:testerOk?'ok':'bad',title:'Testeurs',detail:testerOk?`${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} prévu${cfg.testerCount>1?'s':''}`:'Aucun testeur paramétré',required:true},
     {key:'blind',level:'ok',title:'Test à l’aveugle',detail:'Les fournisseurs sont masqués sur les écrans testeurs',required:true},
-    {key:'cloud',level:shared?'ok':'warn',title:'Téléphones préparés',detail:shared?'Accès et QR codes préparés':'Préparez les téléphones dans « Créer / Modifier le jury »',required:false},
+    {key:'cloud',level:shared?'ok':'warn',title:'Téléphones préparés',detail:shared?'Accès et QR codes préparés':'Préparez les téléphones dans « Lancer le jury »',required:false},
     {key:'public',level:publicPage?'ok':'warn',title:'Adresse en ligne',detail:publicPage?'Application ouverte depuis une adresse web':'Fichier local : les liens multi-téléphones peuvent ne pas fonctionner',required:false}
   ];
 }
@@ -4042,6 +4042,43 @@ function launchBlockingError(){
   const bad=launchChecksData().filter(x=>x.required&&x.level==='bad');
   return bad.length?bad.map(x=>x.title).join(', '):'';
 }
+
+/* V617 — roster is configured at launch, before generating phone access. */
+function renderLaunchTestersV617(){
+  const box=$('#launchTestersV617');if(!box)return;
+  const cfg=state.config;
+  const locked=isJuryOfficiallyOpen()||isJuryClosed()||phoneSharePrepared(cfg)||preparationHasAnswersV347();
+  box.innerHTML='<h3>1. Nombre et noms des testeurs</h3><div class="field"><label for="launchTesterCountV617">Combien de testeurs participent au jury ?</label><select id="launchTesterCountV617" '+(locked?'disabled':'')+'>'+
+    Array.from({length:20},(_,i)=>'<option value="'+(i+1)+'" '+(Number(cfg.testerCount)===i+1?'selected':'')+'>'+(i+1)+' testeur'+(i?'s':'')+'</option>').join('')+
+    '</select></div><p>Les noms sont facultatifs. Vous pouvez conserver « Testeur 1 », « Testeur 2 »…</p><div class="form-grid">'+
+    Array.from({length:cfg.testerCount},(_,i)=>'<div class="field"><label for="launchTesterNameV617-'+i+'">Testeur '+(i+1)+'</label><input id="launchTesterNameV617-'+i+'" data-launch-tester-v617="'+i+'" value="'+escapeHtml(cfg.testerNames[i]||'')+'" '+(locked?'disabled':'')+'></div>').join('')+
+    '</div><p>'+(locked?'Les accès sont déjà préparés ou le jury a commencé. Utilisez « Modifier le jury » pour une modification autorisée.':'Les modifications sont enregistrées automatiquement. Préparez ensuite les téléphones.')+'</p>';
+  function persist(n,names){
+    if(isJuryOfficiallyOpen()||isJuryClosed()||phoneSharePrepared(state.config)||preparationHasAnswersV347())return false;
+    state.config.testerCount=n;
+    state.config.testerNames=names.slice(0,n);
+    while(state.config.testerNames.length<n)state.config.testerNames.push('Testeur '+(state.config.testerNames.length+1));
+    Object.keys(state.testers||{}).forEach(k=>{if(Number(k)>n)delete state.testers[k]});
+    ensureTesterRosterConsistency();
+    state.config._phoneShareSignature='';
+    delete state.config._preparationLockedAt;
+    saveState();upsertPreparedJury(state);
+    draftConfig=deepClone(state.config);
+    $('#cfgTesterCount').value=String(n);
+    return true;
+  }
+  $('#launchTesterCountV617').onchange=e=>{
+    if(persist(Number(e.target.value),state.config.testerNames||[]))renderLaunchView();
+  };
+  box.querySelectorAll('[data-launch-tester-v617]').forEach(input=>{
+    input.onchange=()=>{
+      const names=(state.config.testerNames||[]).slice();
+      names[Number(input.dataset.launchTesterV617)]=input.value.trim()||('Testeur '+(Number(input.dataset.launchTesterV617)+1));
+      persist(state.config.testerCount,names);
+    };
+  });
+}
+
 function renderLaunchView(){
   updateJuryEditAvailabilityV555();
   ensureTesterRosterConsistency();
@@ -4049,6 +4086,12 @@ function renderLaunchView(){
   $('#headerTitle').textContent='Lancer le jury';$('#headerSub').textContent=state.config.lotName||'Jury Marchés';
   const p=lotDisplayParts(),cfg=state.config,m=juryMetrics(),checks=launchChecksData(),blocking=launchBlockingError(),opened=isJuryOfficiallyOpen();
   const phonesReady=phoneSharePrepared(cfg);
+  draftConfig=deepClone(cfg);
+  $('#cfgTesterCount').value=String(cfg.testerCount);
+  $('#cfgLotName').value=cfg.lotName||'';
+  $('#cfgSubtitle').value=cfg.subtitle||'';
+  renderLaunchTestersV617();
+  renderArticlePrintStatus();
 
   $('#launchLotTitle').textContent=p.title;
   $('#launchLotSubtitle').textContent=p.subtitle||'';
@@ -4063,7 +4106,7 @@ function renderLaunchView(){
     stateDetail.textContent=`${blocking}. Cliquez sur « Modifier » pour corriger.`;
   }else if(!phonesReady){
     stateTitle.textContent='Téléphones à préparer';
-    stateDetail.textContent='Cliquez sur « Modifier » puis terminez l’étape 6 « Préparer les téléphones ».';
+    stateDetail.textContent='Choisissez les testeurs ci-dessous, puis cliquez sur « Préparer les téléphones ».';
   }else{
     stateTitle.textContent='Tout est prêt ✓';
     stateDetail.textContent='Les téléphones et les QR codes ont déjà été préparés. Vous pouvez lancer le jury.';
@@ -6582,21 +6625,9 @@ function applyDraft(){
   const phonesReady=phoneSharePrepared(state.config);
 
   if(!phonesReady){
-    /* Le jury est bien enregistré, mais on ne renvoie pas l'utilisateur
-       à l'accueil avec un jury impossible à lancer sans explication. */
     draftConfig=deepClone(state.config);
-    renderConfig();
-
-    setTimeout(()=>{
-      alert(
-        `Jury enregistré avec ${requestedTesterCount} testeur${requestedTesterCount>1?'s':''}.\n\n`+
-        `Attention : les téléphones et les QR codes ne sont plus à jour.\n`+
-        `Préparez à nouveau les téléphones avant de lancer le jury.`
-      );
-      $('#configPhonesStep')?.scrollIntoView({behavior:'smooth',block:'center'});
-    },80);
-
-    toast('Jury enregistré — téléphones à mettre à jour');
+    renderLaunchView();
+    toast('Lot enregistré ✓ — choisissez maintenant les testeurs');
     return;
   }
 
