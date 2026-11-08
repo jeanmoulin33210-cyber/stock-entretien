@@ -203,7 +203,7 @@
   }
   async function persist(showToast){
     capture();
-    if(typeof saveState==="function")saveState();
+    try{await saveWorkflowStateV641();}catch(error){if(typeof toast==="function")toast("Contrôle non enregistré : "+error.message);return false;}
     var s=document.getElementById("occenaSaveState");
     if(s)s.textContent="✓ Enregistré";
     if(typeof syncDirtyToCloud==="function"){
@@ -472,13 +472,13 @@
     return rows;
   }
 
-  function returnOccenaToResults(){
+  async function returnOccenaToResults(){
     var modal=document.getElementById("occenaPhoneModalV300");
     var phoneOpen=!!(modal&&modal.classList.contains("open"));
     if(phoneOpen)closeOccenaPhoneMode();
     else capture();
     occenaScrollLock.token++;
-    if(typeof saveState==="function")saveState();
+    try{await saveWorkflowStateV641();}catch(error){if(typeof toast==="function")toast("Contrôle non enregistré : "+error.message);return;}
     if(typeof syncDirtyToCloud==="function")Promise.resolve(syncDirtyToCloud()).catch(function(){});
     if(typeof openSimplifiedResults==="function")openSimplifiedResults();
     else if(typeof renderAdmin==="function")renderAdmin();
