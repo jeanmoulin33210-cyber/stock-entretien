@@ -208,8 +208,8 @@ function syncSimpleResultsActions(){
 
   if(moreBtn){
     moreBtn.textContent=$('#adminView')?.classList.contains('show-results-details')
-      ?'Masquer les détails'
-      :'⚙️ Détails';
+      ?'Masquer les détails et outils administrateur'
+      :'🔒 Détails et outils administrateur';
   }
 }
 function toggleSimpleResultsDetails(){
