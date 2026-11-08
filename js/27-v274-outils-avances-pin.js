@@ -14,9 +14,9 @@
     var p=modal.querySelector('p');
     pendingMode=mode||'advanced';
     if(pendingMode==='results-details'){
-      if(h)h.textContent='Détails protégés';
-      if(p)p.textContent='Saisissez votre code PIN pour afficher les détails des résultats.';
-      if(confirmBtn)confirmBtn.textContent='Ouvrir les détails';
+      if(h)h.textContent='Détails et outils administrateur';
+      if(p)p.textContent='Saisissez votre code PIN pour ouvrir les détails et les outils administrateur.';
+      if(confirmBtn)confirmBtn.textContent='Ouvrir les outils';
     }else{
       if(h)h.textContent='Outils avancés protégés';
       if(p)p.textContent='Saisissez votre code PIN pour ouvrir les outils avancés.';
