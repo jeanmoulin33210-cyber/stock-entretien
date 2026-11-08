@@ -10143,11 +10143,15 @@ function copyArchiveAsNew(id){return duplicateArchive(id)}
 
 $('#homeBtn').onclick=renderHome;$('#archivesBtn').onclick=renderArchives;$('#archivesHomeBtn').onclick=renderHome;$('#archivesBackHubBtn').onclick=()=>renderHome();$('#archiveMoreFiltersBtn').onclick=()=>toggleArchiveFilters();
 $('#closureBackBtn').onclick=()=>{renderAdmin()};
-$('#saveClosureBtn').onclick=saveClosure;
-/* Keep an edited field from blurring and moving this button before its click. */
-$('#saveClosureBtn').addEventListener('pointerdown',e=>{
-  if(e.isPrimary!==false&&e.button===0)e.preventDefault();
-});
+$('#saveClosureBtn').onclick=async function(){
+  try{
+    await saveClosure();
+  }catch(e){
+    console.error('Enregistrement de la fiche du jury',e);
+    setClosureSaveIndicator('Réessayer l’enregistrement');
+    alert('La fiche n’a pas pu être enregistrée. Votre saisie reste ouverte.\n\n'+(e?.message||String(e)));
+  }
+};
 ['closureDate','closurePlace','closureChair','closureChairRole','closureCoSigner','closureCoSignerRole','closureNotes'].forEach(id=>{
   const el=$('#'+id);
   if(el){
