@@ -84,7 +84,11 @@ async function openDirectFinalReportV415(){
       }
       jury.config._finalReportPreparedAt=new Date().toISOString();
       jury.config._finalReportSentAt=jury.config._finalReportPreparedAt;
-      jury.config._finalReportEmailId=result.data.id;saveState();
+      jury.config._finalReportEmailId=result.data.id;
+      // Once delivery is confirmed, a local save failure must never offer a second send.
+      send.disabled=true;form.querySelectorAll('input,textarea').forEach(el=>el.disabled=true);
+      try{await saveWorkflowStateV641();if(typeof syncDirtyToCloud==='function')await syncDirtyToCloud();}
+      catch(storageError){status.textContent='Rapport envoyé. Conservation du statut en attente : '+storageError.message;send.textContent='Rapport déjà envoyé';busy=false;close.disabled=false;return;}
       if(typeof syncSimpleResultsActions==='function')syncSimpleResultsActions();
       status.textContent='Envoi pris en charge ✓';send.disabled=true;send.textContent='Envoi pris en charge ✓';send.style.background='#23764e';
       form.querySelectorAll('input,textarea').forEach(el=>el.disabled=true);
