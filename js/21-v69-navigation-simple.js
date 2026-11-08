@@ -27,7 +27,7 @@ function loadJuryConclusionIntoForm(){
   if(stateLabel){stateLabel.textContent=input.value.trim()?'Enregistré ✓':(input.id==='juryConclusionInput'?'À compléter':'Facultatif');stateLabel.classList.remove('changed');}
 }
 // Save both report fields before returning to the numbered results menu.
-function saveJuryReportAndReturn(){
+async function saveJuryReportAndReturn(){
   const conclusion=$('#juryConclusionInput');
   const note=$('#reportNoteInput');
   if(!conclusion||!note)return;
@@ -37,7 +37,7 @@ function saveJuryReportAndReturn(){
   state.config.reportNote=String(note.value||'').trim();
   state.config.juryConclusionUpdatedAt=updatedAt;
   state.config.reportNoteUpdatedAt=updatedAt;
-  try{saveState();}
+  try{await saveWorkflowStateV641();}
   catch(error){
     toast('Enregistrement impossible. Restez sur cette page et réessayez.');
     return;
