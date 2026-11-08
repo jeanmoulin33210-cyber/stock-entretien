@@ -7510,7 +7510,26 @@ function scheduleClosureAutosave(preserveScrollY=null){
 
 async function saveClosure(){
   const c=captureClosureForm();
-  saveState();
+  try{
+    saveState();
+  }catch(error){
+    if(error?.name!=='QuotaExceededError'&&error?.code!==22&&error?.code!==1014)throw error;
+    // Preserve the edited form before moving verified recovery copies out of localStorage.
+    if(typeof verifyRecoveryValueV360!=='function')throw error;
+    await verifyRecoveryValueV360('jury-form-before-quota-recovery',JSON.stringify(state));
+    if(typeof compactLocalJuryCopiesV360==='function')await compactLocalJuryCopiesV360();
+    try{saveState()}catch(retryError){
+      if(retryError?.name!=='QuotaExceededError'&&retryError?.code!==22&&retryError?.code!==1014)throw retryError;
+      const keys=Object.keys(localStorage).filter(key=>/^jm[_-]/.test(key)&&/backup|recovery/i.test(key)&&![STORAGE_KEY,PREPARED_JURY_STORAGE_KEY,ARCHIVE_STORAGE_KEY].includes(key));
+      for(const key of keys){
+        const raw=localStorage.getItem(key);
+        if(raw===null)continue;
+        await verifyRecoveryValueV360(key,raw);
+        if(localStorage.getItem(key)===raw)localStorage.removeItem(key);
+      }
+      saveState();
+    }
+  }
 
   const ready=renderClosureStatus(c);
 
