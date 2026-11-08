@@ -400,7 +400,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="638-jury-form-check-ok">
+<meta name="jury-release" content="639-separated-admin-tools">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -2329,7 +2329,9 @@ html body #closureDate{
       <button type="button" class="btn btn-secondary" id="simpleResultsPdfBtn">7. 📚 Vérifier le rapport avant envoi</button>
       <button type="button" class="btn btn-secondary" id="simpleResultsEmailBtn">8. 📧 Envoyer le rapport final</button>
       <button type="button" class="btn btn-primary" id="confirmReportSentArchiveBtn" hidden onclick="confirmReportSentAndArchive()">9. Archiver et verrouiller</button>
-      <button type="button" class="btn btn-ghost" id="simpleResultsMoreBtn">⚙️ Détails</button>
+    </div>
+    <div class="results-admin-tools-access" style="margin-top:24px;padding-top:18px;border-top:1px solid var(--line);text-align:center">
+      <button type="button" class="btn btn-ghost" id="simpleResultsMoreBtn">🔒 Détails et outils administrateur</button>
     </div>
   </section>
 
@@ -2632,7 +2634,7 @@ html body #closureDate{
 
 <script src="js/20-v36-stabilisation-finale-wrappers-tardifs.js?build=338a"></script>
 
-<script src="js/21-v69-navigation-simple.js?build=638-jury-form-check-ok"></script>
+<script src="js/21-v69-navigation-simple.js?build=639-separated-admin-tools"></script>
 
 
 
@@ -2649,7 +2651,7 @@ html body #closureDate{
 
 <script src="js/25-protection-tactile.js?build=338a"></script>
 <script src="js/26-v207-reinitialiser-les-lots.js?build=367-shared-reset"></script>
-<script src="js/27-v274-outils-avances-pin.js?build=338a"></script>
+<script src="js/27-v274-outils-avances-pin.js?build=639-separated-admin-tools"></script>
 <script src="js/28-v274-dossier-resultats-2025.js?build=397-single-tester-signature"></script>
 <script src="js/30-v290-controle-occena.js?build=401-adaptive-occena"></script>
 <script src="js/31-v291-occena-a-faire.js?build=612-report-verified-ok"></script>
