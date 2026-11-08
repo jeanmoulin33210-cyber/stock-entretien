@@ -4148,7 +4148,7 @@ function renderLaunchView(){
     shareHint.textContent=blocking
       ?'Corrigez d’abord le jury dans « Plus d’options > Modifier le jury ».'
       :phonesReady
-        ?'Les QR codes sont prêts. Vous pouvez les afficher, les imprimer ou vérifier les accès.'
+        ?'Les QR codes sont générés. Cliquez sur « Voir / imprimer les QR codes » pour les ouvrir.'
         :'Créez les QR codes et les liens pour connecter les testeurs. Ensuite le bouton « Lancer ce jury » se débloquera.';
   }
   if(shareState){
@@ -4156,8 +4156,8 @@ function renderLaunchView(){
     shareState.classList.toggle('ready',phonesReady);
   }
   if(cloudBtn){
-    cloudBtn.disabled=!!blocking||opened;
-    cloudBtn.textContent=phonesReady?'↻ Vérifier les QR codes':'▦ Générer les QR codes';
+    cloudBtn.disabled=phonesReady||!!blocking||opened;
+    cloudBtn.textContent=phonesReady?'✓ QR codes générés':'▦ Générer les QR codes';
   }
 
   const btn=$('#officialLaunchBtn');
