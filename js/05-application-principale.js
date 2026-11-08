@@ -3544,13 +3544,7 @@ function juryArchivedV472(cfg){
 }
 function renderHome(){updateJuryEditAvailabilityV555();removeRetiredMoulikV356();if(!$('#homeView').classList.contains('active'))ensureCurrentPrepSaved();updateHeader();showView('homeView');renderHomeReceptionBadge();const cfg=state.config,p=lotDisplayParts(),m=juryMetrics();$('#headerTitle').textContent='Tests culinaires';$('#headerSub').textContent='Groupe Marchés Nouvelle-Aquitaine';$('#homeTitle').textContent='Tests culinaires';$('#homeSubtitle').innerHTML='<strong>Groupe Marchés Nouvelle-Aquitaine</strong><br><span>Préparation, dégustation et suivi des jurys marchés</span>';const hc=$('#homeLotContext');if(hc)hc.textContent=p.title+(p.subtitle?` · ${p.subtitle}`:'');$('#homeMeta').innerHTML=`<span class="hero-chip">${cfg.products.length} produit${cfg.products.length>1?'s':''}</span><span class="hero-chip">${totalSamples()} échantillon${totalSamples()>1?'s':''}</span><span class="hero-chip">${cfg.testerCount} testeur${cfg.testerCount>1?'s':''}</span><span class="hero-chip">5 questions · 65 points</span>`;let status='Jury prêt',detail=' · Test à l’aveugle, fournisseurs masqués',progress='Aucune dégustation commencée';if(isJuryOfficiallyOpen()&&m.done>0&&m.done<m.max){status='Jury en cours';detail=` · ${m.finished}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} complet${m.finished>1?'s':''}`;progress=`${m.done} fiche${m.done>1?'s':''} sur ${m.max} terminée${m.done>1?'s':''}`}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated<cfg.testerCount){status='Validations en attente';detail=` · ${m.validated}/${cfg.testerCount} testeur${cfg.testerCount>1?'s':''} validé${m.validated>1?'s':''}`;progress='Toutes les dégustations sont complètes'}else if(isJuryOfficiallyOpen()&&m.max>0&&m.done===m.max&&m.validated===cfg.testerCount){status='Jury terminé';detail=' · Tous les tests sont validés et verrouillés';progress='Jury entièrement validé'}$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;$('#homeProgressDetail').textContent=m.max?(m.remaining?`${m.remaining} fiche${m.remaining>1?'s':''} restante${m.remaining>1?'s':''}.`:`${m.validated}/${cfg.testerCount} validation${cfg.testerCount>1?'s':''} définitive${cfg.testerCount>1?'s':''}.`):'Aucun échantillon paramétré.';$('#homeProgressPct').textContent=`${m.pct} %`;const opened=isJuryOfficiallyOpen(),closed=isJuryClosed();if(closed){status='Jury fermé';detail=` · ${fmtCloseDate(juryCloseInfo().closedAt)}`;progress=state.config?._archive?.archivedAt?'Jury archivé':'Clôture administrative à terminer';$('#homeJuryStatus').textContent=status;$('#homeJuryDetail').textContent=detail;$('#homeProgressTitle').textContent=progress;}const fullyValidated=m.max>0&&m.done===m.max&&m.validated===cfg.testerCount;
 const preparedCount=loadPreparedJurys().filter(r=>(r?.state?.config?.products||[]).length>0&&!r?.state?.config?.juryClose?.closedAt&&!juryArchivedV472(r.state.config)).length;
-$('#juryBtnTitle').textContent=preparedCount>1
-  ?'Choisir un jury'
-  :preparedCount===1
-    ?'Lancer le jury'
-    :closed
-      ?'Lancer un jury'
-      :'Lancer le jury';
+$('#juryBtnTitle').textContent='Lancer le jury';
 $('#juryBtnSub').textContent='Démarrer les dégustations avec les testeurs';
 const ac=loadArchives().length;const ah=$('#archiveHomeCount');if(ah)ah.textContent=ac?`${ac} jury${ac>1?'s':''} archivé${ac>1?'s':''}`:'Aucun jury archivé';renderMyJuriesDashboard();renderPreparedHome()}
 
@@ -7852,7 +7846,7 @@ function openProductSheets(readOnly=false){
   if(!state?.config?.products?.length){alert('Aucun produit dans ce jury.');return}
   if(!activeProductSheetId || !state.config.products.some(p=>String(p.id)===String(activeProductSheetId)))activeProductSheetId=state.config.products[0].id;
   showView('productSheetsView');
-  $('#headerTitle').textContent=productSheetsReadOnlyView?'Fiches terminées — lecture seule':'Fiches produits';
+  $('#headerTitle').textContent=productSheetsReadOnlyView?'Fiches complétées — lecture seule':'Fiches produits';
   $('#headerSub').textContent=state.config.lotName||'Jury Marchés';
   renderProductSheets();
 }
@@ -7975,7 +7969,7 @@ function captureProductSheetForm(){
   }
 }
 async function saveProductSheets(){
-  if(productSheetsReadOnlyView){toast('Fiches terminées — consultation uniquement');return;}
+  if(productSheetsReadOnlyView){toast('Fiches complétées — consultation uniquement');return;}
   productSheetsShowMissing=true;
   captureProductSheetForm();saveState();
   if(typeof syncDirtyToCloud==='function'){try{await syncDirtyToCloud()}catch(e){}}
@@ -8027,7 +8021,7 @@ function printCompletedProductSheets(){
   st.config.products=(st.config.products||[]).map(p=>({...p,samples:(p.samples||[]).filter(sm=>productSheetMissingFields(st,p,sm).length===0)})).filter(p=>p.samples.length);
   const w=window.open('','_blank');
   if(!w){alert('Autorisez les fenêtres pop-up pour imprimer les fiches.');return;}
-  w.document.write('<!doctype html><html lang="fr"><meta charset="utf-8"><title>Fiches terminées</title><style>@page{size:A4 landscape;margin:10mm}body{font:12px Arial}section{break-after:page}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:5px}</style><body>'+productSheetAnnexHtml(st)+'</body></html>');
+  w.document.write('<!doctype html><html lang="fr"><meta charset="utf-8"><title>Fiches complétées</title><style>@page{size:A4 landscape;margin:10mm}body{font:12px Arial}section{break-after:page}table{border-collapse:collapse;width:100%}td,th{border:1px solid #bbb;padding:5px}</style><body>'+productSheetAnnexHtml(st)+'</body></html>');
   w.document.close();
   setTimeout(()=>{w.focus();w.print();},350);
 }
