@@ -2488,7 +2488,7 @@ setInterval(function(){
     if(typeof isJuryOfficiallyOpen==='function' &&
        typeof isJuryClosed==='function' &&
        isJuryOfficiallyOpen() &&
-       !isJuryClosed()){
+       (!isJuryClosed()||['juryView','adminView','homeView','juryChooserView'].includes(document.querySelector('.view.active')?.id))){
       automaticReconcileV335();
     }
   }catch(e){}
