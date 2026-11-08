@@ -201,6 +201,14 @@
     for(const row of Object.values(cfg.productSheets||{}))n+=Object.values(row||{}).filter(v=>v!==null&&v!==undefined&&String(v).trim()).length;
     return n;
   }
+  // V616: the active lists must use the same admission rule as uploads.
+  // Legacy device-only copies remain in the verified recovery backup.
+  function sharedActiveStateV616(st,catalog,bases){
+    const rid=id(st);
+    if(!rid)return false;
+    const key='prepared:'+rid;
+    return !!(catalog?.records?.[key]||bases?.[key]||st?.config?._catalogCreatedV357);
+  }
   async function apply(catalog,bases,local){
     const before=collect();const prepared=loadPreparedJurys().filter(r=>!retired(r.state));const archives=loadArchives().filter(r=>!catalog.removed['archive:'+r.id]);
     let changed=archives.length!==loadArchives().length;
@@ -223,10 +231,10 @@
     }
     const samplesChanged=!equal(sampleBefore,samples);
     if(samplesChanged)changed=true;
-    const keep=prepared.filter(r=>!catalog.removed['prepared:'+r.id]&&!Object.values(catalog.records).some(e=>e.state.config._archive?.archivedAt&&id(e.state)===String(r.id)));
+    const keep=prepared.filter(r=>sharedActiveStateV616(r.state,catalog,bases)&&!catalog.removed['prepared:'+r.id]&&!Object.values(catalog.records).some(e=>e.state.config._archive?.archivedAt&&id(e.state)===String(r.id)));
     if(keep.length!==prepared.length)changed=true;
     const currentKey='prepared:'+id(state),incoming=catalog.records[currentKey]?.state;
-    const currentRemoved=!!catalog.removed[currentKey];
+    const currentRemoved=!!catalog.removed[currentKey]||!!(state?.config?.products?.length&&!sharedActiveStateV616(state,catalog,bases));
     const currentChanged=(incoming&&!equal(snapshot(state),incoming))||currentRemoved;
     if(changed||currentChanged){
       await preserveImportRecoveryV453(JSON.stringify({at:new Date().toISOString(),state:snapshot(state),prepared:loadPreparedJurys(),archives:loadArchives()}),localStorage,verifyRecoveryValueV360);
