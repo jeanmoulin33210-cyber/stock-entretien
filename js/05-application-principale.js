@@ -2985,7 +2985,9 @@ function prepareJuryFromHomeV180(event){
             lotName:String(cfg.lotName||rec.name||'Jury préparé'),
             products:products.length,
             suppliers:suppliers.length,
-            status:cfg?.juryLaunch?.openedAt
+            status:cfg._lotPreparationSavedAtV627
+              ?'Lot préparé et enregistré'
+              :cfg?.juryLaunch?.openedAt
               ?'Jury déjà lancé'
               :phonesRefresh
                 ?'↻ Recharger les téléphones'
@@ -3068,7 +3070,7 @@ function prepareJuryFromHomeV180(event){
       // Keep the most advanced copy before hiding ready jurys, so an older
       // sample-selection copy cannot reappear as a lot awaiting preparation.
       items.splice(0,items.length,...Array.from(groupedV374.values()).filter(item=>
-        !/Téléphones prêts|Jury déjà lancé/.test(item.status||'')
+        !/Téléphones prêts|Jury déjà lancé|Lot préparé et enregistré/.test(item.status||'')
       ));
 
       if(!items.length){
@@ -3268,7 +3270,15 @@ function prepareJuryChoices(){
     choices.unshift(latest);
   }
 
-  return choices;
+  return choices.filter(choice=>{
+    if(choice.kind==='prepared')return !prepared.find(rec=>String(rec.id)===String(choice.id))?.state?.config?._lotPreparationSavedAtV627;
+    const snapshot=choice.snapshot;
+    const products=snapshot?.products||choice.sampleProducts||[];
+    // Product/supplier representation differs between sample snapshots and jury configs;
+    // compare lot and product names just as the main picker does.
+    const key=(name,ps)=>String(name||'').trim().toLowerCase()+'|'+ps.map(p=>String(p.name||'').trim().toLowerCase()).sort().join('|');
+    return !prepared.some(rec=>rec?.state?.config?._lotPreparationSavedAtV627&&key(rec.state.config.lotName,rec.state.config.products||[])===key(choice.lotName,products));
+  });
 }
 function activatePrepareJuryChoice(choice){
   closePrepareJuryChooser();
@@ -6551,6 +6561,7 @@ function applyDraft(){
     if(!state.config?.juryLaunch?.openedAt&&!state.config?.juryClose?.closedAt&&
        !preparationHasAnswersV347()&&phoneSharePrepared(state.config)&&
        preparationKeyV347(draftConfig)===preparationKeyV347(state.config)){
+      state.config._lotPreparationSavedAtV627=new Date().toISOString();
       saveState();
       upsertPreparedJury(state);
       renderHome();
@@ -6576,6 +6587,7 @@ function applyDraft(){
   const allowed=validKeys(draftConfig);
 
   const savedConfig=deepClone(draftConfig);
+  savedConfig._lotPreparationSavedAtV627=new Date().toISOString();
   savedConfig.testerCount=requestedTesterCount;
   savedConfig.testerNames=savedConfig.testerNames.slice(0,requestedTesterCount);
   if(!savedConfig._preparedId)savedConfig._catalogCreatedV357=true;
