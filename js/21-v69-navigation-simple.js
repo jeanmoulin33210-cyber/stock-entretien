@@ -143,7 +143,7 @@ function syncSimpleResultsActions(){
     /* V321 — Clôture reste toujours accessible.
        Même lorsqu'elle est complète, on peut la rouvrir pour vérifier ou modifier. */
     closureBtn.disabled=false;
-    closureBtn.textContent=closureReady?'✓ 2. Fiche du jury complétée':'2. Compléter la fiche du jury';
+    closureBtn.textContent=closureReady?'✓ 2. Fiche du jury complétée — OK':'2. Compléter la fiche du jury';
     closureBtn.classList.toggle('simple-results-complete-v305',closureReady);
   }
   if(receptionBtn){
