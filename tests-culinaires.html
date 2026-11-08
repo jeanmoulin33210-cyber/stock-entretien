@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="614-product-sheets-ok">
+<meta name="jury-release" content="615-home-labels">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -746,7 +746,7 @@ html body #juryReportView #juryConclusionInput{
 <div class="home-status-summary"><div><strong id="homeProgressTitle">Aucune dégustation commencée</strong><span id="homeProgressDetail">Le jury peut être préparé.</span></div><div class="pct" id="homeProgressPct">0 %</div></div>
     <div class="home-command-grid simple-command-grid">
       <button class="command-card simple-command" id="samplesSetupBtn"><span class="cmd-icon culinary-line-icon"><svg width="76" height="76" style="width:76px;height:76px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="m8 23 24-12 24 12-24 12zM12 26v22l20 9 20-9V26M32 35v22M8 23v10l24 12M56 23v10L32 45M20 17l24 12"/><path stroke="#b56d4d" d="M43 49q8-3 10-12-9 2-10 12Zm-3 6 10-12"/></svg></span><div><strong>1. Choix des échantillons</strong><span>Créer un nouveau lot</span></div></button>
-      <button class="command-card simple-command" id="configureBtn" type="button"><span class="cmd-icon culinary-line-icon"><svg width="76" height="76" style="width:76px;height:76px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="32" cy="17" r="6"/><circle cx="13" cy="24" r="5"/><circle cx="51" cy="24" r="5"/><path d="M20 49v-7a12 12 0 0 1 24 0v7M3 45v-4a10 10 0 0 1 14-9M61 45v-4a10 10 0 0 0-14-9"/><path stroke="#b56d4d" d="M20 55h24"/></svg></span><div><strong>2. Préparer le jury</strong><span>Questions, testeurs et préparation du jury</span></div></button>
+      <button class="command-card simple-command" id="configureBtn" type="button"><span class="cmd-icon culinary-line-icon"><svg width="76" height="76" style="width:76px;height:76px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><circle cx="32" cy="17" r="6"/><circle cx="13" cy="24" r="5"/><circle cx="51" cy="24" r="5"/><path d="M20 49v-7a12 12 0 0 1 24 0v7M3 45v-4a10 10 0 0 1 14-9M61 45v-4a10 10 0 0 0-14-9"/><path stroke="#b56d4d" d="M20 55h24"/></svg></span><div><strong>2. Préparer le lot</strong><span>Questions, testeurs et préparation du lot</span></div></button>
       <button class="command-card primary-command simple-command" id="juryBtn" type="button" onclick="openJuryFlow()"><span class="cmd-icon culinary-line-icon"><svg width="76" height="76" style="width:76px;height:76px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M9 45a23 23 0 0 1 46 0M5 46h54M10 53h44M29 20v-2a3 3 0 0 1 6 0v2"/><path stroke="#b56d4d" d="M24 10c-5-5 5-6 0-11M34 10c-5-5 5-6 0-11M44 10c-5-5 5-6 0-11M13 58h38"/></svg></span><div><strong id="juryBtnTitle">Lancer le jury</strong><span id="juryBtnSub">Démarrer les dégustations avec les testeurs</span></div></button>
       <button class="command-card simple-command" id="resultsBtn" type="button">
         <span class="cmd-icon culinary-line-icon"><svg width="76" height="76" style="width:76px;height:76px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><rect x="9" y="36" width="10" height="21" rx="2"/><rect x="27" y="23" width="10" height="34" rx="2"/><rect x="45" y="9" width="10" height="48" rx="2" stroke="#b56d4d" fill="#b56d4d"/></svg></span>
@@ -771,7 +771,7 @@ html body #juryReportView #juryConclusionInput{
       </button>
       <button class="home-product-btn-v174 product-history-btn-v200" id="homeProductSheetsDoneBtnV200" type="button">
         <span class="quick-icon culinary-line-icon"><svg width="52" height="52" style="width:52px;height:52px;display:block;color:#244d3d;flex:none" viewBox="0 0 64 64" fill="none" stroke="#244d3d" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" focusable="false"><path d="M14 57V7h25l11 11v17M38 8v13h12M22 29h17M22 37h12M22 45h8"/><circle cx="46" cy="48" r="12" stroke="#b56d4d" fill="#b56d4d"/><path d="m40 48 4 4 8-9" stroke="#fffdf8"/></svg></span>
-        <span><strong>Fiches terminées</strong><span>Consulter les fiches produits complètes</span></span>
+        <span><strong>Fiches complétées</strong><span>Consulter les fiches produits complètes</span></span>
         <span class="home-reception-badge" id="homeProductSheetsDoneBadgeV200">0</span>
       </button>
       <button class="home-reception-btn reception-history-btn" id="homeArchivesMiniBtn" type="button">
@@ -2504,7 +2504,7 @@ html body #juryReportView #juryConclusionInput{
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=614-product-sheets-ok"></script>
+<script src="js/05-application-principale.js?build=615-home-labels"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
