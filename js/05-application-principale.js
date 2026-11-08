@@ -9707,9 +9707,25 @@ async function emailCurrentReport(){
   }
 }
 
+async function saveArchiveWithQuotaRecoveryV640(archives){
+  const compact=typeof compactOwnerEnvelopesV360==='function'?compactOwnerEnvelopesV360(archives):archives;
+  try{saveArchives(compact);return}catch(error){
+    if(error?.name!=='QuotaExceededError'&&error?.code!==22&&error?.code!==1014)throw error;
+    if(typeof verifyRecoveryValueV360!=='function')throw error;
+    await verifyRecoveryValueV360('archive-before-quota-recovery',JSON.stringify(archives));
+    if(typeof compactLocalJuryCopiesV360==='function')await compactLocalJuryCopiesV360();
+    for(const key of Object.keys(localStorage).filter(key=>/^jm[_-]/.test(key)&&/backup|recovery/i.test(key)&&![STORAGE_KEY,PREPARED_JURY_STORAGE_KEY,ARCHIVE_STORAGE_KEY].includes(key))){
+      const raw=localStorage.getItem(key);if(raw===null)continue;
+      await verifyRecoveryValueV360(key,raw);
+      if(localStorage.getItem(key)===raw)localStorage.removeItem(key);
+    }
+    saveArchives(compact);
+  }
+}
 async function confirmReportSentAndArchive(){
   if(!state.config?._finalReportPreparedAt){alert('Préparez et envoyez d’abord le rapport final.');return;}
-  if(state.config?._archive?.finalLocked)return;
+  // A previous interrupted archive may already have set finalLocked in memory.
+  // Retry the durable archive write before completing cleanup.
   if(!ensureProductSheetsComplete('archiver le rapport envoyé'))return;
   const m=juryMetrics();
   if(!(m.max>0&&m.done===m.max&&m.validated===Number(state.config.testerCount))){
@@ -9718,16 +9734,19 @@ async function confirmReportSentAndArchive(){
   if(!closureIsReady()){alert('Complétez d’abord la fiche de clôture.');return;}
   const btn=$('#confirmReportSentArchiveBtn');
   if(btn)btn.disabled=true;
+  const previousArchive=deepClone(state.config._archive||null);
+  let archiveSaved=false;
   try{
     const now=new Date().toISOString();
     if(!state.config.juryClose?.closedAt)state.config.juryClose={...(state.config.juryClose||{}),closedAt:now};
     const id=state.config._archive?.archiveId||uid('archive');
     state.config._archive={...(state.config._archive||{}),archiveId:id,archivedAt:now,reportSentConfirmedAt:now,finalLocked:true,cloudSessionId:typeof cloudCfg!=='undefined'?cloudCfg.sessionId:''};
-    const snapshot=deepClone(state);
+    const snapshot=typeof compactOwnerEnvelopesV360==='function'?compactOwnerEnvelopesV360(state):deepClone(state);
     const archives=loadArchives().filter(r=>String(r.id)!==String(id));
     archives.unshift({id,archivedAt:now,finalLocked:true,state:snapshot,cloudSessionId:state.config._archive.cloudSessionId});
     // Sauver l’archive complète avant de retirer quoi que ce soit de l’accueil.
-    saveArchives(archives);
+    await saveArchiveWithQuotaRecoveryV640(archives);
+    archiveSaved=true;
     saveState();
     if(typeof syncDirtyToCloud==='function')await syncDirtyToCloud();
     if(typeof disconnectCloud==='function')await disconnectCloud({keepOwnerSession:true});
@@ -9754,6 +9773,7 @@ async function confirmReportSentAndArchive(){
     renderHome();
     toast('Rapport envoyé confirmé — jury archivé et verrouillé ✓');
   }catch(e){
+    if(!archiveSaved)state.config._archive=previousArchive;
     console.error(e);
     alert('La clôture n’a pas pu être entièrement terminée. Les données sont conservées. '+(e?.message||e));
   }finally{if(btn)btn.disabled=false;}
