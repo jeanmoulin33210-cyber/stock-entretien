@@ -3677,7 +3677,7 @@ async function refreshTesterLaunchState(){
     }
 
     /* V220 : secours fiable par la table que le testeur lit déjà pour ses réponses. */
-    if(!openedAt){
+    if(!openedAt||!instanceId){
       const {data:markers,error:markerError}=await cloudClient
         .from('test_culinaire_reponses')
         .select('remarks,updated_at')
@@ -3693,7 +3693,7 @@ async function refreshTesterLaunchState(){
       }
     }
 
-    if(openedAt){
+    if(openedAt&&instanceId){
       if(instanceId){
         state.config.juryInstanceId=instanceId;
         state.config._juryInstanceId=instanceId;
