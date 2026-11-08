@@ -400,7 +400,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="630-closure-date-fit">
+<meta name="jury-release" content="631-jury-person-fields-aligned">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -683,6 +683,15 @@ html body #closureDate{
 }
 html body #closureDate::-webkit-date-and-time-value{min-width:0;text-align:left}
 html body #closureDate::-webkit-datetime-edit{min-width:0;padding:0}
+</style>
+<style id="closurePersonAlignV631">
+html body .closure-card .form-grid > .closure-person-field{align-self:stretch;min-width:0}
+html body .closure-card .closure-person-field > label{
+ flex:1;display:flex;align-items:flex-end;flex-wrap:wrap;column-gap:4px;
+}
+html body .closure-card .closure-person-field > input{
+ flex:none;box-sizing:border-box;width:100%;min-width:0;max-width:100%;margin-top:0;
+}
 </style>
 </head>
 <body>
@@ -2133,10 +2142,10 @@ html body #closureDate::-webkit-datetime-edit{min-width:0;padding:0}
       <div class="form-grid">
         <div class="field"><label>Date de dégustation <span class="required-mark">*</span></label><input id="closureDate" type="date"></div>
         <div class="field"><label>Lieu <span class="required-mark">*</span></label><input id="closurePlace" placeholder="Ex. Lycée Jean Moulin — Langon"></div>
-        <div class="field"><label>Responsable / président du jury <span class="required-mark">*</span></label><input id="closureChair" placeholder="Nom et prénom"></div>
-        <div class="field"><label>Fonction</label><input id="closureChairRole" placeholder="Ex. Chef de cuisine"></div>
-        <div class="field"><label>Second signataire</label><input id="closureCoSigner" placeholder="Nom et prénom"></div>
-        <div class="field"><label>Fonction</label><input id="closureCoSignerRole" placeholder="Ex. Adjoint-gestionnaire"></div>
+        <div class="field closure-person-field"><label>Responsable / président du jury <span class="required-mark">*</span></label><input id="closureChair" placeholder="Nom et prénom"></div>
+        <div class="field closure-person-field"><label>Fonction</label><input id="closureChairRole" placeholder="Ex. Chef de cuisine"></div>
+        <div class="field closure-person-field"><label>Second signataire</label><input id="closureCoSigner" placeholder="Nom et prénom"></div>
+        <div class="field closure-person-field"><label>Fonction</label><input id="closureCoSignerRole" placeholder="Ex. Adjoint-gestionnaire"></div>
         <div class="field" style="grid-column:1/-1"><label>Observations générales / réserves éventuelles</label><textarea id="closureNotes" placeholder="Observations générales du jury, incidents, réserves, précisions utiles…"></textarea></div>
       </div>
     </div>
