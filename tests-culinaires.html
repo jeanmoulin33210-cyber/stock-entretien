@@ -399,7 +399,7 @@ html body #prepareJuryModal :is(h2,h3,h4,strong){color:#2d5948!important}
 html body #prepareJuryModal :is(p,.prepare-jury-empty-v180,.empty){color:#657165!important}
 html body #prepareJuryModal #prepareJuryCancelBtn{-webkit-text-fill-color:#2d5948!important}
 </style>
-<meta name="jury-release" content="617-launch-testers">
+<meta name="jury-release" content="618-lot-preparation-footer">
 <style id="deploymentStatusStyleV557">
 /* Seule la petite feuille du logo TC indique une nouvelle version. */
 html body #deploymentStatusV557{
@@ -634,6 +634,13 @@ html body #projectionView .projection-many-testers-v609 .projection-tester-card{
 <style id="whiteJuryConclusionV611">
 html body #juryReportView #juryConclusionInput{
   background:#fffefa!important;background-image:none!important;color:#233e32!important;
+}
+</style>
+<style id="lotPreparationFooterV618">
+html body #configView .config-summary-bar{
+ position:static!important;inset:auto!important;bottom:auto!important;left:auto!important;right:auto!important;
+ width:100%!important;max-width:100%!important;box-sizing:border-box!important;
+ margin-top:24px!important;transform:none!important;z-index:auto!important;
 }
 </style>
 </head>
@@ -1501,7 +1508,7 @@ html body #juryReportView #juryConclusionInput{
   </div>
 
   <div class="panel" id="preparedJuryIntro" style="padding:14px 16px;margin-bottom:12px">
-    <strong style="display:block;color:#305744;font-size:13px">Préparation du jury</strong>
+    <strong style="display:block;color:#305744;font-size:13px">Préparation du lot</strong>
     <span style="display:block;color:var(--muted);font-size:10px;margin-top:4px;line-height:1.45">Les choix du lot ont déjà été faits. Vérifiez les informations ci-dessous puis complétez uniquement ce qui manque.</span>
   </div>
 
@@ -1574,11 +1581,11 @@ html body #juryReportView #juryConclusionInput{
 
 </div>
   <div class="config-summary-bar">
-    <div class="summary-copy"><strong id="configFooterSummary">Jury à préparer</strong><span id="configFooterDetail">Commencez par choisir les échantillons à tester.</span></div>
+    <div class="summary-copy"><strong id="configFooterSummary">Lot à préparer</strong><span id="configFooterDetail">Commencez par choisir les échantillons à tester.</span></div>
     <div class="right">
       <button class="btn btn-ghost" id="cancelConfigBtn">Annuler</button>
       <button class="btn btn-secondary" id="previewConfigBtn">Aperçu</button>
-      <button class="btn btn-primary" id="saveConfigBtn">Enregistrer ce jury</button>
+      <button class="btn btn-primary" id="saveConfigBtn">Enregistrer ce lot</button>
     </div>
   </div>
 </main>
@@ -2508,7 +2515,7 @@ html body #juryReportView #juryConclusionInput{
   </div>
 </div>
 
-<script src="js/05-application-principale.js?build=617-launch-testers"></script>
+<script src="js/05-application-principale.js?build=618-lot-preparation-footer"></script>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
