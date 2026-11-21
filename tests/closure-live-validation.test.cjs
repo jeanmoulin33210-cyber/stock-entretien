@@ -13,7 +13,7 @@ console.log('PASS chair validation follows live input, accepts names, catches bl
 async function checkSave(){
   for(const id of ['closureChairRole','closureCoSigner','closureCoSignerRole','closureNotes'])fields[id]={value:''};
   state.config.testerCount=0;state.testers={};ctx.signatureCanvasData=()=>'';ctx.toast=()=>{};let saved,returns=0;ctx.renderAdmin=()=>returns++;ctx.window.scrollTo=()=>{};
-  ctx.saveState=()=>{saved=JSON.parse(JSON.stringify(state))};ctx.document.querySelector=()=>null;
+  ctx.saveState=()=>{saved=JSON.parse(JSON.stringify(state))};ctx.localStorage={getItem:()=>saved?JSON.stringify(saved):null};ctx.STORAGE_KEY='test-closure-state';ctx.document.querySelector=()=>null;
   load('function ensureClosure(','function closureHasUsefulData(');load('function captureClosureForm(','let closureAutosaveTimer=');load('async function saveClosure(','function signatureCanvasData(');
   fields.closureChair.value='Marie Dupont';await ctx.saveClosure();assert.equal(saved.config.closure.chair,'Marie Dupont');assert.equal(returns,1);assert.equal(fields.closureStatusTitle.textContent,'Fiche prête ✓');assert.equal(fields.closureChair.classes.has('closure-required-missing'),false);
   console.log('PASS real save handler stores the entered chair name and validates the complete closure');
