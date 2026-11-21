@@ -13,10 +13,13 @@
   function clear(st,no){for(const a of Object.values(st.testers?.[no]?.answers||{}))a.remarks=(a.remarks||[]).map(v=>typeof v==='string'&&v.startsWith(PREFIX)?'':v);}
   function attach(st,no,s,slot){const answers=Object.values(st.testers?.[no]?.answers||{});if(!answers.length)throw Error('Aucune réponse à signer.');clear(st,no);const a=answers[answers.length-1];a.remarks=a.remarks||[];a.remarks[slot]=PREFIX+JSON.stringify({...s,testerNo:Number(no),jury:identity(st)});}
   const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const signedClosureReceiptsV648=new Map();
+  const signedClosureKeyV648=(st,no)=>identity(st)+'|'+Number(no);
   function list(st){
     const members=st.config?.closure?.members||[],numbers=new Set([...Object.keys(st.testers||{}),...members.map(m=>String(m.testerNo))]);
     return [...numbers].map(no=>{
-      const member=members.find(m=>Number(m.testerNo)===Number(no))||{},signed=read(st,no);
+      const member=members.find(m=>Number(m.testerNo)===Number(no))||{},
+        signed=read(st,no)||signedClosureReceiptsV648.get(signedClosureKeyV648(st,no))||null;
       // Preserve historical attendance signatures; a phone signature takes precedence.
       const legacy=!signed&&/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(member.signature||'')&&member.signature.length<=160000?{testerNo:Number(no),name:member.name,image:member.signature,signedAt:member.signedAt||'',legacy:true}:null;
       const s=signed||legacy;return s?{...s,name:s.name||st.testers?.[no]?.name||member.name||'Testeur '+no,function:s.function||member.role||'',establishment:s.establishment||member.establishment||''}:null;
@@ -194,9 +197,125 @@
     pendingReceipt={...old,inProgress:false,failure:''};
     saveState();renderSample();startReceiptDelivery(pendingReceipt);
   }
-  if(typeof module!=='undefined'&&module.exports){module.exports={read,attach,clear,html,list,receiptVerified};return;}
+  /* V648 — Loading a prepared lot from the authenticated owner's catalogue
+     does not include its protected tester answer rows. Restore only verified
+     signed profiles from the matching secure jury session, without overwriting
+     a single editable closure field or publishing signatures in public_config. */
+  const pendingClosureRecoveryV648=new Map();
+  function closureSignatureRowV648(rows,st,no){
+    if(!Array.isArray(rows)||!st?.config||!Number.isInteger(Number(no)))return null;
+    const n=Number(no);
+    const official=rows.find(row=>Number(row.tester_no)===n&&
+      row.product_id==='__meta__'&&row.sample_id==='__validation__');
+    const validated=String(official?.remarks?.[0]||'');
+    if(!validated||!Number.isFinite(Date.parse(validated)))return null;
+    const expectedSamples=new Set((st.config.products||[]).flatMap(p=>
+      (p.samples||[]).map(sample=>String(p.id)+'|'+String(sample.id))));
+    const jury=identity(st);
+    if(!jury||!expectedSamples.size)return null;
+    for(const row of rows){
+      if(Number(row.tester_no)!==n||
+         !expectedSamples.has(String(row.product_id)+'|'+String(row.sample_id)))continue;
+      for(const remark of row.remarks||[]){
+        if(typeof remark!=='string'||!remark.startsWith(PREFIX))continue;
+        try{
+          const signed=JSON.parse(remark.slice(PREFIX.length));
+          if(Number(signed.testerNo)!==n||signed.jury!==jury||
+             !/^data:image\/png;base64,[A-Za-z0-9+/=]+$/.test(signed.image||'')||
+             signed.image.length>160000||
+             !Number.isFinite(Date.parse(signed.signedAt||'')))continue;
+          return signed;
+        }catch(_){}
+      }
+    }
+    return null;
+  }
+  function sameClosureJuryV648(local,remote,sid){
+    if(!local||!remote)return false;
+    const id=cfg=>String(cfg._juryInstanceId||cfg.juryInstanceId||'');
+    const localId=id(local),remoteId=id(remote);
+    if(!localId||localId!==remoteId)return false;
+    if(String(local._preparedId||'')!==String(remote._preparedId||''))return false;
+    if(String(local.lotNumber||'')!==String(remote.lotNumber||''))return false;
+    if(String(local.lotName||'')!==String(remote.lotName||''))return false;
+    const remoteSid=String(remote._shareSessionId||remote.juryLaunch?.sessionId||'');
+    return remoteSid===String(sid);
+  }
+  function paintClosureSignaturesV648(st){
+    if(typeof document==='undefined'||state!==st)return;
+    const view=document.getElementById('closureView');
+    const host=document.getElementById('closureTesterSignaturesV393');
+    if(!host||view?.classList.contains('active')===false)return;
+    host.innerHTML=html(st);
+    for(const signed of list(st)){
+      const i=Number(signed.testerNo)-1;
+      if(!Number.isInteger(i)||i<0||i>=Number(st.config.testerCount||0))continue;
+      const field=document.querySelector('[data-cl-role="'+i+'"]');
+      if(!field||field===document.activeElement||String(field.value||'').trim())continue;
+      const parts=[signed.function,signed.establishment].filter(Boolean);
+      if(parts.length){
+        field.value=parts.join(' — ');
+        /* This visible suggestion is not silently recorded in the closure.
+           The administrator's normal Save action records it. */
+        if(typeof scheduleClosureAutosave==='function')scheduleClosureAutosave();
+      }
+    }
+  }
+  async function recoverClosureSignaturesV648(){
+    if(typeof cloudClient==='undefined'||!cloudClient||
+       typeof cloudRole==='undefined'||cloudRole!=='admin')return false;
+    const st=state,cfg=st?.config;
+    if(!cfg||!Number(cfg.testerCount))return false;
+    const sid=String(cfg._shareSessionId||cfg.juryLaunch?.sessionId||'');
+    const jury=identity(st),key=sid+'|'+jury;
+    if(!/^[0-9a-f]{8}-[0-9a-f-]{27,}$/i.test(sid)||!jury)return false;
+    if(Array.from({length:cfg.testerCount},(_,i)=>i+1).every(
+      no=>!!read(st,no)||signedClosureReceiptsV648.has(signedClosureKeyV648(st,no)))){
+      paintClosureSignaturesV648(st);return true;
+    }
+    if(pendingClosureRecoveryV648.has(key))return pendingClosureRecoveryV648.get(key);
+    const job=(async()=>{
+      const querySession=()=>cloudClient.from('test_culinaire_sessions')
+        .select('config').eq('session_id',sid).maybeSingle();
+      let {data:session,error:sessionError}=await querySession();
+      if(sessionError||!session?.config){
+        /* Only the real jury administrator, proving the original admin code,
+           may attach this account to its protected results. Never rotate
+           the connected account's authentication identity. */
+        const adminCode=typeof getRawAdminTokenV20==='function'?getRawAdminTokenV20():'';
+        if(!adminCode)return false;
+        const joined=await cloudClient.rpc('test_culinaire_join_session',
+          {p_session_id:sid,p_code:adminCode,p_tester_no:null});
+        if(joined.error)return false;
+        const membership=Array.isArray(joined.data)?joined.data[0]:joined.data;
+        if(membership?.role!=='admin')return false;
+        const retry=await querySession();session=retry.data;sessionError=retry.error;
+      }
+      if(sessionError||!session?.config||!sameClosureJuryV648(cfg,session.config,sid))return false;
+      const fetched=await cloudClient.from('test_culinaire_reponses')
+        .select('tester_no,product_id,sample_id,remarks').eq('session_id',sid);
+      if(fetched.error||!Array.isArray(fetched.data))return false;
+      if(state!==st||identity(state)!==jury||
+         String(state.config?._shareSessionId||state.config?.juryLaunch?.sessionId||'')!==sid)return false;
+      let found=0;
+      for(let no=1;no<=Number(cfg.testerCount);no++){
+        const signature=closureSignatureRowV648(fetched.data,st,no);
+        if(signature){
+          signedClosureReceiptsV648.set(signedClosureKeyV648(st,no),signature);
+          found++;
+        }
+      }
+      if(found)paintClosureSignaturesV648(st);
+      return found>0;
+    })().catch(err=>{console.warn('Affichage des signatures de clôture différé',err);return false;})
+      .finally(()=>pendingClosureRecoveryV648.delete(key));
+    pendingClosureRecoveryV648.set(key,job);
+    return job;
+  }
+  if(typeof module!=='undefined'&&module.exports){module.exports={read,attach,clear,html,list,receiptVerified,closureSignatureRowV648,sameClosureJuryV648};return;}
   window.testerSignaturesHtmlV393=html;
   window.testerSignaturesV393=list;
+  window.recoverClosureSignaturesV648=recoverClosureSignaturesV648;
   if(typeof window.addEventListener==='function'){
     window.addEventListener('load',()=>recoverPendingReceipt().catch(e=>console.warn('Reprise des réponses différée',e)));
     window.addEventListener('online',()=>{
