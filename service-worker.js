@@ -1,5 +1,5 @@
 /* v338 forced refresh */
-const CACHE_NAME='tc-offline-v338-icon-20261121b';
+const CACHE_NAME='tc-offline-v646-signed-receipt-20261121';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
@@ -41,7 +41,8 @@ const APP_SHELL=[
   './js/29-v275-correctif-impression-qr.js',
   './js/30-v290-controle-occena.js',
   './js/31-v291-occena-a-faire.js',
-  './js/32-v338-rapport-sensoriel-premium.js'
+  './js/32-v338-rapport-sensoriel-premium.js',
+  './js/36-tester-signature.js'
 ];
 
 self.addEventListener('install',event=>{
