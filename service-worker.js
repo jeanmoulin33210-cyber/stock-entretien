@@ -1,11 +1,12 @@
 /* v338 forced refresh */
-const CACHE_NAME='tc-offline-v338-20261007a';
+const CACHE_NAME='tc-offline-v338-icon-20261121b';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
   './manifest.webmanifest',
-  './icon-192.png',
-  './icon-512.png',
+  './icon-jury.svg',
+  './icon-jury-192.png',
+  './icon-jury-512.png',
   './css/styles.css',
   './css/correctifs.css',
   './css/fin.css',
