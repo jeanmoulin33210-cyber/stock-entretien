@@ -1,5 +1,5 @@
 /* v338 forced refresh */
-const CACHE_NAME='tc-offline-v647-closure-save-20261121';
+const CACHE_NAME='tc-offline-v648-closure-signature-20261121';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
