@@ -23,9 +23,185 @@
     }).filter(Boolean);
   }
   function html(st){const cards=list(st).map(s=>`<div style="break-inside:avoid;border:1px solid #ccd9df;border-radius:12px;padding:12px;margin:8px 0"><strong>${esc(s.name)}</strong>${s.function?`<div>Fonction : ${esc(s.function)}</div>`:''}${s.establishment?`<div>Établissement : ${esc(s.establishment)}</div>`:''}${s.signedAt?`<div>Signé le ${esc(new Date(s.signedAt).toLocaleString('fr-FR'))}</div>`:'<div>Signature déjà enregistrée dans la clôture</div>'}<img src="${s.image}" alt="Signature du testeur ${esc(s.testerNo)}" style="display:block;max-width:100%;width:300px;height:110px;object-fit:contain"></div>`).join('');return cards?'<section><h3>Signatures des testeurs</h3>'+cards+'</section>':'';}
-  if(typeof module!=='undefined'&&module.exports){module.exports={read,attach,clear,html,list};return;}
+  /* V646 — The phone must receive a server receipt before it may say "Merci".
+     Signed, incomplete uploads are saved to a per-jury IndexedDB outbox. This
+     does not read or change the administrator's (isolated) browser storage. */
+  const OUTBOX='jm-tc-tester-outbox-v646';
+  let pendingReceipt=null;
+  const nap=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+  function receiptVerified(rows,receipt){
+    if(!Array.isArray(rows)||!receipt?.stamp||!receipt?.signature||
+       !Array.isArray(receipt.answers)||!receipt.answers.length)return false;
+    const official=rows.find(row=>row.product_id==='__meta__'&&row.sample_id==='__validation__');
+    if(!Array.isArray(official?.remarks)||official.remarks[0]!==receipt.stamp)return false;
+    let signatureFound=false;
+    for(const expected of receipt.answers){
+      const row=rows.find(r=>r.product_id===expected.product_id&&r.sample_id===expected.sample_id);
+      if(!row||
+         JSON.stringify(row.choices||[])!==JSON.stringify(expected.choices||[])||
+         JSON.stringify(row.remarks||[])!==JSON.stringify(expected.remarks||[]))return false;
+      if(row.remarks.includes(receipt.signature))signatureFound=true;
+    }
+    return signatureFound;
+  }
+  function receiptKey(sid,jury,no){return String(sid)+'|'+String(jury)+'|'+Number(no);}
+  function buildReceipt(no){
+    const tester=state.testers?.[no],jury=identity(state);
+    if(!tester?.validatedAt||!read(state,no))throw Error('Signature locale introuvable : conservez cette page ouverte.');
+    const sid=String(cloudCfg?.sessionId||new URLSearchParams(location.search).get('session')||'');
+    if(!sid||!jury)throw Error('Session du jury introuvable : conservez cette page ouverte.');
+    const answers=[];
+    for(const product of state.config.products||[])for(const sample of product.samples||[]){
+      const answer=tester.answers?.[sampleKey(product.id,sample.id)];
+      if(!answer)throw Error('Une fiche locale manque : conservez cette page ouverte.');
+      answers.push({
+        product_id:String(product.id),sample_id:String(sample.id),
+        choices:JSON.parse(JSON.stringify(answer.choices||[])),
+        remarks:JSON.parse(JSON.stringify(answer.remarks||[]))
+      });
+    }
+    const signature=answers.flatMap(a=>a.remarks).find(v=>typeof v==='string'&&v.startsWith(PREFIX));
+    if(!signature)throw Error('Signature locale introuvable : conservez cette page ouverte.');
+    return {key:receiptKey(sid,jury,no),sid,jury,no:Number(no),
+      stamp:String(tester.validatedAt),signature,answers};
+  }
+  function outbox(action,receipt){
+    return new Promise((resolve,reject)=>{
+      if(typeof indexedDB==='undefined'){resolve(null);return;}
+      let db;
+      const opened=indexedDB.open(OUTBOX,1);
+      opened.onupgradeneeded=()=>{if(!opened.result.objectStoreNames.contains('pending'))opened.result.createObjectStore('pending',{keyPath:'key'});};
+      opened.onerror=()=>reject(opened.error||Error('Stockage local indisponible'));
+      opened.onsuccess=()=>{
+        db=opened.result;
+        let result=null,tx;
+        try{
+          tx=db.transaction('pending',action==='get'?'readonly':'readwrite');
+          const store=tx.objectStore('pending');
+          const req=action==='get'?store.get(receipt.key):
+                    action==='put'?store.put({...receipt,inProgress:false,failure:''}):store.delete(receipt.key);
+          req.onsuccess=()=>{result=req.result??null;};
+          tx.oncomplete=()=>{db.close();resolve(result);};
+          tx.onerror=()=>{db.close();reject(tx.error||Error('Sauvegarde locale impossible'));};
+          tx.onabort=()=>{db.close();reject(tx.error||Error('Sauvegarde locale interrompue'));};
+        }catch(e){db?.close();reject(e);}
+      };
+    });
+  }
+  function receiptStillCurrent(receipt){
+    return identity(state)===receipt.jury &&
+      Number(currentTester)===receipt.no &&
+      String(state.testers?.[receipt.no]?.validatedAt||'')===receipt.stamp;
+  }
+  async function sendReceipt(receipt){
+    if(!receiptStillCurrent(receipt))throw Error('Le jury ou le testeur a changé. Les données locales ont été conservées.');
+    if(typeof navigator!=='undefined'&&navigator.onLine===false)
+      throw Error('Le téléphone est hors connexion.');
+    if(typeof cloudReady==='undefined'||!cloudReady||
+       typeof cloudRole==='undefined'||cloudRole!=='tester'||
+       Number(cloudTesterNo)!==receipt.no||
+       String(cloudCfg?.sessionId||'')!==receipt.sid||
+       !cloudClient)throw Error('Le partage sécurisé avec le jury n’est pas connecté.');
+    /* Wait for an ordinary answer upload that might have begun just before signing.
+       Never send an older snapshot over the final signature. */
+    for(let i=0;i<24&&cloudBusy;i++)await nap(250);
+    if(cloudBusy)throw Error('Synchronisation précédente toujours en cours.');
+    if(!receiptStillCurrent(receipt))throw Error('Le jury a changé pendant l’enregistrement.');
+    const now=new Date().toISOString();
+    const rows=receipt.answers.map(a=>({
+      session_id:receipt.sid,tester_no:receipt.no,
+      product_id:a.product_id,sample_id:a.sample_id,
+      choices:a.choices,remarks:a.remarks,updated_at:now
+    }));
+    const sent=await cloudClient.from('test_culinaire_reponses')
+      .upsert(rows,{onConflict:'session_id,tester_no,product_id,sample_id'});
+    if(sent.error)throw sent.error;
+    const validated=await cloudClient.from('test_culinaire_reponses')
+      .upsert([{session_id:receipt.sid,tester_no:receipt.no,
+        product_id:'__meta__',sample_id:'__validation__',choices:[],
+        remarks:[receipt.stamp],updated_at:new Date().toISOString()}],
+        {onConflict:'session_id,tester_no,product_id,sample_id'});
+    if(validated.error)throw validated.error;
+    const checked=await cloudClient.from('test_culinaire_reponses')
+      .select('product_id,sample_id,choices,remarks')
+      .eq('session_id',receipt.sid).eq('tester_no',receipt.no);
+    if(checked.error)throw checked.error;
+    if(!receiptVerified(checked.data,receipt))
+      throw Error('Le serveur n’a pas encore confirmé toutes les notes, la signature et la validation.');
+    return true;
+  }
+  function showPendingReceipt(panel,receipt){
+    const failed=!!receipt.failure;
+    panel.className='panel tester-thank-you';
+    panel.innerHTML='<div role="status" aria-live="polite" style="text-align:center;padding:30px 16px;line-height:1.65">'+
+      '<div aria-hidden="true" style="font-size:48px">'+(failed?'⚠️':'⏳')+'</div>'+
+      '<h2 style="font-size:25px;color:#176b48">'+
+        (failed?'Enregistrement à confirmer':'Enregistrement en cours…')+'</h2>'+
+      '<p>'+(failed?
+        'Le serveur n’a pas confirmé la réception complète. Vos réponses et votre signature restent sur ce téléphone.':
+        'Transmission et vérification des notes, de votre signature et de la validation sur le serveur…')+'</p>'+
+      (failed?'<p style="color:#9b3833">'+esc(receipt.failure)+'</p>':'')+
+      '<p><strong>Ne fermez pas cette page avant le message de confirmation.</strong></p>'+
+      (failed?'<button type="button" class="btn btn-primary" id="retryTesterDeliveryV646" style="min-height:50px">Réessayer l’enregistrement</button>':'')+
+      '</div>';
+    const retry=panel.querySelector('#retryTesterDeliveryV646');
+    if(retry)retry.onclick=()=>startReceiptDelivery(receipt);
+  }
+  async function startReceiptDelivery(receipt){
+    if(receipt.inProgress)return;
+    receipt.inProgress=true;receipt.failure='';
+    if(pendingReceipt===receipt)renderSample();
+    try{
+      /* An interrupted connection can never expose "Merci" until the server
+         has been queried and all fields compared. */
+      await outbox('put',receipt);
+      await Promise.race([
+        sendReceipt(receipt),
+        new Promise((_,reject)=>setTimeout(()=>reject(Error('La confirmation du serveur prend trop de temps.')),15000))
+      ]);
+      if(!receiptStillCurrent(receipt))throw Error('Le jury a changé avant la confirmation.');
+      try{await outbox('delete',receipt);}catch(e){console.warn('Copie de secours locale conservée',e);}
+      if(pendingReceipt===receipt){pendingReceipt=null;renderSample();}
+    }catch(e){
+      receipt.failure=String(e?.message||e||'Connexion interrompue. Réessayez.');
+      if(pendingReceipt===receipt)renderSample();
+    }finally{receipt.inProgress=false;}
+  }
+  async function recoverPendingReceipt(){
+    if(typeof URLSearchParams==='undefined'||typeof location==='undefined'||
+       !/^[1-9][0-9]*$/.test(new URLSearchParams(location.search).get('tester')||''))return;
+    for(let i=0;i<40;i++){
+      if(typeof cloudReady!=='undefined'&&cloudReady&&
+         typeof cloudRole!=='undefined'&&cloudRole==='tester'&&
+         state?.config?.products?.length)break;
+      await nap(400);
+    }
+    if(typeof cloudReady==='undefined'||!cloudReady||cloudRole!=='tester')return;
+    const no=Number(cloudTesterNo),sid=String(cloudCfg?.sessionId||'');
+    const old=await outbox('get',{key:receiptKey(sid,identity(state),no)});
+    if(!old||old.no!==no||old.sid!==sid||old.jury!==identity(state)||
+       !Array.isArray(old.answers)||!old.answers.length||pendingReceipt)return;
+    const expected=(state.config.products||[]).flatMap(p=>(p.samples||[]).map(sm=>String(p.id)+'|'+String(sm.id)));
+    if(expected.length!==old.answers.length||
+       old.answers.some(a=>!expected.includes(a.product_id+'|'+a.sample_id))||
+       !state.testers?.[no])return;
+    for(const a of old.answers){
+      state.testers[no].answers[sampleKey(a.product_id,a.sample_id)]=
+        {choices:a.choices,remarks:a.remarks};
+    }
+    state.testers[no].validatedAt=old.stamp;
+    pendingReceipt={...old,inProgress:false,failure:''};
+    saveState();renderSample();startReceiptDelivery(pendingReceipt);
+  }
+  if(typeof module!=='undefined'&&module.exports){module.exports={read,attach,clear,html,list,receiptVerified};return;}
   window.testerSignaturesHtmlV393=html;
   window.testerSignaturesV393=list;
+  if(typeof window.addEventListener==='function'){
+    window.addEventListener('load',()=>recoverPendingReceipt().catch(e=>console.warn('Reprise des réponses différée',e)));
+    window.addEventListener('online',()=>{
+      if(pendingReceipt?.failure&&!pendingReceipt.inProgress)startReceiptDelivery(pendingReceipt);
+    });
+  }
   const original=validateTesterFinal;
   validateTesterFinal=function(no=currentTester){
     if(testerValidated(no)||testerMustWaitForLaunch()||isJuryClosed()||!totalSamples()||testerCompleted(no)!==totalSamples())return original(no);
@@ -52,7 +228,23 @@
       if(length<25){message.textContent='Veuillez dessiner votre signature avant de valider.';return;}
       if(identity(state)!==jury||state.testers[no]!==tester||isJuryClosed()||testerCompleted(no)!==totalSamples()){message.textContent='Le jury a changé. Fermez cette fenêtre et vérifiez votre test.';return;}
       const image=canvas.toDataURL('image/png');if(image.length>160000){message.textContent='Signature trop volumineuse. Effacez puis signez à nouveau.';return;}
-      try{attach(state,no,{image,name:tester.name||'Testeur '+no,function:functionName,establishment,signedAt:new Date().toISOString()},QUESTIONS.length+2);original(no);if(testerValidated(no)){dialog.close();renderSample();}else{clear(state,no);message.textContent='Le test n’a pas été validé. Vérifiez vos réponses.';}}catch(e){message.textContent='Validation impossible : '+e.message;}
+      try{
+        attach(state,no,{image,name:tester.name||'Testeur '+no,function:functionName,establishment,signedAt:new Date().toISOString()},QUESTIONS.length+2);
+        pendingReceipt={no:Number(no),jury:identity(state),inProgress:false,failure:''};
+        original(no);
+        if(testerValidated(no)){
+          pendingReceipt=buildReceipt(no);
+          dialog.close();
+          renderSample();
+          startReceiptDelivery(pendingReceipt);
+        }else{
+          pendingReceipt=null;clear(state,no);
+          message.textContent='Le test n’a pas été validé. Vérifiez vos réponses.';
+        }
+      }catch(e){
+        pendingReceipt=null;
+        message.textContent='Validation impossible : '+e.message;
+      }
     };
   };window.validateTesterFinal=validateTesterFinal;
   const renderFinal=renderValidatedTesterFinal;
@@ -60,6 +252,13 @@
     const entering=!document.getElementById('testerThankYou');
     const result=renderFinal.apply(this,arguments);
     const panel=document.getElementById('validationPanel');
+    if(panel&&pendingReceipt&&
+       pendingReceipt.no===Number(currentTester)&&
+       pendingReceipt.jury===identity(state)&&
+       pendingReceipt.stamp===String(state.testers?.[currentTester]?.validatedAt||'')){
+      showPendingReceipt(panel,pendingReceipt);
+      return result;
+    }
     const signed=read(state,currentTester);
     if(panel){
       panel.className='panel tester-thank-you';
