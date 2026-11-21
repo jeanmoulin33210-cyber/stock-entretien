@@ -35,6 +35,9 @@ jobs:
       - name: Tester signature transport and jury isolation
         run: node tests/tester-signature.test.cjs
 
+      - name: Signed tester confirmation blocks premature thank-you and allows offline retry
+        run: node tests/tester-delivery.test.cjs
+
       - name: Reception temperature thresholds, refusals and traceability
         run: node tests/reception-temperature.test.cjs
 
