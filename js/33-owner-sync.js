@@ -88,6 +88,74 @@
     return out;
   }
 
+
+  /* V649 — A prepared-owner catalogue is a snapshot, not the definitive tester
+   * record. Recover completed answers only from the authenticated, identity-
+   * matched jury session. Never manufacture a validation from a local badge. */
+  function recoverVerifiedResultsV649(entryState,remoteCfg,rows){
+    const cfg=entryState?.config;
+    if(!cfg||!remoteCfg||!Array.isArray(rows))return null;
+    const instance=c=>String(c?._juryInstanceId||c?.juryInstanceId||'');
+    const prepared=String(cfg._preparedId||'');
+    const sid=String(cfg._shareSessionId||cfg.juryLaunch?.sessionId||'');
+    if(!prepared||prepared!==String(remoteCfg._preparedId||'')||
+       !instance(cfg)||instance(cfg)!==instance(remoteCfg)||
+       !sid||sid!==String(remoteCfg._shareSessionId||remoteCfg.juryLaunch?.sessionId||'')||
+       String(cfg.lotName||'')!==String(remoteCfg.lotName||'')||
+       String(cfg.lotNumber||'')!==String(remoteCfg.lotNumber||'')||
+       Number(cfg.testerCount||0)!==Number(remoteCfg.testerCount||0))return null;
+    const samples=c=>(c.products||[]).flatMap(p=>(p.samples||[]).map(sm=>String(p.id)+'|'+String(sm.id)));
+    const expected=samples(cfg),remoteExpected=samples(remoteCfg);
+    if(!expected.length||!equal(expected,remoteExpected))return null;
+    const next=clone(entryState);
+    next.testers=next.testers||{};
+    let changed=false,confirmed=0;
+    for(let t=1;t<=Number(cfg.testerCount||0);t++){
+      const official=rows.find(r=>Number(r.tester_no)===t &&
+        r.product_id==='__meta__'&&r.sample_id==='__validation__');
+      const stamp=String(official?.remarks?.[0]||
+        remoteCfg._validatedTestersV333?.[t]||'');
+      if(!stamp||!Number.isFinite(Date.parse(stamp)))continue;
+      const authoritative=[];
+      for(const p of cfg.products||[])for(const sm of p.samples||[]){
+        const row=rows.find(r=>Number(r.tester_no)===t &&
+          String(r.product_id)===String(p.id)&&String(r.sample_id)===String(sm.id));
+        if(!row||!Array.isArray(row.choices)||row.choices.length!==5||
+           row.choices.some(v=>v===null||v===undefined)){
+          authoritative.length=0;break;
+        }
+        authoritative.push({key:String(p.id)+'__'+String(sm.id),
+          choices:clone(row.choices),
+          // Signature remains in protected jury rows, not in the owner catalogue.
+          remarks:(Array.isArray(row.remarks)?row.remarks:[]).map(v=>
+            typeof v==='string'&&v.startsWith('__TC_SIGNATURE_V393__:')?'':v)});
+      }
+      if(authoritative.length!==expected.length)continue;
+      next.testers[t]=next.testers[t]||{name:'Testeur '+t,answers:{}};
+      next.testers[t].answers=next.testers[t].answers||{};
+      for(const answer of authoritative){
+        if(!equal(next.testers[t].answers[answer.key],{choices:answer.choices,remarks:answer.remarks})){
+          next.testers[t].answers[answer.key]={choices:answer.choices,remarks:answer.remarks};
+          changed=true;
+        }
+      }
+      if(next.testers[t].validatedAt!==stamp){
+        next.testers[t].validatedAt=stamp;changed=true;
+      }
+      confirmed++;
+    }
+    if(confirmed===Number(cfg.testerCount||0)&&remoteCfg.juryClose?.closedAt){
+      if(!equal(next.config.juryClose,remoteCfg.juryClose)){
+        next.config.juryClose=clone(remoteCfg.juryClose);changed=true;
+      }
+      // Preserve every locally edited closure field. Only initialize it if absent.
+      if(!next.config.closure&&remoteCfg.closure){
+        next.config.closure=clone(remoteCfg.closure);changed=true;
+      }
+    }
+    return changed?next:null;
+  }
+
   // V388: Results uses a fresh catalogue, while preserving local-only work.
   // An incomplete transport record must not hide an existing complete jury.
   function resultsChoicesV388(catalog,locals=[]){
@@ -125,7 +193,7 @@
       if(storage.getItem(key)===old)storage.removeItem(key);
     }
   }
-  const API={preserveImportRecoveryV453,clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383,resultsChoicesV388,isLotDRecoveryV389,validateLotDRestoreV389};
+  const API={preserveImportRecoveryV453,clone,equal,snapshot,id,retired,merge,reconcile,emptyJuryPlaceholderV383,resultsChoicesV388,recoverVerifiedResultsV649,isLotDRecoveryV389,validateLotDRestoreV389};
   if(typeof module==='object'&&module.exports){module.exports=API;return;}
   root.JuryOwnerSyncV357=API;
   let hub=null,descriptor=null,busy=false,applying=false,retryAt=0;
@@ -455,18 +523,48 @@
     const result=await c.from('test_culinaire_sessions').select('config').eq('session_id',descriptor.sessionId).maybeSingle();
     if(result.error||!result.data?.config?._ownerCatalogV357?.records)throw new Error('La liste partagée des résultats ne peut pas être vérifiée.');
     const catalog=clone(result.data.config._ownerCatalogV357);
-    // Recover incomplete catalogue entries only from their explicitly linked,
-    // authenticated jury session, never from a guessed lot name.
-    for(const [key,entry]of Object.entries(catalog.records)){
-      if(!key.startsWith('prepared:')||catalog.removed?.[key]||entry.state?.config?.products?.length)continue;
+    // V649: a completed signed jury may still look like 0/1 in the owner's
+    // prepared catalogue. Fetch only from the EXACT session linked to the lot.
+    await Promise.all(Object.entries(catalog.records).map(async ([key,entry])=>{
+      if(!key.startsWith('prepared:')||catalog.removed?.[key])return;
       const cfg=entry.state?.config||{},sid=String(cfg._shareSessionId||cfg.juryLaunch?.sessionId||'');
-      if(!sid||sid===descriptor.sessionId||(catalog.resetSessionIds||[]).includes(sid))continue;
+      if(!sid||sid===descriptor.sessionId||(catalog.resetSessionIds||[]).includes(sid))return;
+      if(!cfg.juryLaunch?.openedAt&&!(!cfg.products||!cfg.products.length))return;
+      if(cfg.juryClose?.closedAt&&cfg.products?.length)return;
       try{
-        const live=await c.from('test_culinaire_sessions').select('config').eq('session_id',sid).maybeSingle();
-        if(live.error||!live.data?.config?.products?.length||String(live.data.config._preparedId||'')!==key.slice(9))continue;
-        entry.state={...clone(entry.state),config:clone(live.data.config)};
-      }catch(e){console.warn('Résultat lié non disponible',e);}
-    }
+        const query=()=>c.from('test_culinaire_sessions').select('config').eq('session_id',sid).maybeSingle();
+        let {data:live,error:sessionError}=await query();
+        if(sessionError||!live?.config){
+          // RLS membership to this jury is required. The account's admin
+          // code can explicitly join, exactly as signature recovery does.
+          const token=typeof getRawAdminTokenV20==='function'?getRawAdminTokenV20():'';
+          if(!token)return;
+          const joined=await c.rpc('test_culinaire_join_session',
+            {p_session_id:sid,p_code:token,p_tester_no:null});
+          const membership=Array.isArray(joined.data)?joined.data[0]:joined.data;
+          if(joined.error||membership?.role!=='admin')return;
+          const retry=await query();live=retry.data;sessionError=retry.error;
+        }
+        if(sessionError||!live?.config?.products?.length ||
+           String(live.config._preparedId||'')!==key.slice(9))return;
+        const remote=live.config;
+        if(!cfg.products?.length){
+          // Legacy incomplete preparation: recover configuration only when
+          // both the instance and prepared identity were preserved.
+          const instance=x=>String(x._juryInstanceId||x.juryInstanceId||'');
+          if(instance(cfg)&&instance(cfg)===instance(remote)){
+            entry.state={...clone(entry.state),config:{...clone(remote),closure:clone(cfg.closure||remote.closure)}};
+          }
+          return;
+        }
+        const answerResult=await c.from('test_culinaire_reponses')
+          .select('tester_no,product_id,sample_id,choices,remarks')
+          .eq('session_id',sid);
+        if(answerResult.error||!Array.isArray(answerResult.data))return;
+        const verified=recoverVerifiedResultsV649(entry.state,remote,answerResult.data);
+        if(verified)entry.state=verified;
+      }catch(e){console.warn('Validation de jury lié non disponible',e);}
+    }));
     return resultsChoicesV388(catalog,local);
   };
   // V389: inspect device recovery copies without changing any jury.
