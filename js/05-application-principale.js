@@ -7508,49 +7508,107 @@ function scheduleClosureAutosave(preserveScrollY=null){
   }
 }
 
-async function saveClosure(){
-  const c=captureClosureForm();
-  try{
-    saveState();
-  }catch(error){
-    if(error?.name!=='QuotaExceededError'&&error?.code!==22&&error?.code!==1014)throw error;
-    // Preserve the edited form before moving verified recovery copies out of localStorage.
-    if(typeof verifyRecoveryValueV360!=='function')throw error;
-    await verifyRecoveryValueV360('jury-form-before-quota-recovery',JSON.stringify(state));
-    if(typeof compactLocalJuryCopiesV360==='function')await compactLocalJuryCopiesV360();
-    try{saveState()}catch(retryError){
-      if(retryError?.name!=='QuotaExceededError'&&retryError?.code!==22&&retryError?.code!==1014)throw retryError;
-      const keys=Object.keys(localStorage).filter(key=>/^jm[_-]/.test(key)&&/backup|recovery/i.test(key)&&![STORAGE_KEY,PREPARED_JURY_STORAGE_KEY,ARCHIVE_STORAGE_KEY].includes(key));
-      for(const key of keys){
-        const raw=localStorage.getItem(key);
-        if(raw===null)continue;
-        await verifyRecoveryValueV360(key,raw);
-        if(localStorage.getItem(key)===raw)localStorage.removeItem(key);
-      }
-      saveState();
+/* V647 — Un seul appui doit sauvegarder et confirmer la clôture.
+   La réussite locale ne doit pas être confondue avec la confirmation Supabase. */
+let closureSavingV647=false;
+function closureCloudSessionV647(){
+  if(typeof cloudReady==='undefined'||!cloudReady||
+     typeof cloudRole==='undefined'||cloudRole!=='admin'||
+     typeof cloudClient==='undefined'||!cloudClient||
+     typeof cloudCfg==='undefined')return '';
+  const sid=String(state?.config?._shareSessionId||
+    state?.config?.juryLaunch?.sessionId||'');
+  return sid&&sid===String(cloudCfg?.sessionId||'')?sid:'';
+}
+async function closureServerConfirmedV647(closure,sid){
+  const currentState=state;
+  for(let attempt=0;attempt<14;attempt++){
+    if(state!==currentState||closureCloudSessionV647()!==sid)return false;
+    /* La synchronisation en cours peut contenir un ancien instantané.
+       Attendre sa fin, puis forcer une nouvelle tentative si nécessaire. */
+    if(typeof cloudBusy!=='undefined'&&!cloudBusy&&
+       typeof syncDirtyToCloud==='function'){
+      try{await syncDirtyToCloud()}catch(e){console.warn('Envoi clôture à reprendre',e);}
     }
+    try{
+      const {data,error}=await cloudClient.from('test_culinaire_sessions')
+        .select('config').eq('session_id',sid).maybeSingle();
+      if(!error&&data?.config?.closure?.updatedAt===closure.updatedAt){
+        const saved=data.config.closure;
+        if(['date','place','chair','chairRole','coSigner','coSignerRole','notes',
+          'chairSignature','coSignature'].every(k=>
+            String(saved[k]||'')===String(closure[k]||'')) &&
+          JSON.stringify(saved.members||[])===JSON.stringify(closure.members||[]))return true;
+      }
+    }catch(e){console.warn('Vérification clôture différée',e);}
+    if(attempt<13)await new Promise(resolve=>setTimeout(resolve,450));
   }
+  return false;
+}
+async function saveClosure(){
+  if(closureSavingV647)return;
+  closureSavingV647=true;
+  const button=$('#saveClosureBtn');
+  if(button)button.disabled=true;
+  setClosureSaveIndicator('⏳ Enregistrement en cours…');
+  try{
+    const c=captureClosureForm();
+    try{
+      saveState();
+    }catch(error){
+      if(error?.name!=='QuotaExceededError'&&error?.code!==22&&error?.code!==1014)throw error;
+      // Une copie de récupération vérifiée est conservée AVANT tout nettoyage.
+      if(typeof verifyRecoveryValueV360!=='function')throw error;
+      await verifyRecoveryValueV360('jury-form-before-quota-recovery',JSON.stringify(state));
+      if(typeof compactLocalJuryCopiesV360==='function')await compactLocalJuryCopiesV360();
+      try{saveState()}catch(retryError){
+        if(retryError?.name!=='QuotaExceededError'&&retryError?.code!==22&&retryError?.code!==1014)throw retryError;
+        const keys=Object.keys(localStorage).filter(key=>/^jm[_-]/.test(key)&&/backup|recovery/i.test(key)&&![STORAGE_KEY,PREPARED_JURY_STORAGE_KEY,ARCHIVE_STORAGE_KEY].includes(key));
+        for(const key of keys){
+          const raw=localStorage.getItem(key);
+          if(raw===null)continue;
+          await verifyRecoveryValueV360(key,raw);
+          if(localStorage.getItem(key)===raw)localStorage.removeItem(key);
+        }
+        saveState();
+      }
+    }
 
-  const ready=renderClosureStatus(c);
+    /* Lire la sauvegarde réelle, et non seulement supposer que saveState a marché. */
+    const persisted=JSON.parse(localStorage.getItem(STORAGE_KEY)||'null');
+    if(persisted?.config?.closure?.updatedAt!==c.updatedAt)
+      throw Error('Sauvegarde locale non confirmée. Votre saisie est conservée à l’écran.');
 
-  /* Confirm the local save immediately; network latency must not require a second click. */
-  setClosureSaveIndicator('✓ Enregistré');
-  if(typeof syncSimpleResultsActions==='function'){
-    try{syncSimpleResultsActions()}catch(e){}
-  }
+    const ready=renderClosureStatus(c);
+    const sid=closureCloudSessionV647();
+    let onlineConfirmed=false;
+    if(sid){
+      setClosureSaveIndicator('⏳ Confirmation du serveur…');
+      onlineConfirmed=await closureServerConfirmedV647(c,sid);
+    }
 
-  if(ready){
-    renderAdmin();
-    window.scrollTo(0,0);
-    toast('Fiche de clôture complète et enregistrée ✓');
-  }else{
-    const missing=closureMissingFieldsFrom(c);
-    toast(`Fiche enregistrée — il manque : ${missing.map(x=>x.label).join(', ')}`);
-    /* Keep the saved form in place; its status card already lists missing fields. */
-  }
-
-  if(typeof syncDirtyToCloud==='function'){
-    Promise.resolve().then(()=>syncDirtyToCloud()).catch(e=>console.warn('Synchronisation de la clôture différée',e));
+    if(ready&&(!sid||onlineConfirmed)){
+      setClosureSaveIndicator(sid?'✓ Enregistré sur le serveur':'✓ Enregistré sur ce téléphone');
+      if(typeof syncSimpleResultsActions==='function'){
+        try{syncSimpleResultsActions()}catch(e){}
+      }
+      toast(sid?'Fiche de clôture enregistrée et confirmée ✓':
+        'Fiche de clôture enregistrée sur ce téléphone ✓');
+      renderAdmin();
+      window.scrollTo(0,0);
+    }else if(ready){
+      setClosureSaveIndicator('✓ Enregistré ici · serveur en attente');
+      toast('Fiche sauvegardée sur ce téléphone. Synchronisation serveur en attente ; elle se poursuivra automatiquement.');
+      /* Ne pas quitter la fiche ni prétendre que le serveur l’a reçue. */
+    }else{
+      setClosureSaveIndicator(sid&&!onlineConfirmed?
+        '✓ Enregistré ici · serveur en attente':'✓ Fiche enregistrée');
+      const missing=closureMissingFieldsFrom(c);
+      toast('Fiche enregistrée — il manque : '+missing.map(x=>x.label).join(', '));
+    }
+  }finally{
+    closureSavingV647=false;
+    if(button)button.disabled=false;
   }
 }
 function signatureCanvasData(id){
