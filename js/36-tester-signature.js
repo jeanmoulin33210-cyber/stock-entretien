@@ -48,8 +48,9 @@
   function buildReceipt(no){
     const tester=state.testers?.[no],jury=identity(state);
     if(!tester?.validatedAt||!read(state,no))throw Error('Signature locale introuvable : conservez cette page ouverte.');
-    const sid=String(cloudCfg?.sessionId||new URLSearchParams(location.search).get('session')||'');
-    if(!sid||!jury)throw Error('Session du jury introuvable : conservez cette page ouverte.');
+    const sid=String((typeof cloudCfg!=='undefined'&&cloudCfg?.sessionId)||
+      (typeof location!=='undefined'&&new URLSearchParams(location.search).get('session'))||'');
+    if(!jury)throw Error('Identité du jury introuvable : conservez cette page ouverte.');
     const answers=[];
     for(const product of state.config.products||[])for(const sample of product.samples||[]){
       const answer=tester.answers?.[sampleKey(product.id,sample.id)];
@@ -233,10 +234,16 @@
         pendingReceipt={no:Number(no),jury:identity(state),inProgress:false,failure:''};
         original(no);
         if(testerValidated(no)){
-          pendingReceipt=buildReceipt(no);
           dialog.close();
-          renderSample();
-          startReceiptDelivery(pendingReceipt);
+          try{
+            pendingReceipt=buildReceipt(no);
+            renderSample();
+            startReceiptDelivery(pendingReceipt);
+          }catch(error){
+            pendingReceipt={no:Number(no),jury:identity(state),stamp:String(state.testers?.[no]?.validatedAt||''),
+              inProgress:false,failure:String(error?.message||error)};
+            renderSample();
+          }
         }else{
           pendingReceipt=null;clear(state,no);
           message.textContent='Le test n’a pas été validé. Vérifiez vos réponses.';
@@ -255,7 +262,7 @@
     if(panel&&pendingReceipt&&
        pendingReceipt.no===Number(currentTester)&&
        pendingReceipt.jury===identity(state)&&
-       pendingReceipt.stamp===String(state.testers?.[currentTester]?.validatedAt||'')){
+       (!pendingReceipt.stamp||pendingReceipt.stamp===String(state.testers?.[currentTester]?.validatedAt||''))){
       showPendingReceipt(panel,pendingReceipt);
       return result;
     }
