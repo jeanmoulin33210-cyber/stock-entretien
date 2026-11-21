@@ -7458,6 +7458,12 @@ function renderClosure(){
   setupSignatureCanvas('chairSignature',c.chairSignature||'');
   setupSignatureCanvas('coSignature',c.coSignature||'');
   setClosureSaveIndicator(c.updatedAt&&c.date?'✓ Enregistré':'💾 Enregistrer');
+  /* V648 — after owner-catalog reload, retrieve the testeur's protected
+     signature and profile without reinitializing edited closure fields. */
+  if(typeof window.recoverClosureSignaturesV648==='function'){
+    Promise.resolve().then(()=>window.recoverClosureSignaturesV648())
+      .catch(e=>console.warn('Affichage différé de la signature testeur',e));
+  }
 }
 function captureClosureForm(){
   const c=normalizeClosureMembers();
