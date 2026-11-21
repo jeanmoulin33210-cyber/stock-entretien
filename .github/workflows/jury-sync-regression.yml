@@ -31,6 +31,7 @@ jobs:
         run: |
           node tests/shared-results.test.cjs
           node tests/lot-d-recovery.test.cjs
+          node tests/owner-verified-jury-results.test.cjs
 
       - name: Tester signature transport and jury isolation
         run: node tests/tester-signature.test.cjs
