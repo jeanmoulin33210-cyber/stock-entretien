@@ -1,5 +1,5 @@
 /* v338 forced refresh */
-const CACHE_NAME='tc-offline-v648-closure-signature-20261121';
+const CACHE_NAME='tc-offline-v649-jury-results-20261121';
 const APP_SHELL=[
   './',
   './tests-culinaires.html',
@@ -42,6 +42,7 @@ const APP_SHELL=[
   './js/30-v290-controle-occena.js',
   './js/31-v291-occena-a-faire.js',
   './js/32-v338-rapport-sensoriel-premium.js',
+  './js/33-owner-sync.js',
   './js/36-tester-signature.js'
 ];
 
